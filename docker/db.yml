@@ -1,0 +1,6 @@
+# DB settings
+
+adapter: mongodb
+encoding: utf8
+host: 172.16.42.43
+database: nudiplomacy

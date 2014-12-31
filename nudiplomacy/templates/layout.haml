@@ -1,0 +1,26 @@
+!!! 5
+%html
+    %head
+        %title {{=current.response.meta.title or 'nuDiplomacy'}}
+        %meta{name: "viewport", content:"width=device-width, initial-scale=1"}
+
+        - include_meta
+        - block head
+        - end
+
+        - include_helpers
+        - include_bs3
+
+        - assets 'css_base'
+
+    %body
+        - include 'header.haml'
+
+        .content
+            - block center
+            - include
+            - end
+
+        %footer
+            %hr
+            %p copyright Company 2014

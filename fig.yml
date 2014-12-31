@@ -1,0 +1,18 @@
+web:
+  build: .
+  command: python run.py
+  volumes:
+    - .:/home/app
+  ports:
+    - "8000:8000"
+  links:
+    - db
+    - redis
+db:
+  image: mongo:latest
+  ports:
+    - "27017:27017"
+redis:
+  image: redis:latest
+  ports:
+    - "6379:6379"

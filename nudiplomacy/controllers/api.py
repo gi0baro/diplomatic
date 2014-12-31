@@ -1,0 +1,170 @@
+import random
+from weppy import AppModule, request
+from weppy.tools import ServiceHandler, requires
+from weppy.storage import Storage
+from nudiplomacy import app, auth, db, mdb, Orders
+from nudiplomacy.helpers.mongo import longToObjid, objidToLong
+from nudiplomacy.gameman import process_orders
+
+api = AppModule(app, "api", __name__, url_prefix="api")
+api.common_handlers = [ServiceHandler('json')]
+
+
+def access_error():
+    return dict(status="Error", data="Not authorized")
+
+
+@api.expose("/map/<int:mid>")
+def map_get(mid):
+    mapdata = db(db.Map.id == mid).select().first().as_dict()
+    if not mapdata:
+        return dict()
+    # temp workaround for str->int conversion
+    ch = ["neutrals", "seas", "coasts"]
+    for c in ch:
+        for i in range(0, len(mapdata[c])):
+            mapdata[c][i] = str(mapdata[c][i])
+    #
+    return mapdata
+
+
+@api.expose("/game/<int:gid>")
+def game_get(gid):
+    game = db(db.Game.id == gid).select(
+        db.Game.phases, db.Game.countries, db.Game.buildew).first()
+    rv = Storage()
+    if game:
+        rv.currentPlayer = None
+        rv.phases = game.phases
+        if auth.user:
+            for k, v in game.countries.items():
+                if objidToLong(v) == auth.user.id:
+                    rv.currentPlayer = k
+                    break
+        rv.countries = game.countries.keys()
+        rv.buildew = game.buildew
+    return rv
+
+
+@api.expose("/join/<int:gid>")
+@requires(auth.is_logged_in, access_error)
+def game_join(gid):
+    rv = Storage(status="Error")
+    gamedata = db.Game(id=gid)
+    if not gamedata:
+        rv.data = "No such game found"
+        return rv
+    countrydict = {}
+    app.log.debug(gamedata.countries)
+    for k, v in gamedata.countries.items():
+        if v is None:
+            countrydict[k] = v
+    app.log.debug(countrydict)
+    if not countrydict.keys():
+        rv.data = "No slots available"
+        return rv
+    if gamedata.countriesassign == "random":
+        joined = False
+        while not joined:
+            chosen = random.choice(countrydict.keys())
+            app.log.debug(chosen)
+            updated = mdb.games.fandm(
+                {"id": gid, "countries."+chosen: None},
+                {"$set": {"countries."+chosen: longToObjid(auth.user.id)}},
+                fields=["countries"],
+                new=True
+            )
+            app.log.debug(updated)
+            if not updated:
+                del countrydict[chosen]
+            else:
+                joined = True
+                if all([v is not None for v in updated.countries.iterkeys()]):
+                    mdb.games.upd(
+                        {"id": gid, "ready": False},
+                        {"$set": {"ready": True}}
+                    )
+            if not countrydict:
+                break
+        if not joined:
+            rv.data = "No slots available"
+            return rv
+    else:
+        chosen = request.get_vars.country
+        if not chosen:
+            rv.data = "You have to pick a country"
+            return rv
+        updated = mdb.games.fandm(
+            {"id": gid, "countries."+chosen: None},
+            {"$set": {"countries."+chosen: longToObjid(auth.user.id)}},
+            fields=["countries"],
+            new=True
+        )
+        if not updated:
+            rv.data = "Selected country not available"
+        else:
+            if all([v is not None for v in updated.countries.iterkeys()]):
+                mdb.games.upd(
+                    {"id": gid, "ready": False},
+                    {"$set": {"ready": True}}
+                )
+    rv.status = "Ok"
+    rv.data = "Joined successfully"
+    return rv
+
+
+@api.expose("/orders/<int:gid>", methods=["get"])
+@requires(auth.is_logged_in, access_error)
+def orders_get(gid):
+    return Orders.owned(gid)
+
+
+@api.expose("/orders/<int:gid>", methods=["post"])
+@requires(auth.is_logged_in, access_error)
+def orders_save(gid):
+    app.log.debug(request.post_vars)
+    if not request.post_vars.orders:
+        return dict(status="Error", data="Bad request")
+    game = db.Game(id=gid)
+    if not game:
+        return dict(status="Error", data="Bad game")
+    country = game.playercountry()
+    if not country:
+        return dict(status="Error", data="Not in the game")
+    if country not in game.phases[-1]["countries"]:
+        return dict(status="Error", data="Not allowed in phase")
+    rv = process_orders(country, game, request.post_vars.orders)
+    if rv.orders:
+        row = Orders.owned(game.id)
+        for k, v in rv.orders.items():
+            row[k] = v
+        db((db.Orders.game == game.id) &
+           (db.Orders.player == auth.user.id)).update(data=row)
+    if rv.error:
+        return dict(status="Error", data=rv.error)
+    return dict(status="Ok", data=rv.orders)
+
+
+@api.expose("/ready/<int:gid>", methods=["get"])
+@requires(auth.is_logged_in, access_error)
+def orders_ready(gid):
+    game = db.Game(id=gid)
+    if not game:
+        return dict(status="Error", data="Bad game")
+    country = game.playercountry()
+    if not country:
+        return dict(status="Error", data="Not in the game")
+    if country not in game.phases[-1]["countries"]:
+        return dict(status="Error", data="Not allowed in phase")
+    enabled = request.get_vars.set == "1"
+    db((db.Orders.game == game.id) &
+        (db.Orders.player == auth.user.id)).update(ready=enabled)
+    if enabled:
+        readycount = db(
+            (db.Orders.game == game.id) & (db.Orders.ready == True)).count()
+        if readycount == len(game.phases[-1]["countries"]):
+            mdb.games.fandm(
+                {"id": game.id, "ready": False},
+                {"$set": {"ready": True}}
+            )
+    return dict(status="Ok", data=enabled)

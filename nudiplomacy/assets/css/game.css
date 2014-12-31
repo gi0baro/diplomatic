@@ -1,0 +1,570 @@
+body, html {
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+}
+
+.container_ce {
+    position: fixed;
+    width: 100%;
+    top: 50px;
+    bottom: 50px;
+    padding: 0;
+    margin: 0;
+}
+
+.container_foot {
+    padding-top: 10px;
+    min-height: 20px;
+    width: 100%;
+}
+
+.navbar {
+    color: #fff;
+    background-color: #222;
+    border-color: #080808;
+}
+
+.main {
+    margin: 0 0 0 0;
+    padding: 0 0 0 0;
+    height: 100%;
+}
+
+#cont_wrapper {
+    position: relative;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+#map_wrapper {
+    position: relative;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: auto;
+    /*background: url("map.png");
+    background-size: 100% 100%;*/
+}
+
+#map_img {
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+}
+
+.menu_butt {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    opacity: 0;
+    visibility: hidden;
+}
+
+#terr_menu {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    top: 0px;
+    left: 0px;
+    opacity: 0;
+    visibility: hidden;
+    /*border-radius: 50%;
+    visibility: none;
+    z-index: 1;*/
+}
+
+#mcoast_menu {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    top: 0px;
+    left: 0px;
+    opacity: 0;
+    visibility: hidden;
+    /*border-radius: 50%;
+    visibility: none;
+    z-index: 1;*/
+}
+
+#terr_name {
+    position: absolute;
+    width: auto;
+    padding: 5px;
+    height: 20px;
+    opacity: 0;
+    visibility: hidden;
+    background-color: black;
+    color: white;
+    border-radius: 7px 7px 7px 7px;
+}
+
+.btn_m {
+    position: relative;
+    margin: 0 0 0 0;
+    padding: 0 0 0 0;
+    left: 35px;
+    display: block;
+}
+
+.btn_sm {
+    position: relative;
+    margin: 0 0 0 0;
+    padding: 0 0 0 0;
+    left: 15px;
+    display: block;
+}
+
+.btn_sh {
+    position: relative;
+    margin: 0 0 0 0;
+    padding: 0 0 0 0;
+    left: 7px;
+    display: block;
+}
+
+.btn_c {
+    position: relative;
+    margin: 0 0 0 0;
+    padding: 0 0 0 0;
+    left: 5px;
+    display: block;
+}
+
+.btn_x {
+    position: relative;
+    margin: 0 0 0 0;
+    padding: 0 0 0 0;
+    left: 0px;
+    display: block;
+}
+
+.btn_mc_n {
+    position: relative;
+    margin: 0 0 0 0;
+    padding: 0 0 0 0;
+    left: 0px;
+    display: block;
+}
+
+.btn_mc_s {
+    position: relative;
+    margin: 0 0 0 0;
+    padding: 0 0 0 0;
+    left: 0px;
+    display: block;
+}
+
+.ninja {
+    visibility: hidden;
+}
+
+#loader {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0px;
+    left: 0px;
+    background-color: white;
+    opacity: 1;
+    z-index: 2;
+}
+
+#loader_cont {
+    position: absolute;
+    top: 45%;
+    width: 100%;
+    text-align: center;
+    vertical-align: center;
+}
+
+#left_wrapper {
+    position: absolute;
+    /*z-index: 1;*/
+    left: -38%;
+    top: 0px;
+    width: 40%;
+    height: 100%;
+}
+
+#left_menu {
+    position: absolute;
+    top: 0px;
+    left: 95%;
+    /*width: 10%;*/
+    width: 5%;
+    height: 15%;
+    z-index: 1;
+}
+
+#msg_wrapper {
+    position: relative;
+    top: 0px;
+    left: 0px;
+    width: 95%;
+    height: 100%;
+    background-color: white;
+    -webkit-box-shadow: 0 0 8px #888;
+    box-shadow: 0 0 8px #888;
+    z-index: 1;
+    overflow: hidden;
+}
+
+.wrap_tit {
+    height: 5%;
+}
+
+#msg_button {
+    position: relative;
+    top: 10%;
+    left: 0px;
+    width: 100%;
+    height: 20px;
+    padding-right: 4px;
+    text-align: right;
+    background-color: white;
+    -webkit-box-shadow: 2px 0 5px 0px #888;
+    box-shadow: 2px 0 5px 0px #888;
+}
+
+#msg_ext_button {
+    position: absolute;
+    top: 10%;
+    left: -100%;
+    width: 100%;
+    height: 20px;
+    text-align: left;
+}
+
+#msg_content {
+    position: relative;
+    top: 3%;
+    /*left: 4%;*/
+    left: 54%;
+    width: 46%;
+    height: 95%;
+    overflow: hidden;
+}
+
+.msg_select {
+    position: relative;
+    top: 1%;
+    width: 97%;
+    height: 95%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.msg_select_sub {
+    position: relative;
+    width: auto;
+    height: 100%;
+    overflow: hidden;
+}
+
+.msg_select_child {
+    display: inline-block;
+    position: relative;
+    /*float: left;*/
+    width: 36px;
+    height: 36px;
+    margin: 4px;
+    background-color: #ddd;
+    -webkit-border-radius: 18px;
+    border-radius: 18px;
+}
+
+.msg_conv {
+    opacity: 0;
+    position: absolute;
+    top: 20px;
+    height: 95%;
+    width: 100%;
+}
+
+.msg_list {
+    position: relative;
+    width: 95%;
+    /*height: 88%;*/
+    height: 74%;
+    overflow-x: none;
+    overflow-y: auto;
+    /*vertical-align: bottom;*/
+}
+
+#msg_list_c {
+    width: 100%;
+    height: auto;
+}
+
+.msg_text {
+    position: absolute;
+    margin: 0px;
+    width: 92%;
+    height: 16%;
+    bottom: 0px;
+}
+
+.msg_me {
+    position: relative;
+    left: 0;
+    width: 97%;
+    height: auto;
+    /*height: 100%;*/
+    border-color: #ccc;
+    border-style: solid;
+    border-width: 1px;
+    margin-top: 4px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    padding: 1%;
+}
+
+.msg_re {
+    position: relative;
+    left: 0;
+    width: 97%;
+    height: auto;
+    /*height: 100%;*/
+    border-color: #ccc;
+    border-style: solid;
+    border-width: 1px;
+    margin-top: 4px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    padding: 1%;
+    background-color: #eee;
+}
+
+#right_wrapper {
+    position: absolute;
+    /*z-index: 1;*/
+    right: -18%;
+    top: 0px;
+    width: 20%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#right_menu {
+    position: absolute;
+    top: 0px;
+    right: 90%;
+    width: 10%;
+    height: 15%;
+    z-index: 1;
+}
+
+#ord_wrapper {
+    position: relative;
+    top: 0px;
+    /*right: 0px;*/
+    margin-left: 10%;
+    width: 90%;
+    height: 100%;
+    background-color: white;
+    -webkit-box-shadow: 0 0 8px #888;
+    box-shadow: 0 0 8px #888;
+    z-index: 1;
+    padding-left: 3%;
+    padding-top: 3%;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.ord_phase_wrapper {
+    position: absolute;
+    top: 35px;
+    width: 100%;
+    height: auto;
+    visibility: hidden;
+}
+
+#ord_button {
+    position: relative;
+    top: 10%;
+    /*right: 0px;*/
+    left: -4px;
+    width: 100%;
+    height: 20px;
+    padding-left: 4px;
+    text-align: left;
+    background-color: white;
+    -webkit-box-shadow: -2px 0 5px 0 #888;
+    box-shadow: -2px 0 5px 0 #888;
+}
+
+.ord_pin {
+    position: relative;
+    left: 0;
+    width: 100%;
+    height: 20px;
+    /*height: 100%;*/
+    border-color: #ccc;
+    border-style: solid;
+    border-width: 1px;
+    margin-top: 4px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+}
+
+.ord_pin_head {
+    position: relative;
+    left: 0;
+    width: 100%;
+    overflow: hidden;
+    height: auto;
+}
+
+.ord_pin_icon {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    /*margin: 2px;*/
+    overflow: hidden;
+    background-repeat: no-repeat;
+    background-image: url(ui_icons.png);
+    float: left;
+}
+
+.ord_pin_icon_off {
+    background-position: -32px -16px;
+}
+
+.ord_pin_icon_on {
+    background-position: -64px -16px;
+}
+
+.ord_pin_text {
+    position: relative;
+    width: auto;
+    height: 20px;
+    float: left;
+}
+
+.ord_pin_text_off {
+    color: gray;
+}
+
+.ord_pin_text_on {
+    color: #000;
+}
+
+.orders {
+    position: relative;
+    left: 10%;
+    width: 80%;
+    height: auto;
+    /*visibility: hidden;*/
+    opacity: 0;
+}
+
+#top_wrapper {
+    position: absolute;
+    /*width: 10%;*/
+    width: 200px;
+    height: 60px;
+    left: 45%;
+    top: -40px;
+    z-index: 2;
+}
+
+#top_bottom {
+    position: absolute;
+    width: 20%;
+    height: 20px;
+    top: 40px;
+    left: 40%;
+}
+
+#top_menu {
+    position: relative;
+    top: 0px;
+    width: 100%;
+    height: 40px;
+    background-color: white;
+    -webkit-box-shadow: 0 2px 5px #888;
+    box-shadow: 0 2px 5px #888;
+    /*z-index: 1;*/
+    border-radius: 0 0 20px 20px;
+}
+
+#top_menu_cont {
+    position: relative;
+    width: 100%;
+    height: 29px;
+    top: 1px;
+    left: 0;
+}
+
+#top_menu_stats {
+    position: relative;
+    width: 100%;
+    height: 10px;
+    top: 1px;
+    left: 0;
+    text-align: center;
+}
+
+.top_menu_button {
+    width: 20px;
+    height: 20px;
+    float: left;
+    text-align: center;
+    vertical-align: center;
+    /*z-index: 1*/
+}
+
+#phase_ind {
+    width: 120px;
+    height: 20px;
+    float: left;
+    text-align: center;
+    vertical-align: center;
+}
+
+#top_button {
+    position: relative;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    background-color: white;
+    -webkit-box-shadow: 0 2px 5px 0px #888;
+    box-shadow: 0 2px 5px 0px #888;
+    border-radius: 0 0 8px 8px;
+}
+
+#top_sensor {
+    position: absolute;
+    top: 0px;
+    left: 45%;
+    width: 140px;
+    height: 40px;
+    /*z-index: 1;*/
+}
+
+#stats_wrapper {
+    position: absolute;
+    /*width: 10%;*/
+    width: 50%;
+    height: 50%;
+    left: 25%;
+    top: -52%;
+    z-index: 1;
+}
+
+#stats_content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    -webkit-box-shadow: 0 2px 5px 0px #888;
+    box-shadow: 0 2px 5px 0px #888;
+    border-radius: 0 0 8px 8px;
+}

@@ -1,0 +1,8 @@
+pymongo
+redis
+rq
+rq-scheduler
+weppy >= 0.1.7
+weppy-Haml
+weppy-BS3
+weppy-Assets

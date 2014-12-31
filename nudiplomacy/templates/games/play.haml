@@ -1,0 +1,84 @@
+- extend 'ingame.haml'
+
+:javascript
+    $(document).ready(function() {
+        app.net.route("map", "{{=url('api.map_get', game.map)}}");
+        app.net.route("game", "{{=url('api.game_get', game.id)}}");
+        app.net.route("orders", "{{=url('api.orders_get', game.id)}}");
+        app.net.route("saveorders", "{{=url('api.orders_save', game.id)}}");
+        app.net.route("ready", "{{=url('api.orders_ready', game.id, {'set': '1'})}}");
+        app.net.route("unready", "{{=url('api.orders_ready', game.id)}}");
+        app.start();
+    });
+
+.container.container_ce
+    %section#main.main.row
+        #left_wrapper
+            #msg_wrapper
+                #msg_content
+                    .wrap_tit
+                        %span Messages
+                    .msg_select
+
+            #left_menu
+                #msg_button M
+                #msg_ext_button >>
+
+        #cont_wrapper
+            #map_wrapper
+                %img#map_img{src: '{{=url("main.download", game.map.image)}}'}
+            #terr_menu.menu_butt
+                %button#btn_m.btn.btn-mini.btn_m{type: "button"} M
+                %button#btn_sm.btn.btn-mini.btn_sm{type: "button"} SM
+                %button#btn_sh.btn.btn-mini.btn_sh{type: "button"} SH
+                %button#btn_c.btn.btn-mini.btn_c.ninja{type: "button"} C
+                %button#btn_x.btn.btn-mini.btn_x{type: "button"} X
+            #mcoast_menu.menu_butt
+                %button#btn_n.btn.btn-mini.btn_mc_n{type: "button"} N
+                %button#btn_s.btn.btn-mini.btn_mc_s{type: "button"} S
+            #build_menu.menu_butt
+                %button#btn_b_a.btn.btn-mini.btn_build_a{type: "button"} A
+                %button#btn_b_f.btn.btn-mini.btn_build_f.ninja{type: "button"} F
+                %button#btn_b_x.btn.btn-mini.btn_x{type: "button"} X
+
+        #top_wrapper
+            #top_menu
+                #top_menu_stats Stats
+                #top_menu_cont
+                    #phase_rr.top_menu_button rr
+                    #phase_r.top_menu_button r
+                    #phase_ind
+                    #phase_f.top_menu_button f
+                    #phase_ff.top_menu_button ff
+            #top_bottom
+                #top_button T
+
+        #stats_wrapper
+            #stats_content
+                .stats_member
+                    .stats_country Russia
+                .stats_mdata
+                    .stats_uinfo
+                    .stats_pinfo
+                    .stats_bar
+
+        #right_wrapper
+            #ord_wrapper
+                %span Orders
+            #right_menu
+                #ord_button O
+
+        #loader
+            #loader_cont
+                %h1 Loading..
+
+.ninja
+    %img#army_img{src: '{{=url("static", "images/tank.png")}}'}
+    %img#ship_img{src: '{{=url("static", "images/ship.png")}}'}
+
+.navbar.navbar-fixed-bottom
+    .navbar-inner
+        .container
+        .container_foot
+            .copyright.pull-left Copyright &#169; 2015 nuDiplomacy
+            #poweredBy.pull-right coded by gi0baro with TONS of caffeine
