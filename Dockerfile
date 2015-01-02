@@ -17,6 +17,7 @@ RUN easy_install pip
 
 ## TEMP: weppy master
 WORKDIR /root
+ADD http://www.random.org/strings/?num=10&len=8&digits=on&upperalpha=on&loweralpha=on&unique=on&format=plain&rnd=new uuid
 RUN git clone https://github.com/gi0baro/weppy.git weppy
 RUN cd weppy && python setup.py install
 

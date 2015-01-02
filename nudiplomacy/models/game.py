@@ -2,7 +2,7 @@ import json
 import random
 from weppy import request, session
 from weppy.dal import Field, Model, before_insert, modelmethod, fieldmethod
-from weppy.validators import inDB, isntEmpty, inSet, isIntInRage
+from weppy.validators import inDb, isntEmpty, inSet, isIntInRange
 
 
 class Game(Model):
@@ -41,8 +41,8 @@ class Game(Model):
     validators = {
         "name": isntEmpty(),
         "pottype": inSet(["wta", "ppsc"], zero=None),
-        "phasetime": isIntInRage(5, 60*24*10),
-        "jointime": isIntInRage(5, 60*24*10),
+        "phasetime": isIntInRange(5, 60*24*10),
+        "jointime": isIntInRange(5, 60*24*10),
         "starton": inSet(["asap", "ontime"], zero=None),
         "presstype": inSet(["all", "globals", "none"], zero=None),
         "countriesassign": inSet(["random", "choose"], zero=None),
@@ -63,8 +63,8 @@ class Game(Model):
         "targetsc": (False, False)
     }
 
-    def set_validators(self):
-        self.entity.map.requires = inDB(self.db, self.db.maps.id, zero=None)
+    def setup(self):
+        self.entity.map.requires = inDb(self.db, self.db.maps.id, zero=None)
 
     @fieldmethod('playercountry')
     def get_country(self, row):
