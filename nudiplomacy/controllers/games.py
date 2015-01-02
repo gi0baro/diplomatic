@@ -13,9 +13,6 @@ def index():
     ## TEMP
     rows = db(db.Game.id > 0).select().as_list()
     app.log.debug(rows)
-    from nudiplomacy import mdb
-    rows = mdb.games.find({})
-    app.log.debug(rows)
     ##
     return dict()
 

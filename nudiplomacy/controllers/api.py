@@ -1,7 +1,6 @@
 import random
-from weppy import AppModule, request
+from weppy import AppModule, request, sdict
 from weppy.tools import ServiceHandler, requires
-from weppy.storage import Storage
 from nudiplomacy import app, auth, db, mdb, Orders
 from nudiplomacy.helpers.mongo import longToObjid, objidToLong
 from nudiplomacy.gameman import process_orders
@@ -32,7 +31,7 @@ def map_get(mid):
 def game_get(gid):
     game = db(db.Game.id == gid).select(
         db.Game.phases, db.Game.countries, db.Game.buildew).first()
-    rv = Storage()
+    rv = sdict()
     if game:
         rv.currentPlayer = None
         rv.phases = game.phases
@@ -49,7 +48,7 @@ def game_get(gid):
 @api.expose("/join/<int:gid>")
 @requires(auth.is_logged_in, access_error)
 def game_join(gid):
-    rv = Storage(status="Error")
+    rv = sdict(status="Error")
     gamedata = db.Game(id=gid)
     if not gamedata:
         rv.data = "No such game found"

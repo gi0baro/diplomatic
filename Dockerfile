@@ -16,9 +16,8 @@ RUN apt-get install -y git python python-dev python-setuptools wget nodejs
 RUN easy_install pip
 
 ## TEMP: weppy master
-ADD ./weppy /root/weppy
 WORKDIR /root
-#RUN git clone https://github.com/gi0baro/weppy.git weppy
+RUN git clone https://github.com/gi0baro/weppy.git weppy
 RUN cd weppy && python setup.py install
 
 # install python requirements

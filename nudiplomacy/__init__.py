@@ -1,6 +1,6 @@
-from weppy import App, ModelsDAL
+from weppy import App, DAL, sdict
 from weppy.sessions import SessionCookieManager
-from weppy.tools import ModelsAuth
+from weppy.tools import Auth
 
 app = App(__name__)
 app.config.url_default_namespace = "main"
@@ -15,8 +15,7 @@ app.language_force_on_url = True
 app.config_from_yaml('app.yml')
 app.config_from_yaml('db.yml', 'db')
 
-from weppy.storage import Storage
-app.config.logging.production = Storage(level='info', on_app_debug=True)
+app.config.logging.production = sdict(level='info', on_app_debug=True)
 
 # redis and queue system
 from redis import Redis
@@ -28,8 +27,8 @@ queue = Queue(app.config, redis)
 from models.user import User, UserData
 from models.map import Map
 from models.game import Game, Orders
-db = ModelsDAL(app)
-auth = ModelsAuth(app, db, User, mailer=False)
+db = DAL(app)
+auth = Auth(app, db, usermodel=User, mailer=False)
 db.define_datamodels([UserData, Map, Game, Orders])
 from helpers.mongo import MongoDB
 mdb = MongoDB(db)

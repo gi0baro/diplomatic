@@ -1,5 +1,5 @@
 from rq import Queue as RQueue
-from weppy.storage import Storage
+from weppy import sdict
 #from weppy.tools import Mail
 #from nudiplomacy import app
 
@@ -16,7 +16,7 @@ class Mailer(Mail):
 
 class Queue(object):
     def __init__(self, config, connect):
-        self.queues = Storage()
+        self.queues = sdict()
         self.queues.default = RQueue('default', connection=connect)
         self.queues.open = RQueue('open', connection=connect)
         self.queues.close = RQueue('close', connection=connect)

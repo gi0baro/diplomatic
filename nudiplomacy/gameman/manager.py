@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from weppy.storage import Storage
+from weppy import sdict
 from nudiplomacy import app, db, mdb, queue
 from nudiplomacy.helpers.mongo import objidToLong
 from .diplomacy import OrdersProcessor, GameProcessor
@@ -69,7 +69,7 @@ def process_orders(country, game, orders):
     #
     proc = OrdersProcessor(country, game, gamemap, app.log.debug)
     proc.process(orders)
-    return Storage(error=proc.error, orders=proc.orders_data)
+    return sdict(error=proc.error, orders=proc.orders_data)
 
 
 def open_game(gid):

@@ -1,8 +1,8 @@
 import json
 import random
-from weppy import Field, request, session
-from weppy.dal.models import Model, before_insert, modelmethod, fieldmethod
-from weppy.validators import IS_IN_DB, IS_NOT_EMPTY, IS_IN_SET, IS_INT_IN_RANGE
+from weppy import request, session
+from weppy.dal import Field, Model, before_insert, modelmethod, fieldmethod
+from weppy.validators import inDB, isntEmpty, inSet, isIntInRage
 
 
 class Game(Model):
@@ -39,14 +39,14 @@ class Game(Model):
     ]
 
     validators = {
-        "name": IS_NOT_EMPTY(),
-        "pottype": IS_IN_SET(["wta", "ppsc"], zero=None),
-        "phasetime": IS_INT_IN_RANGE(5, 60*24*10),
-        "jointime": IS_INT_IN_RANGE(5, 60*24*10),
-        "starton": IS_IN_SET(["asap", "ontime"], zero=None),
-        "presstype": IS_IN_SET(["all", "globals", "none"], zero=None),
-        "countriesassign": IS_IN_SET(["random", "choose"], zero=None),
-        "access": IS_IN_SET(["free", "password"], zero=None)
+        "name": isntEmpty(),
+        "pottype": inSet(["wta", "ppsc"], zero=None),
+        "phasetime": isIntInRage(5, 60*24*10),
+        "jointime": isIntInRage(5, 60*24*10),
+        "starton": inSet(["asap", "ontime"], zero=None),
+        "presstype": inSet(["all", "globals", "none"], zero=None),
+        "countriesassign": inSet(["random", "choose"], zero=None),
+        "access": inSet(["free", "password"], zero=None)
     }
 
     visibility = {
@@ -64,8 +64,7 @@ class Game(Model):
     }
 
     def set_validators(self):
-        self.entity.map.requires = IS_IN_DB(self.db, self.db.maps.id,
-                                            zero=None)
+        self.entity.map.requires = inDB(self.db, self.db.maps.id, zero=None)
 
     @fieldmethod('playercountry')
     def get_country(self, row):

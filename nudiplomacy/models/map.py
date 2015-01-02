@@ -1,5 +1,4 @@
-from weppy import Field
-from weppy.dal.models import Model
+from weppy.dal import Field, Model
 
 
 class Map(Model):

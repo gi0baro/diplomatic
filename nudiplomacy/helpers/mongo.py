@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from weppy.storage import Storage
+from weppy import sdict
 
 
 def longToObjid(arg):
@@ -41,7 +41,7 @@ class MongoTable(object):
     def _map_object(obj):
         if obj:
             obj["id"] = objidToLong(obj.get("_id", ""))
-            obj = (Storage(obj))
+            obj = (sdict(obj))
         return obj
 
     def _find(self, query=None, sort=None, limit=0, skip=0):
