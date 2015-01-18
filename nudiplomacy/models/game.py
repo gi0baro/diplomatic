@@ -1,8 +1,21 @@
 import json
 import random
-from weppy import request, session
+from weppy import request, session, T
 from weppy.dal import Field, Model, before_insert, modelmethod, fieldmethod
 from weppy.validators import inDb, isntEmpty, inSet, isIntInRange
+
+
+_repr_pot = {'wta': T("Winner takes all"),
+             'ppsc': T("Points per supply center")}
+_repr_start = {'asap': T("As soon as enough players have joined"),
+               'ontime': T("Wait for the join time to expire")}
+_repr_press = {'all': T("Allow all"),
+               'globals': T("Allow only global chat"),
+               'none': T("Disable game messages")}
+_repr_assign = {'random': T("Random assignment"),
+                'choose': T("Every player choose its country")}
+_repr_access = {'free': T("Everyone can join the game"),
+                'password': T("Password-protect the game")}
 
 
 class Game(Model):
@@ -61,6 +74,32 @@ class Game(Model):
         "phases": (False, False),
         # temp disabled
         "targetsc": (False, False)
+    }
+
+    labels = {
+        "map": T("Variant"),
+        "nplayers": T("Num. of players"),
+        "bet": T("Bet amount"),
+        "pottype": T("Pot type"),
+        "phasetime": T("Phase period length"),
+        "jointime": T("Joining period length"),
+        "starton": T("Start game"),
+        "buildew": T("Build everywhere"),
+        "buildonstart": T("Start game with a build phase"),
+        "anonymous": T("Anonymous players"),
+        "presstype": T("In-game messaging"),
+        "countriesassign": T("Countries assignment"),
+        "countriesenabled": T("Enabled countries"),
+        "access": T("Game access"),
+        "maxturns": T("Maximum turns"),
+        "targetsc": T("Target SCs to win")
+    }
+
+    representation = {
+        "pottype": lambda value: _repr_pot[value],
+        "starton": lambda value: _repr_start[value],
+        "presstype": lambda value: _repr_press[value],
+        "countriesassign": lambda value: _repr_assign[value]
     }
 
     def setup(self):
