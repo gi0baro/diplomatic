@@ -43,7 +43,6 @@
 
         #top_wrapper
             #top_menu
-                #top_menu_stats Stats
                 #top_menu_cont
                     #phase_rr.top_menu_button rr
                     #phase_r.top_menu_button r
@@ -54,13 +53,18 @@
                 #top_button T
 
         #stats_wrapper
+            #stats_top
+                #stats_button Stats
             #stats_content
-                .stats_member
-                    .stats_country Russia
-                .stats_mdata
-                    .stats_uinfo
-                    .stats_pinfo
-                    .stats_bar
+                - for country in game.countries.iterkeys():
+                    .stats_member{id: "stats_{{=country}}"}
+                        .stats_country
+                            %span
+                                = country
+                        .stats_mdata
+                            .stats_uinfo
+                            .stats_pinfo
+                            .stats_bar
 
         #right_wrapper
             #ord_wrapper

@@ -159,13 +159,13 @@ class UI
         $('#top_wrapper').mouseleave ->
             self.closeTopMenu()
             return
-        $('#top_menu_stats').click ->
-            if self.stats_bar is "closed"
-                self.stats_bar = "open"
-                app.OpenStats()
+        $('#stats_button').click ->
+            if self.statsBar is "closed"
+                self.statsBar = "open"
+                self.openStats()
             else
-                self.stats_bar = "closed"
-                app.CloseStats()
+                self.statsBar = "closed"
+                self.closeStats()
         $('#phase_rr').click ->
             buttoff = $('#phase_rr').hasClass 'disabled'
             if not buttoff
@@ -224,10 +224,14 @@ class UI
         if id isnt "next"
             #$('#phase_ind').append '<span>'+id+'/'+app.phase.id+'</span>'
             phase = app.game.phase(id)
-            if phase.season
+            console.log(phase)
+            if phase.type is "diplomacy"
                 $('#phase_ind').append '<span>'+phase.season+' '+phase.year+'</span>'
             else
-                $('#phase_ind').append '<span>'+phase.type+' '+phase.year+'</span>'
+                if phase.year
+                    $('#phase_ind').append '<span>'+phase.type+' '+phase.year+'</span>'
+                else
+                    $('#phase_ind').append '<span>'+phase.type+'</span'
         else
             $('#phase_ind').append '<span><em>Next</em></span>'
         return
@@ -413,21 +417,43 @@ class UI
         return
 
     openTopMenu: ->
-        if @statsBar is "closed"
-            $('#top_wrapper').stop()
-            $('#top_wrapper').animate
-                top: '0px'
-                300
-                'linear'
+        #if @statsBar is "closed"
+        $('#top_wrapper').stop()
+        $('#top_wrapper').animate
+            top: '0px'
+            300
+            'linear'
         return
 
     closeTopMenu: ->
-        if @statsBar is "closed"
-            $('#top_wrapper').stop()
-            $('#top_wrapper').animate
-                top: '-40px'
-                300
-                'linear'
+        #if @statsBar is "closed"
+        $('#top_wrapper').stop()
+        $('#top_wrapper').animate
+            top: '-40px'
+            300
+            'linear'
+        return
+
+    openStats: ->
+        #$('#stats_wrapper').stop()
+        #$('#stats_wrapper').css
+        #    top: '-50%'
+        $('#stats_wrapper').animate
+            bottom: '0px'
+            500
+            'linear'
+        #$('#top_wrapper').animate
+        #    top: '50%'
+        #    500
+        #    'linear'
+        return
+
+    closeStats: ->
+        #$('#stats_wrapper').stop()
+        $('#stats_wrapper').animate
+            bottom: '-50%'
+            500
+            'linear'
         return
 
     openBar: (side) ->

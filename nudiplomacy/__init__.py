@@ -29,7 +29,7 @@ from models.map import Map
 from models.game import Game, Orders
 db = DAL(app)
 auth = Auth(app, db, usermodel=User, mailer=False)
-db.define_datamodels([UserData, Map, Game, Orders])
+db.define_models([UserData, Map, Game, Orders])
 from helpers.mongo import MongoDB
 mdb = MongoDB(db)
 

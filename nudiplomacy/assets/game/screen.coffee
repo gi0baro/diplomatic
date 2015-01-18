@@ -165,14 +165,21 @@ class Screen
     _diffColor: (color1, color2) ->
         return !(color1.r is color2.r and color1.g is color2.g and color1.b is color2.b)
 
+    _getTerritories: ->
+        if app.game.phase().id is 0
+            return app.env.countries_init
+        return app.game.phase().territories
+
     _updateColors: (grounds) ->
         ## draw all terrs to ground color
         color = r: 226, g: 198, b: 158
         for i in grounds
             app.game.colors[i] = color
         ## draw countries terrs
+        territories = @_getTerritories()
         for key, color of app.env.countries
-            for i in app.game.phase().territories[key]
+            #for i in app.game.phase().territories[key]
+            for i in territories[key]
                 app.game.colors[i] = color
         return
 
@@ -181,7 +188,9 @@ class Screen
         #time_start = new Date().getTime()
         c_terrs = []
         #for key, terr_list of app.map.countries_terr
-        for key, terr_list of app.game.phase().territories
+        territories = @_getTerritories()
+        #for key, terr_list of app.game.phase().territories
+        for key, terr_list of territories
             for terr in terr_list
                 c_terrs.push(terr)
         c_diff_list = old_c_terrs.filter (x) -> x not in c_terrs

@@ -1,5 +1,5 @@
 from rq import Queue, Connection, Worker
-from weppy.validators import CRYPT
+from weppy.validators import Crypt
 from nudiplomacy import app, auth, redis
 from nudiplomacy.helpers.scheduler import Scheduler
 
@@ -10,7 +10,7 @@ def setup():
         email="admin@nudiplomacy.com",
         first_name="Giovanni",
         last_name="Barillari",
-        password=CRYPT()("testing")[0]
+        password=Crypt()("testing")[0]
     )
     u = auth.get_or_create_user(udata, login=False)
     gid = auth.add_group("admin", "admin")

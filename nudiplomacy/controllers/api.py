@@ -30,7 +30,8 @@ def map_get(mid):
 @api.expose("/game/<int:gid>")
 def game_get(gid):
     game = db(db.Game.id == gid).select(
-        db.Game.phases, db.Game.countries, db.Game.buildew).first()
+        db.Game.phases, db.Game.countries, db.Game.buildew,
+        db.Game.targetsc).first()
     rv = sdict()
     if game:
         rv.currentPlayer = None
@@ -42,6 +43,7 @@ def game_get(gid):
                     break
         rv.countries = game.countries.keys()
         rv.buildew = game.buildew
+        rv.scs = game.targetsc
     return rv
 
 
