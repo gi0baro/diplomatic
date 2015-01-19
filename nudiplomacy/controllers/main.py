@@ -1,4 +1,4 @@
-from weppy import stream_file
+from weppy.helpers import stream_dbfile
 from nudiplomacy import app, auth, db
 from nudiplomacy.contexts import BaseContext
 
@@ -16,4 +16,4 @@ def account(f, k):
 
 @app.expose("/download/<str:filename>")
 def download(filename):
-    stream_file(db, filename)
+    stream_dbfile(db, filename)

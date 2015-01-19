@@ -58,7 +58,7 @@ def game_join(gid):
         return rv
     playerdata = db.UserData(user=auth.user.id)
     #: does player have enough credits?
-    if playerdata.points < gamedata.bet:
+    if playerdata.credits < gamedata.bet:
         rv.data = "You have not enough credits"
         return rv
     #: evaluate available countries
@@ -93,8 +93,8 @@ def game_join(gid):
             else:
                 joined = True
                 #db(db.UserData.user == auth.user.id).update(
-                #    points=db.UserData.points-gamedata.bet)
-                playerdata.update_record(points=playerdata.points-gamedata.bet)
+                #    credits=db.UserData.credits-gamedata.bet)
+                playerdata.update_record(credits=playerdata.credits-gamedata.bet)
                 if all([v is not None for v in updated.countries.iterkeys()]):
                     mdb.games.upd(
                         {"id": gid, "ready": False},
@@ -122,8 +122,8 @@ def game_join(gid):
             rv.data = "Selected country not available"
         else:
             #db(db.UserData.user == auth.user.id).update(
-            #    points=db.UserData.points-gamedata.bet)
-            playerdata.update_record(points=playerdata.points-gamedata.bet)
+            #    credits=db.UserData.credits-gamedata.bet)
+            playerdata.update_record(credits=playerdata.credits-gamedata.bet)
             if all([v is not None for v in updated.countries.iterkeys()]):
                 mdb.games.upd(
                     {"id": gid, "ready": False},
