@@ -105,6 +105,7 @@ class GameProcessor(Processor):
         self._loadMap(gamemap)
         self._loadGame(game)
         self.orders = dict(self.orders_data)
+        self.end = False
 
     def _loadMap(self, gamemap):
         self.map = dict()
@@ -372,6 +373,28 @@ class GameProcessor(Processor):
         ## set empty orders
         self._setEmptyOrders()
 
+    def _checkWin(self):
+        if self.phase_new["type"] != "builds":
+            return
+        gotSCs = []
+        for country, troops in self._troops.items():
+            supplyc = [i for i in self.map["supply"]
+                       if i in self._terrs[country]]
+            if len(supplyc) >= self.map["scstowin"]:
+                gotSCs.append(country, len(supplyc))
+        if gotSCs:
+            higher = max(gotSCs, key=lambda el: el[1])
+            maxCount = 0
+            winner = None
+            for country, scs in gotSCs:
+                if scs == higher:
+                    maxCount += 1
+                    winner = country
+            #: if we have a draw, we must continue
+            if maxCount == 1:
+                self.end = True
+                self.winner = winner
+
     def _buildNewPhase(self):
         ## TODO: set next phase enabled countries
         self.phase_new = dict()
@@ -424,3 +447,4 @@ class GameProcessor(Processor):
             self._updatePositions(moves)
         self._buildPhaseData()
         self.phase_new["territories"] = self._terrs
+        self._checkWin()
