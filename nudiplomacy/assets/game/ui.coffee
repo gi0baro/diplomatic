@@ -113,6 +113,13 @@ class UI
         $('.btn_build_f').click ->
             app.act.uiClick("build_fleet")
             return
+        #: retreat menu clicks handlers
+        $('#btn_r_r').click ->
+            app.act.uiClick("retreat")
+            return
+        $('#btn_r_d').click ->
+            app.act.uiClick("disband")
+            return
         ## left menu handler
         $('#msg_button').click ->
             console.log('msg click')
@@ -341,10 +348,11 @@ class UI
                 $('#btn_b_f').addClass 'ninja'
         else if act is "reset"
             if app.game.phase().type is "diplomacy"
-                $('#btn_m').removeClass 'btn-primary'
-                $('#btn_sh').removeClass 'btn-primary'
-                $('#btn_sm').removeClass 'btn-primary'
-                $('#btn_c').removeClass 'btn-primary'
+                for bid in ["btn_m", "btn_sh", "btn_sm", "btn_c"]
+                    $('#'+bid).removeClass 'btn-primary'
+            else if app.game.phase().type is "retreats"
+                $('#btn_r_r').removeClass 'btn-primary'
+                $('#btn_r_d').addClass 'btn-primary'
         return
 
     setTopButtons: (act, dis) ->
@@ -370,6 +378,8 @@ class UI
             menu_id = "#terr_menu"
         if app.game.phase().type is "builds"
             menu_id = "#build_menu"
+        if app.game.phase().type is "retreats"
+            menu_id = "#retreat_menu"
         $(menu_id).css
             top: m_y+'px'
             left: m_x+'px'
@@ -386,6 +396,8 @@ class UI
             menu_id = "#terr_menu"
         if app.game.phase().type is "builds"
             menu_id = "#build_menu"
+        if app.game.phase().type is "retreats"
+            menu_id = "#retreat_menu"
         $(menu_id).animate
             opacity:'0'
             500

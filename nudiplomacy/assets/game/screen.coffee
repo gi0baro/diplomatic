@@ -304,7 +304,7 @@ class Screen
                             @arms.ctx.stroke()
         console.log(app.game.phase().builds)
         for tid, tdata of app.game.phase().builds
-            if tdata.type is "build_fleet" and app.env.isMCoast(tid)
+            if tdata.type in ["build_fleet", "disband"] and app.env.isMCoast(tid)
                 mc_pos = tdata.mc
                 x = app.env.mcoasts_oxy[tid][mc_pos].x
                 y = app.env.mcoasts_oxy[tid][mc_pos].y
@@ -312,7 +312,11 @@ class Screen
                 x = app.env.oxy[tid].x
                 y = app.env.oxy[tid].y
             if tdata.type is "disband"
-                return
+                ccolor = r: 255, g: 0, b: 0
+                @arms.ctx.beginPath()
+                @arms.ctx.arc(x+12, y-16, 4, 0, Math.PI*2, true)
+                @arms.ctx.fillStyle = 'rgb('+ccolor.r+','+ccolor.g+','+ccolor.b+')'
+                @arms.ctx.fill()
             else
                 if tdata.type is "build_army"
                     @arms.ctx.drawImage(@img_army, x-15, y-9, 29, 17)
