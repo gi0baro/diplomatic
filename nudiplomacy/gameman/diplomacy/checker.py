@@ -252,8 +252,10 @@ class Validator(object):
                     prevmoveorders.append(tdata["to"])
         for order_id, order in self.orders.items():
             if not order.get("to"):
-                ## we process only retreats, disbands are not in orders
-                self.invalids.append(order_id)
+                ## we process only retreats
+                #self.invalids.append(order_id)
+                if order["type"] != "disband":
+                    self.invalids.append(order_id)
                 continue
             if not self._canMove(order_id, order["to"]):
                 self.log("Order " + str(order_id) +

@@ -266,10 +266,17 @@ class Screen
     drawTroops: ->
         @_clearTroops()
         for country, troops of app.game.phase().troops
+            dislodged = app.game.phase().dislodged[country]
+            if not dislodged
+                dislodged = []
             for type, tlist of troops
                 for id in tlist
                     if type is "fleets" and app.env.isMCoast(id)
-                        mc_pos = app.game.phase().mcpos[id]
+                        if i in dislodged
+                            #? sure about that?
+                            mc_pos = app.game._nextPhase.previous().previous().mcpos[id]
+                        else
+                            mc_pos = app.game.phase().mcpos[id]
                         x = app.env.mcoasts_oxy[id][mc_pos].x
                         y = app.env.mcoasts_oxy[id][mc_pos].y
                     else

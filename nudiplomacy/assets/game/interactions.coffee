@@ -40,7 +40,10 @@ class Interactions
                                     res = true
                     if app.game.phase().type is "retreats"
                         #if Id in app.game.phase().previous().getCountryTroops()
-                        if Id in app.game.phase().dislodged[app.game.country]
+                        dlist = app.game.phase().dislodged[app.gane.country]
+                        if not dlist
+                            dlist = []
+                        if Id in dlist
                             res = true
             when "move"
                 if Id in @tracked

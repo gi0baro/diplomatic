@@ -157,8 +157,10 @@ def orders_save(gid):
     rv = process_orders(country, game, request.post_vars.orders)
     if rv.orders:
         row = Orders.owned(game.id)
+        #: avoid to store invalid orders
         for k, v in rv.orders.items():
             row[k] = v
+        #: update in db
         db((db.Orders.game == game.id) &
            (db.Orders.player == auth.user.id)).update(data=row)
     if rv.error:
