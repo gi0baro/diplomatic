@@ -1,2 +1,45 @@
 - extend 'layout.haml'
 
+.container
+    .row
+        .col-md-12
+            .row
+                .col-md-1
+                    = T("Language")
+                .col-md-3
+                    = T("Name")
+                .col-md-2
+                    = T("Variant")
+                .col-md-1
+                    = T("Players")
+                .col-md-1
+                    = T("Bet")
+                .col-md-2
+                    = T("Status")
+                .col-md-1
+                    = T("Phase length")
+                .col-md-1
+                    n
+            - for game in games
+                .card
+                    .row.game
+                        .col-md-1
+                            lang
+                        .col-md-3
+                            = game.name
+                        .col-md-2
+                            = game.map.name
+                        .col-md-1
+                            = game.nplayers
+                        .col-md-1
+                            = game.bet
+                        .col-md-2
+                            = game.status
+                        .col-md-1
+                            = game.phasetime
+                        .col-md-1
+                            n
+                        .col-md-12
+                            %a{href: '{{=url("api.game_join", game.id)}}'}
+                                .btn.btn-primary.pull-right
+                                    Join

@@ -10,11 +10,8 @@ games.common_helpers = [BaseContext()]
 
 @games.expose("/")
 def index():
-    ## TEMP
-    rows = db(db.Game.id > 0).select().as_list()
-    app.log.debug(rows)
-    ##
-    return dict()
+    gamelist = db(db.Game.id > 0).select(orderby=~db.Game.created)
+    return dict(games=gamelist)
 
 
 @games.expose("/create")
