@@ -272,7 +272,7 @@ class Screen
             for type, tlist of troops
                 for id in tlist
                     if type is "fleets" and app.env.isMCoast(id)
-                        if i in dislodged
+                        if id in dislodged
                             #? sure about that?
                             mc_pos = app.game._nextPhase.previous().previous().mcpos[id]
                         else
