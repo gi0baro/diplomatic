@@ -22,14 +22,19 @@ class Phase
         return
 
     _genBuilds: ->
-        for id, odata of @orders
-            if odata.type is "build"
-                if odata.troop is "fleet"
-                    @builds[id] = type: "build_fleet"
-                else
-                    @builds[id] = type: "build_army"
-                if odata.mc isnt undefined
-                    @builds[id]['mc'] = odata.mc
+        if not @id
+            return
+        prior = @id-1
+        #for id, odata of app.game._phases[prior+''].orders
+        for country, orders of app.game._phases[prior+''].orders
+            for id, odata of orders
+                if odata.type is "build"
+                    if odata.troop is "fleet"
+                        @builds[id] = type: "build_fleet"
+                    else
+                        @builds[id] = type: "build_army"
+                    if odata.mc isnt undefined
+                        @builds[id]['mc'] = odata.mc
         return
 
     _genPastMoves: ->
