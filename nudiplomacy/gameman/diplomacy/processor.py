@@ -305,16 +305,16 @@ class GameProcessor(Processor):
         self.phase_new["orders"] = dict()
         for country in self.phase_new["countries"]:
             self.phase_new["orders"][country] = dict()
-            if self.phase_new["type"] != "builds":
+            if self.phase_new["type"] == "diplomacy":
                 for troops in self.phase_new["troops"][country].itervalues():
-                    if self.phase_new["type"] == "retreats":
-                        for troop in self.phase_new["dislodged"][country]:
-                            self.phase_new["orders"][country][troop] = \
-                                dict(type="disband")
-                    else:
-                        for troop in troops:
-                            self.phase_new["orders"][country][troop] = \
-                                dict(type="hold")
+                    for troop in troops:
+                        self.phase_new["orders"][country][troop] = \
+                            dict(type="hold")
+            elif self.phase_new["type"] == "retreats":
+                for country, troops in self.phase_new["dislodged"].items():
+                    for troop in troops:
+                        self.phase_new["orders"][country][troop] = \
+                            dict(type="disband")
             else:
                 supplyc = [i for i in self.map["supply"]
                            if i in self._terrs[country]]
