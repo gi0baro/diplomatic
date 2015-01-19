@@ -95,7 +95,9 @@ body, html {
     position: absolute;
     width: auto;
     padding: 5px;
-    height: 20px;
+    padding-top: 3px;
+    font-size: 12px;
+    height: 22px;
     opacity: 0;
     visibility: hidden;
     background-color: black;
@@ -103,60 +105,45 @@ body, html {
     border-radius: 7px 7px 7px 7px;
 }
 
-.btn_m {
+.menu_butt > .btn {
     position: relative;
-    margin: 0 0 0 0;
-    padding: 0 0 0 0;
+    display: table;
+}
+
+.btn_m {
     left: 35px;
-    display: block;
 }
 
 .btn_sm {
-    position: relative;
-    margin: 0 0 0 0;
-    padding: 0 0 0 0;
     left: 15px;
-    display: block;
 }
 
 .btn_sh {
-    position: relative;
-    margin: 0 0 0 0;
-    padding: 0 0 0 0;
     left: 7px;
-    display: block;
 }
 
 .btn_c {
-    position: relative;
-    margin: 0 0 0 0;
-    padding: 0 0 0 0;
     left: 5px;
-    display: block;
 }
 
 .btn_x {
-    position: relative;
-    margin: 0 0 0 0;
-    padding: 0 0 0 0;
     left: 0px;
-    display: block;
 }
 
 .btn_mc_n {
-    position: relative;
-    margin: 0 0 0 0;
-    padding: 0 0 0 0;
     left: 0px;
-    display: block;
 }
 
 .btn_mc_s {
-    position: relative;
-    margin: 0 0 0 0;
-    padding: 0 0 0 0;
     left: 0px;
-    display: block;
+}
+
+.btn_retreat_r {
+    left: 7px;
+}
+
+.btn_retreat_d {
+    left: 5px;
 }
 
 .ninja {
@@ -388,7 +375,7 @@ body, html {
     position: relative;
     top: 10%;
     /*right: 0px;*/
-    left: -4px;
+    /*left: -4px;*/
     width: 100%;
     height: 20px;
     padding-left: 4px;

@@ -126,6 +126,20 @@ class Game(Model):
                 return k
         return None
 
+    @fieldmethod('playersin')
+    def get_players_in(self, row):
+        n = 0
+        for k, v in row.games.countries.items():
+            if v is not None:
+                n += 1
+        return n
+
+    @fieldmethod('isjoinable')
+    def is_joinable(self, row):
+        if row.games.playersin() != row.games.nplayers:
+            return True
+        return False
+
     @before_insert
     def setup_game(self, fields):
         # build countries based on selected preferences

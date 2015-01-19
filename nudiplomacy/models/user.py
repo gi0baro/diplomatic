@@ -12,5 +12,6 @@ class UserData(Model):
 
     fields = [
         Field("user", "reference auth_user"),
+        Field("credits", "integer", default=100),
         Field("points", "integer", default=100)
     ]

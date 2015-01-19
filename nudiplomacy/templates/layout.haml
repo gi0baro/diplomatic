@@ -12,9 +12,14 @@
         - include_bs3
 
         - assets 'css_base'
+        - assets 'js_base'
 
     %body
         - include 'header.haml'
+
+        :javascript
+            api.route('join', '{{=url("api.game_join")}}');
+            api.route('game', '{{=url("games.play")}}');
 
         .content
             - block center

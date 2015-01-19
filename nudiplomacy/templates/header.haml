@@ -13,9 +13,11 @@
         #bs-example-navbar-collapse-1.collapse.navbar-collapse
             %ul.nav.navbar-nav.nav-pills.pull-right
                 %li
-                    %a{href:"#"} Discover
+                    %a{href: '{{=url("games.index")}}'}
+                        = T("Games")
                 %li
-                    %a{href:"#"} Bakers
+                    %a{href:"#"}
+                        = T("Players")
                 %li
                     %a{href:"#"} Stats
                 - if current_user()

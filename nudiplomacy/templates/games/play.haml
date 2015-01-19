@@ -21,36 +21,57 @@
                     .msg_select
 
             #left_menu
-                #msg_button M
+                #msg_button
+                    %i.fa.fa-envelope.fa-lg
                 #msg_ext_button >>
 
         #cont_wrapper
             #map_wrapper
                 %img#map_img{src: '{{=url("main.download", game.map.image)}}'}
             #terr_menu.menu_butt
-                %button#btn_m.btn.btn-mini.btn_m{type: "button"} M
-                %button#btn_sm.btn.btn-mini.btn_sm{type: "button"} SM
-                %button#btn_sh.btn.btn-mini.btn_sh{type: "button"} SH
-                %button#btn_c.btn.btn-mini.btn_c.ninja{type: "button"} C
-                %button#btn_x.btn.btn-mini.btn_x{type: "button"} X
+                #btn_m.btn.btn-default.btn-xs.btn_m
+                    %i.fa.fa-crosshairs.fa-lg
+                #btn_sm.btn.btn-default.btn-xs.btn_sm
+                    %i.fa.fa-reply-all.fa-lg
+                #btn_sh.btn.btn-default.btn-xs.btn_sh
+                    %i.fa.fa-shield.fa-lg
+                #btn_c.btn.btn-default.btn-xs.btn_c.ninja
+                    %i.fa.fa-life-ring.fa-lg
+                #btn_x.btn.btn-default.btn-xs.btn_x
+                    %i.fa.fa-remove.fa-lg
             #mcoast_menu.menu_butt
-                %button#btn_n.btn.btn-mini.btn_mc_n{type: "button"} N
-                %button#btn_s.btn.btn-mini.btn_mc_s{type: "button"} S
+                #btn_n.btn.btn-default.btn-xs.btn_mc_n N
+                #btn_s.btn.btn-default.btn-xs.btn_mc_s S
             #build_menu.menu_butt
-                %button#btn_b_a.btn.btn-mini.btn_build_a{type: "button"} A
-                %button#btn_b_f.btn.btn-mini.btn_build_f.ninja{type: "button"} F
-                %button#btn_b_x.btn.btn-mini.btn_x{type: "button"} X
+                #btn_b_a.btn.btn-default.btn-xs.btn_build_a
+                    %i.fa.fa-truck.fa-lg
+                #btn_b_f.btn.btn-default.btn-xs.btn_build_f.ninja
+                    %i.fa.fa-anchor.fa-lg
+                #btn_b_x.btn.btn-default.btn-xs.btn_x
+                    %i.fa.fa-remove.fa-lg
+            #retreat_menu.menu_butt
+                #btn_r_r.btn.btn-default.btn-xs.btn_retreat_r
+                    %i.fa.fa-share.fa-lg
+                #btn_r_d.btn.btn-default.btn-xs.btn_retreat_d
+                    %i.fa.fa-certificate.fa-lg
+                #btn_r_x.btn.btn-default.btn-xs.btn_x
+                    %i.fa.fa-remove.fa-lg
 
         #top_wrapper
             #top_menu
                 #top_menu_cont
-                    #phase_rr.top_menu_button rr
-                    #phase_r.top_menu_button r
+                    #phase_rr.top_menu_button
+                        %i.fa.fa-angle-double-left
+                    #phase_r.top_menu_button
+                        %i.fa.fa-angle-left
                     #phase_ind
-                    #phase_f.top_menu_button f
-                    #phase_ff.top_menu_button ff
+                    #phase_f.top_menu_button
+                        %i.fa.fa-angle-right
+                    #phase_ff.top_menu_button
+                        %i.fa.fa-angle-double-right
             #top_bottom
-                #top_button T
+                #top_button
+                    %i.fa.fa-chevron-down
 
         #stats_wrapper
             #stats_top
@@ -70,7 +91,8 @@
             #ord_wrapper
                 %span Orders
             #right_menu
-                #ord_button O
+                #ord_button
+                    %i.fa.fa-check-square-o.fa-lg
 
         #loader
             #loader_cont

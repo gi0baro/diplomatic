@@ -2,44 +2,57 @@
 
 .container
     .row
-        .col-md-12
-            .row
-                .col-md-1
-                    = T("Language")
-                .col-md-3
-                    = T("Name")
-                .col-md-2
-                    = T("Variant")
-                .col-md-1
-                    = T("Players")
-                .col-md-1
-                    = T("Bet")
-                .col-md-2
-                    = T("Status")
-                .col-md-1
-                    = T("Phase length")
-                .col-md-1
-                    n
+        .js-masonry
             - for game in games
-                .card
-                    .row.game
-                        .col-md-1
-                            lang
-                        .col-md-3
-                            = game.name
-                        .col-md-2
-                            = game.map.name
-                        .col-md-1
-                            = game.nplayers
-                        .col-md-1
+                .card.game-item
+                    %h5.grey-light
+                        = game.map.name
+                    %h3
+                        = game.name
+                    .row
+                        .col-md-4
+                            %h6.grey-light
+                                = T("players no.")
+                            = str(game.playersin())+"/"+str(game.nplayers)
+                        .col-md-4
+                            %h6.grey-light
+                                = T("Bet amount")
                             = game.bet
-                        .col-md-2
-                            = game.status
-                        .col-md-1
-                            = game.phasetime
-                        .col-md-1
-                            n
-                        .col-md-12
-                            %a{href: '{{=url("api.game_join", game.id)}}'}
-                                .btn.btn-primary.pull-right
-                                    Join
+                        .col-md-4
+                            %h6.grey-light
+                                = T("Phase duration")
+                            = pretty_gamephasetime(game.phasetime)
+                    %hr.divider
+                    .row
+                        - if not game.playercountry()
+                            .col-md-6
+                                %a{href: '{{=url("games.play", game.id)}}'}
+                                    .btn.btn-default
+                                        = T("Watch")
+                            .col-md-6
+                                .btn.btn-primary{onclick: 'javascript: act.joinGame("{{=game.id}}", "{{=game.bet}}");'}
+                                    = T("Join")
+                        - else
+                            .col-md-12
+                                %a{href: '{{=url("games.play", game.id)}}'}
+                                    .btn.btn-success
+                                        = T("Enter")
+
+#joinframe.container.nulled.overframe
+    .backframe
+    .row.intframe
+        .col-md-3
+        .col-md-6
+            .box.border.white
+                .box-title
+                    = T("Join the game")
+                    %i.fa.fa-close.pull-right{onclick: 'javascript: act.hideJoinFrame();'}
+                .row.m-15{style: 'text-align: center;'}
+                    #joinmsg.col-md-12
+                        = T("In order to join this game you will spend")
+                        %h3#betwarn
+                        = T("of your credits.")
+                    #joinbtn.col-md-12{style: 'margin-top: 15px;'}
+                        .btn.btn-success{onclick: 'javascript: api.join(act.jgid)'}
+                            = T("Join the game")
+        .col-md-3

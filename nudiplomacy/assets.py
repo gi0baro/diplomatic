@@ -2,7 +2,13 @@ from nudiplomacy import app
 
 css_base = app.ext.Assets.css(['css/base.css'], output='base.css').minify()
 
+js_base = app.ext.Assets.js([
+    'helpers/masonry.min.js',
+    'base/api.coffee',
+    'base/act.coffee'], output="base.js").minify()
+
 app.ext.Assets.register('css_base', css_base)
+app.ext.Assets.register('js_base', js_base)
 
 js_game = app.ext.Assets.js([
     'helpers/Point.js',
