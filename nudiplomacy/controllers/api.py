@@ -52,34 +52,49 @@ def game_get(gid):
 def game_join(gid):
     rv = sdict(status="Error")
     gamedata = db.Game(id=gid)
+    #: do we have a game?
     if not gamedata:
         rv.data = "No such game found"
         return rv
+    playerdata = db.UserData(user=auth.user.id)
+    #: does player have enough credits?
+    if playerdata.points < gamedata.bet:
+        rv.data = "You have not enough credits"
+        return rv
+    #: evaluate available countries
     countrydict = {}
     app.log.debug(gamedata.countries)
     for k, v in gamedata.countries.items():
         if v is None:
             countrydict[k] = v
+        #: is the user already in game?
+        elif v == longToObjid(auth.user.id):
+            rv.data = "You've already joined the game"
+            return rv
     app.log.debug(countrydict)
+    #: does the game have available slots?
     if not countrydict.keys():
         rv.data = "No slots available"
         return rv
     if gamedata.countriesassign == "random":
+        #: try to pick a random country
         joined = False
         while not joined:
             chosen = random.choice(countrydict.keys())
-            app.log.debug(chosen)
             updated = mdb.games.fandm(
                 {"id": gid, "countries."+chosen: None},
                 {"$set": {"countries."+chosen: longToObjid(auth.user.id)}},
                 fields=["countries"],
                 new=True
             )
-            app.log.debug(updated)
             if not updated:
+                #: someone else has joined with chosen country in the meantime
                 del countrydict[chosen]
             else:
                 joined = True
+                #db(db.UserData.user == auth.user.id).update(
+                #    points=db.UserData.points-gamedata.bet)
+                playerdata.update_record(points=playerdata.points-gamedata.bet)
                 if all([v is not None for v in updated.countries.iterkeys()]):
                     mdb.games.upd(
                         {"id": gid, "ready": False},
@@ -92,6 +107,7 @@ def game_join(gid):
             return rv
     else:
         chosen = request.get_vars.country
+        #: has the user chosen a country?
         if not chosen:
             rv.data = "You have to pick a country"
             return rv
@@ -102,8 +118,12 @@ def game_join(gid):
             new=True
         )
         if not updated:
+            #: someone else has joined with chosen country in the meantime
             rv.data = "Selected country not available"
         else:
+            #db(db.UserData.user == auth.user.id).update(
+            #    points=db.UserData.points-gamedata.bet)
+            playerdata.update_record(points=playerdata.points-gamedata.bet)
             if all([v is not None for v in updated.countries.iterkeys()]):
                 mdb.games.upd(
                     {"id": gid, "ready": False},
