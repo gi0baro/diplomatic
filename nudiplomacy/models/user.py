@@ -1,8 +1,10 @@
-from weppy.dal import Field, Model, AuthModel
+from weppy.dal import Field, Model, AuthModel, after_insert
 
 
 class User(AuthModel):
-    pass
+    @after_insert
+    def insert_udata(self, fields, oid):
+        self.db.UserData.insert(user=oid)
 
 
 class UserData(Model):
