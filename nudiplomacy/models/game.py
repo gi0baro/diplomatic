@@ -3,8 +3,10 @@ import random
 from weppy import request, session, T
 from weppy.dal import Field, Model, before_insert, modelmethod, fieldmethod
 from weppy.validators import inDb, isntEmpty, inSet, isIntInRange
+from nudiplomacy import app
+from nudiplomacy.helpers.widgets import games_map
 
-
+_repr_lang = {'en': "English", 'it': "Italiano"}
 _repr_pot = {'wta': T("Winner takes all"),
              'ppsc': T("Points per supply center")}
 _repr_start = {'asap': T("As soon as enough players have joined"),
@@ -25,6 +27,7 @@ class Game(Model):
         Field("owner", "reference auth_user"),
         Field("map", "reference maps"),
         Field("name"),
+        Field("lang"),
         Field("nplayers", "integer"),
         Field("bet", "integer", default=10),
         Field("pottype", default="wta"),
@@ -53,6 +56,7 @@ class Game(Model):
 
     validators = {
         "name": isntEmpty(),
+        "lang": inSet(app.config.langs, zero=None),
         "pottype": inSet(["wta", "ppsc"], zero=None),
         "phasetime": isIntInRange(5, 60*24*10),
         "jointime": isIntInRange(5, 60*24*10),
@@ -78,6 +82,7 @@ class Game(Model):
 
     labels = {
         "map": T("Variant"),
+        "lang": T("Language"),
         "nplayers": T("Num. of players"),
         "bet": T("Bet amount"),
         "pottype": T("Pot type"),
@@ -96,10 +101,15 @@ class Game(Model):
     }
 
     representation = {
+        "lang": lambda value: _repr_lang[value],
         "pottype": lambda value: _repr_pot[value],
         "starton": lambda value: _repr_start[value],
         "presstype": lambda value: _repr_press[value],
         "countriesassign": lambda value: _repr_assign[value]
+    }
+
+    widgets = {
+        "map": lambda field, value: games_map(field, value)
     }
 
     def setup(self):
