@@ -104,7 +104,7 @@ class Game
         old_tcolors = {}
         old_c_terrs = []
         app.ui.setOrdersPhase(id)
-        if id is "next" and @isLastPhase
+        if id is "next" and @isLastPhase()
             reset_map = false
         else
             for key, value of @colors
@@ -122,6 +122,7 @@ class Game
             app.ui.setTopButtons("disable", "f")
         app.ui.setPhase(id)
         @_currentPhase = id
+        console.log(reset_map)
         if reset_map
             time_start = new Date().getTime()
             #app.SetMap()
