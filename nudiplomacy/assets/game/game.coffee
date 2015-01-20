@@ -9,6 +9,7 @@ class Game
         @moves_mc = {}
         @moves_queue = []
         @orders = {}
+        @ready = false
         @_nextPhase = null
         @buildew = null
         #@builds = {}
@@ -31,7 +32,9 @@ class Game
         @_currentPhase = @_nphases-1
         @_nextPhase = new PhaseNext()
         console.log(orders)
-        @orders = orders
+        @orders = orders.data
+        if orders.ready
+            @ready = true
         @_initOrders()
         @_setStartingColors()
         if @gotOrders()
@@ -263,11 +266,13 @@ class Game
         #   @orders_country[country] = []
         #   @orders_country[country].push(id)
         app.ui.addOrder(id, @orders[id])
+        app.ui.autoSave()
         return
 
     delOrder: (id) ->
         @orders[id] = type: "hold"
         app.ui.delOrder(id)
+        app.ui.autoSave()
         return
 
 window.Game = Game

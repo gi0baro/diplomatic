@@ -41,6 +41,7 @@ class Network
         return
 
     postOrders: ->
+        console.log('sending orders')
         d =
             orders: app.game.orders
         app.ui.saving()
@@ -63,7 +64,7 @@ class Network
         $.ajax @urls['ready'],
             type: 'GET'
             success: (data) ->
-                console.log(data)
+                app.ui.didReady(data.data)
                 return
         return
 
@@ -71,7 +72,7 @@ class Network
         $.ajax @urls['unready'],
             type: 'GET'
             success: (data) ->
-                console.log(data)
+                app.ui.didReady(data.data)
                 return
         return
 

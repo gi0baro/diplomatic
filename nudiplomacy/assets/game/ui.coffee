@@ -15,7 +15,8 @@ class UI
         @barsOpened = 0
         @statsBar = "closed"
         @saveTimer = null
-        @doSave = false
+        @isSaving = false
+        @isSettingReady = false
         return
 
     init: ->
@@ -246,18 +247,18 @@ class UI
         return
 
     setOrdersPhase: (phase) ->
-        last = app.game.phase().id
+        #last = app.game.phase().id
         console.log(phase)
-        console.log(last)
+        #console.log(last)
         #if last isnt "next"
         #    last--
         if phase isnt "next"
-            last--
+            #last--
             phase--
         if phase is -1
             phase = 0
         console.log(phase)
-        console.log(last)
+        #console.log(last)
         ###
         $('#orders_'+last+' .ord_pin').each(
             ->
@@ -266,9 +267,19 @@ class UI
                 return
         )
         ###
+        #: off open phase
+        $('.ord_phase_wrapper').each ->
+            if $(this).hasClass('on')
+                $(this).removeClass 'on'
+                $(this).css
+                    visibility: 'hidden'
+            return
         if phase
-            $('#orders_'+last).css
-                visibility: 'hidden'
+            $('#ord_date').removeClass 'nulled'
+            $('#noorders').addClass 'nulled'
+            #$('#orders_'+last).css
+            #    visibility: 'hidden'
+            $('#orders_'+phase).addClass 'on'
             $('#orders_'+phase).css
                 visibility: 'visible'
             if phase isnt "next"
@@ -284,6 +295,9 @@ class UI
                     $('#ord_date').html s
             else
                 $('#ord_date').html 'For next phase'
+        else
+            $('#ord_date').addClass 'nulled'
+            $('#noorders').removeClass 'nulled'
         ###
         $('#orders_'+phase+' .ord_pin').each(
             ->
@@ -668,7 +682,8 @@ class UI
                     @ordersClick("orders_"+phase+"_"+app.game.country+"_head")
             #$('#orders_next').css
             #   visibility: 'visible'
-            p = app.game.phase().id-1
+            p = if app.game.phase().id isnt "next" then app.game.phase().id-1 else "next"
+            $('#orders_'+p).addClass 'on'
             $('#orders_'+p).css
                 visibility: 'visible'
         return
@@ -696,12 +711,12 @@ class UI
     addOrder: (id, data) ->
         order_str = @_buildOrderString(id, data)
         $('#ord_next_'+id).html order_str
-        @autoSave()
+        #@autoSave()
         return
 
     delOrder: (id) ->
         $('#ord_'+id).remove()
-        @autoSave()
+        #@autoSave()
         return
 
     ordersClick: (id) ->
@@ -750,6 +765,8 @@ class UI
         $($(id+'_icon').children()[0]).addClass 'fa-caret-right'
 
     autoSave: ->
+        @iconOff('ord')
+        @iconOn('save')
         clearTimeout(@saveTimer)
         self = this
         @saveTimer = setTimeout (->
@@ -759,31 +776,98 @@ class UI
         return
 
     saveOrders: ->
+        if $('#icon_save').hasClass('off') or $('#icon_save').hasClass('light')
+            return
+        if @isSaving
+            return
+        console.log('manually saving orders')
         clearTimeout(@saveTimer)
         app.net.postOrders()
         return
 
     saving: ->
+        @isSaving = true
+        @iconOff('ready')
         $('#icon_save').removeClass 'fa-save'
-        $('#icon_save').addClass 'fa-spinner fa-spin'
+        $('#icon_save').removeClass 'fa-border'
+        @iconSpin('save')
         $('#icon_ord').removeClass 'fa-check-square-o'
-        $('#icon_ord').addClass 'fa-spinner fa-spin'
-        $('#icon_ord').css
-            color: '#000'
+        @iconSpin('ord')
+        #$('#icon_ord').css
+        #    color: '#000'
         return
 
     saved: (data) ->
-        $('#icon_save').removeClass 'fa-spin'
-        $('#icon_save').removeClass 'fa-spinner'
+        @iconUnspin('save')
         $('#icon_save').addClass 'fa-save'
-        $('#icon_ord').removeClass 'fa-spin'
-        $('#icon_ord').removeClass 'fa-spinner'
+        $('#icon_save').addClass 'fa-border'
+        @iconUnspin('ord')
         $('#icon_ord').addClass 'fa-check-square-o'
-        $('#icon_save').css
-            color: '#0769AD'
+        @iconLight('save')
+        @iconOn('ready')
+        @isSaving = false
+        return
+
+    iconSpin: (id) ->
+        @iconOn(id)
+        $('#icon_'+id).addClass 'fa-spinner fa-spin'
+        return
+
+    iconUnspin: (id) ->
+        $('#icon_'+id).removeClass 'fa-spin'
+        $('#icon_'+id).removeClass 'fa-spinner'
+        return
+
+    iconOff: (id) ->
+        $('#icon_'+id).removeClass 'light'
+        $('#icon_'+id).removeClass 'on'
+        $('#icon_'+id).addClass 'off'
+        return
+
+    iconOn: (id) ->
+        $('#icon_'+id).removeClass 'light'
+        $('#icon_'+id).removeClass 'off'
+        $('#icon_'+id).addClass 'on'
+        return
+
+    iconLight: (id) ->
+        $('#icon_'+id).removeClass 'on'
+        $('#icon_'+id).removeClass 'off'
+        $('#icon_'+id).addClass 'light'
         return
 
     setReady: ->
+        if $('#icon_ready').hasClass('off')
+            return
+        if @isSettingReady
+            return
+        @isSettingReady = true
+        $('#icon_ready').removeClass 'fa-check'
+        $('#icon_ready').removeClass 'fa-border'
+        isReady = $('#icon_ready').hasClass('light')
+        @iconSpin('ready')
+        console.log(isReady)
+        if isReady
+            app.net.setUnready()
+        else
+            app.net.setReady()
+        return
+
+    didReady: (isReady) ->
+        app.game.ready = isReady
+        console.log(isReady)
+        @iconUnspin('ready')
+        $('#icon_ready').addClass 'fa-check'
+        $('#icon_ready').addClass 'fa-border'
+        if isReady
+            @iconLight('ready')
+            @iconLight('ord')
+        else
+            @iconOn('ready')
+            if not $('#icon_ord').hasClass('off')
+                @iconOn('ord')
+        @iconOff('save')
+        @isSettingReady = false
         return
 
 window.UI = UI

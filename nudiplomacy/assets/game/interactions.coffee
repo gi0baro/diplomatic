@@ -291,6 +291,8 @@ class Interactions
                 app.screen.offTerritory(@active)
                 app.ui.closeMenu()
                 @current = "none"
+        if eve isnt "close" and app.game.ready
+            app.ui.setReady()
         app.screen.update()
         return
 

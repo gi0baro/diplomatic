@@ -20,12 +20,18 @@ class App
         gameData = @net.getGame()
         #console.log(gameData)
         if gameData.currentPlayer
-            ordersData = @net.getOrders()
+            orders = @net.getOrders()
         else
-            ordersData = {}
-        @game.init(gameData, ordersData)
+            orders =
+                data: {}
+        @game.init(gameData, orders)
         @ui.init()
         @ui.buildOrders()
+        if @game.gotOrders()
+            @ui.iconOn('ord')
+        if @game.ready
+            @ui.iconLight('ready')
+            @ui.iconLight('ord')
         @screen.createElements()
         @screen.img.onload = ->
             app._launch()

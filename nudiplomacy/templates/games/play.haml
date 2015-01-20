@@ -92,12 +92,12 @@
                 .row.ordrow
                     .col-md-8
                         Orders
-                    #savebtns.col-md-4.nulled
-                        %i#icon_save.fa.fa-save.fa-border{onclick: 'javascript: app.ui.saveOrders();'}
-                        %i#icon_ready.fa.fa-check.fa-border{onclick: 'javascript: app.ui.setReady();'}
+                    #savebtns.col-md-4
+                        %i#icon_save.fa.fa-save.fa-border.off{onclick: 'javascript: app.ui.saveOrders();'}
+                        %i#icon_ready.fa.fa-check.fa-border.on{onclick: 'javascript: app.ui.setReady();'}
                 #ord_date
                 - if len(game.phases) > 2
-                    - for i in range(1, len(game.phases))
+                    - for i in range(1, len(game.phases)-1)
                         - phase = game.phases[i]
                         .ord_phase_wrapper{id: 'orders_{{=i}}'}
                             - for country, orders in phase['orders'].iteritems()
@@ -118,13 +118,13 @@
                                 #orders_next_me_text.ord_pin_text.ord_pin_text_off
                                     My orders
                             #orders_next_me_data.orders
-                %h4.nulled
+                %h4#noorders.nulled
                     No orders to show
 
 
             #right_menu
                 #ord_button
-                    %i#icon_ord.fa.fa-check-square-o.fa-lg
+                    %i#icon_ord.fa.fa-check-square-o.fa-lg.off
 
         #loader
             #loader_cont

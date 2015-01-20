@@ -1,6 +1,6 @@
 import json
 import random
-from weppy import request, session, T
+from weppy import request, session, T, sdict
 from weppy.dal import Field, Model, before_insert, modelmethod, fieldmethod
 from weppy.validators import inDb, isntEmpty, inSet, isIntInRange
 from nudiplomacy import app
@@ -171,8 +171,8 @@ class Orders(Model):
     def owned(db, entity, gid, owner=None):
         uid = owner or (session.auth.user.id if session.auth else None)
         if not uid:
-            return {}
+            return sdict(data={})
         rv = db((entity.game == gid) & (entity.player == uid)).select().first()
         if not rv:
-            return {}
-        return rv.data
+            return sdict(data={})
+        return sdict(data=rv.data, ready=rv.ready)

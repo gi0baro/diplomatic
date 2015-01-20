@@ -376,7 +376,7 @@ body, html {
 
 .ord_phase_wrapper {
     position: absolute;
-    top: 44px;
+    top: 56px;
     width: 100%;
     height: auto;
     visibility: hidden;
@@ -424,8 +424,8 @@ body, html {
     height: 20px;
     /*margin: 2px;*/
     overflow: hidden;
-    background-repeat: no-repeat;
-    background-image: url(ui_icons.png);
+    /*background-repeat: no-repeat;
+    background-image: url(ui_icons.png);*/
     float: left;
     text-align: center;
 }
@@ -612,6 +612,14 @@ body, html {
     padding: 0;
 }
 
-#icon_ord {
+.fa.off {
     color: #777;
+}
+
+.fa.on {
+    color: #000;
+}
+
+.fa.light {
+    color: #0769AD;
 }
