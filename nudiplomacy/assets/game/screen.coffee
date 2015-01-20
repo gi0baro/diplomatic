@@ -167,7 +167,13 @@ class Screen
 
     _getTerritories: ->
         if app.game.phase().id is 0
-            return app.env.countries_init
+            rv = {}
+            for key of app.env.countries
+                rv[key] = []
+                for terr in app.env.countries_init[key]
+                    rv[key].push(terr)
+            return rv
+            #return app.env.countries_init
         return app.game.phase().territories
 
     _updateColors: (grounds) ->
@@ -190,10 +196,13 @@ class Screen
         #for key, terr_list of app.map.countries_terr
         territories = @_getTerritories()
         #for key, terr_list of app.game.phase().territories
+        console.log(old_c_terrs)
+        console.log(territories)
         for key, terr_list of territories
             for terr in terr_list
                 c_terrs.push(terr)
         c_diff_list = old_c_terrs.filter (x) -> x not in c_terrs
+        console.log(c_diff_list)
         @_updateColors(c_diff_list)
         #time_end = new Date().getTime()
         #time_ex = time_end - time_start
