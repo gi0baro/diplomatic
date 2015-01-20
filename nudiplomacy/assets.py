@@ -12,6 +12,7 @@ app.ext.Assets.register('css_base', css_base)
 app.ext.Assets.register('js_base', js_base)
 
 js_game = app.ext.Assets.js([
+    'helpers/Chart.min.js',
     'helpers/Point.js',
     'helpers/Intersection.js',
     'base/counter.coffee',

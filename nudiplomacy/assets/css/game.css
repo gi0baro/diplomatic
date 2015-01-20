@@ -568,14 +568,16 @@ body, html {
     box-shadow: 0 -2px 5px 0px #888;
     border-radius: 8px 8px 0 0;
     padding: 6px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 #stats_top {
     position: absolute;
-    width: 15%;
+    width: 16%;
     height: 20px;
     top: -20px;
-    left: 40%;
+    left: 42%;
     z-index: 2;
 }
 
@@ -593,23 +595,17 @@ body, html {
 }
 
 .stats_member {
-    position: relative;
-    width: 100%;
-    height: 36px;
-    border-bottom: 1px solid #888;
-}
-
-.stats_country {
-    float: left;
-    width: 22%;
-    height: 100%;
+    padding: 15px 30px 15px;
+    border-radius: 9px;
+    border: 5px solid #EFF0EF;
+    box-shadow:inset 0px 0px 1px #333;
     text-align: center;
 }
 
-.stats_mdata {
-    float: left;
-    width: 78%;
-    height: 100%;
+.stats_over {
+    position: relative;
+    margin: auto;
+    font-size: 28px;
 }
 
 .ordrow {

@@ -24,7 +24,8 @@ class Environment
         @mcoasts_oxy = {}
         @same = {}
         #: supply centers
-        @supply = []
+        @supply = {}
+        @_supplylist = []
         @homes = {}
         #: terr names
         @names = {}
@@ -42,6 +43,7 @@ class Environment
         @coasts = data.coasts
         @mcoasts_oxy = data.mcoasts
         @supply = data.supply
+        @_supplylist = (key for key of @supply)
         @homes = data.homes
         @names = data.names
         @countries = data.countries
@@ -63,7 +65,7 @@ class Environment
 
     isSupply: (id) ->
         if app.game.buildew
-            return id in @supply
+            return id in @_supplylist
         return id in @homes[app.game.country]
 
     getTerritoryByColor: (color) ->

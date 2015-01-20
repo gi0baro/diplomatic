@@ -54,7 +54,14 @@ def play(gid):
     timerdata.h = (timeleft/(60*60)) % 24
     timerdata.m = (timeleft/60) % 60
     timerdata.s = timeleft % 60
-    return dict(game=game, timer=timerdata)
+    scs = game.targetsc or game.map.scstowin
+    if len(game.countries) < 3:
+        statscol = 6
+    elif len(game.countries) >= 3 and len(game.countries) < 4:
+        statscol = 4
+    else:
+        statscol = 3
+    return dict(game=game, timer=timerdata, scs=scs, statscol=statscol)
 
 
 @games.expose("/mine")

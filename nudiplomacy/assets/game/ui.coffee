@@ -17,6 +17,7 @@ class UI
         @saveTimer = null
         @isSaving = false
         @isSettingReady = false
+        @_statsCharts = {}
         return
 
     init: ->
@@ -242,6 +243,39 @@ class UI
                 "border-width": "1px"
         return
 
+    _initStatsChart: (country, color) ->
+        ctx = document.getElementById('stats_'+country+'_canv').getContext('2d')
+        n = 0
+        for terr in app.game.phase().territories[country]
+            if terr in app.env._supplylist
+                n++
+        data = [
+            {value: n, color: color},
+            {value: app.game.scsToWin-n, color: "#FFF"}
+        ]
+        @_statsCharts[country] = new Chart(ctx).Doughnut(data)
+        $('#stats_'+country+'_perc').html n
+        return
+
+    initStats: ->
+        for key, val of app.env.countries
+            color = @_rgbToHex(val.r, val.g, val.b)
+            $('#stats_'+key+"_name").css
+                color: color
+            w = $($('#stats_'+key+"_canv").parent()).innerWidth()
+            document.getElementById('stats_'+key+'_canv').width = w*0.7
+            document.getElementById('stats_'+key+'_canv').height = w*0.7
+            $('#stats_'+key+"_perc").css
+                color: color
+                width: w*0.7+"px"
+                height: w*0.7+"px"
+                top: -w*0.7+"px"
+                'line-height': w*0.7+"px"
+            $($('#stats_'+key+"_canv").parent()).css
+                height: w*0.7+"px"
+            @_initStatsChart(key, color)
+        return
+
     hideLoader: ->
         $('#loader').animate
             opacity:'0'
@@ -267,6 +301,22 @@ class UI
                     $('#phase_ind').append '<span>'+phase.type+'</span'
         else
             $('#phase_ind').append '<span><em>Next</em></span>'
+        @setPhaseStats(id)
+        return
+
+    setPhaseStats: (id) ->
+        #if id is "next"
+        #    id = app.game._nextPhase.previous
+        for country of app.env.countries
+            n = 0
+            if id isnt 0
+                for terr in app.game.phase(id).territories[country]
+                    if terr in app.env._supplylist
+                        n++
+            @_statsCharts[country].segments[0].value = n
+            @_statsCharts[country].segments[1].value = app.game.scsToWin-n
+            @_statsCharts[country].update()
+            $('#stats_'+country+'_perc').html n
         return
 
     setOrdersPhase: (phase) ->

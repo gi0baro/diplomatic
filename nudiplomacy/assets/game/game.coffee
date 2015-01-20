@@ -13,6 +13,7 @@ class Game
         @_nextPhase = null
         @buildew = null
         #@builds = {}
+        @scsToWin = 0
         return
 
     init: (data, orders) ->
