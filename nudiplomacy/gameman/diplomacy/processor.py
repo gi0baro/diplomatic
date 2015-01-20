@@ -113,6 +113,7 @@ class GameProcessor(Processor):
         self.map["names"] = gamemap["names"]
         self.map["supply"] = gamemap["supply"]
         self.map["home"] = gamemap["homes"]
+        self.map["scstowin"] = gamemap["scstowin"]
 
     def _loadGame(self, game):
         self.game = dict()
@@ -136,6 +137,7 @@ class GameProcessor(Processor):
         self.game["year"] = game["phases"][phase]["year"]
         self.game["dislodged"] = game["phases"][phase].get("dislodged", {})
         self.game["buildew"] = game["buildew"]
+        self.game["scstowin"] = game["targetsc"] or self.map["scstowin"]
         self.orders_data = game["phases"][phase]["orders"]
 
     def _preproc(self):
@@ -380,7 +382,7 @@ class GameProcessor(Processor):
         for country, troops in self._troops.iteritems():
             supplyc = [i for i in self.map["supply"]
                        if i in self._terrs[country]]
-            if len(supplyc) >= self.map["scstowin"]:
+            if len(supplyc) >= self.game["scstowin"]:
                 gotSCs.append(country, len(supplyc))
         if gotSCs:
             higher = max(gotSCs, key=lambda el: el[1])
