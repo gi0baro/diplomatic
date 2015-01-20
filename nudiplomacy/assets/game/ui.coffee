@@ -143,10 +143,14 @@ class UI
                 self.menuStatus.left = "open"
             return
         $('.msg_select_child').click ->
-            app.ChatLoad(this.id)
+            country = this.id.split("_")[-1..][0]
+            console.log(this.id)
+            console.log(this.id.split("_"))
+            self.openChat(country)
             return
         $('.msg_back').click ->
-            app.ChatBack(this.parentNode.id)
+            country = this.parentNode.id.split("_")[-1..][0]
+            self.closeChat(country)
             return
         ## right menu handler
         $('#ord_button').click ->
@@ -217,6 +221,25 @@ class UI
         $('.btn_mc_s').click ->
             app.act.mcClick("mc_s")
             return
+        return
+
+    _componentToHex: (c) ->
+        hex = c.toString(16)
+        if hex.length == 1
+            return "0"+hex
+        return hex
+
+    _rgbToHex: (r, g, b) ->
+        "#" + @_componentToHex(r) + @_componentToHex(g) + @_componentToHex(b)
+
+    initMessages: ->
+        for key, val of app.env.countries
+            color = @_rgbToHex(val.r, val.g, val.b)
+            $("#msg_sel_"+key).css
+                "box-shadow": "0 0 6px "+color
+                "border-color": color
+                "border-style": "solid"
+                "border-width": "1px"
         return
 
     hideLoader: ->
@@ -763,6 +786,29 @@ class UI
         #$(id+'_icon').addClass('ord_pin_icon_off')
         $($(id+'_icon').children()[0]).removeClass 'fa-caret-down'
         $($(id+'_icon').children()[0]).addClass 'fa-caret-right'
+
+    openChat: (country) ->
+        console.log(country)
+        $('#msg_conv_'+country).removeClass('ninja')
+        $('.msg_select').animate
+            opacity: 0
+            200
+        $('#msg_conv_'+country).animate
+            opacity: 1
+            200
+        $('.msg_select').addClass('ninja')
+        return
+
+    closeChat: (country) ->
+        $('.msg_select').removeClass('ninja')
+        $('#msg_conv_'+country).animate
+            opacity: 0
+            200
+        $('.msg_select').animate
+            opacity: 1
+            200
+        $('#msg_conv_'+country).addClass('ninja')
+        return
 
     autoSave: ->
         @iconOff('ord')

@@ -1,4 +1,4 @@
-from weppy import AppModule, url, abort
+from weppy import AppModule, url, abort, request, sdict
 from weppy.tools import requires
 from nudiplomacy import app, db, auth, Game
 from nudiplomacy.contexts import BaseContext
@@ -48,7 +48,13 @@ def play(gid):
     orders = db(db.Orders.game == game.id).select().as_list()
     app.log.debug(orders)
     #
-    return locals()
+    timeleft = (game.next-request.now).seconds
+    timerdata = sdict()
+    timerdata.d = timeleft/(60*60*24)
+    timerdata.h = (timeleft/(60*60)) % 24
+    timerdata.m = (timeleft/60) % 60
+    timerdata.s = timeleft % 60
+    return dict(game=game, timer=timerdata)
 
 
 @games.expose("/mine")

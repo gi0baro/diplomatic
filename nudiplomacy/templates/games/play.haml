@@ -9,6 +9,7 @@
         app.net.route("ready", "{{=url('api.orders_ready', game.id, {'set': '1'})}}");
         app.net.route("unready", "{{=url('api.orders_ready', game.id)}}");
         app.start();
+        counters.add('top_menu_timer', {{=timer.s}}, {{=timer.m}}, {{=timer.h}}, {{=timer.d}});
     });
 
 .container.container_ce
@@ -19,7 +20,27 @@
                     .wrap_tit
                         %span Messages
                     .msg_select
-
+                        #msg_sel_global.msg_select_child G
+                        - for country, uoid in game.countries.iteritems()
+                            .msg_select_child{id: 'msg_sel_{{=country}}'}
+                                = country[0].upper()
+                    #msg_conv_global.msg_conv.ninja
+                        .msg_back
+                            Back
+                        .msg_list
+                            .msg_me Test msg me G
+                            .msg_re Test msg re G
+                        %textarea#msg_text_global.msg_text
+                    - for country in game.countries.iterkeys()
+                        .msg_conv.ninja{id: 'msg_conv_{{=country}}'}
+                            .msg_back
+                                Back
+                            .msg_list
+                                .msg_me
+                                    = "Test msg me "+country
+                                .msg_re
+                                    = "Test msg re "+country
+                            %textarea.msg_text{id: 'msg_text_{{=country}}'}
             #left_menu
                 #msg_button
                     %i.fa.fa-envelope.fa-lg
@@ -69,6 +90,7 @@
                         %i.fa.fa-angle-right
                     #phase_ff.top_menu_button
                         %i.fa.fa-angle-double-right
+                #top_menu_timer
             #top_bottom
                 #top_button
                     %i.fa.fa-chevron-down
@@ -118,7 +140,7 @@
                                 #orders_next_me_text.ord_pin_text.ord_pin_text_off
                                     My orders
                             #orders_next_me_data.orders
-                %h4#noorders.nulled
+                %h5#noorders.nulled
                     No orders to show
 
 

@@ -27,6 +27,7 @@ class App
         @game.init(gameData, orders)
         @ui.init()
         @ui.buildOrders()
+        @ui.initMessages()
         if @game.gotOrders()
             @ui.iconOn('ord')
         if @game.ready
