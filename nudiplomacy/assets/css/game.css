@@ -4,6 +4,10 @@ body, html {
     width: 100%;
 }
 
+.nulled {
+    display: none;
+}
+
 .container_ce {
     position: fixed;
     width: 100%;
@@ -363,9 +367,16 @@ body, html {
     overflow-y: auto;
 }
 
+#ord_date {
+    font-style: italic;
+    margin-top: 2px;
+    margin-bottom: 4px;
+    color: #444;
+}
+
 .ord_phase_wrapper {
     position: absolute;
-    top: 35px;
+    top: 44px;
     width: 100%;
     height: auto;
     visibility: hidden;
@@ -416,6 +427,7 @@ body, html {
     background-repeat: no-repeat;
     background-image: url(ui_icons.png);
     float: left;
+    text-align: center;
 }
 
 .ord_pin_icon_off {
@@ -589,4 +601,17 @@ body, html {
     float: left;
     width: 78%;
     height: 100%;
+}
+
+.ordrow {
+    margin: 2px;
+}
+
+#savebtns {
+    margin: 0;
+    padding: 0;
+}
+
+#icon_ord {
+    color: #777;
 }

@@ -70,6 +70,8 @@ class Game
                     @_nextPhase.builds[k] = d
                 else
                     @moves[k] = v
+                    if not @moves[k].from
+                        @moves[k].from = k
         return
 
     _setStartingColors: ->

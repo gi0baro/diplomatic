@@ -43,12 +43,13 @@ class Network
     postOrders: ->
         d =
             orders: app.game.orders
+        app.ui.saving()
         $.ajax @urls['saveorders'],
             type: 'POST'
             contentType: "application/json"
             data: JSON.stringify(d)
             success: (data) ->
-                console.log(data)
+                app.ui.saved(data)
                 return
             error: ->
                 console.log(error)

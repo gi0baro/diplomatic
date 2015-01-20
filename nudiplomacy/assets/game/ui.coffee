@@ -14,6 +14,8 @@ class UI
         @mouseTimer = null
         @barsOpened = 0
         @statsBar = "closed"
+        @saveTimer = null
+        @doSave = false
         return
 
     init: ->
@@ -204,7 +206,7 @@ class UI
                 if app.game.gotOrders()
                     newphase = "next"
                 else
-                    newphase = app.phase.id
+                    newphase = app.game._nphases-1
                 app.game.loadPhase(newphase)
             return
         ## Pop-Up Multicoasts Menu clicks handlers
@@ -247,10 +249,13 @@ class UI
         last = app.game.phase().id
         console.log(phase)
         console.log(last)
-        if last isnt "next"
-            last--
+        #if last isnt "next"
+        #    last--
         if phase isnt "next"
+            last--
             phase--
+        if phase is -1
+            phase = 0
         console.log(phase)
         console.log(last)
         ###
@@ -261,10 +266,24 @@ class UI
                 return
         )
         ###
-        $('#orders_'+last).css
-            visibility: 'hidden'
-        $('#orders_'+phase).css
-            visibility: 'visible'
+        if phase
+            $('#orders_'+last).css
+                visibility: 'hidden'
+            $('#orders_'+phase).css
+                visibility: 'visible'
+            if phase isnt "next"
+                pphase = app.game._phases[phase]
+                if pphase.id
+                    s = "Resulting from "
+                    if pphase.type is "diplomacy"
+                        s += pphase.season+' '+pphase.year
+                    else if pphase.type is "retreats"
+                        s += 'retreats in '+pphase.season+' '+pphase.year
+                    else
+                        s += pphase.type+' '+pphase.year
+                    $('#ord_date').html s
+            else
+                $('#ord_date').html 'For next phase'
         ###
         $('#orders_'+phase+' .ord_pin').each(
             ->
@@ -605,18 +624,22 @@ class UI
     buildOrders: ->
         ## TODO: implement other steps filling
         if app.game.phase().id
-            $('#ord_wrapper').append '''
-                <div class="ord_phase_wrapper" id="orders_next">
-                    <div class="ord_pin" id="orders_next_me">
-                        <div class="ord_pin_head" id="orders_next_me_head">
-                            <div class="ord_pin_icon ord_pin_icon_off" id="orders_next_me_icon"></div>
-                            <div class="ord_pin_text ord_pin_text_off" id="orders_next_me_text">
-                                My orders
-                            </div>
-                        </div>
-                        <div class="orders" id="orders_next_me_data"></div>
-                    </div>
-                </div>'''
+            pphase = app.game.phase().previous()
+            #$('#ord_wrapper').append '<h6 id="ord_date">Resulting from '+pphase.type+' '+pphase.year+'</h6>'
+            #$('#ord_wrapper').append '''
+            #    <div class="ord_phase_wrapper" id="orders_next">
+            #        <div class="ord_pin" id="orders_next_me">
+            #            <div class="ord_pin_head" id="orders_next_me_head">
+            #                <div class="ord_pin_icon" id="orders_next_me_icon">
+            #                    <i class="fa fa-caret-right"></i>
+            #                </div>
+            #                <div class="ord_pin_text ord_pin_text_off" id="orders_next_me_text">
+            #                    My orders
+            #                </div>
+            #            </div>
+            #            <div class="orders" id="orders_next_me_data"></div>
+            #        </div>
+            #    </div>'''
             for id, data of app.game.orders
                 order_str = @_buildOrderString(id, data)
                 $('#orders_next_me_data').append '<div class="order" id="ord_next_'+id+'">'+order_str+'</div>'
@@ -624,21 +647,21 @@ class UI
             #for i in [1..app.phase.orders.length-1]
             for phase, pdata of app.game._phases
                 if phase not in ["0", app.game.phase().id+""]
-                    $('#ord_wrapper').append '<div class="ord_phase_wrapper" id="orders_'+phase+'"></div>'
-                    #$('#ord_wrapper').append '<div class="orders" id="orders_'+phase+'"></div>'
+                    #$('#ord_wrapper').append '<div class="ord_phase_wrapper" id="orders_'+phase+'"></div>'
                     for country, orders of pdata.orders
-                        $('#orders_'+phase).append(
-                            '<div class="ord_pin" id="orders_'+phase+'_'+country+'">
-                            <div class="ord_pin_head" id="orders_'+phase+'_'+country+'_head">
-                                    <div class="ord_pin_icon ord_pin_icon_off" id="orders_'+phase+'_'+country+'_icon"></div>
-                                    <div class="ord_pin_text ord_pin_text_off" id="orders_'+phase+'_'+country+'_text">
-                                        '+country+' orders
-                                    </div>
-                                </div>
-                                <div class="orders" id="orders_'+phase+'_'+country+'_data"></div>
-                            </div>'
-                        )
-                        #$('#orders_'+phase).append '<div class="orders_sub" id="orders_sub_'+phase+'_'+country+'"></div>'
+                        #$('#orders_'+phase).append(
+                        #    '<div class="ord_pin" id="orders_'+phase+'_'+country+'">
+                        #    <div class="ord_pin_head" id="orders_'+phase+'_'+country+'_head">
+                        #            <div class="ord_pin_icon" id="orders_'+phase+'_'+country+'_icon">
+                        #                <i class="fa fa-caret-right"></i>
+                        #            </div>
+                        #            <div class="ord_pin_text ord_pin_text_off" id="orders_'+phase+'_'+country+'_text">
+                        #                '+country+' orders
+                        #            </div>
+                        #        </div>
+                        #        <div class="orders" id="orders_'+phase+'_'+country+'_data"></div>
+                        #    </div>'
+                        #)
                         for id, data of orders
                             order_str = @_buildOrderString(id, data)
                             $('#orders_'+phase+'_'+country+'_data').append '<div class="order" id="ord_'+phase+'_'+id+'">'+order_str+'</div>'
@@ -673,10 +696,12 @@ class UI
     addOrder: (id, data) ->
         order_str = @_buildOrderString(id, data)
         $('#ord_next_'+id).html order_str
+        @autoSave()
         return
 
     delOrder: (id) ->
         $('#ord_'+id).remove()
+        @autoSave()
         return
 
     ordersClick: (id) ->
@@ -693,8 +718,9 @@ class UI
     ordersOpen: (id) ->
         $(id+'_text').removeClass 'ord_pin_text_off'
         $(id+'_text').addClass 'ord_pin_text_on'
-        $(id+'_icon').removeClass 'ord_pin_icon_off'
-        $(id+'_icon').addClass 'ord_pin_icon_on'
+        $($(id+'_icon').children()[0]).removeClass 'fa-caret-right'
+        $($(id+'_icon').children()[0]).addClass 'fa-caret-down'
+        #$(id+'_icon').addClass 'ord_pin_icon_on'
         new_height = $(id+'_data').height()+20
         $(id).animate
             height: new_height
@@ -718,7 +744,46 @@ class UI
             200
         $(id+'_text').removeClass('ord_pin_text_on')
         $(id+'_text').addClass('ord_pin_text_off')
-        $(id+'_icon').removeClass('ord_pin_icon_on')
-        $(id+'_icon').addClass('ord_pin_icon_off')
+        #$(id+'_icon').removeClass('ord_pin_icon_on')
+        #$(id+'_icon').addClass('ord_pin_icon_off')
+        $($(id+'_icon').children()[0]).removeClass 'fa-caret-down'
+        $($(id+'_icon').children()[0]).addClass 'fa-caret-right'
+
+    autoSave: ->
+        clearTimeout(@saveTimer)
+        self = this
+        @saveTimer = setTimeout (->
+            app.net.postOrders()
+            return
+        ), 3000
+        return
+
+    saveOrders: ->
+        clearTimeout(@saveTimer)
+        app.net.postOrders()
+        return
+
+    saving: ->
+        $('#icon_save').removeClass 'fa-save'
+        $('#icon_save').addClass 'fa-spinner fa-spin'
+        $('#icon_ord').removeClass 'fa-check-square-o'
+        $('#icon_ord').addClass 'fa-spinner fa-spin'
+        $('#icon_ord').css
+            color: '#000'
+        return
+
+    saved: (data) ->
+        $('#icon_save').removeClass 'fa-spin'
+        $('#icon_save').removeClass 'fa-spinner'
+        $('#icon_save').addClass 'fa-save'
+        $('#icon_ord').removeClass 'fa-spin'
+        $('#icon_ord').removeClass 'fa-spinner'
+        $('#icon_ord').addClass 'fa-check-square-o'
+        $('#icon_save').css
+            color: '#0769AD'
+        return
+
+    setReady: ->
+        return
 
 window.UI = UI

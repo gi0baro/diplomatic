@@ -89,10 +89,42 @@
 
         #right_wrapper
             #ord_wrapper
-                %span Orders
+                .row.ordrow
+                    .col-md-8
+                        Orders
+                    #savebtns.col-md-4.nulled
+                        %i#icon_save.fa.fa-save.fa-border{onclick: 'javascript: app.ui.saveOrders();'}
+                        %i#icon_ready.fa.fa-check.fa-border{onclick: 'javascript: app.ui.setReady();'}
+                #ord_date
+                - if len(game.phases) > 2
+                    - for i in range(1, len(game.phases))
+                        - phase = game.phases[i]
+                        .ord_phase_wrapper{id: 'orders_{{=i}}'}
+                            - for country, orders in phase['orders'].iteritems()
+                                - div = "orders_"+str(i)+"_"+country
+                                .ord_pin{id: '{{=div}}'}
+                                    .ord_pin_head{id: '{{=div+"_head"}}'}
+                                        .ord_pin_icon{id: '{{=div+"_icon"}}'}
+                                            %i.fa.fa-caret-right
+                                        .ord_pin_text.ord_pin_text_off{id: '{{=div+"_text"}}'}
+                                            = country+" orders"
+                                    .orders{id: '{{=div+"_data"}}'}
+                - if len(game.phases) > 1
+                    #orders_next.ord_phase_wrapper
+                        #orders_next_me.ord_pin
+                            #orders_next_me_head.ord_pin_head
+                                #orders_next_me_icon.ord_pin_icon
+                                    %i.fa.fa-caret-right
+                                #orders_next_me_text.ord_pin_text.ord_pin_text_off
+                                    My orders
+                            #orders_next_me_data.orders
+                %h4.nulled
+                    No orders to show
+
+
             #right_menu
                 #ord_button
-                    %i.fa.fa-check-square-o.fa-lg
+                    %i#icon_ord.fa.fa-check-square-o.fa-lg
 
         #loader
             #loader_cont
