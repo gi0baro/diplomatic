@@ -200,6 +200,9 @@ def process_game(gid):
          "$push": {"phases": proc.phase_new}}
     )
     if proc.end:
+        #: close chats
+        #: init chats
+        db(db.Chat.game == gid).update(open=False)
         #: credits and points
         winner = objidToLong(game.countries[proc.winner])
         if game.pottype == "wta":
