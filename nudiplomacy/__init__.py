@@ -19,7 +19,8 @@ app.config.logging.production = sdict(level='info', on_app_debug=True)
 
 # redis and queue system
 from redis import Redis
-redis = Redis(host=app.config.redis.host, port=app.config.redis.port)
+redis = Redis(host=app.config.redis.host, port=app.config.redis.port,
+              db=app.config.redis.db)
 from helpers.queues import Queue
 queue = Queue(app.config, redis)
 
