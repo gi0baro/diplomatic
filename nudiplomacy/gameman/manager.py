@@ -163,26 +163,34 @@ def process_game(gid):
     proc.process()
     app.log.info(proc.phase_new)
     print proc.phase_new
-    #: store new game phase
-    orders_new = dict(proc.phase_new['orders'])
-    last_phase = str(len(gamedata['phases'])-1)
-    nextrun = datetime.utcnow()+timedelta(minutes=game.phasetime)
-    proc.phase_new['orders'] = {}
     #game.update_record(status="ingame")
+    #: last orders become public
+    last_phase = str(len(gamedata['phases'])-1)
     mdb.games.upd(
         {"id": gid},
         {"$set": {"phases."+last_phase+".orders": proc.orders_data}}
     )
+    #: store new phase, update game status
+    if proc.end:
+        nextstatus = 'win'
+        nextrun = None
+        #: clean orders collection
+        db(db.Orders.game == gid).delete()
+    else:
+        nextstatus = 'ingame'
+        nextrun = datetime.utcnow()+timedelta(minutes=game.phasetime)
+        #: store new empty orders
+        orders_new = dict(proc.phase_new['orders'])
+        for k, v in game.countries.items():
+            co = orders_new.get(k, {})
+            pid = objidToLong(v)
+            db((db.Orders.game == gid) & (db.Orders.player == pid)).update(
+                ready=False, data=co)
+    proc.phase_new['orders'] = {}
     mdb.games.upd(
         {"id": gid},
         {"$set": {
-            "status": "ingame", "next": nextrun,
+            "status": nextstatus, "next": nextrun,
             "processed": datetime.utcnow()},
          "$push": {"phases": proc.phase_new}}
     )
-    #: store new orders
-    baseq = (db.Orders.game == gid)
-    for k, v in game.countries.items():
-        co = orders_new.get(k, {})
-        pid = objidToLong(v)
-        db(baseq & (db.Orders.player == pid)).update(ready=False, data=co)

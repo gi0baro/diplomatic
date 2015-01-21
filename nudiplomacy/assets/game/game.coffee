@@ -1,6 +1,6 @@
 class Game
     constructor: ->
-        @country = ''
+        @country = null
         @_phases = {}
         @colors = {}
         @_currentPhase = 0
@@ -13,6 +13,7 @@ class Game
         @_nextPhase = null
         @buildew = null
         #@builds = {}
+        @presstype = null
         @scsToWin = 0
         return
 
@@ -22,17 +23,16 @@ class Game
         #: set participating countries
         @_setCountries(data.countries)
         @buildew = data.buildew
+        @presstype = data.presstype
         #: load phases
         i = 0
         for phase in data.phases
             cstr = i+''
             @_phases[cstr] = new Phase(i, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.mc, phase.dislodged, phase.orders)
             i++
-        console.log(@_phases)
         @_nphases = data.phases.length
         @_currentPhase = @_nphases-1
         @_nextPhase = new PhaseNext()
-        console.log(orders)
         @orders = orders.data
         if orders.ready
             @ready = true

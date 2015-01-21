@@ -283,7 +283,7 @@ class Screen
                     if type is "fleets" and app.env.isMCoast(id)
                         if id in dislodged
                             #? sure about that?
-                            mc_pos = app.game._nextPhase.previous().previous().mcpos[id]
+                            mc_pos = app.game.phase('last').previous().mcpos[id]
                         else
                             mc_pos = app.game.phase().mcpos[id]
                         x = app.env.mcoasts_oxy[id][mc_pos].x

@@ -1,6 +1,7 @@
 - extend 'ingame.haml'
 
 :javascript
+    var preGame = {{='true' if game.status == 'pregame' else 'false'}};
     $(document).ready(function() {
         app.net.route("map", "{{=url('api.map_get', game.map)}}");
         app.net.route("game", "{{=url('api.game_get', game.id)}}");
@@ -15,15 +16,15 @@
 
 .container.container_ce
     %section#main.main.row
-        #left_wrapper
+        #left_wrapper.nulled
             #msg_wrapper
                 #msg_content
                     .wrap_tit
                         %span Messages
                     .msg_select
-                        #msg_sel_global.msg_select_child G
+                        #msg_sel_global.msg_select_child.nulled G
                         - for country, uoid in game.countries.iteritems()
-                            .msg_select_child{id: 'msg_sel_{{=country}}'}
+                            .msg_select_child.nulled{id: 'msg_sel_{{=country}}'}
                                 = country[0].upper()
                     #msg_conv_global.msg_conv.ninja
                         .msg_back

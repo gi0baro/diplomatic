@@ -63,9 +63,9 @@ class Paradox(object):
             #   new_chain.append(j)
             #new_chain.append(self._stack[i])
             self._chain._stack = new_chain
-            ## Convoy's solve force follow the Szykman law which states that
-            ## the unit being convoyed is unsuccessful, and has no influence
-            ## over the territory it is being convoyed to.
+            #: Convoy's solve force follow the Szykman law which states that
+            #  the unit being convoyed is unsuccessful, and has no influence
+            #  over the territory it is being convoyed to.
             self._chain.proc.solve_force()
             self._chain.rem_last()
         else:

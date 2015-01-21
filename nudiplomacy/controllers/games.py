@@ -2,6 +2,7 @@ from weppy import AppModule, url, abort, request, sdict
 from weppy.tools import requires
 from nudiplomacy import app, db, auth, Game
 from nudiplomacy.contexts import BaseContext
+from nudiplomacy.helpers.mongo import objidToLong
 
 games = AppModule(app, "games", __name__, url_prefix="games",
                   template_folder="games")
@@ -45,8 +46,8 @@ def play(gid):
     if not game:
         abort(404)
     # temp
-    orders = db(db.Orders.game == game.id).select().as_list()
-    app.log.debug(orders)
+    #orders = db(db.Orders.game == game.id).select().as_list()
+    #app.log.debug(orders)
     #
     timeleft = (game.next-request.now).seconds
     timerdata = sdict()

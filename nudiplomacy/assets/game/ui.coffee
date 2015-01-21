@@ -234,13 +234,18 @@ class UI
         "#" + @_componentToHex(r) + @_componentToHex(g) + @_componentToHex(b)
 
     initMessages: ->
-        for key, val of app.env.countries
-            color = @_rgbToHex(val.r, val.g, val.b)
-            $("#msg_sel_"+key).css
-                "box-shadow": "0 0 6px "+color
-                "border-color": color
-                "border-style": "solid"
-                "border-width": "1px"
+        if app.game.presstype isnt "none"
+            $('#left_wrapper').removeClass('nulled')
+            $('#msg_sel_global').removeClass('nulled')
+            if app.game.presstype is "all"
+                for key, val of app.env.countries
+                    color = @_rgbToHex(val.r, val.g, val.b)
+                    $("#msg_sel_"+key).css
+                        "box-shadow": "0 0 6px "+color
+                        "border-color": color
+                        "border-style": "solid"
+                        "border-width": "1px"
+                    $("#msg_sel_"+key).removeClass('nulled')
         return
 
     _initStatsChart: (country, color) ->
@@ -258,6 +263,8 @@ class UI
         return
 
     initStats: ->
+        if app.game.phase('last').id is 0
+            return
         for key, val of app.env.countries
             color = @_rgbToHex(val.r, val.g, val.b)
             $('#stats_'+key+"_name").css
@@ -284,6 +291,11 @@ class UI
             ->
                 $('#loader').remove()
                 return
+        if app.game.phase('last').id is 0
+            @_preGame()
+        return
+
+    _preGame: ->
         return
 
     setPhase: (id) ->
@@ -305,6 +317,8 @@ class UI
         return
 
     setPhaseStats: (id) ->
+        if app.game.phase(id).id is 0
+            return
         #if id is "next"
         #    id = app.game._nextPhase.previous
         for country of app.env.countries

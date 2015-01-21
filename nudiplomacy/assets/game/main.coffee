@@ -19,7 +19,7 @@ class App
         @env.init(mapData)
         gameData = @net.getGame()
         #console.log(gameData)
-        if gameData.currentPlayer
+        if gameData.currentPlayer and gameData.phases.length > 1
             orders = @net.getOrders()
         else
             orders =

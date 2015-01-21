@@ -340,7 +340,7 @@ class GameProcessor(Processor):
                 self.phase_new["season"] = "autumn"
             else:
                 self.phase_new["type"] = "builds"
-                self.phase_new["season"] = self.game["season"]
+                #self.phase_new["season"] = self.game["season"]
                 ## set countries' territories
                 self._updateTerrs()
 
@@ -396,6 +396,9 @@ class GameProcessor(Processor):
             if maxCount == 1:
                 self.end = True
                 self.winner = winner
+                self.phase_new['countries'] = []
+                self.phase_new['winner'] = winner
+                self.phase_new['type'] = 'end'
 
     def _buildNewPhase(self):
         ## TODO: set next phase enabled countries

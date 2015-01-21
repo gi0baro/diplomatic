@@ -31,19 +31,20 @@ def map_get(mid):
 def game_get(gid):
     game = db(db.Game.id == gid).select(
         db.Game.phases, db.Game.countries, db.Game.buildew,
-        db.Game.targetsc).first()
+        db.Game.targetsc, db.Game.presstype).first()
     rv = sdict()
     if game:
         rv.currentPlayer = None
         rv.phases = game.phases
+        rv.countries = game.countries.keys()
+        rv.buildew = game.buildew
+        rv.scs = game.targetsc
+        rv.presstype = game.presstype
         if auth.user:
             for k, v in game.countries.items():
                 if objidToLong(v) == auth.user.id:
                     rv.currentPlayer = k
                     break
-        rv.countries = game.countries.keys()
-        rv.buildew = game.buildew
-        rv.scs = game.targetsc
     return rv
 
 
@@ -143,33 +144,44 @@ def orders_get(gid):
 @api.expose("/orders/<int:gid>", methods=["post"])
 @requires(auth.is_logged_in, access_error)
 def orders_save(gid):
-    app.log.debug(request.post_vars)
+    rv = sdict(status="Error")
+    #app.log.debug(request.post_vars)
     if not request.post_vars.orders:
-        return dict(status="Error", data="Bad request")
+        rv.data = "Bad request"
+        return rv
     game = db.Game(id=gid)
     if not game:
-        return dict(status="Error", data="Bad game")
+        rv.data = "Bad game"
+        return rv
+    if game.status != "ingame":
+        rv.data = "Game doesn't allow orders"
+        return rv
     country = game.playercountry()
     if not country:
-        return dict(status="Error", data="Not in the game")
+        rv.data = "Not in the game"
+        return rv
     if country not in game.phases[-1]["countries"]:
-        return dict(status="Error", data="Not allowed in phase")
+        rv.data = "Not allowed in phase"
+        return rv
     row = Orders.owned(game.id)
     #: if player is ready can't update orders
     if row.ready:
-        return dict(status="Error", data="Cannot update orders when ready")
-    #: process orders
-    rv = process_orders(country, game, request.post_vars.orders)
-    if rv.orders:
+        rv.data = "Cannot update orders when ready"
+        return rv
+    validated = process_orders(country, game, request.post_vars.orders)
+    if validated.orders:
         #: avoid to store invalid orders
-        for k, v in rv.orders.items():
+        for k, v in validated.orders.items():
             row.data[k] = v
         #: update in db
         db((db.Orders.game == game.id) &
            (db.Orders.player == auth.user.id)).update(data=row.data)
-    if rv.error:
-        return dict(status="Error", data=rv.error)
-    return dict(status="Ok", data=rv.orders)
+    if validated.error:
+        rv.data = validated.error
+        return rv
+    rv.status = "Ok"
+    rv.data = validated.orders
+    return rv
 
 
 @api.expose("/ready/<int:gid>", methods=["get"])
@@ -178,6 +190,8 @@ def orders_ready(gid):
     game = db.Game(id=gid)
     if not game:
         return dict(status="Error", data="Bad game")
+    if game.status != "ingame":
+        return dict(status="Error", data="Game doesn't allow orders")
     country = game.playercountry()
     if not country:
         return dict(status="Error", data="Not in the game")

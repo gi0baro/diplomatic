@@ -567,7 +567,7 @@ class Interactions
                 color = app.screen.getColor(pos)
                 t_id = app.env.getTerritoryByColor(color)
                 ## multi-coasts check
-                if app.env.isMCoast(t_id) and app.game._nextPhase.previous().previous().isFleet(id)
+                if app.env.isMCoast(t_id) and app.game.phase('last').previous().isFleet(id)
                     mv_mc_lst = app.env.moves.mc[t_id]
                     l0 = id in mv_mc_lst[0]
                     l1 = id in mv_mc_lst[1]
@@ -693,7 +693,7 @@ class Interactions
                 continue
             #: don't track prior moves to terr
             skip = false
-            for country, orders of app.game._nextPhase().previous().orders
+            for country, orders of app.game.phase('last').previous().orders
                 for oid, odata of orders
                     if odata.type is "move" and odata.to is i
                         skip = true
@@ -927,7 +927,7 @@ class Interactions
                     if app.env.isCoast(i)
                         nears_res.push(i)
             when "retreat"
-                if app.game._nextPhase.previous().previous().isArmy(id_f)
+                if app.game.phase('last').previous().isArmy(id_f)
                     nears_res = app.env.moves.armies[id_f]
                 else
                     ## check multicoasts
