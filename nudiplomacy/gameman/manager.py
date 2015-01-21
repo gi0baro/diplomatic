@@ -194,3 +194,12 @@ def process_game(gid):
             "processed": datetime.utcnow()},
          "$push": {"phases": proc.phase_new}}
     )
+    if proc.end:
+        #: credits and points
+        winner = objidToLong(game.countries[proc.winner])
+        if game.pottype == "wta":
+            won = game.bet * game.nplayers
+            db(db.Userdata.user == winner).update(
+                credits=db.Userdata.credits+won)
+        else:
+            pass
