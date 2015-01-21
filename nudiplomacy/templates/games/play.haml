@@ -11,7 +11,9 @@
         app.net.route("unready", "{{=url('api.orders_ready', game.id)}}");
         app.game.scsToWin = {{=scs}};
         app.start();
-        counters.add('top_menu_timer', {{=timer.s}}, {{=timer.m}}, {{=timer.h}}, {{=timer.d}});
+        if !(preGame) {
+            counters.add('top_menu_timer', {{=timer.s}}, {{=timer.m}}, {{=timer.h}}, {{=timer.d}});
+        }
     });
 
 .container.container_ce
@@ -97,7 +99,7 @@
                 #top_button
                     %i.fa.fa-chevron-down
 
-        #stats_wrapper
+        #stats_wrapper.nulled
             #stats_top
                 #stats_button Stats
             #stats_content
@@ -113,7 +115,6 @@
                                 .row.stats_mdata
                                     .stats_uinfo
                                     .stats_pinfo
-                                    .stats_bar
 
         #right_wrapper
             #ord_wrapper
@@ -157,6 +158,11 @@
         #loader
             #loader_cont
                 %h1 Loading..
+
+        #pregame.announce.nulled
+            = T("This is a pre-game phase. The game will start when all the players have been joined.")
+
+        #win.announce.nulled
 
 .ninja
     %img#army_img{src: '{{=url("static", "images/tank.png")}}'}

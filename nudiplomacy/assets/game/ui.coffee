@@ -263,8 +263,9 @@ class UI
         return
 
     initStats: ->
-        if app.game.phase('last').id is 0
+        if preGame
             return
+        $('#stats_wrapper').removeClass 'nulled'
         for key, val of app.env.countries
             color = @_rgbToHex(val.r, val.g, val.b)
             $('#stats_'+key+"_name").css
@@ -291,11 +292,12 @@ class UI
             ->
                 $('#loader').remove()
                 return
-        if app.game.phase('last').id is 0
+        if preGame
             @_preGame()
         return
 
     _preGame: ->
+        $('#pregame').removeClass 'nulled'
         return
 
     setPhase: (id) ->
@@ -317,7 +319,7 @@ class UI
         return
 
     setPhaseStats: (id) ->
-        if app.game.phase(id).id is 0
+        if preGame
             return
         #if id is "next"
         #    id = app.game._nextPhase.previous
@@ -978,6 +980,10 @@ class UI
                 @iconOn('ord')
         @iconOff('save')
         @isSettingReady = false
+        return
+
+    win: ->
+        $('#win').html "Game won by "+app.game.win
         return
 
 window.UI = UI

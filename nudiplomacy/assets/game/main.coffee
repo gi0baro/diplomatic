@@ -51,6 +51,8 @@ class App
         else
             @ui.setPhase('next')
         @ui.hideLoader()
+        if @game.isWin
+            @ui.win()
         return
 
 window.app = new App()

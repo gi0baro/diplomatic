@@ -15,6 +15,7 @@ class Game
         #@builds = {}
         @presstype = null
         @scsToWin = 0
+        @win = null
         return
 
     init: (data, orders) ->
@@ -40,6 +41,8 @@ class Game
         @_setStartingColors()
         if @gotOrders()
             @_currentPhase = "next"
+        if @_phases[@_currentPhase].type is "win"
+            @win = data.phases[@_nphases-1].winner
         return
 
     phase: (id='last') ->
