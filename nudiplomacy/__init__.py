@@ -1,5 +1,5 @@
 from weppy import App, DAL, sdict
-from weppy.sessions import SessionCookieManager
+from weppy.sessions import SessionRedisManager
 from weppy.tools import Auth
 
 app = App(__name__)
@@ -35,7 +35,7 @@ from helpers.mongo import MongoDB
 mdb = MongoDB(db)
 
 app.expose.common_handlers = [
-    SessionCookieManager('verySecretKEY3'),
+    SessionRedisManager(redis),
     db.handler,
     auth.handler
 ]
