@@ -1,7 +1,8 @@
 import json
 import random
 from weppy import request, session, T, sdict
-from weppy.dal import Field, Model, before_insert, modelmethod, fieldmethod
+from weppy.dal import Field, Model, before_insert, after_insert, modelmethod, \
+    fieldmethod
 from weppy.validators import inDb, isntEmpty, inSet, isIntInRange
 from nudiplomacy import app
 from nudiplomacy.helpers.widgets import games_map
@@ -156,6 +157,10 @@ class Game(Model):
         # init phases
         fields['phases'] = [{"type": "pre-game"}]
 
+    @after_insert
+    def add_global_chat(self, fields, gid):
+        self.db.Chat.insert(game=gid, users=['all'])
+
 
 class Orders(Model):
     tablename = "orders"
@@ -176,3 +181,14 @@ class Orders(Model):
         if not rv:
             return sdict(data={})
         return sdict(data=rv.data, ready=rv.ready)
+
+
+class Chat(Model):
+    tablename = "chats"
+
+    fields = [
+        Field("game", "reference games"),
+        Field("open", "boolean", default=True),
+        Field("users", "json"),
+        Field("messages", "json", default=[])
+    ]

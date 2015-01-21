@@ -76,7 +76,7 @@ def open_game(gid):
     db._adapter.reconnect()
     game = db.Game(id=gid)
     #: init orders
-    for country, player in game.countries.items():
+    for country, player in game.countries.iteritems():
         orders = {}
         if game.buildonstart:
             for ttype in ["armies", "fleets"]:
@@ -92,6 +92,11 @@ def open_game(gid):
                 for t in game.map.init["troops"][country][ttype]:
                     orders[t] = {"type": "hold"}
         db.Orders.insert(game=game.id, player=objidToLong(player), data=orders)
+    #: init chats
+    plist = game.countries.values()
+    for i in range(0, len(plist)-1):
+        for j in range(i+1, len(plist)):
+            db.Chat.insert(game=gid, users=[plist[i], plist[j]])
     #: init game
     orders = {}
     territories = {}

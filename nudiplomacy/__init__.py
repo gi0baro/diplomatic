@@ -26,10 +26,10 @@ queue = Queue(app.config, redis)
 # db and auth
 from models.user import User, UserData
 from models.map import Map
-from models.game import Game, Orders
+from models.game import Game, Orders, Chat
 db = DAL(app)
 auth = Auth(app, db, usermodel=User, mailer=False)
-db.define_models([UserData, Map, Game, Orders])
+db.define_models([UserData, Map, Game, Orders, Chat])
 from helpers.mongo import MongoDB
 mdb = MongoDB(db)
 

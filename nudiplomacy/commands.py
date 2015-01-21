@@ -1,6 +1,6 @@
 from rq import Queue, Connection, Worker
 from weppy.validators import Crypt
-from nudiplomacy import app, auth, redis
+from nudiplomacy import app, db, auth, redis
 from nudiplomacy.helpers.scheduler import Scheduler
 
 
@@ -15,6 +15,21 @@ def setup():
     u = auth.get_or_create_user(udata, login=False)
     gid = auth.add_group("admin", "admin")
     auth.add_membership(gid, u.id)
+
+
+# temp
+@app.command('addtester')
+def addtester():
+    db._adapter.reconnect()
+    c = db(db.auth_user.id > 0).count()
+    udata = dict(
+        email="tester"+str(c)+"@nudiplomacy.com",
+        first_name="Tester",
+        last_name=str(c),
+        password=Crypt()("imtester"+str(c))
+    )
+    auth.get_or_create_user(udata, login=False)
+#
 
 
 @app.command('gameman')
