@@ -95,7 +95,7 @@ class Game
         for i in app.env.seas
             @colors[i] = color
         #:set countries terrs
-        cterrs = if @phase().id is 0 then app.env.countries_init else @phase.territories()
+        cterrs = if @phase().id is 0 then app.env.countries_init else @phase().territories()
         for key, color of app.env.countries
             #for i in app.env.countries_terr[key]
             #for i in @phase().territories[key]
