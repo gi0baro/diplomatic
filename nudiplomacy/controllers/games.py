@@ -49,7 +49,7 @@ def play(gid):
     #orders = db(db.Orders.game == game.id).select().as_list()
     #app.log.debug(orders)
     #
-    timeleft = (game.next-request.now).seconds
+    timeleft = int((game.next-request.now).total_seconds())
     timerdata = sdict()
     timerdata.d = timeleft/(60*60*24)
     timerdata.h = (timeleft/(60*60)) % 24
