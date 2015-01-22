@@ -26,7 +26,7 @@ def addtester():
         email="tester"+str(c)+"@nudiplomacy.com",
         first_name="Tester",
         last_name=str(c),
-        password=Crypt()("imtester"+str(c))
+        password=Crypt()("imtester"+str(c))[0]
     )
     auth.get_or_create_user(udata, login=False)
 #
