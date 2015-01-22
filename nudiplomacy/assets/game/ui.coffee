@@ -263,7 +263,7 @@ class UI
         if country is app.game.country
             $('#stats_c').html n+"/"+(app.game.scsToWin-n)
             $('#stats_dot').css
-                'background-color': @_rgbToHex(color.r, color.g, color.b)
+                'background-color': color
         return
 
     initStats: ->
