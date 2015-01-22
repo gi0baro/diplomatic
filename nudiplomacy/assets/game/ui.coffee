@@ -258,10 +258,12 @@ class UI
             {value: n, color: color},
             {value: app.game.scsToWin-n, color: "transparent"}
         ]
-        @_statsCharts[country] = new Chart(ctx).Doughnut(data)
+        options =
+            segmentShowStroke: false
+        @_statsCharts[country] = new Chart(ctx).Doughnut(data, options)
         $('#stats_'+country+'_perc').html n
         if country is app.game.country
-            $('#stats_c').html n+"/"+(app.game.scsToWin-n)
+            $('#stats_c').html n+"/"+app.game.scsToWin
             $('#stats_dot').css
                 'background-color': color
         return
