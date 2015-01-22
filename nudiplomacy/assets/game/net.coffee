@@ -50,6 +50,7 @@ class Network
             contentType: "application/json"
             data: JSON.stringify(d)
             success: (data) ->
+                console.log(data)
                 app.ui.saved(data)
                 return
             error: ->

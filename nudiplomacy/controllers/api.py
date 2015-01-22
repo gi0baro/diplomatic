@@ -96,7 +96,7 @@ def game_join(gid):
                 #db(db.UserData.user == auth.user.id).update(
                 #    credits=db.UserData.credits-gamedata.bet)
                 playerdata.update_record(credits=playerdata.credits-gamedata.bet)
-                if all([v is not None for v in updated.countries.iterkeys()]):
+                if all([v is not None for v in updated.countries.iteritems()]):
                     mdb.games.upd(
                         {"id": gid, "ready": False},
                         {"$set": {"ready": True}}
@@ -125,7 +125,7 @@ def game_join(gid):
             #db(db.UserData.user == auth.user.id).update(
             #    credits=db.UserData.credits-gamedata.bet)
             playerdata.update_record(credits=playerdata.credits-gamedata.bet)
-            if all([v is not None for v in updated.countries.iterkeys()]):
+            if all([v is not None for v in updated.countries.iteritems()]):
                 mdb.games.upd(
                     {"id": gid, "ready": False},
                     {"$set": {"ready": True}}
