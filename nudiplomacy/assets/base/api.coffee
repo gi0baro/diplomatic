@@ -15,6 +15,7 @@ class API
             type: 'GET'
             success: (data) ->
                 if data.status is "Ok"
+                    act.joinedGame()
                     return
                 else
                     console.log(data.data)

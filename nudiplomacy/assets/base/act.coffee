@@ -22,7 +22,10 @@ class Act
         return
 
     confirmJoinGame: (gid) ->
-        $('#joinmsg').html "Loading"
+        $('#joinmsg').html "Joining.."
+        $('#joinbtn').attr
+            disabled: 'disabled'
+        api.join(gid)
         return
 
     joinedGame: ->
@@ -35,6 +38,11 @@ class Act
                 return
             1000
         )
+        return
+
+    cannotJoin: (msg) ->
+        $('#joinmsg').html msg
+        $('#joinbtn').html "Error"
         return
 
 window.act = new Act()
