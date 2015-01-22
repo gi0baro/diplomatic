@@ -159,7 +159,7 @@ class Game(Model):
 
     @after_insert
     def add_global_chat(self, fields, gid):
-        self.db.Chat.insert(game=gid, users=['all'])
+        self.db.Chat.insert(game=gid, users="['all']")
 
 
 class Orders(Model):
@@ -190,5 +190,5 @@ class Chat(Model):
         Field("game", "reference games"),
         Field("open", "boolean", default=True),
         Field("users", "json"),
-        Field("messages", "json", default=[])
+        Field("messages", "json", default="[]")
     ]

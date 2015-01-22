@@ -24,6 +24,7 @@ class MongoTable(object):
         #self.find = partial(self._find, table=name)
         #self.upd = partial(self._update, table=name)
         self.find = self._find
+        self.save = self._insert
         self.upd = self._update
         from functools import partial
         self.ioru = partial(self._update, upsert=True)
@@ -43,6 +44,10 @@ class MongoTable(object):
             obj["id"] = objidToLong(obj.get("_id", ""))
             obj = (sdict(obj))
         return obj
+
+    def _insert(self, obj):
+        _table = self._db[self.name]
+        return _table.insert(obj)
 
     def _find(self, query=None, sort=None, limit=0, skip=0):
         table = self.name

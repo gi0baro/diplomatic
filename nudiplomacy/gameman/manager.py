@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from weppy import sdict
 from nudiplomacy import app, db, mdb, queue
-from nudiplomacy.helpers.mongo import objidToLong
+from nudiplomacy.helpers.mongo import objidToLong, longToObjid
 from .diplomacy import OrdersProcessor, GameProcessor
 
 
@@ -96,7 +96,10 @@ def open_game(gid):
     plist = game.countries.values()
     for i in range(0, len(plist)-1):
         for j in range(i+1, len(plist)):
-            db.Chat.insert(game=gid, users=[plist[i], plist[j]])
+            #db.Chat.insert(game=gid, users=[plist[i], plist[j]])
+            mdb.chats.save(
+                {'game': longToObjid(gid), 'users': [plist[i], plist[j]]}
+            )
     #: init game
     orders = {}
     territories = {}
