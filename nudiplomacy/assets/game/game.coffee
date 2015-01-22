@@ -33,8 +33,7 @@ class Game
             i++
         @_nphases = data.phases.length
         @_currentPhase = @_nphases-1
-        if not preGame
-            @_nextPhase = new PhaseNext()
+        @_nextPhase = new PhaseNext()
         @orders = orders.data
         if orders.ready
             @ready = true

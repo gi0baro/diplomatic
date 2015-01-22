@@ -108,7 +108,8 @@ class PhaseNext extends Phase
         @orders = {}
         @builds = {}
         @pastMoves = {}
-        @_genPastMoves()
+        if not preGame
+            @_genPastMoves()
         @listArmies = prev.listArmies
         @listFleets = prev.listFleets
         return
