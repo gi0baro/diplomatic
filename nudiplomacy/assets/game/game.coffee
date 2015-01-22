@@ -41,7 +41,7 @@ class Game
         @_setStartingColors()
         if @gotOrders()
             @_currentPhase = "next"
-        if @_phases[@_currentPhase].type is "win"
+        if @phase('last').type is "win"
             @win = data.phases[@_nphases-1].winner
         return
 
