@@ -11,7 +11,7 @@
         app.net.route("unready", "{{=url('api.orders_ready', game.id)}}");
         app.game.scsToWin = {{=scs}};
         app.start();
-        if !(preGame) {
+        if (!preGame) {
             counters.add('top_menu_timer', {{=timer.s}}, {{=timer.m}}, {{=timer.h}}, {{=timer.d}});
         }
     });
