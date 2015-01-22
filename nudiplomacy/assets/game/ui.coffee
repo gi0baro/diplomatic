@@ -728,21 +728,6 @@ class UI
         ## TODO: implement other steps filling
         if app.game.phase().id
             pphase = app.game.phase().previous()
-            #$('#ord_wrapper').append '<h6 id="ord_date">Resulting from '+pphase.type+' '+pphase.year+'</h6>'
-            #$('#ord_wrapper').append '''
-            #    <div class="ord_phase_wrapper" id="orders_next">
-            #        <div class="ord_pin" id="orders_next_me">
-            #            <div class="ord_pin_head" id="orders_next_me_head">
-            #                <div class="ord_pin_icon" id="orders_next_me_icon">
-            #                    <i class="fa fa-caret-right"></i>
-            #                </div>
-            #                <div class="ord_pin_text ord_pin_text_off" id="orders_next_me_text">
-            #                    My orders
-            #                </div>
-            #            </div>
-            #            <div class="orders" id="orders_next_me_data"></div>
-            #        </div>
-            #    </div>'''
             for id, data of app.game.orders
                 order_str = @_buildOrderString(id, data)
                 $('#orders_next_me_data').append '<div class="order" id="ord_next_'+id+'">'+order_str+'</div>'
@@ -752,19 +737,6 @@ class UI
                 if phase not in ["0", app.game.phase().id+""]
                     #$('#ord_wrapper').append '<div class="ord_phase_wrapper" id="orders_'+phase+'"></div>'
                     for country, orders of pdata.orders
-                        #$('#orders_'+phase).append(
-                        #    '<div class="ord_pin" id="orders_'+phase+'_'+country+'">
-                        #    <div class="ord_pin_head" id="orders_'+phase+'_'+country+'_head">
-                        #            <div class="ord_pin_icon" id="orders_'+phase+'_'+country+'_icon">
-                        #                <i class="fa fa-caret-right"></i>
-                        #            </div>
-                        #            <div class="ord_pin_text ord_pin_text_off" id="orders_'+phase+'_'+country+'_text">
-                        #                '+country+' orders
-                        #            </div>
-                        #        </div>
-                        #        <div class="orders" id="orders_'+phase+'_'+country+'_data"></div>
-                        #    </div>'
-                        #)
                         for id, data of orders
                             order_str = @_buildOrderString(id, data)
                             $('#orders_'+phase+'_'+country+'_data').append '<div class="order" id="ord_'+phase+'_'+id+'">'+order_str+'</div>'
@@ -775,6 +747,8 @@ class UI
             $('#orders_'+p).addClass 'on'
             $('#orders_'+p).css
                 visibility: 'visible'
+        else
+            $('#noorders').removeClass 'nulled'
         return
 
     _buildOrderString: (id, data) ->
