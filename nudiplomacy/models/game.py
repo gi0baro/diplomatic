@@ -26,7 +26,8 @@ class Game(Model):
     tablename = "games"
 
     fields = [
-        Field("owner", "reference auth_user"),
+        Field("owner", "reference auth_user",
+              default=lambda: session.auth.user.id),
         Field("map", "reference maps"),
         Field("name"),
         Field("lang"),
