@@ -1,5 +1,6 @@
 import json
 import random
+from datetime import timedelta
 from weppy import request, session, T, sdict
 from weppy.dal import Field, Model, before_insert, after_insert, modelmethod, \
     fieldmethod
@@ -156,6 +157,8 @@ class Game(Model):
             fields['countries'][chosen] = longToObjid(session.auth.user.id)
         # init phases
         fields['phases'] = [{"type": "pre-game"}]
+        #: set next time
+        fields['next'] = request.now + timedelta(minutes=fields['phasetime'])
 
     @after_insert
     def add_global_chat(self, fields, gid):

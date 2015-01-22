@@ -15,8 +15,6 @@ app.language_force_on_url = True
 app.config_from_yaml('app.yml')
 app.config_from_yaml('db.yml', 'db')
 
-app.config.logging.production = sdict(level='info', on_app_debug=True)
-
 # redis and queue system
 from redis import Redis
 redis = Redis(host=app.config.redis.host, port=app.config.redis.port,
