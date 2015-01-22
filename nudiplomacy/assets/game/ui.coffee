@@ -256,10 +256,14 @@ class UI
                 n++
         data = [
             {value: n, color: color},
-            {value: app.game.scsToWin-n, color: "#FFF"}
+            {value: app.game.scsToWin-n, color: "transparent"}
         ]
         @_statsCharts[country] = new Chart(ctx).Doughnut(data)
         $('#stats_'+country+'_perc').html n
+        if country is app.game.country
+            $('#stats_c').html n+"/"+(app.game.scsToWin-n)
+            $('#stats_dot').css
+                'background-color': @_rgbToHex(color.r, color.g, color.b)
         return
 
     initStats: ->

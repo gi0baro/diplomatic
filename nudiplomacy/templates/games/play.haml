@@ -101,7 +101,11 @@
 
         #stats_wrapper.nulled
             #stats_top
-                #stats_button Stats
+                #stats_button
+                    #stats_dot
+                    #stats_text
+                        {{=game.playercountry() or 'stats'}}
+                    #stats_c
             #stats_content
                 .row{style: "margin: 0;"}
                     - for country in game.countries.iterkeys():
