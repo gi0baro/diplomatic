@@ -68,6 +68,9 @@ class Environment
             return id in @_supplylist
         return id in @homes[app.game.country]
 
+    isNeutral: (id) ->
+        return id in @neutrals
+
     getTerritoryByColor: (color) ->
         #: this get the territory id from color
         for key, value of @colors
