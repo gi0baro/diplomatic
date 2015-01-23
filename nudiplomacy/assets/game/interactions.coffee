@@ -692,7 +692,7 @@ class Interactions
         nears = @_availableMoves("retreat", id)
         for i in nears
             #: don't track occupied territories
-            if not app.game.phase().isArmy(i) and not app.game.phase().isFleet(i)
+            if app.game.phase().isArmy(i) or app.game.phase().isFleet(i)
                 continue
             #: don't track prior moves to terr
             skip = false
