@@ -67,11 +67,13 @@ class Game
     _initOrders: ->
         for k, v of @orders
             if v.type isnt "hold"
-                if v.type is "build"
+                if v.type in ["build", "disband"]
                     if v.troop is "fleet"
                         d = type: "build_fleet"
-                    else
+                    else if v.troop is "army"
                         d = type: "build_army"
+                    else
+                        d = type: "disband"
                     if v.mc isnt undefined
                         d.mc = v.mc
                     @_nextPhase.builds[k] = d
