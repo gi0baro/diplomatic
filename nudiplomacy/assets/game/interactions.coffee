@@ -250,8 +250,8 @@ class Interactions
             if app.game.phase().type is "retreats"
                 # set menu button on for disband
                 app.ui.setMenuButtons("reset", @active)
-                if not re_act and act is "retreats"
-                    app.ui.setMenuButtons("open", @active)
+                #if not re_act and act is "retreats"
+                app.ui.setMenuButtons("open", @active)
         switch eve
             when "move"
                 if not re_act
