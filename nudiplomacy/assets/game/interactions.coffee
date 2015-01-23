@@ -240,7 +240,10 @@ class Interactions
                     # if was retreat -> disband
                     if act is "retreat"
                         app.game.delMove(m_id)
-                        app.game.addBuild(m_id, "disband")
+                        app.game.drawLines()
+                        #app.game.addBuild(m_id, "disband")
+                        if re_act
+                            app.game.addBuild(m_id, "disband")
             if app.game.phase().type is "diplomacy"
                 app.ui.setMenuButtons("reset", @active)
             if app.game.phase().type is "builds"
@@ -248,10 +251,9 @@ class Interactions
                 if todel
                     app.ui.setMenuButtons("reset", @active)
             if app.game.phase().type is "retreats"
-                # set menu button on for disband
                 app.ui.setMenuButtons("reset", @active)
-                #if not re_act and act is "retreats"
-                app.ui.setMenuButtons("open", @active)
+                if eve isnt "close" and app.game.hasBuild(m_id)
+                    app.ui.setMenuButtons("open", @active)
         switch eve
             when "move"
                 if not re_act
