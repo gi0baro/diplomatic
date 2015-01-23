@@ -163,7 +163,7 @@ class Game(Model):
 
     @after_insert
     def add_global_chat(self, fields, gid):
-        if fields['presstype'] != "none"
+        if fields['presstype'] != "none":
             self.db.Chat.insert(game=gid, users='["all"]')
 
 
