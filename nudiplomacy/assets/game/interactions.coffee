@@ -40,7 +40,7 @@ class Interactions
                                     res = true
                     if app.game.phase().type is "retreats"
                         #if Id in app.game.phase().previous().getCountryTroops()
-                        dlist = app.game.phase().dislodged[app.gane.country]
+                        dlist = app.game.phase().dislodged[app.game.country]
                         if not dlist
                             dlist = []
                         if Id in dlist
