@@ -240,7 +240,7 @@ class Interactions
                     # if was retreat -> disband
                     if act is "retreat"
                         app.game.delMove(m_id)
-                        app.game.drawLines()
+                        app.screen.drawLines()
                         #app.game.addBuild(m_id, "disband")
                         if re_act
                             app.game.addBuild(m_id, "disband")
