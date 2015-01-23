@@ -519,6 +519,7 @@ body, html {
 }
 
 #top_menu_timer {
+    float: left;
     width: 30%;
     text-align: center;
     font-size: 12px;
