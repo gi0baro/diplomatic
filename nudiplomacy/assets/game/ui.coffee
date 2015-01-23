@@ -469,6 +469,19 @@ class UI
             if app.game.phase().type is "builds"
                 if app.env.isCoast(id)
                     $('#btn_b_f').removeClass 'ninja'
+                build = app.game.hasBuild(id)
+                if build
+                    switch build
+                        when "build_army"
+                            $('#btn_b_a').addClass 'btn-primary'
+                        when "build_fleet"
+                            $('#btn_b_f').addClass 'btn-primary'
+            if app.game.phase().type is "retreats"
+                move = app.game.hasMove(id)
+                if move
+                    $('#btn_r_r').addClass 'btn-primary'
+                else
+                    $('#btn_r_d').addClass 'btn-primary'
         else if act is "close"
             if app.game.phase().type is "diplomacy"
                 $('#btn_c').addClass 'ninja'
@@ -481,6 +494,9 @@ class UI
             else if app.game.phase().type is "retreats"
                 $('#btn_r_r').removeClass 'btn-primary'
                 $('#btn_r_d').addClass 'btn-primary'
+            else
+                $('#btn_b_a').removeClass 'btn-primary'
+                $('#btn_b_f').removeClass 'btn-primary'
         return
 
     setTopButtons: (act, dis) ->
