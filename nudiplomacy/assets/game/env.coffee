@@ -49,7 +49,7 @@ class Environment
         @countries = data.countries
         @countries_init = data.init.territories
         @mcoasts = (key for key of @mcoasts_oxy)
-        @_cleanAvailMoves()
+        #@_cleanAvailMoves()
         return
 
     _cleanAvailMoves: ->
