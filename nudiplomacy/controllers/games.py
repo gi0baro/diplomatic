@@ -48,17 +48,13 @@ def play(gid):
     #: evaluate real sc for win
     scs = game.targetsc or game.map.scstowin
     #: get player chats
+    inMatch = ['all']
     playercountry = game.playercountry()
     if playercountry:
-        chatsr = mdb.chats.find({
-            'game': longToObjid(gid),
-            'users': {'$in': ['all', longToObjid(auth.user.id)]}
-        })
-    else:
-        chatsr = mdb.chats.find({
-            'game': longToObjid(gid),
-            'users': {'$elemMatch': 'all'}
-        })
+        inMatch.append(longToObjid(auth.user.id))
+    chatsr = mdb.chats.find({
+        'game': longToObjid(gid), 'users': {'$in': inMatch}
+    })
     chats = {}
     for r in chatsr:
         if 'all' in r['users']:
