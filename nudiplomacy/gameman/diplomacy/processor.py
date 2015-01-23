@@ -66,10 +66,10 @@ class OrdersProcessor(Processor):
             return
         #: prepare data
         gdata = dict()
-        for key in ["seas", "coasts", "mcoasts", "moves"]:
+        for key in ["seas", "coasts", "mcoasts", "moves", "neutrals"]:
             gdata[key] = self.map[key]
         for key in ["terrs", "supply", "centers", "troops", "armies", "fleets",
-                    "mc_pos", "phase", "prev", "neutrals"]:
+                    "mc_pos", "phase", "prev"]:
             gdata[key] = self.game[key]
         #: validate orders
         from .checker import Validator
