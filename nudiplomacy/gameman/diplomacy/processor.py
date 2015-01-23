@@ -422,7 +422,7 @@ class GameProcessor(Processor):
             ## disband units
             disbands = []
             moves = []
-            for troop, country in self.game["dislodged"]:
+            for troop, country in self.game["dislodged"].iteritems():
                 disband = True
                 orders = self.orders_data[country]
                 order = orders[troop]
