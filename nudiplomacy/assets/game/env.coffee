@@ -58,7 +58,7 @@ class Environment
             armies: {}
             fleets: {}
             mc: {}
-        for k in ["armies", "fleets"]:
+        for k in ["armies", "fleets"]
             for tid, links of @moves[k]
                 if tid not in @neutrals
                     rv[tid] = []
