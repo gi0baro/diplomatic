@@ -31,6 +31,7 @@ class OrdersProcessor(Processor):
         self.map["moves"] = gamemap["links"]
         self.map["seas"] = gamemap["seas"]
         self.map["coasts"] = gamemap["coasts"]
+        self.map["neutrals"] = gamemap["neutrals"]
         self.map["mcoasts"] = [i for i in gamemap["mcoasts"].iterkeys()]
         self.map["supply"] = gamemap["supply"]
         self.map["home"] = gamemap["homes"]
@@ -68,7 +69,7 @@ class OrdersProcessor(Processor):
         for key in ["seas", "coasts", "mcoasts", "moves"]:
             gdata[key] = self.map[key]
         for key in ["terrs", "supply", "centers", "troops", "armies", "fleets",
-                    "mc_pos", "phase", "prev"]:
+                    "mc_pos", "phase", "prev", "neutrals"]:
             gdata[key] = self.game[key]
         #: validate orders
         from .checker import Validator

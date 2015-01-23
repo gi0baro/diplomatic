@@ -10,6 +10,7 @@ class Validator(object):
         self.seas = gdata["seas"]
         self.coasts = gdata["coasts"]
         self.mcoasts = gdata["mcoasts"]
+        self.neutrals = gdata["neutrals"]
         self.moves = gdata["moves"]
         self.troops = gdata["troops"]["armies"]+gdata["troops"]["fleets"]
         self.terrs = gdata["terrs"]
@@ -136,6 +137,21 @@ class Validator(object):
             res.append(self._convoy_routes_stacks[route["index"]])
         return res
 
+    def _check_neutrals(self):
+        for order_id, order in self.orders.iteritems():
+            if order_id in self.neutrals:
+                self.invalids.append(order_id)
+                self.log("Order "+str(order_id)+" is made on neutral state")
+                continue
+            if order.get('to') in self.neutrals:
+                self.invalids.append(order_id)
+                self.log("Order "+str(order_id)+" is to a neutral state")
+                continue
+            if order.get('from') in self.neutrals:
+                self.invalids.append(order_id)
+                self.log("Order "+str(order_id)+" has 'from' set to a " +
+                         "neutral state")
+
     def _check_troops(self):
         for order_id in self.orders.iterkeys():
             ## check order is on player's armies
@@ -162,6 +178,7 @@ class Validator(object):
         #if self.phase == "builds":
         #    self._check_supplCent()
         #else:
+        self._check_neutrals()
         if self.phase != "builds":
             self._check_troops()
         for order in self.invalids:
