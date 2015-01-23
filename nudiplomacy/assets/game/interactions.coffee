@@ -24,9 +24,6 @@ class Interactions
     _clickCheck: (act, color) ->
         res = false
         Id = app.env.getTerritoryByColor(color)
-        #: avoid neutrals actions
-        if app.env.isNeutral(Id)
-            return false
         #: same check and correction
         if app.env.isSame(Id)
             Id = app.env.same[Id]

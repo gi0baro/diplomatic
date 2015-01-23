@@ -49,6 +49,30 @@ class Environment
         @countries = data.countries
         @countries_init = data.init.territories
         @mcoasts = (key for key of @mcoasts_oxy)
+        @_cleanAvailMoves()
+        return
+
+    _cleanAvailMoves: ->
+        #: this can be avoided if we're sure links not contains neutrals
+        rv =
+            armies: {}
+            fleets: {}
+            mc: {}
+        for k in ["armies", "fleets"]:
+            for tid, links of @moves[k]
+                if tid not in @neutrals
+                    rv[tid] = []
+                    for l in links
+                        if l not in @neutrals
+                            rv[tid].push(l)
+        for tid, alinks of @moves.mc
+            if tid not in @neutrals
+                rv.mc[tid] = [[], []]
+                for i in [0, 1]
+                    for l in alinks[i]
+                        if l not in @neutrals
+                            rv.mc[tid][i].push(l)
+        @moves = rv
         return
 
     isSame: (id) ->
@@ -67,9 +91,6 @@ class Environment
         if app.game.buildew
             return id in @_supplylist
         return id in @homes[app.game.country]
-
-    isNeutral: (id) ->
-        return id in @neutrals
 
     getTerritoryByColor: (color) ->
         #: this get the territory id from color
