@@ -35,6 +35,8 @@ class Phase
                         @builds[id] = type: "build_army"
                     if odata.mc isnt undefined
                         @builds[id]['mc'] = odata.mc
+                if odata.type is "disband"
+                    @builds[id] = type: "disband"
         return
 
     _genPastMoves: ->
