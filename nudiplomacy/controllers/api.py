@@ -227,7 +227,7 @@ def chat_get(cid):
     return rv
 
 
-@api.expose("/chat/<int:cid>", methods["post"])
+@api.expose("/chat/<int:cid>", methods=["post"])
 @requires(auth.is_logged_in, access_error)
 def chat_post(cid):
     rv = sdict(status="Error")
@@ -236,7 +236,7 @@ def chat_post(cid):
         chat = db.Chat(id=cid)
         if chat:
             mdata = {'text': message, 'timeref': request.now}
-            if chat.users = ["all"]:
+            if chat.users == ["all"]:
                 ingame = longToObjid(auth.user.id) in chat.game.countries.values()
             else:
                 ingame = longToObjid(auth.user.id) in chat.users
