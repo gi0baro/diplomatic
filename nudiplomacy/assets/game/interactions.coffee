@@ -689,23 +689,8 @@ class Interactions
         return
 
     _onRetreatTo: (id) ->
-        nears = @_availableMoves("retreat", id)
-        for i in nears
-            #: don't track occupied territories
-            if app.game.phase().isArmy(i) or app.game.phase().isFleet(i)
-                continue
-            #: don't track prior moves to terr
-            skip = false
-            for country, orders of app.game.phase('last').previous().orders
-                for oid, odata of orders
-                    if odata.type is "move" and odata.to is i
-                        skip = true
-                        break
-            if skip
-                continue
-            @tracked.push(i)
-            #ocolor = app.game.colors[i]
-            #ncolor = r: ocolor.r+30, g: ocolor.g+30, b: ocolor.b+30
+        @tracked = @_availableMoves("retreat", id)
+        for i in @tracked
             ncolor = r: 235, g: 0, b: 0
             app.screen.colorTerritory(i, ncolor)
         return
@@ -931,14 +916,31 @@ class Interactions
                         nears_res.push(i)
             when "retreat"
                 if app.game.phase('last').previous().isArmy(id_f)
-                    nears_res = app.env.moves.armies[id_f]
+                    nears = app.env.moves.armies[id_f]
                 else
-                    ## check multicoasts
+                    #: check multicoasts
                     if app.env.isMCoast(id_f)
                         mc_pos = app.game.phase('last').previous().mcpos[id_f]
-                        nears_res = app.env.moves.mc[id_f][mc_pos]
+                        nears = app.env.moves.mc[id_f][mc_pos]
                     else
-                        nears_res = app.env.moves.fleets[id_f]
+                        nears = app.env.moves.fleets[id_f]
+                for i in nears
+                    #: don't track occupied territories
+                    if app.game.phase().isArmy(i) or app.game.phase().isFleet(i)
+                        continue
+                    #: don't track prior moves to terr
+                    skip = false
+                    for country, orders of app.game.phase('last').previous().orders
+                        for oid, odata of orders
+                            if odata.type is "move" and odata.to is i
+                                skip = true
+                                break
+                            if oid is i and odata.type is "move" and odata.to is @active
+                                skip = true
+                                break
+                    if skip
+                        continue
+                    nears_res.push(i)
         return nears_res
 
     _getConvoysFromMove: (id_f, id_t) ->
