@@ -493,7 +493,7 @@ class UI
                     $('#'+bid).removeClass 'btn-primary'
             else if app.game.phase().type is "retreats"
                 $('#btn_r_r').removeClass 'btn-primary'
-                $('#btn_r_d').addClass 'btn-primary'
+                $('#btn_r_d').removeClass 'btn-primary'
             else
                 $('#btn_b_a').removeClass 'btn-primary'
                 $('#btn_b_f').removeClass 'btn-primary'

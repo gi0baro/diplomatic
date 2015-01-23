@@ -250,6 +250,8 @@ class Interactions
             if app.game.phase().type is "retreats"
                 # set menu button on for disband
                 app.ui.setMenuButtons("reset", @active)
+                if not re_act and act is "retreats"
+                    app.ui.setMenuButtons("open", @active)
         switch eve
             when "move"
                 if not re_act
@@ -933,7 +935,7 @@ class Interactions
                 else
                     ## check multicoasts
                     if app.env.isMCoast(id_f)
-                        mc_pos = app.game.phase().mcpos[id_f]
+                        mc_pos = app.game.phase('last').previous().mcpos[id_f]
                         nears_res = app.env.moves.mc[id_f][mc_pos]
                     else
                         nears_res = app.env.moves.fleets[id_f]
