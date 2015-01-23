@@ -220,7 +220,10 @@ class Game
 
     _addBuild: (id, data) ->
         @_nextPhase.builds[id] = data
-        odata = type: "build", troop: data.type.split("_")[1]
+        if data.type is "disband"
+            odata = type: "disband"
+        else
+            odata = type: "build", troop: data.type.split("_")[1]
         if data.mc isnt undefined
             odata["mc"] = data.mc
         console.log(id)
