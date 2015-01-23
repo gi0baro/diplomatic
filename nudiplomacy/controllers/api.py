@@ -209,3 +209,63 @@ def orders_ready(gid):
                 {"$set": {"ready": True}}
             )
     return dict(status="Ok", data=enabled)
+
+
+@api.expose("/chat/<int:cid>", methods=["get"])
+@requires(auth.is_logged_in, access_error)
+def chat_get(cid):
+    rv = sdict(status="Ok", data=[])
+    chat = db.Chat(id=cid)
+    if chat:
+        since = request.vars.since or 0
+        if chat.users == ["all"]:
+            rv.data = chat.messages[since:]
+        else:
+            ingame = longToObjid(auth.user.id) in chat.users
+            if ingame:
+                rv.data = chat.messages[since:]
+    return rv
+
+
+@api.expose("/chat/<int:cid>", methods["post"])
+@requires(auth.is_logged_in, access_error)
+def chat_post(cid):
+    rv = sdict(status="Error")
+    message = request.post_vars.msg
+    if message:
+        chat = db.Chat(id=cid)
+        if chat:
+            mdata = {'text': message, 'timeref': request.now}
+            if chat.users = ["all"]:
+                ingame = longToObjid(auth.user.id) in chat.game.countries.values()
+            else:
+                ingame = longToObjid(auth.user.id) in chat.users
+                mdata['read'] = False
+            if ingame:
+                rv.data = "Internal"
+                posted = mdb.chats.upd(
+                    {'id': cid},
+                    {'$push': {'messages': mdata}}
+                )
+                if posted:
+                    rv.status = "Ok"
+                    rv.data = mdata
+            else:
+                rv.data = "Not authorized"
+        else:
+            rv.data = "Invalid chat"
+    else:
+        rv.data = "Empty message"
+    return rv
+
+
+@api.expose("/chat/read/<int:cid>/<int:mid>", methods=["get"])
+@requires(auth.is_logged_in, access_error)
+def chat_read(cid, mid):
+    uoid = longToObjid(auth.user.id)
+    read = mdb.chats.upd(
+        {'id': cid, 'users': {'$elemMatch': uoid},
+         'messages': {'$size': {'$gt': mid}}},
+        {'$set': {'messages.'+str(mid)+'.read': True}}
+    )
+    return dict(status="Ok", data=read)

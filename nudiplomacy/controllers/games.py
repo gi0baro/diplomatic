@@ -2,7 +2,7 @@ from weppy import AppModule, url, abort, request, sdict
 from weppy.tools import requires
 from nudiplomacy import app, db, auth, Game
 from nudiplomacy.contexts import BaseContext
-from nudiplomacy.helpers.mongo import objidToLong
+from nudiplomacy.helpers.mongo import objidToLong, longToObjid
 
 games = AppModule(app, "games", __name__, url_prefix="games",
                   template_folder="games")
@@ -45,16 +45,41 @@ def play(gid):
     game = db(db.Game.id == gid).select().first()
     if not game:
         abort(404)
-    # temp
-    #orders = db(db.Orders.game == game.id).select().as_list()
-    #app.log.debug(orders)
-    #
+    #: evaluate real sc for win
+    scs = game.targetsc or game.map.scstowin
+    #: get player chats
+    playercountry = game.playercountry()
+    if playercountry:
+        chatsr = mdb.chats.find({
+            'game': longToObjid(gid),
+            'users': {'$in': ['all', longToObjid(auth.user.id)]}
+        })
+    else:
+        chatsr = mdb.chats.find({
+            'game': longToObjid(gid),
+            'users': {'$elemMatch': 'all'}
+        })
+    chats = {}
+    for r in chatsr:
+        if 'all' in r['users']:
+            chats['global'] = r['id']
+            continue
+    if playercountry:
+        for country, player in game.countries.iteritems():
+            if country == playercountry:
+                continue
+            for r in chatsr:
+                if player in r['users']:
+                    chats[country] = r['id']
+                    break
+    #: ui stuffs
     timeleft = int((game.next-request.now).total_seconds())
-    timerdata = sdict()
-    timerdata.d = timeleft/(60*60*24)
-    timerdata.h = (timeleft/(60*60)) % 24
-    timerdata.m = (timeleft/60) % 60
-    timerdata.s = timeleft % 60
+    timerdata = sdict(d=0, h=0, m=0, s=0)
+    if timeleft > 0:
+        timerdata.d = timeleft/(60*60*24)
+        timerdata.h = (timeleft/(60*60)) % 24
+        timerdata.m = (timeleft/60) % 60
+        timerdata.s = timeleft % 60
     scs = game.targetsc or game.map.scstowin
     if len(game.countries) < 3:
         statscol = 6
@@ -62,7 +87,8 @@ def play(gid):
         statscol = 4
     else:
         statscol = 3
-    return dict(game=game, timer=timerdata, scs=scs, statscol=statscol)
+    return dict(game=game, scs=scs, chats=chats, timer=timerdata,
+                statscol=statscol)
 
 
 @games.expose("/mine")

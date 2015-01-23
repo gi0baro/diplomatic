@@ -93,13 +93,15 @@ def open_game(gid):
                     orders[t] = {"type": "hold"}
         db.Orders.insert(game=game.id, player=objidToLong(player), data=orders)
     #: init chats
-    plist = game.countries.values()
-    for i in range(0, len(plist)-1):
-        for j in range(i+1, len(plist)):
-            #db.Chat.insert(game=gid, users=[plist[i], plist[j]])
-            mdb.chats.save(
-                {'game': longToObjid(gid), 'users': [plist[i], plist[j]]}
-            )
+    presstype = game.presstype
+    if presstype == "all":
+        plist = game.countries.values()
+        for i in range(0, len(plist)-1):
+            for j in range(i+1, len(plist)):
+                #db.Chat.insert(game=gid, users=[plist[i], plist[j]])
+                mdb.chats.save(
+                    {'game': longToObjid(gid), 'users': [plist[i], plist[j]]}
+                )
     #: init game
     orders = {}
     territories = {}
