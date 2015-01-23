@@ -26,7 +26,7 @@ class UI
 
     setProps: ->
         @_setOverflow()
-        @_setTopMenu()
+        #@_setTopMenu()
         @_getPageDim()
         @_evalZoom()
         return
@@ -168,12 +168,12 @@ class UI
             self.ordersClick(this.id)
             return
         ## top menu handler
-        $('#top_wrapper').mouseenter ->
-            self.openTopMenu()
-            return
-        $('#top_wrapper').mouseleave ->
-            self.closeTopMenu()
-            return
+        #$('#top_wrapper').mouseenter ->
+        #    self.openTopMenu()
+        #    return
+        #$('#top_wrapper').mouseleave ->
+        #    self.closeTopMenu()
+        #    return
         $('#stats_button').click ->
             if self.statsBar is "closed"
                 self.statsBar = "open"

@@ -466,9 +466,9 @@ body, html {
     opacity: 0;
 }
 
+/*
 #top_wrapper {
     position: absolute;
-    /*width: 10%;*/
     width: 200px;
     height: 60px;
     left: 45%;
@@ -492,7 +492,6 @@ body, html {
     background-color: white;
     -webkit-box-shadow: 0 2px 5px #888;
     box-shadow: 0 2px 5px #888;
-    /*z-index: 1;*/
     border-radius: 0 0 20px 20px;
 }
 
@@ -503,29 +502,47 @@ body, html {
     top: 1px;
     left: 0;
 }
+*/
+
+#top_menu {
+    position: absolute;
+    top: 0px;
+    width: 18%;
+    left: 40%;
+    height: 20px;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.74);
+    border-radius: 0 0 8px 8px;
+    border: 1px solid #000;
+    color: #fff;
+    font-size: 12px;
+}
 
 #top_menu_timer {
+    width: 30%;
     text-align: center;
     font-size: 12px;
 }
 
 .top_menu_button {
-    width: 20px;
+    /*width: 20px; */
+    width: 8%;
     height: 20px;
     float: left;
     text-align: center;
     vertical-align: center;
-    /*z-index: 1*/
 }
 
 #phase_ind {
-    width: 120px;
+    /*width: 120px;*/
+    width: 38%;
     height: 20px;
     float: left;
     text-align: center;
     vertical-align: center;
 }
 
+/*
 #top_button {
     position: relative;
     top: 0px;
@@ -545,8 +562,8 @@ body, html {
     left: 45%;
     width: 140px;
     height: 40px;
-    /*z-index: 1;*/
 }
+*/
 
 #stats_wrapper {
     position: absolute;
