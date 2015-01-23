@@ -422,18 +422,19 @@ class GameProcessor(Processor):
             ## disband units
             disbands = []
             moves = []
-            for troop, country in self.game["dislodged"].iteritems():
-                disband = True
-                orders = self.orders_data[country]
-                order = orders[troop]
-                if order["type"] == "retreat":
-                    if order["success"]:
-                        disband = False
-                        moves.append(
-                            [troop, order["to"], country, order.get("mc")]
-                        )
-                if disband:
-                    disbands.append((troop, country))
+            for country, tlist in self.game["dislodged"].iteritems():
+                for troop in tlist:
+                    disband = True
+                    orders = self.orders_data[country]
+                    order = orders[troop]
+                    if order["type"] == "retreat":
+                        if order["success"]:
+                            disband = False
+                            moves.append(
+                                [troop, order["to"], country, order.get("mc")]
+                            )
+                    if disband:
+                        disbands.append((troop, country))
             self._updateTroops("delete", disbands)
             ## update troops' positions
             self._updatePositions(moves)
