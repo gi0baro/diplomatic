@@ -1,8 +1,8 @@
 from weppy import AppModule, url, abort, request, sdict
 from weppy.tools import requires
-from nudiplomacy import app, db, auth, Game
+from nudiplomacy import app, db, mdb, auth, Game
 from nudiplomacy.contexts import BaseContext
-from nudiplomacy.helpers.mongo import objidToLong, longToObjid
+from nudiplomacy.helpers.mongo import longToObjid
 
 games = AppModule(app, "games", __name__, url_prefix="games",
                   template_folder="games")
