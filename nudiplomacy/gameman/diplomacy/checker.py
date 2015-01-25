@@ -430,8 +430,8 @@ class PreProcessor(object):
         for player, orders_set in self.orders.iteritems():
             for order_id, order in orders_set.iteritems():
                 if order["type"] == "retreat":
-                    if not retreats.get(order_id):
-                        retreats[order_id] = dict(count=0, data=[])
+                    if not retreats.get(order["to"]):
+                        retreats[order["to"]] = dict(count=0, data=[])
                     retreats[order["to"]]["count"] += 1
                     retreats[order["to"]]["data"].append((player, order_id))
         for retreat in retreats.itervalues():
