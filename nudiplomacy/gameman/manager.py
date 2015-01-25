@@ -145,6 +145,7 @@ def open_game(gid):
             "processed": datetime.utcnow()},
          "$push": {"phases": nphase}}
     )
+    app.log.warning("Opened game "+str(gid))
 
 
 def process_game(gid):
@@ -216,3 +217,4 @@ def process_game(gid):
                 credits=db.Userdata.credits+won)
         else:
             pass
+    app.log.warning("Processed game "+str(gid))
