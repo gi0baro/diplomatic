@@ -765,6 +765,8 @@ class UI
                     @ordersClick("orders_"+phase+"_"+app.game.country+"_head")
             #$('#orders_next').css
             #   visibility: 'visible'
+            $('#readyorders').css
+                'line-height': ($('#orders_next').height()-12)+"px"
             p = if app.game.phase().id isnt "next" then app.game.phase().id-1 else "next"
             $('#orders_'+p).addClass 'on'
             $('#orders_'+p).css
@@ -896,6 +898,7 @@ class UI
     saving: ->
         @isSaving = true
         @iconOff('ready')
+        $('#readyorders').addClass 'nulled'
         $('#icon_save').removeClass 'fa-save'
         $('#icon_save').removeClass 'fa-border'
         @iconSpin('save')
@@ -913,6 +916,7 @@ class UI
         $('#icon_ord').addClass 'fa-check-square-o'
         @iconLight('save')
         @iconOn('ready')
+        $('#readyorders').addClass 'nulled'
         @isSaving = false
         return
 
@@ -970,8 +974,10 @@ class UI
         if isReady
             @iconLight('ready')
             @iconLight('ord')
+            $('#readyorders').removeClass 'nulled'
         else
             @iconOn('ready')
+            $('#readyorders').addClass 'nulled'
             if not $('#icon_ord').hasClass('off')
                 @iconOn('ord')
         @iconOff('save')
