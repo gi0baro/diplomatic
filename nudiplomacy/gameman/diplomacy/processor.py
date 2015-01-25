@@ -430,6 +430,7 @@ class GameProcessor(Processor):
                     order = orders[troop]
                     if order["type"] == "retreat":
                         if not order.get('failed', False):
+                            order["success"] = True
                             disband = False
                             moves.append(
                                 [troop, order["to"], country, order.get("mc")]
