@@ -84,16 +84,16 @@ class OrdersProcessor(Processor):
             self.status = "OK"
         #: clean orders from invalid ones
         for fail_id in checker.invalids:
-            to_del = None
+            #to_del = None
             if fail_id in self.orders_data.iterkeys():
-                if self.game["phase"] == "diplomacy":
+                if self.game["phase"] in ["diplomacy", "builds"]:
                     self.orders_data[fail_id] = dict(type="hold")
                 elif self.game["phase"] == "retreats":
                     self.orders_data[fail_id] = dict(type="disband")
-                else:
-                    to_del = fail_id
-            if to_del:
-                del self.orders_data[fail_id]
+                #else:
+                #    to_del = fail_id
+            #if to_del:
+            #    del self.orders_data[fail_id]
 
     def process(self, orders={}):
         self.orders_data = orders
