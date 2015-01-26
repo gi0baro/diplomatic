@@ -515,6 +515,7 @@ class Move(Hold):
 class MoveConv(Move):
     def _start(self):
         Move._start(self)
+        self._convoyed = None
 
     def set_routes(self, llid):
         self._convoy_routes = llid
@@ -528,21 +529,17 @@ class MoveConv(Move):
         b = Move._get_dependencies(self)
         return a+b
 
-    ### -- TESTING strength 0 solution
     @property
     def strength_att(self):
-        if self.solved:
-            if not self.succeeded:
-                return (0, 0)
+        if self.convoyed is False:
+            return (0, 0)
         return self._strength_att()
 
     @property
     def strength_ssa(self):
-        if self.solved:
-            if not self.succeeded:
-                return (0, 0)
+        if self.convoyed is False:
+            return (0, 0)
         return self._strength_att(False)
-    ### ---
 
     def solve(self):
         # TO IMPROVE: duplicates nodes (different routes can have common nodes)
@@ -561,13 +558,14 @@ class MoveConv(Move):
             ## convoyers check in the route
             for convoyer in route:
                 log("\t\tProcessing convoyer "+str(convoyer))
-                self._versus = convoyer
-                self._convoyed = self.convoyed
-                self._versus = None
-                if self._convoyed is not None:
+                #self._versus = convoyer
+                #self._convoyed = self.convoyed
+                #self._versus = None
+                convoyed = self._solve_convoyer(convoyer)
+                if convoyed is not None:
                     ## solved node, add dependency to remove list
                     conv_rem.append(convoyer)
-                    if not self._convoyed:
+                    if not convoyed:
                         ## fail the route and break the cycle
                         routes_fail.append(route)
                         break
@@ -600,6 +598,7 @@ class MoveConv(Move):
             if routes_fail == self._convoyers:
                 ## the movement is failing, removing all deps
                 log("\tMoveViaConvoy: all convoy routes failed.")
+                self._convoyed = False
                 self.success_var = False
                 self._solved_deps_all()
             else:
@@ -608,19 +607,22 @@ class MoveConv(Move):
                     self._convoyers.remove(route)
         else:
             ## normal movement solve
+            self._convoyed = True
             log("\tMoveViaConvoy: starting normal movement solving..")
             Move.solve(self)
 
-    @property
-    def convoyed(self):
-        by = self._versus
-        if not by:
-            by = self.depends
-        if by.solved:
-            if by.succeeded:
+    def _solve_convoyer(self, convoyer):
+        if convoyer.solved:
+            if convoyer.succeeded:
                 return True
             return False
         return None
+
+    @property
+    def convoyed(self):
+        if self._convoyed is None:
+            self.solve()
+        return self._convoyed
 
 
 class Convoy(Hold):
