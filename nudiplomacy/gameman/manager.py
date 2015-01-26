@@ -67,7 +67,7 @@ def process_orders(country, game, orders):
         for i in range(0, len(gamemap[c])):
             gamemap[c][i] = str(gamemap[c][i])
     #
-    proc = OrdersProcessor(country, game, gamemap, app.log.debug)
+    proc = OrdersProcessor(country, game, gamemap, app.log.warning)
     proc.process(orders)
     return sdict(error=proc.error, orders=proc.orders_data)
 
