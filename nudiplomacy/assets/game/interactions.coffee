@@ -724,6 +724,9 @@ class Interactions
                     if nears
                         for i in nears
                             if app.game.phase().isFleet(i) and app.env.isSea(i)
+                                d =
+                                    step: 1
+                                    pre: null
                                 nears_s[i] = 1
                     console.log(nears_s)
                     console.log($.isEmptyObject(nears_s))
@@ -741,7 +744,7 @@ class Interactions
                                 if j not in (k for k of nears_s)
                                     if app.game.phase().isFleet(j) and app.env.isSea(j)
                                         nears_s[j] =
-                                            step: value + 1
+                                            step: value.step + 1
                                             pre: key
                                         console.log(nears_s)
                                         found = true
