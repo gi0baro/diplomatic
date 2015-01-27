@@ -514,6 +514,7 @@ class Interactions
                 else
                     mc_n = 1
                     mc_s = 0
+                console.log(mc_n)
                 #app.game.moves_mc[id] = mc_n
                 #app.game.moves[id] = type: "move", from: id, to: t_id
                 #if app.game.phase().type isnt "builds"
@@ -528,6 +529,7 @@ class Interactions
                     if app.game.moves_queue.length
                         qm = app.game.dequeueMove()
                         app.game.addMoveMC(qm.id, qm.type, qm.from, qm.to, mc_n)
+                    console.log("adding mcmove with diplomacy phase")
                     app.game.addMoveMC(id, "move", id, t_id, mc_n)
                     @_offTracked()
                 app.screen.offTerritory(@active)
@@ -542,6 +544,7 @@ class Interactions
                 else
                     mc_n = 1
                     mc_s = 0
+                console.log(mc_s)
                 #app.game.moves_mc[id] = mc_s
                 #app.game.moves[id] = type: "move", from: id, to: t_id
                 if app.game.phase().type is "builds"
@@ -555,6 +558,7 @@ class Interactions
                     if app.game.moves_queue.length
                         qm = app.game.dequeueMove()
                         app.game.addMoveMC(qm.id, qm.type, qm.from, qm.to, mc_s)
+                    console.log("adding mcmove with diplomacy phase")
                     app.game.addMoveMC(id, "move", id, t_id, mc_s)
                     @_offTracked()
                 app.screen.offTerritory(@active)
