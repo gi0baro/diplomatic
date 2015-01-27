@@ -771,8 +771,8 @@ class Interactions
                                     if @trackedConvoyRoutes[id_f+"_"+j] is undefined
                                         @trackedConvoyRoutes[id_f+"_"+j] = []
                                     _rdata =
-                                        to = j
-                                        index = _stackInd
+                                        to: j
+                                        index: _stackInd
                                     @trackedConvoyRoutes[id_f+"_"+j].push(_rdata)
                                     #
                                     if j not in nears_o
