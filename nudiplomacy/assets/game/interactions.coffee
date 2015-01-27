@@ -727,7 +727,7 @@ class Interactions
                                 d =
                                     step: 1
                                     pre: null
-                                nears_s[i] = 1
+                                nears_s[i] = d
                     console.log(nears_s)
                     console.log($.isEmptyObject(nears_s))
                     if $.isEmptyObject(nears_s)
