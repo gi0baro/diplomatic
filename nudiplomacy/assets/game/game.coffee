@@ -268,7 +268,8 @@ class Game
                 @orders[id]["viaConvoy"] = data.viaConvoy
                 @orders[id]["convoy_route"] = data.croute
             if app.env.isMCoast(data.to)
-                @orders[id]["mc"] = @moves_mc[id]
+                #@orders[id]["mc"] = @moves_mc[id]
+                @orders[id]["mc"] = data.mc
         else if data.type in ["sup_move", "convoy"]
             @orders[id]["from"] = data.from
         #country = app.GetCountryByTerr(id)
