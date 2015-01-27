@@ -4,6 +4,8 @@ class Interactions
         @active = null
         @tracked = []
         @trackedConvoys = {}
+        @trackedConvoyRoutes = {}
+        @_trackedConvoyRST = []
         @trackedConvoyTerrs = []
         return
 
@@ -608,6 +610,8 @@ class Interactions
             app.screen.offTerritory(i)
         @tracked = []
         @trackedConvoys = {}
+        @trackedConvoyRoutes = {}
+        @_trackedConvoyRST = []
         @trackedConvoyTerrs = []
 
     _onMoveTo: (id) ->
@@ -734,9 +738,11 @@ class Interactions
                             nears_t = app.env.moves.fleets[key]
                             #found = false
                             for j in nears_t
-                                if j not in (key for key of nears_s)
+                                if j not in (k for k of nears_s)
                                     if app.game.phase().isFleet(j) and app.env.isSea(j)
-                                        nears_s[j] = value + 1
+                                        nears_s[j] =
+                                            step: value + 1
+                                            pre: key
                                         console.log(nears_s)
                                         found = true
                                         break
@@ -745,13 +751,31 @@ class Interactions
                         if not found
                             done = true
                     console.log(nears_s)
+                    @trackedConvoyRoutes = {}
+                    @_trackedConvoyRST = []
                     for key of nears_s
                         nears_t = app.env.moves.fleets[key]
                         for j in nears_t
                             if j isnt id_f
-                                if j not in nears_o
-                                    #if j not in app.map.seas
-                                    if not app.env.isSea(j)
+                                if not app.env.isSea(j)
+                                    # set route
+                                    _stack = []
+                                    _fdata = nears_s[key]
+                                    _stack.push(key)
+                                    while _fdata.step > 1
+                                        _stack.push(_fdata.pre)
+                                        _fdata = nears_s[_fdata.pre]
+                                    _stack.reverse()
+                                    @_trackedConvoyRST.push(_stack)
+                                    _stackInd = @_trackedConvoyRST.length-1
+                                    if @trackedConvoyRoutes[id_f+"_"+j] is undefined
+                                        @trackedConvoyRoutes[id_f+"_"+j] = []
+                                    _rdata =
+                                        to = j
+                                        index = _stackInd
+                                    @trackedConvoyRoutes[id_f+"_"+j].push(_rdata)
+                                    #
+                                    if j not in nears_o
                                         if j not in nears_res
                                             nears_res.push(j)
                     @trackedConvoys = nears_s
@@ -945,7 +969,7 @@ class Interactions
                     nears_res.push(i)
         return nears_res
 
-    _getConvoysFromMove: (id_f, id_t) ->
+    _OLDgetConvoysFromMove: (id_f, id_t) ->
         conv_lst = []
         #country = app.FindCountry(id_f)
         #id_t = app.play.moves[id_f].to
@@ -993,5 +1017,30 @@ class Interactions
                 conv_lst.push(route[0])
         console.log(conv_lst)
         return conv_lst
+
+    _getConvoysFromMove: (id_f, id_t) ->
+        choosen = false
+        choice = null
+        choices = []
+        routes = @trackedConvoyRoutes[id_f+"_"+id_t]
+        for rdata in routes
+            route = @_trackedConvoyRST[rdata.index]
+            allmine = true
+            for t in route
+                if t not in app.game.phase().getCountryTroops()
+                    allmine = false
+                    break
+            chdata =
+                data: route
+                mine: allmine
+            choices.push(chdata)
+        for ch in choices
+            if ch.mine
+                choice = ch.data
+                choosen = true
+                break
+        if not choosen
+            choice = choices[0].data
+        return choice
 
 window.Interactions = Interactions

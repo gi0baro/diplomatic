@@ -78,7 +78,7 @@ class Validator(object):
 
     def _get_convoy_map(self, Id):
         nears_f = {}
-        nears_o = self.moves["armies"].get(Id)
+        #nears_o = self.moves["armies"].get(Id)
         nears = self.moves["fleets"].get(Id)
         for terr in nears:
             if self._isFleet(terr) and self._isSea(terr):
