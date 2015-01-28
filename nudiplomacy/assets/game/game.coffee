@@ -152,6 +152,22 @@ class Game
                 app.screen.update()
         return
 
+    canBuild: ->
+        if not @phase('last').type is "builds"
+            return
+        ntroops = @phase('last').getCountryTroops()
+        nsupply = 0
+        for i in app.env._supplylist
+            if i in @phase('last').territories[@country]
+                nsupply++
+        #if nsupply < ntroops
+        #    return 0
+        base = nsupply-ntroops
+        builds = (b for b of @phase('next').builds).length
+        if base < 0
+            return base+builds
+        return base-builds
+
     _addMove: (id, data) ->
         @moves[id] = data
         #if id in (key for key of app.map.troops[app.play.country])

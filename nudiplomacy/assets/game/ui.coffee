@@ -117,6 +117,9 @@ class UI
         $('.btn_build_f').click ->
             app.act.uiClick("build_fleet")
             return
+        $('#btn_b_d').click ->
+            app.act.uiClick("disband")
+            return
         #: retreat menu clicks handlers
         $('#btn_r_r').click ->
             app.act.uiClick("retreat")
@@ -467,15 +470,20 @@ class UI
                         when "convoy"
                             $('#btn_c').addClass 'btn-primary'
             if app.game.phase().type is "builds"
-                if app.env.isCoast(id)
-                    $('#btn_b_f').removeClass 'ninja'
-                build = app.game.hasBuild(id)
-                if build
-                    switch build
-                        when "build_army"
-                            $('#btn_b_a').addClass 'btn-primary'
-                        when "build_fleet"
-                            $('#btn_b_f').addClass 'btn-primary'
+                if id in app.game.phase().getCountryTroops()
+                    build = app.game.hasBuild(id)
+                    if build
+                        $('#btn_b_d').addClass 'btn-primary'
+                else
+                    if app.env.isCoast(id)
+                        $('#btn_b_f').removeClass 'ninja'
+                    build = app.game.hasBuild(id)
+                    if build
+                        switch build
+                            when "build_army"
+                                $('#btn_b_a').addClass 'btn-primary'
+                            when "build_fleet"
+                                $('#btn_b_f').addClass 'btn-primary'
             if app.game.phase().type is "retreats"
                 move = app.game.hasMove(id)
                 if move
@@ -497,6 +505,7 @@ class UI
             else
                 $('#btn_b_a').removeClass 'btn-primary'
                 $('#btn_b_f').removeClass 'btn-primary'
+                $('#btn_b_d').removeClass 'btn-primary'
         return
 
     setTopButtons: (act, dis) ->
@@ -521,7 +530,13 @@ class UI
         if app.game.phase().type is "diplomacy"
             menu_id = "#terr_menu"
         if app.game.phase().type is "builds"
-            menu_id = "#build_menu"
+            pos = @_translatePosition(mpos)
+            refcolor = app.screen.getColor(pos)
+            tid = app.env.getTerritoryByColor(refcolor)
+            if tid in app.game.phase().getCountryTroops()
+                menu_id = "build_menu_d"
+            else
+                menu_id = "#build_menu"
         if app.game.phase().type is "retreats"
             menu_id = "#retreat_menu"
         $(menu_id).css
@@ -532,21 +547,23 @@ class UI
             opacity:'1'
             500
             'linear'
+        $(menu_id).addClass 'menuopened'
         return
 
     closeMenu: ->
         @setMenuButtons("close", false)
-        if app.game.phase().type is "diplomacy"
-            menu_id = "#terr_menu"
-        if app.game.phase().type is "builds"
-            menu_id = "#build_menu"
-        if app.game.phase().type is "retreats"
-            menu_id = "#retreat_menu"
-        $(menu_id).animate
+        menu = $('.menuopened')[0]
+        #if app.game.phase().type is "diplomacy"
+        #    menu_id = "#terr_menu"
+        #if app.game.phase().type is "builds"
+        #    menu_id = "#build_menu"
+        #if app.game.phase().type is "retreats"
+        #    menu_id = "#retreat_menu"
+        $(menu).animate
             opacity:'0'
             500
             'linear'
-        $(menu_id).css visibility: 'hidden'
+        $(menu).css visibility: 'hidden'
         return
 
     openMCMenu: (pos) ->

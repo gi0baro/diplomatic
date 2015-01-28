@@ -37,10 +37,20 @@ class Interactions
                         if Id in app.game.phase().getCountryTroops()
                             res = true
                     if app.game.phase().type is "builds"
-                        if app.game.phase().getCountryByTerritory(Id) is app.game.country
-                            if app.env.isSupply(Id)
-                                if not app.game.phase().isFleet(Id) and not app.game.phase().isArmy(Id)
-                                    res = true
+                        bn = app.game.canBuild()
+                        if bn > 0
+                            if app.game.phase().getCountryByTerritory(Id) is app.game.country
+                                if app.env.isSupply(Id)
+                                    if not app.game.phase().isFleet(Id) and not app.game.phase().isArmy(Id)
+                                        res = true
+                        else if bn < 0
+                            if Id in app.game.phase().getCountryTroops()
+                                res = true
+                        else
+                            # allow undo orders
+                            bd = (key for key of app.game.phase('next').builds)
+                            if Id in bd
+                                res = true
                     if app.game.phase().type is "retreats"
                         #if Id in app.game.phase().previous().getCountryTroops()
                         dlist = app.game.phase().dislodged[app.game.country]
