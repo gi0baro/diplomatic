@@ -1026,7 +1026,7 @@ class UI
         rdiv = if read then '<div class="dotunread nulled"></div>' else '<div class="dotunread"></div>'
         ddiv = '<div class="msg_date">'+date+'</div>'
         isauthor = from is app.game.country
-        cdiv = '<div class="row">'
+        cdiv = '<div class="row msg_row">'
         if isauthor
             cdiv += '<div class="msg_from is_me col-md-2">'+from.charAt(0).toUpperCase()+'</div>'
             cdiv += '<div class="msg_me col-md-10">'+rdiv+text+'</div>'

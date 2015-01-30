@@ -304,6 +304,10 @@ body, html {
     bottom: 0px;
 }
 
+.msg_row {
+    margin: 0;
+}
+
 .msg_me {
     /*height: 100%;*/
     border-color: #ccc;
