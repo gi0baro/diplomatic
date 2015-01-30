@@ -36,18 +36,12 @@
                         .msg_back
                             Back
                         .msg_list
-                            .msg_me Test msg me G
-                            .msg_re Test msg re G
                         %textarea#msg_text_global.msg_text
                     - for country in ocountries
                         .msg_conv.ninja{id: 'msg_conv_{{=country}}', 'data-cid': '{{=chats.get(country, 0)}}'}
                             .msg_back
                                 Back
                             .msg_list
-                                .msg_me
-                                    = "Test msg me "+country
-                                .msg_re
-                                    = "Test msg re "+country
                             %textarea.msg_text{id: 'msg_text_{{=country}}'}
             #left_menu
                 #msg_button

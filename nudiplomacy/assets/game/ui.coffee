@@ -236,11 +236,24 @@ class UI
     _rgbToHex: (r, g, b) ->
         "#" + @_componentToHex(r) + @_componentToHex(g) + @_componentToHex(b)
 
+    _initMessagesDims: (country) ->
+        toth = $('#msg_conv_'+country).innerHeight
+        mbut = $($('#msg_conv_'+country).children()[0])
+        mlist = $($('#msg_conv_'+country).children()[1])
+        mtext = $($('#msg_conv_'+country).children()[2])
+        mtext.css
+            height: '250px'
+        h = toth-mbut.height()-250-10
+        mlist.css
+            height: h+"px"
+        return
+
     initMessages: ->
         if app.game.presstype isnt "none"
             $('#left_wrapper').removeClass('nulled')
             $('#msg_sel_global').removeClass('nulled')
             cid = $('#msg_conv_global').data('cid')
+            @_initMessagesDims('global')
             app.net.getMessages(cid, 'global')
             if app.game.presstype is "all"
                 for key, val of app.env.countries
@@ -251,6 +264,7 @@ class UI
                         "border-style": "solid"
                         "border-width": "1px"
                     $("#msg_sel_"+key).removeClass('nulled')
+                    @_initMessagesDims(key)
                     cid = $('#msg_conv_'+key).data('cid')
                     app.net.getMessages(cid, key)
         return
