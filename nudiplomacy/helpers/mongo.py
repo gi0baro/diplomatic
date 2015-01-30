@@ -69,7 +69,7 @@ class MongoTable(object):
         table = self.name
         _table = self._db[table]
         query = MongoTable._map_query_id(query)
-        _table.update(query, update, upsert)
+        return _table.update(query, update, upsert)
 
     def _findmodify(self, query=None, update=None, fields=None, upsert=False,
                     new=False):

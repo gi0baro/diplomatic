@@ -1022,7 +1022,7 @@ class UI
         return head+ddiv+cdiv+foot
 
     gotMessages: (country, data) ->
-        chat = $($('#msg_conv_'+country).children[1])
+        chat = $($('#msg_conv_'+country).children()[1])
         for m in data
             #: read
             if country is "global"

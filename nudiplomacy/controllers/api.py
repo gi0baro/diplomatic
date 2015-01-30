@@ -244,14 +244,12 @@ def chat_post(cid):
                 can = longToObjid(auth.user.id) in chat.users
                 mdata['read'] = False
             if can:
-                rv.data = "Internal"
-                posted = mdb.chats.upd(
+                mdb.chats.upd(
                     {'id': cid},
                     {'$push': {'messages': mdata}}
                 )
-                if posted:
-                    rv.status = "Ok"
-                    rv.data = mdata
+                rv.status = "Ok"
+                rv.data = mdata
             else:
                 rv.data = "Not authorized"
         else:
