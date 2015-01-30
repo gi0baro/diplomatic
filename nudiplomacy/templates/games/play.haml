@@ -9,6 +9,9 @@
         app.net.route("saveorders", "{{=url('api.orders_save', game.id)}}");
         app.net.route("ready", "{{=url('api.orders_ready', game.id, {'set': '1'})}}");
         app.net.route("unready", "{{=url('api.orders_ready', game.id)}}");
+        app.net.route("messages", "{{=url('api.chat_get')}}");
+        app.net.route("postmessage", "{{=url('api.chat_post')}}");
+        app.net.route("readmessage", "{{=url('api.chat_read')}}");
         app.game.scsToWin = {{=scs}};
         app.start();
         if (!preGame) {

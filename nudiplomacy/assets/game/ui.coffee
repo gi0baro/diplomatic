@@ -1013,9 +1013,9 @@ class UI
         cdiv = '<div class="msg_in_row">'
         if isauthor
             cdiv += '<div class="msg_from is_me">'+from.charAt(0).toUpperCase()+'</div>'
-            cdiv += '<div class="msg_me">'+rdiv+m.text+'</div>'
+            cdiv += '<div class="msg_me">'+rdiv+text+'</div>'
         else
-            cdiv += '<div class="msg_re">'+rdiv+m.text+'</div>'
+            cdiv += '<div class="msg_re">'+rdiv+text+'</div>'
             cdiv += '<div class="msg_from">'+from.charAt(0).toUpperCase()+'</div>'
         cdiv += '</div>'
         foot = '</div>'
