@@ -1026,13 +1026,13 @@ class UI
         rdiv = if read then '<div class="dotunread nulled"></div>' else '<div class="dotunread"></div>'
         ddiv = '<div class="msg_date">'+date+'</div>'
         isauthor = from is app.game.country
-        cdiv = '<div class="msg_in_row">'
+        cdiv = '<div class="row">'
         if isauthor
-            cdiv += '<div class="msg_from is_me">'+from.charAt(0).toUpperCase()+'</div>'
-            cdiv += '<div class="msg_me">'+rdiv+text+'</div>'
+            cdiv += '<div class="msg_from is_me col-md-2">'+from.charAt(0).toUpperCase()+'</div>'
+            cdiv += '<div class="msg_me col-md-10">'+rdiv+text+'</div>'
         else
-            cdiv += '<div class="msg_re">'+rdiv+text+'</div>'
-            cdiv += '<div class="msg_from">'+from.charAt(0).toUpperCase()+'</div>'
+            cdiv += '<div class="msg_re col-md-10">'+rdiv+text+'</div>'
+            cdiv += '<div class="msg_from col-md-2">'+from.charAt(0).toUpperCase()+'</div>'
         cdiv += '</div>'
         foot = '</div>'
         return head+ddiv+cdiv+foot

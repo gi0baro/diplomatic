@@ -305,10 +305,6 @@ body, html {
 }
 
 .msg_me {
-    position: relative;
-    left: 0;
-    width: 97%;
-    height: auto;
     /*height: 100%;*/
     border-color: #ccc;
     border-style: solid;
@@ -320,9 +316,6 @@ body, html {
 }
 
 .msg_re {
-    position: relative;
-    left: 0;
-    width: 97%;
     height: auto;
     /*height: 100%;*/
     border-color: #ccc;
