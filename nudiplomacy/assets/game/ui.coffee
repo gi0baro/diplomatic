@@ -1047,9 +1047,9 @@ class UI
                 read = m.read
             chat.append(@_renderMessage(country, m.text, m.from, m.timeref, read))
         open_msgs = chat.children()
-        for i in open_msgs
-            if open_msgs[i].classList.contains("unread")
-                unread = open_msgs[i]
+        for msg in open_msgs
+            if msg.classList.contains("unread")
+                unread = msg
                 break
         if unread
             chat.scrollTop(unread.offset().top)
