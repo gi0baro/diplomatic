@@ -242,8 +242,8 @@ class UI
         mlist = $($('#msg_conv_'+country).children()[1])
         mtext = $($('#msg_conv_'+country).children()[2])
         mtext.css
-            height: '250px'
-        h = toth-mbut.height()-250-10
+            height: '100px'
+        h = toth-mbut.height()-100-10
         mlist.css
             height: h+"px"
         return
