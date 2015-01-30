@@ -1052,7 +1052,7 @@ class UI
                 unread = msg
                 break
         if unread
-            chat.scrollTop(unread.offset().top)
+            chat.scrollTop($(unread).offset().top)
         return
 
     sendMessage: (country, cid) ->
