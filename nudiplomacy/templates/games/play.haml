@@ -29,7 +29,7 @@
                         %span Messages
                     .msg_select
                         #msg_sel_global.msg_select_child.nulled G
-                        - for country, in ocountries
+                        - for country in ocountries
                             .msg_select_child.nulled{id: 'msg_sel_{{=country}}'}
                                 = country[0].upper()
                     #msg_conv_global.msg_conv.ninja{'data-cid': '{{=chats["global"]}}'}
