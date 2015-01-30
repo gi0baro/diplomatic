@@ -332,6 +332,19 @@ body, html {
     background-color: #eee;
 }
 
+.msg_from {
+    display: inline-block;
+    position: relative;
+    /*float: left;*/
+    height: 26px;
+    background-color: #ddd;
+    -webkit-border-radius: 13px;
+    border-radius: 13px;
+    text-align: center;
+    padding: 2px;
+    font-size: 14px;
+}
+
 #right_wrapper {
     position: absolute;
     /*z-index: 1;*/
