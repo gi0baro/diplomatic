@@ -342,9 +342,9 @@ body, html {
     -webkit-border-radius: 13px;
     border-radius: 13px;
     text-align: center;
-    padding: 2px;
+    padding: 4px;
     font-size: 13px;
-    margin-top: 8px;
+    margin-top: 4px;
 }
 
 #right_wrapper {
