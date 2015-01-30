@@ -1006,7 +1006,7 @@ class UI
         return
 
     _renderMessage: (country, text, from, date, read) ->
-        head = '<div class="msg_el">'
+        head = if read then '<div class="msg_el">' else '<div class="msg_el unread">'
         rdiv = if read then '<div class="msgread nulled"></div>' else '<div class="msgread"></div>'
         ddiv = '<div class="msg_date">'+date+'</div>'
         isauthor = from is app.game.country
@@ -1030,6 +1030,13 @@ class UI
             else
                 read = m.read
             chat.append(@_renderMessage(country, m.text, m.from, m.timeref, read))
+        open_msgs = chat.children()
+        for i in open_msgs
+            if open_msgs[i].classList.contains("unread")
+                unread = open_msgs[i]
+                break
+        if unread
+            chat.scrollTop(unread.offset().top)
         return
 
     sendMessage: (country, cid) ->
