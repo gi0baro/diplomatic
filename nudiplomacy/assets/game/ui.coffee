@@ -269,6 +269,23 @@ class UI
                     @_initMessagesDims(key)
                     cid = $('#msg_conv_'+key).data('cid')
                     app.net.getMessages(cid, key)
+            setInterval(->
+                $(".msg_list").each (i, list) ->
+                    if $(list).hasClass("ninja")
+                        return
+                    size = $(list).scrollTop() + $(list).height()
+                    cid = $($(list).parent()).data("cid")
+                    $(list).children().each (j, el) ->
+                        if $(el).hasClass("unread")
+                            if $(el).offset().top < size
+                                $(el).removeClass("unread")
+                                $(el).find(".dotunread").addClass("nulled")
+                                app.net.setRead(cid, j)
+                        return
+                    return
+                return
+            , 10000)
+
         return
 
     _initStatsChart: (country, color) ->
