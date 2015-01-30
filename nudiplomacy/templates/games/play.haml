@@ -39,7 +39,7 @@
                             .msg_re Test msg re G
                         %textarea#msg_text_global.msg_text
                     - for country in game.countries.iterkeys()
-                        .msg_conv.ninja{id: 'msg_conv_{{=country}}', 'data-cid': '{{=chats["global"]}}'}
+                        .msg_conv.ninja{id: 'msg_conv_{{=country}}', 'data-cid': '{{=chats[country]}}'}
                             .msg_back
                                 Back
                             .msg_list
