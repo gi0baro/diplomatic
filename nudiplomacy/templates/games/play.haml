@@ -39,6 +39,8 @@
                             .msg_re Test msg re G
                         %textarea#msg_text_global.msg_text
                     - for country in game.countries.iterkeys()
+                        - if country == game.playercountry()
+                            - continue
                         .msg_conv.ninja{id: 'msg_conv_{{=country}}', 'data-cid': '{{=chats[country]}}'}
                             .msg_back
                                 Back
@@ -108,7 +110,7 @@
                 #stats_button
                     #stats_dot
                     #stats_text
-                        {{=game.playercountry() or 'stats'}}
+                        = game.playercountry() or 'stats'
                     #stats_c
             #stats_content
                 .row{style: "margin: 0;"}
