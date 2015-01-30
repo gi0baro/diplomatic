@@ -257,6 +257,8 @@ class UI
             app.net.getMessages(cid, 'global')
             if app.game.presstype is "all"
                 for key, val of app.env.countries
+                    if key is app.game.country
+                        continue
                     color = @_rgbToHex(val.r, val.g, val.b)
                     $("#msg_sel_"+key).css
                         "box-shadow": "0 0 6px "+color
