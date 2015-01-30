@@ -37,11 +37,15 @@ class Network
                 return
         return rv
 
-    getMessages: ->
+    getMessages: (cid, country) ->
+        $.ajax @urls['messages']+"/"+cid,
+            type: 'GET'
+            success: (data) ->
+                app.ui.gotMessages(country, data.data)
+                return
         return
 
     postOrders: ->
-        console.log('sending orders')
         d =
             orders: app.game.orders
         app.ui.saving()
@@ -54,11 +58,22 @@ class Network
                 app.ui.saved(data)
                 return
             error: ->
-                console.log(error)
+                #console.log(error)
                 return
         return
 
-    postMessage: ->
+    postMessage: (cid, text) ->
+        d =
+            msg: text
+        $.ajax @urls['postmessage']+"/"+cid,
+            type: 'POST'
+            contentType: "application/json"
+            data: JSON.stringify(d)
+            success: (data) ->
+                console.log(data)
+                return
+            error: ->
+                return
         return
 
     setReady: ->
@@ -76,5 +91,14 @@ class Network
                 app.ui.didReady(data.data)
                 return
         return
+
+    setRead: (cid, mid) ->
+        rv = {}
+        $.ajax @urls['readmessage']+"/"+cid+"/"+mid,
+            type: 'GET'
+            success: (data) ->
+                rv = data
+                return
+        return rv
 
 window.Network = Network

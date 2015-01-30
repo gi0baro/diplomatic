@@ -96,7 +96,7 @@ def game_join(gid):
                 #db(db.UserData.user == auth.user.id).update(
                 #    credits=db.UserData.credits-gamedata.bet)
                 playerdata.update_record(credits=playerdata.credits-gamedata.bet)
-                if all([v is not None for v in updated.countries.iteritems()]):
+                if all([v is not None for v in updated.countries.itervalues()]):
                     mdb.games.upd(
                         {"id": gid, "ready": False},
                         {"$set": {"ready": True}}
@@ -125,7 +125,7 @@ def game_join(gid):
             #db(db.UserData.user == auth.user.id).update(
             #    credits=db.UserData.credits-gamedata.bet)
             playerdata.update_record(credits=playerdata.credits-gamedata.bet)
-            if all([v is not None for v in updated.countries.iteritems()]):
+            if all([v is not None for v in updated.countries.itervalues()]):
                 mdb.games.upd(
                     {"id": gid, "ready": False},
                     {"$set": {"ready": True}}
@@ -235,13 +235,15 @@ def chat_post(cid):
     if message:
         chat = db.Chat(id=cid)
         if chat:
-            mdata = {'text': message, 'timeref': request.now}
+            pcountry = chat.game.playercountry()
+            mdata = {'text': message, 'timeref': request.now, 'from': pcountry}
             if chat.users == ["all"]:
-                ingame = longToObjid(auth.user.id) in chat.game.countries.values()
+                can = longToObjid(auth.user.id) in chat.game.countries.values()
+                mdata['read'] = [pcountry]
             else:
-                ingame = longToObjid(auth.user.id) in chat.users
+                can = longToObjid(auth.user.id) in chat.users
                 mdata['read'] = False
-            if ingame:
+            if can:
                 rv.data = "Internal"
                 posted = mdb.chats.upd(
                     {'id': cid},
@@ -263,9 +265,19 @@ def chat_post(cid):
 @requires(auth.is_logged_in, access_error)
 def chat_read(cid, mid):
     uoid = longToObjid(auth.user.id)
-    read = mdb.chats.upd(
-        {'id': cid, 'users': {'$elemMatch': uoid},
-         'messages': {'$size': {'$gt': mid}}},
-        {'$set': {'messages.'+str(mid)+'.read': True}}
-    )
+    if request.get_vars.all:
+        chat = db(db.Chat.id == cid).select().first()
+        pcountry = chat.game.playercountry()
+        if pcountry:
+            read = mdb.chats.upd(
+                {'id': cid, 'users': {'$in': 'all'},
+                 'messages': {'$size': {'$gt': mid}}},
+                {'$push': {'messages.'+str(mid)+'.read': pcountry}}
+            )
+    else:
+        read = mdb.chats.upd(
+            {'id': cid, 'users': {'$in': uoid},
+             'messages': {'$size': {'$gt': mid}}},
+            {'$set': {'messages.'+str(mid)+'.read': True}}
+        )
     return dict(status="Ok", data=read)

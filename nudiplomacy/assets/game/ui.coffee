@@ -240,6 +240,8 @@ class UI
         if app.game.presstype isnt "none"
             $('#left_wrapper').removeClass('nulled')
             $('#msg_sel_global').removeClass('nulled')
+            cid = $('#msg_conv_global').data('cid')
+            app.net.getMessages('global', cid)
             if app.game.presstype is "all"
                 for key, val of app.env.countries
                     color = @_rgbToHex(val.r, val.g, val.b)
@@ -249,6 +251,8 @@ class UI
                         "border-style": "solid"
                         "border-width": "1px"
                     $("#msg_sel_"+key).removeClass('nulled')
+                    cid = $('#msg_conv_'+key).data('cid')
+                    app.net.getMessages(key, cid)
         return
 
     _initStatsChart: (country, color) ->
@@ -999,6 +1003,41 @@ class UI
                 @iconOn('ord')
         @iconOff('save')
         @isSettingReady = false
+        return
+
+    _renderMessage: (country, text, from, date, read) ->
+        head = '<div class="msg_el">'
+        rdiv = if read then '<div class="msgread nulled"></div>' else '<div class="msgread"></div>'
+        ddiv = '<div class="msg_date">'+date+'</div>'
+        isauthor = from is app.game.country
+        cdiv = '<div class="msg_in_row">'
+        if isauthor
+            cdiv += '<div class="msg_from is_me">'+from.charAt(0).toUpperCase()+'</div>'
+            cdiv += '<div class="msg_me">'+rdiv+m.text+'</div>'
+        else
+            cdiv += '<div class="msg_re">'+rdiv+m.text+'</div>'
+            cdiv += '<div class="msg_from">'+from.charAt(0).toUpperCase()+'</div>'
+        cdiv += '</div>'
+        foot = '</div>'
+        return head+ddiv+cdiv+foot
+
+    gotMessages: (country, data) ->
+        chat = $($('#msg_conv_'+country).children[1])
+        for m in data
+            #: read
+            if country is "global"
+                read = app.game.country in m.read
+            else
+                read = m.read
+            chat.append(@_renderMessage(country, m.text, m.from, m.timestamp, read))
+        return
+
+    sendMessage: (country, cid, text) ->
+        app.net.postMessage(cid, text)
+        chat = $($('#msg_conv_'+country).children[1])
+        # update next line with real date
+        chat.append(@_renderMessage(country, text, app.game.country, 'now', false))
+        $('#msg_text_'+country).val ''
         return
 
     win: ->

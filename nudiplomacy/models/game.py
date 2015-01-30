@@ -164,7 +164,12 @@ class Game(Model):
     @after_insert
     def add_global_chat(self, fields, gid):
         if fields['presstype'] != "none":
-            self.db.Chat.insert(game=gid, users='["all"]')
+            from nudiplomacy.helpers.mongo import objidToLong
+            for country, p in fields["countries"].iteritems():
+                if objidToLong(p) == session.auth.user.id:
+                    c = country
+                    break
+            self.db.Chat.insert(game=gid, users='["'+c+'"]')
 
 
 class Orders(Model):

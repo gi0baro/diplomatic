@@ -28,7 +28,7 @@
                         - for country, uoid in game.countries.iteritems()
                             .msg_select_child.nulled{id: 'msg_sel_{{=country}}'}
                                 = country[0].upper()
-                    #msg_conv_global.msg_conv.ninja
+                    #msg_conv_global.msg_conv.ninja{'data-cid': '{{=chats["global"]}}'}
                         .msg_back
                             Back
                         .msg_list
@@ -36,7 +36,7 @@
                             .msg_re Test msg re G
                         %textarea#msg_text_global.msg_text
                     - for country in game.countries.iterkeys()
-                        .msg_conv.ninja{id: 'msg_conv_{{=country}}'}
+                        .msg_conv.ninja{id: 'msg_conv_{{=country}}', 'data-cid': '{{=chats["global"]}}'}
                             .msg_back
                                 Back
                             .msg_list

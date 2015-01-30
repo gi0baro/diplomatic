@@ -100,7 +100,8 @@ def open_game(gid):
             for j in range(i+1, len(plist)):
                 #db.Chat.insert(game=gid, users=[plist[i], plist[j]])
                 mdb.chats.save(
-                    {'game': longToObjid(gid), 'users': [plist[i], plist[j]]}
+                    {'game': longToObjid(gid), 'users': [plist[i], plist[j]],
+                     'open': True, 'messages': []}
                 )
     #: init game
     orders = {}
