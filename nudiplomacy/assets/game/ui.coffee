@@ -241,7 +241,7 @@ class UI
             $('#left_wrapper').removeClass('nulled')
             $('#msg_sel_global').removeClass('nulled')
             cid = $('#msg_conv_global').data('cid')
-            app.net.getMessages('global', cid)
+            app.net.getMessages(cid, 'global')
             if app.game.presstype is "all"
                 for key, val of app.env.countries
                     color = @_rgbToHex(val.r, val.g, val.b)
@@ -252,7 +252,7 @@ class UI
                         "border-width": "1px"
                     $("#msg_sel_"+key).removeClass('nulled')
                     cid = $('#msg_conv_'+key).data('cid')
-                    app.net.getMessages(key, cid)
+                    app.net.getMessages(cid, key)
         return
 
     _initStatsChart: (country, color) ->
