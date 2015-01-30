@@ -19,7 +19,7 @@
         }
     });
 
-- ocountries = [c for c in game.countries.iterkeys()]
+- ocountries = [c for c in game.countries.iterkeys() if c != game.playercountry()]
 .container.container_ce
     %section#main.main.row
         #left_wrapper.nulled
