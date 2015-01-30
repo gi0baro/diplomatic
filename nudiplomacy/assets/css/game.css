@@ -347,6 +347,16 @@ body, html {
     margin-top: 4px;
 }
 
+.dotunread {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    background-color: #0769AD;
+    width: 6px;
+    height: 6px;
+    border-radius: 3px;
+}
+
 #right_wrapper {
     position: absolute;
     /*z-index: 1;*/
