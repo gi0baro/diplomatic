@@ -1028,13 +1028,13 @@ class UI
         isauthor = from is app.game.country
         cdiv = '<div class="row msg_row">'
         if isauthor
-            cdiv += '<div class="col-md-2">'
+            cdiv += '<div class="col-md-1">'
             cdiv += '<div class="msg_from is_me pull-left">'+from.charAt(0).toUpperCase()+'</div>'
             cdiv += '</div>'
-            cdiv += '<div class="msg_me col-md-10">'+rdiv+text+'</div>'
+            cdiv += '<div class="msg_me col-md-11">'+rdiv+text+'</div>'
         else
-            cdiv += '<div class="msg_re col-md-10">'+rdiv+text+'</div>'
-            cdiv += '<div class="col-md-2">'
+            cdiv += '<div class="msg_re col-md-11">'+rdiv+text+'</div>'
+            cdiv += '<div class="col-md-1">'
             cdiv += '<div class="msg_from pull-right">'+from.charAt(0).toUpperCase()+'</div>'
             cdiv += '</div>'
         cdiv += '</div>'
