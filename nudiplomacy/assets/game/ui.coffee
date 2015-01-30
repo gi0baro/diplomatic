@@ -1032,9 +1032,10 @@ class UI
             chat.append(@_renderMessage(country, m.text, m.from, m.timeref, read))
         return
 
-    sendMessage: (country, cid, text) ->
+    sendMessage: (country, cid) ->
+        text = $('#msg_text_'+country).val()
         app.net.postMessage(cid, text)
-        chat = $($('#msg_conv_'+country).children[1])
+        chat = $($('#msg_conv_'+country).children()[1])
         # update next line with real date
         chat.append(@_renderMessage(country, text, app.game.country, 'now', false))
         $('#msg_text_'+country).val ''
