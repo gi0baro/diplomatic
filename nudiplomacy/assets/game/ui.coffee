@@ -1029,7 +1029,7 @@ class UI
                 read = app.game.country in m.read
             else
                 read = m.read
-            chat.append(@_renderMessage(country, m.text, m.from, m.timestamp, read))
+            chat.append(@_renderMessage(country, m.text, m.from, m.timeref, read))
         return
 
     sendMessage: (country, cid, text) ->
