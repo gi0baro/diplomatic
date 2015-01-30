@@ -19,6 +19,7 @@
         }
     });
 
+- ocountries = [c for c in game.countries.iterkeys()]
 .container.container_ce
     %section#main.main.row
         #left_wrapper.nulled
@@ -28,7 +29,7 @@
                         %span Messages
                     .msg_select
                         #msg_sel_global.msg_select_child.nulled G
-                        - for country, uoid in game.countries.iteritems()
+                        - for country, in ocountries
                             .msg_select_child.nulled{id: 'msg_sel_{{=country}}'}
                                 = country[0].upper()
                     #msg_conv_global.msg_conv.ninja{'data-cid': '{{=chats["global"]}}'}
@@ -38,10 +39,8 @@
                             .msg_me Test msg me G
                             .msg_re Test msg re G
                         %textarea#msg_text_global.msg_text
-                    - for country in game.countries.iterkeys()
-                        - if country == game.playercountry()
-                            - continue
-                        .msg_conv.ninja{id: 'msg_conv_{{=country}}', 'data-cid': '{{=chats[country]}}'}
+                    - for country in ocountries
+                        .msg_conv.ninja{id: 'msg_conv_{{=country}}', 'data-cid': '{{=chats.get(country, 0)}}'}
                             .msg_back
                                 Back
                             .msg_list
