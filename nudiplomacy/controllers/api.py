@@ -268,13 +268,13 @@ def chat_read(cid, mid):
         pcountry = chat.game.playercountry()
         if pcountry:
             read = mdb.chats.upd(
-                {'id': cid, 'users': {'$in': 'all'},
+                {'id': cid, 'users': 'all',
                  'messages.'+str(mid): {'$exists': True}},
                 {'$push': {'messages.'+str(mid)+'.read': pcountry}}
             )
     else:
         read = mdb.chats.upd(
-            {'id': cid, 'users': {'$in': uoid},
+            {'id': cid, 'users': uoid,
              'messages.'+str(mid): {'$exists': True}},
             {'$set': {'messages.'+str(mid)+'.read': True}}
         )
