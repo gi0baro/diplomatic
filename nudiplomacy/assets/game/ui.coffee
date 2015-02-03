@@ -1072,7 +1072,7 @@ class UI
             chat.scrollTop($(unread).offset().top)
             #: enlight messages and chat icons if unread
             $('#msg_sel_'+country).addClass "light"
-            $($('#msg_button').children[0]).addClass "light"
+            $($('#msg_button').children()[0]).addClass "light"
         return
 
     setMessagesRead: ->
@@ -1083,7 +1083,7 @@ class UI
             chatRead = true
             size = $(list).scrollTop() + $(list).height()
             cid = $($(list).parent()).data("cid")
-            isglob = $($(list).parent()).attr("id").split("_")[last] is "global"
+            isglob = $($(list).parent()).attr("id").split("_")[-1..][0] is "global"
             $(list).children().each (j, el) ->
                 if $(el).hasClass("unread")
                     chatRead = false
@@ -1093,7 +1093,7 @@ class UI
                         app.net.setRead(cid, j, isglob)
                 return
             if chatRead
-                country = $($(list).parent()).attr("id").split("_")[last]
+                country = $($(list).parent()).attr("id").split("_")[-1..][0]
                 $('#msg_sel_'+country).removeClass 'light'
             else
                 allRead = false
