@@ -217,7 +217,10 @@ def chat_get(cid):
     rv = sdict(status="Ok", data=[])
     chat = db.Chat(id=cid)
     if chat:
-        since = request.vars.since or 0
+        try:
+            since = int(request.vars.since)
+        except:
+            since = 0
         if chat.users == ["all"]:
             rv.data = chat.messages[since:]
         else:
