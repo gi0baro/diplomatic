@@ -92,9 +92,12 @@ class Network
                 return
         return
 
-    setRead: (cid, mid) ->
+    setRead: (cid, mid, global=false) ->
         rv = {}
-        $.ajax @urls['readmessage']+"/"+cid+"/"+mid,
+        u = @urls['readmessage']+"/"+cid+"/"+mid
+        if global
+            u += "?all=y"
+        $.ajax u,
             type: 'GET'
             success: (data) ->
                 rv = data

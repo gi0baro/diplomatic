@@ -270,22 +270,18 @@ class UI
                     cid = $('#msg_conv_'+key).data('cid')
                     app.net.getMessages(cid, key)
             setInterval(->
-                $(".msg_list").each (i, list) ->
-                    if $($(list).parent()).hasClass("ninja")
-                        return
-                    size = $(list).scrollTop() + $(list).height()
-                    cid = $($(list).parent()).data("cid")
-                    $(list).children().each (j, el) ->
-                        if $(el).hasClass("unread")
-                            if $(el).offset().top < size
-                                $(el).removeClass("unread")
-                                $(el).find(".dotunread").addClass("nulled")
-                                app.net.setRead(cid, j)
-                        return
-                    return
-                return
+                app.ui.setMessagesRead()
             , 10000)
-            # TO-DO: add interval for refresh messages
+            #: refresh chats every 30s
+            setInterval(->
+                app.net.getMessages($('#msg_conv_global').data('cid'), 'global')
+                if app.game.presstype is "all"
+                    for key, val of app.env.countries
+                        if key is app.game.country
+                            continue
+                        cid = $('#msg_conv_'+key).data('cid')
+                        app.net.getMessages(cid, key)
+            , 30000)
         return
 
     _initStatsChart: (country, color) ->
@@ -1067,7 +1063,6 @@ class UI
             else
                 read = m.read
             chat.append(@_renderMessage(country, m.text, m.from, m.timeref, read))
-            # TO-DO: enlight messages and chat icons if unread
         open_msgs = chat.children()
         for msg in open_msgs
             if msg.classList.contains("unread")
@@ -1075,6 +1070,36 @@ class UI
                 break
         if unread
             chat.scrollTop($(unread).offset().top)
+            #: enlight messages and chat icons if unread
+            $('#msg_sel_'+country).addClass "light"
+            $($('#msg_button').children[0]).addClass "light"
+        return
+
+    setMessagesRead: ->
+        allRead = true
+        $(".msg_list").each (i, list) ->
+            if $($(list).parent()).hasClass("ninja")
+                return
+            chatRead = true
+            size = $(list).scrollTop() + $(list).height()
+            cid = $($(list).parent()).data("cid")
+            isglob = $($(list).parent()).attr("id").split("_")[last] is "global"
+            $(list).children().each (j, el) ->
+                if $(el).hasClass("unread")
+                    chatRead = false
+                    if $(el).offset().top < size
+                        $(el).removeClass("unread")
+                        $(el).find(".dotunread").addClass("nulled")
+                        app.net.setRead(cid, j, isglob)
+                return
+            if chatRead
+                country = $($(list).parent()).attr("id").split("_")[last]
+                $('#msg_sel_'+country).removeClass 'light'
+            else
+                allRead = false
+            return
+        if allRead
+            $($('#msg_button').children()[0]).removeClass 'light'
         return
 
     sendMessage: (country, cid) ->

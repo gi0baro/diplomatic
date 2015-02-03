@@ -273,6 +273,10 @@ body, html {
     font-size: 20px;
 }
 
+.msg_select_child.light {
+    color: #0769AD;
+}
+
 .msg_conv {
     opacity: 0;
     position: absolute;
