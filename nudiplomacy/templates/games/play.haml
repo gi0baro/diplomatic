@@ -37,12 +37,16 @@
                             Back
                         .msg_list
                         %textarea#msg_text_global.msg_text
+                        .btn.btn-sm.btn-warning.send_button{onclick: 'javascript: app.ui.sendMessage("global", "{{=chats["global"]}}");'}
+                            %i.fa.fa-send
                     - for country in ocountries
                         .msg_conv.ninja{id: 'msg_conv_{{=country}}', 'data-cid': '{{=chats.get(country, 0)}}'}
                             .msg_back
                                 Back
                             .msg_list
                             %textarea.msg_text{id: 'msg_text_{{=country}}'}
+                            .btn.btn-sm.btn-warning.send_button{onclick: 'javascript: app.ui.sendMessage("{{=country}}", "{{=chats.get(country, 0)}}");'}
+                                %i.fa.fa-send
             #left_menu
                 #msg_button
                     %i.fa.fa-envelope.fa-lg

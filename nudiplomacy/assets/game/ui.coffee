@@ -241,11 +241,14 @@ class UI
         mbut = $($('#msg_conv_'+country).children()[0])
         mlist = $($('#msg_conv_'+country).children()[1])
         mtext = $($('#msg_conv_'+country).children()[2])
+        msbut = $($('#msg_conv_'+country).children()[3])
         mtext.css
             height: '100px'
         h = toth-mbut.height()-100-10
         mlist.css
             height: h+"px"
+        msbut.css
+            bottom: '76px'
         return
 
     initMessages: ->

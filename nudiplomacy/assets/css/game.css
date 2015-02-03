@@ -361,6 +361,13 @@ body, html {
     border-radius: 3px;
 }
 
+.send_button {
+    position: absolute;
+    right: 4px;
+    /*bottom: 76px;*/
+    padding: 2px 5px;
+}
+
 #right_wrapper {
     position: absolute;
     /*z-index: 1;*/
