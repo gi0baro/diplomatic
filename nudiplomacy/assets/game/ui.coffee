@@ -274,13 +274,16 @@ class UI
             , 10000)
             #: refresh chats every 30s
             setInterval(->
-                app.net.getMessages($('#msg_conv_global').data('cid'), 'global')
+                cid = $('#msg_conv_global').data('cid')
+                since = $($('#msg_conv_global').children()[1]).children().length
+                app.net.getMessages($('#msg_conv_global').data('cid'), 'global', since)
                 if app.game.presstype is "all"
                     for key, val of app.env.countries
                         if key is app.game.country
                             continue
                         cid = $('#msg_conv_'+key).data('cid')
-                        app.net.getMessages(cid, key)
+                        since = $($('#msg_conv_'+key).children()[1]).children().length
+                        app.net.getMessages(cid, key, since)
             , 30000)
         return
 

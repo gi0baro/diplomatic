@@ -37,8 +37,11 @@ class Network
                 return
         return rv
 
-    getMessages: (cid, country) ->
-        $.ajax @urls['messages']+"/"+cid,
+    getMessages: (cid, country, since=null) ->
+        u = @urls['messages']+"/"+cid
+        if since
+            u += "?since="+since
+        $.ajax u,
             type: 'GET'
             success: (data) ->
                 app.ui.gotMessages(country, data.data)
