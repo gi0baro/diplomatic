@@ -1039,10 +1039,10 @@ class UI
         return
 
     _renderMessage: (country, text, from, date, read) ->
-        head = if read then '<div class="msg_el">' else '<div class="msg_el unread">'
-        rdiv = if read then '<div class="dotunread nulled"></div>' else '<div class="dotunread"></div>'
-        ddiv = '<div class="msg_date">'+date+'</div>'
         isauthor = from is app.game.country
+        head = if not read and not isauthor then '<div class="msg_el unread">' else '<div class="msg_el">'
+        rdiv = if not read and not isauthor then '<div class="dotunread"></div>' else '<div class="dotunread nulled"></div>'
+        ddiv = '<div class="msg_date">'+date+'</div>'
         cdiv = '<div class="row msg_row">'
         if isauthor
             cdiv += '<div class="col-md-2">'
