@@ -22,6 +22,18 @@
                             %h6.grey-light
                                 = T("Phase duration")
                             = pretty_gamephasetime(game.phasetime)
+                    - if game.buildew
+                        .row
+                            .col-md-12
+                                %i.fa.fa-globe.fa-fw
+                                %h6
+                                    = T("This is a build-everywhere game")
+                    - if game.buildonstart
+                        .row
+                            .col-md-12
+                                %i.fa-truck.fa-fw
+                                %h6
+                                    = T("This game will start with a build turn")
                     %hr.divider
                     .row
                         - if not game.playercountry()
