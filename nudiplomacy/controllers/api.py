@@ -269,13 +269,13 @@ def chat_read(cid, mid):
         if pcountry:
             read = mdb.chats.upd(
                 {'id': cid, 'users': {'$in': 'all'},
-                 'messages': {'$size': {'$gt': mid}}},
+                 'messages.'+str(mid): {'$exists': True}},
                 {'$push': {'messages.'+str(mid)+'.read': pcountry}}
             )
     else:
         read = mdb.chats.upd(
             {'id': cid, 'users': {'$in': uoid},
-             'messages': {'$size': {'$gt': mid}}},
+             'messages.'+str(mid): {'$exists': True}},
             {'$set': {'messages.'+str(mid)+'.read': True}}
         )
     return dict(status="Ok", data=read)

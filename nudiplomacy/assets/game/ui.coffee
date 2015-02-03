@@ -271,7 +271,7 @@ class UI
                     app.net.getMessages(cid, key)
             setInterval(->
                 $(".msg_list").each (i, list) ->
-                    if $(list).hasClass("ninja")
+                    if $($(list).parent()).hasClass("ninja")
                         return
                     size = $(list).scrollTop() + $(list).height()
                     cid = $($(list).parent()).data("cid")
