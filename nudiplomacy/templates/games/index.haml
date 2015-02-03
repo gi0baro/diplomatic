@@ -12,7 +12,7 @@
                     .row
                         .col-md-4
                             %h6.grey-light
-                                = T("players no.")
+                                = T("Players no.")
                             = str(game.playersin())+"/"+str(game.nplayers)
                         .col-md-4
                             %h6.grey-light
@@ -25,14 +25,14 @@
                     - if game.buildew
                         .row
                             .col-md-12
-                                %i.fa.fa-globe.fa-fw
                                 %h6
+                                    %i.fa.fa-globe.fa-fw
                                     = T("This is a build-everywhere game")
                     - if game.buildonstart
                         .row
                             .col-md-12
-                                %i.fa-truck.fa-fw
                                 %h6
+                                    %i.fa.fa-truck.fa-fw
                                     = T("This game will start with a build turn")
                     %hr.divider
                     .row
