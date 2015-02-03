@@ -285,7 +285,7 @@ class UI
                     return
                 return
             , 10000)
-
+            # TO-DO: add interval for refresh messages
         return
 
     _initStatsChart: (country, color) ->
@@ -1067,6 +1067,7 @@ class UI
             else
                 read = m.read
             chat.append(@_renderMessage(country, m.text, m.from, m.timeref, read))
+            # TO-DO: enlight messages and chat icons if unread
         open_msgs = chat.children()
         for msg in open_msgs
             if msg.classList.contains("unread")

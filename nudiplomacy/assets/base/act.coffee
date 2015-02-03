@@ -29,12 +29,13 @@ class Act
         return
 
     joinedGame: ->
+        self = this
         $('#joinmsg').html "You joined the game successfully."
         $('#joinbtn').css
             display: 'none'
         setTimeout(
             ->
-                window.location.replace(api.urls.game+"/"+@jgid)
+                window.location.replace(api.urls.game+"/"+self.jgid)
                 return
             1000
         )
