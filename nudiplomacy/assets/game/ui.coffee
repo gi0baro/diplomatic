@@ -1047,7 +1047,7 @@ class UI
         rdiv = if not read and not isauthor then '<div class="dotunread"></div>' else '<div class="dotunread nulled"></div>'
         ddiv = '<div class="msg_date">'+date+'</div>'
         cdiv = '<div class="row msg_row">'
-        pcolorRGB = app.env.countries[country]
+        pcolorRGB = app.env.countries[from]
         pcolor = @_rgbToHex(pcolorRGB.r, pcolorRGB.g, pcolorRGB.b)
         if isauthor
             cdiv += '<div class="col-md-2" style="padding: 0;">'
