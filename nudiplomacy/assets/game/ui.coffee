@@ -19,6 +19,7 @@ class UI
         @isSettingReady = false
         @_statsCharts = {}
         @_msgFirstCall = {}
+        @_msgChatUnread = {}
         return
 
     init: ->
@@ -258,6 +259,7 @@ class UI
             $('#msg_sel_global').removeClass('nulled')
             cid = $('#msg_conv_global').data('cid')
             @_initMessagesDims('global')
+            @_msgChatUnread['global'] = false
             app.net.getMessages(cid, 'global')
             if app.game.presstype is "all"
                 for key, val of app.env.countries
@@ -271,6 +273,7 @@ class UI
                         "border-width": "2px"
                     $("#msg_sel_"+key).removeClass('nulled')
                     @_initMessagesDims(key)
+                    @_msgChatUnread[key] = false
                     cid = $('#msg_conv_'+key).data('cid')
                     app.net.getMessages(cid, key)
             setInterval(->
@@ -1082,6 +1085,7 @@ class UI
             chat.scrollTop(chat.prop("scrollHeight"))
             @_msgFirstCall[country] = true
         if unread
+            @_msgChatUnread[country] = true
             chat.scrollTop($(unread).position().top)
             #: enlight messages and chat icons if unread
             $('#msg_sel_'+country).addClass "light"
@@ -1089,7 +1093,6 @@ class UI
         return
 
     setMessagesRead: ->
-        allRead = true
         $(".msg_list").each (i, list) ->
             if $($(list).parent()).hasClass("ninja")
                 return
@@ -1108,9 +1111,13 @@ class UI
             if chatRead
                 country = $($(list).parent()).attr("id").split("_")[-1..][0]
                 $('#msg_sel_'+country).removeClass 'light'
-            else
-                allRead = false
+                @_msgChatUnread[country] = false
             return
+        allRead = true
+        for k, r of @_msgChatUnread
+            if r
+                allRead = false
+                break
         if allRead
             $($('#msg_button').children()[0]).removeClass 'light'
         return
