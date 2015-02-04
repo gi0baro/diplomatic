@@ -306,6 +306,7 @@ body, html {
     width: 88%;
     height: 16%;
     bottom: 0px;
+    resize: none;
 }
 
 .msg_row {
@@ -351,6 +352,11 @@ body, html {
     padding: 4px;
     font-size: 13px;
     margin-top: 4px;
+}
+
+.msg_date {
+    font-size: 11px;
+    color: #888;
 }
 
 .dotunread {
