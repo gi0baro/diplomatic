@@ -18,6 +18,7 @@ class UI
         @isSaving = false
         @isSettingReady = false
         @_statsCharts = {}
+        @_msgFirstCall = {}
         return
 
     init: ->
@@ -267,7 +268,7 @@ class UI
                         "box-shadow": "0 0 6px "+color
                         "border-color": color
                         "border-style": "solid"
-                        "border-width": "1px"
+                        "border-width": "2px"
                     $("#msg_sel_"+key).removeClass('nulled')
                     @_initMessagesDims(key)
                     cid = $('#msg_conv_'+key).data('cid')
@@ -1074,8 +1075,12 @@ class UI
             if msg.classList.contains("unread")
                 unread = msg
                 break
+        if not @_msgFirstCall[country]
+            #: scroll to the end
+            chat.scrollTop(chat.prop("scrollHeight"))
+            @_msgFirstCall[country] = true
         if unread
-            chat.scrollTop($(unread).offset().top)
+            chat.scrollTop($(unread).position().top)
             #: enlight messages and chat icons if unread
             $('#msg_sel_'+country).addClass "light"
             $($('#msg_button').children()[0]).addClass "light"
@@ -1093,7 +1098,7 @@ class UI
             $(list).children().each (j, el) ->
                 if $(el).hasClass("unread")
                     chatRead = false
-                    if $(el).offset().top < size
+                    if $(el).position().top < size
                         $(el).removeClass("unread")
                         $(el).find(".dotunread").addClass("nulled")
                         app.net.setRead(cid, j, isglob)
