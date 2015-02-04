@@ -1121,6 +1121,7 @@ class UI
         chat = $($('#msg_conv_'+country).children()[1])
         # update next line with real date
         chat.append(@_renderMessage(country, text, app.game.country, 'now', false))
+        chat.scrollTop(chat.prop("scrollHeight"))
         $('#msg_text_'+country).val ''
         return
 
