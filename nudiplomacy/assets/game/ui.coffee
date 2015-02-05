@@ -1178,12 +1178,11 @@ class UI
 
     showBuildsTip: ->
         bn = app.game.canBuild()
-        builds = ([k,v] for k, v of app.game.phase('next').builds)
-        left = bn-builds.length
+        ts = if bn > 1 or bn < -1 then "troops" else "troop"
         if bn > 0
-            @showTip('You can build '+left+" out of "+bn+" troops", false)
+            @showTip('You can build '+bn+" "+ts, false)
         else if bn < 0
-            @showTip('You must disband '+left+" troops", false)
+            @showTip('You must disband '+bn+" "+ts, false)
         else
             @hideTip()
 
