@@ -1093,6 +1093,7 @@ class UI
         return
 
     setMessagesRead: ->
+        self = this
         $(".msg_list").each (i, list) ->
             if $($(list).parent()).hasClass("ninja")
                 return
@@ -1111,7 +1112,7 @@ class UI
             if chatRead
                 country = $($(list).parent()).attr("id").split("_")[-1..][0]
                 $('#msg_sel_'+country).removeClass 'light'
-                @_msgChatUnread[country] = false
+                self._msgChatUnread[country] = false
             return
         allRead = true
         for k, r of @_msgChatUnread

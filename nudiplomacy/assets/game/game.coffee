@@ -154,8 +154,8 @@ class Game
 
     canBuild: ->
         if not @phase('last').type is "builds"
-            return
-        ntroops = @phase('last').getCountryTroops()
+            return 0
+        ntroops = @phase('last').getCountryTroops().length
         nsupply = 0
         for i in app.env._supplylist
             if i in @phase('last').territories[@country]
