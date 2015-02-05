@@ -1149,6 +1149,9 @@ class UI
         div = '<div id="tip" class="tip">'+text+'</div>'
         setTimeout (->
             $('#main').append div
+            l = (app.ui.w-$('#tip').outerWidth())/2
+            $('#tip').css
+                left: l+"px"
             $('#tip').animate
                 opacity:'0.8'
                 300
@@ -1176,7 +1179,7 @@ class UI
     showBuildsTip: ->
         bn = app.game.canBuild()
         builds = ([k,v] for k, v of app.game.phase('next').builds)
-        left = bn-builds
+        left = bn-builds.length
         if bn > 0
             @showTip('You can build '+left+" out of "+bn+" troops", false)
         else if bn < 0

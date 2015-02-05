@@ -740,12 +740,11 @@ body, html {
 .tip {
     position: fixed;
     bottom: 100px;
-    left: 35%;
-    width: 30%;
+    left: 50%;
     text-align: center;
     background-color: #000;
     color: #fff;
-    padding: 20px;
+    padding: 5px;
     border-radius: 10px;
     opacity: 0;
 }
