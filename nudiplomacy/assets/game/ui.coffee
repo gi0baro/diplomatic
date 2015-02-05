@@ -20,6 +20,7 @@ class UI
         @_statsCharts = {}
         @_msgFirstCall = {}
         @_msgChatUnread = {}
+        @_tipTimer = null
         return
 
     init: ->
@@ -368,6 +369,9 @@ class UI
         else
             $('#phase_ind').append '<span><em>Next</em></span>'
         @setPhaseStats(id)
+        if id is app.game.phase('last').id or id is 'next'
+            if app.game.phase('last').type is 'builds'
+                @showBuildsTip()
         return
 
     setPhaseStats: (id) ->
@@ -859,11 +863,15 @@ class UI
         order_str = @_buildOrderString(id, data)
         $('#ord_next_'+id).html order_str
         #@autoSave()
+        if app.game.phase('last').type is "builds"
+            @showBuildsTip()
         return
 
     delOrder: (id) ->
         $('#ord_'+id).remove()
         #@autoSave()
+        if app.game.phase('last').type is "builds"
+            @showBuildsTip()
         return
 
     ordersClick: (id) ->
@@ -1136,5 +1144,44 @@ class UI
     win: ->
         $('#win').html "Game won by "+app.game.win
         return
+
+    showTip: (text, timeout=true) ->
+        div = '<div id="tip" class="tip">'+text+'</div>'
+        setTimeout (->
+            $('#main').append div
+            $('#tip').animate
+                opacity:'0.8'
+                300
+                'linear'
+        ), 400
+        if timeout
+            @_tipTimer = setTimeout (->
+                app.ui.hideTip()
+                return
+            ), 5400
+        return
+
+    hideTip: (fast=false) ->
+        div = $('#tip')
+        if div
+            div.animate
+                opacity:'0'
+                300
+                'linear'
+                ->
+                    div.remove()
+                    return
+        return
+
+    showBuildsTip: ->
+        bn = app.game.canBuild()
+        builds = ([k,v] for k, v of app.game.phase('next').builds)
+        left = bn-builds
+        if bn > 0
+            @showTip('You can build '+left+" out of "+bn+" troops", false)
+        else if bn < 0
+            @showTip('You must disband '+left+" troops", false)
+        else
+            @hideTip()
 
 window.UI = UI
