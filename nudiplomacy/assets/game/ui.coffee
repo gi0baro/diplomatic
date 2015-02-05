@@ -1085,7 +1085,7 @@ class UI
             chat.append(@_renderMessage(country, m.text, m.from, m.timeref, read))
         open_msgs = chat.children()
         for msg in open_msgs
-            if msg.classList.contains("unread")
+            if $(msg).hasClass("unread")
                 unread = msg
                 break
         if not @_msgFirstCall[country]
