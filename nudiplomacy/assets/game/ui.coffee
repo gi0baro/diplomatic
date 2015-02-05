@@ -852,7 +852,7 @@ class UI
                     else
                         order_str += ' south coast'
             else if data.type is "build"
-                order_str = "builds a new "+data.troop
+                order_str = app.env.names[id]+" builds a new "+data.troop
                 if data.mc is 0
                     order_str += " at north coast"
                 if data.mc is 1
