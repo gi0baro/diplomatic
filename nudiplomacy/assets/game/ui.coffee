@@ -851,10 +851,12 @@ class UI
                         order_str += ' north coast'
                     else
                         order_str += ' south coast'
-            else if data.type is "build_army"
-                order_str = "build a new army in " + app.env.names[id]
-            else if data.type is "build_fleet"
-                order_str = "build a new fleet in " + app.env.names[id]
+            else if data.type is "build"
+                order_str = "builds a new "+data.troop
+                if data.mc is 0
+                    order_str += " at north coast"
+                if data.mc is 1
+                    order_str += " at south coast"
             else
                 order_str += ' from '+app.env.names[data.from]+' to '+app.env.names[data.to]
         return order_str
