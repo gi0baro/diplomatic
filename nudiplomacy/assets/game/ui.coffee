@@ -285,7 +285,7 @@ class UI
                     app.net.getMessages(cid, key)
             setInterval(->
                 app.ui.setMessagesRead()
-            , 10000)
+            , 5000)
             #: refresh chats every 30s
             setInterval(->
                 cid = $('#msg_conv_global').data('cid')
