@@ -5,6 +5,7 @@
     $(document).ready(function() {
         app.net.route("map", "{{=url('api.map_get', game.map)}}");
         app.net.route("game", "{{=url('api.game_get', game.id)}}");
+        app.net.route("status", "{{=url('api.game_status', game.id)}}");
         app.net.route("orders", "{{=url('api.orders_get', game.id)}}");
         app.net.route("saveorders", "{{=url('api.orders_save', game.id)}}");
         app.net.route("ready", "{{=url('api.orders_ready', game.id, {'set': '1'})}}");

@@ -48,6 +48,12 @@ def game_get(gid):
     return rv
 
 
+@api.expose("/game/<int:gid>/status")
+def game_status(gid):
+    game = db(db.Game.id == gid).select(db.Game.status, db.Game.phases)
+    return dict(status=game.status, phase=len(game.phases)-1)
+
+
 @api.expose("/join/<int:gid>")
 @requires(auth.is_logged_in, access_error)
 def game_join(gid):

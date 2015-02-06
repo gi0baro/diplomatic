@@ -21,6 +21,12 @@ class UI
         @_msgFirstCall = {}
         @_msgChatUnread = {}
         @_tipTimer = null
+        @_statusTimer = null
+        @_nextTimer = null
+        @_statusTimer = setInterval (->
+            app.net.getGameStatus()
+            return
+        ), 60000
         return
 
     init: ->
@@ -1085,11 +1091,14 @@ class UI
             else
                 read = m.read
             chat.append(@_renderMessage(country, m.text, m.from, m.timeref, read))
+        unread = false
         open_msgs = chat.children()
         for msg in open_msgs
             if $(msg).hasClass("unread")
                 unread = msg
                 break
+        console.log(unread)
+        console.log($(unread).position().top)
         if not @_msgFirstCall[country]
             #: scroll to the end
             chat.scrollTop(chat.prop("scrollHeight"))
@@ -1147,7 +1156,8 @@ class UI
         $('#win').html "Game won by "+app.game.win
         return
 
-    showTip: (text, timeout=true) ->
+    showTip: (text, timeout=5000) ->
+        @hideTip()
         div = '<div id="tip" class="tip">'+text+'</div>'
         setTimeout (->
             $('#main').append div
@@ -1163,10 +1173,10 @@ class UI
             @_tipTimer = setTimeout (->
                 app.ui.hideTip()
                 return
-            ), 5400
+            ), timeout*1000+400
         return
 
-    hideTip: (fast=false) ->
+    hideTip: ->
         div = $('#tip')
         if div
             div.animate
@@ -1182,10 +1192,33 @@ class UI
         bn = app.game.canBuild()
         ts = if bn > 1 or bn < -1 then "troops" else "troop"
         if bn > 0
-            @showTip('You can build '+bn+" "+ts, false)
+            @showTip('You can build '+bn+" "+ts, 8)
         else if bn < 0
-            @showTip('You must disband '+bn+" "+ts, false)
+            @showTip('You must disband '+bn+" "+ts, 8)
         else
             @hideTip()
+
+    gotGameStatus: (status, phase) ->
+        if status is "processing"
+            @showTip("The game is being processed, keep your finger crossed..", false)
+            # stop check timeout
+            clearInterval(@_statusTimer)
+            # start processing check
+            @_nextTimer = setInterval (->
+                app.net.getGameStatus()
+            ), 5000
+        else
+            if phase isnt app.game.phase('last').id
+                # reload game
+                console.log('changed phase')
+                @showTip("Game has changed, going to next phase in 3 seconds..")
+                setTimeout (->
+                    app.ui.restart()
+                ), 3400
+        return
+
+    restart: ->
+        location.reload()
+        return
 
 window.UI = UI

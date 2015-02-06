@@ -27,6 +27,14 @@ class Network
                 return
         return rv
 
+    getGameStatus: ->
+        $.ajax @urls['status'],
+            type: 'GET'
+            success: (data) ->
+                app.ui.gotGameStatus(data.status, data.phase)
+                return
+        return
+
     getOrders: ->
         rv = {}
         $.ajax @urls['orders'],
