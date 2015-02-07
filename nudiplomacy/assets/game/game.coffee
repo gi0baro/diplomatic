@@ -45,14 +45,15 @@ class Game
             @win = data.phases[@_nphases-1].winner
         return
 
-    phase: (id='last') ->
+    phase: (id='current') ->
         #if id is 'next' or (id is 'last' and @_currentPhase is 'next')
         if id is 'next'
             return @_nextPhase
-        if id isnt 'last'
+        if id is 'last'
+            return @_phases[@_nphases-1]
+        if id isnt 'current'
             return @_phases[id+'']
-        #return @_phases[@_currentPhase+'']
-        return @_phases[@_nphases-1]
+        return @_phases[@_currentPhase+'']
 
     isLastPhase: ->
         return @_currentPhase is @_nphases-1
