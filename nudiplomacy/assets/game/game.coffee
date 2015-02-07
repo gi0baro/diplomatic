@@ -46,11 +46,13 @@ class Game
         return
 
     phase: (id='last') ->
-        if id is 'next' or (id is 'last' and @_currentPhase is 'next')
+        #if id is 'next' or (id is 'last' and @_currentPhase is 'next')
+        if id is 'next'
             return @_nextPhase
         if id isnt 'last'
             return @_phases[id+'']
-        return @_phases[@_currentPhase+'']
+        #return @_phases[@_currentPhase+'']
+        return @_phases[@_nphases-1]
 
     isLastPhase: ->
         return @_currentPhase is @_nphases-1
