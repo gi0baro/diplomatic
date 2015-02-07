@@ -1098,12 +1098,12 @@ class UI
                 unread = msg
                 break
         console.log(unread)
-        console.log($(unread).position().top)
         if not @_msgFirstCall[country]
             #: scroll to the end
             chat.scrollTop(chat.prop("scrollHeight"))
             @_msgFirstCall[country] = true
         if unread
+            console.log($(unread).position().top)
             @_msgChatUnread[country] = true
             chat.scrollTop($(unread).position().top)
             #: enlight messages and chat icons if unread

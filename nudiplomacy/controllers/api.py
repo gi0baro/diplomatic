@@ -50,7 +50,7 @@ def game_get(gid):
 
 @api.expose("/game/<int:gid>/status")
 def game_status(gid):
-    game = db(db.Game.id == gid).select(db.Game.status, db.Game.phases)
+    game = db(db.Game.id == gid).select(db.Game.status, db.Game.phases).first()
     return dict(status=game.status, phase=len(game.phases)-1)
 
 
