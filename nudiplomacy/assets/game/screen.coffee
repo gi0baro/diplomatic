@@ -457,6 +457,7 @@ class Screen
                     #if f_id in (key for key of app.env.troops[app.play.country])
                     if f_id in country_troops
                         #mc_pos = mc_move_data[f_id]
+                        mc_pos = mc_pos_data[id]
                         p2 = new Point2D(app.env.mcoasts_oxy[t_id][mc_pos].x, app.env.mcoasts_oxy[t_id][mc_pos].y)
                     else
                         p2 = new Point2D(app.env.oxy[t_id].x, app.env.oxy[t_id].y)
