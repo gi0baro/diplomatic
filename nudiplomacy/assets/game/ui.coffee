@@ -1192,9 +1192,9 @@ class UI
         bn = app.game.canBuild()
         ts = if bn > 1 or bn < -1 then "troops" else "troop"
         if bn > 0
-            @showTip('You can build '+bn+" "+ts, 8)
+            @showTip('You can build '+bn+" "+ts, 5)
         else if bn < 0
-            @showTip('You must disband '+bn+" "+ts, 8)
+            @showTip('You must disband '+bn+" "+ts, 5)
         else
             @hideTip()
 
@@ -1204,7 +1204,7 @@ class UI
             # stop check timeout
             clearInterval(@_statusTimer)
             # start processing check
-            @_nextTimer = setInterval (->
+            setTimeout (->
                 app.net.getGameStatus()
             ), 5000
         else
