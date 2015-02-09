@@ -383,7 +383,7 @@ class GameProcessor(Processor):
             supplyc = [i for i in self.map["supply"]
                        if i in self._terrs[country]]
             if len(supplyc) >= self.game["scstowin"]:
-                gotSCs.append(country, len(supplyc))
+                gotSCs.append((country, len(supplyc)))
         if gotSCs:
             higher = max(gotSCs, key=lambda el: el[1])
             maxCount = 0
