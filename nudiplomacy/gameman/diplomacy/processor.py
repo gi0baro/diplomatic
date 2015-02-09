@@ -387,17 +387,15 @@ class GameProcessor(Processor):
         if gotSCs:
             higher = max(gotSCs, key=lambda el: el[1])
             maxCount = 0
-            winner = None
             for country, scs in gotSCs:
-                if scs == higher:
+                if scs == higher[1]:
                     maxCount += 1
-                    winner = country
             #: if we have a draw, we must continue
             if maxCount == 1:
                 self.end = True
-                self.winner = winner
+                self.winner = higher[0]
                 self.phase_new['countries'] = []
-                self.phase_new['winner'] = winner
+                self.phase_new['winner'] = higher[0]
                 self.phase_new['type'] = 'end'
 
     def _buildNewPhase(self):
