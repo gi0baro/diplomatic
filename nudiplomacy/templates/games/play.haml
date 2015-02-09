@@ -20,7 +20,7 @@
         }
     });
 
-- ocountries = [c for c in game.countries.iterkeys() if c != game.playercountry()]
+- ocountries = [el['country'] for el in game.countries if el['country'] != game.playercountry()]
 .container.container_ce
     %section#main.main.row
         #left_wrapper.nulled
@@ -112,7 +112,8 @@
                     #stats_c
             #stats_content
                 .row{style: "margin: 0;"}
-                    - for country in game.countries.iterkeys():
+                    - for el in game.countries
+                        - country = el['country']
                         %div{class: "col-md-{{=statscol}}"}
                             .stats_member{id: "stats_{{=country}}"}
                                 %h4{id: "stats_{{=country}}_name"}

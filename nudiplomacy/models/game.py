@@ -7,6 +7,7 @@ from weppy.dal import Field, Model, before_insert, after_insert, modelmethod, \
 from weppy.validators import inDb, isntEmpty, inSet, isIntInRange
 from nudiplomacy import app
 from nudiplomacy.helpers.widgets import games_map
+from nudiplomacy.helpers.mongo import longToObjid
 
 _repr_lang = {'en': "English", 'it': "Italiano"}
 _repr_pot = {'wta': T("Winner takes all"),
@@ -48,7 +49,8 @@ class Game(Model):
         Field("targetsc", "integer", default=0),
         #Field("skipprocess", "json"),
         Field("status", default="pregame"),
-        Field("active", "boolean", default=False),
+        #Field("active", "boolean", default=False),
+        Field("open", "boolean", default=True),
         Field("ready", "boolean", default=False),
         Field("created", "datetime", default=lambda: request.now),
         Field("processed", "datetime", default=lambda: request.now),
@@ -123,19 +125,23 @@ class Game(Model):
         uid = session.auth.user.id if session.auth else None
         if not uid:
             return None
-        from nudiplomacy.helpers.mongo import objidToLong
-        for k, v in row.games.countries.items():
-            if objidToLong(v) == uid:
-                return k
+        #from nudiplomacy.helpers.mongo import objidToLong
+        poid = longToObjid(uid)
+        #for k, v in row.games.countries.items():
+        #    if objidToLong(v) == uid:
+        #        return k
+        for el in row.games.countries:
+            if el['player'] == poid:
+                return el['country']
         return None
 
     @fieldmethod('playersin')
     def get_players_in(self, row):
-        n = 0
-        for k, v in row.games.countries.items():
-            if v is not None:
-                n += 1
-        return n
+        #n = 0
+        #for k, v in row.games.countries.items():
+        #    if v is not None:
+        #        n += 1
+        return len(row.games.countries)
 
     @fieldmethod('isjoinable')
     def is_joinable(self, row):
@@ -149,15 +155,18 @@ class Game(Model):
         ce = json.loads(fields['countriesenabled'])
         random.shuffle(ce)
         countrylist = ce[:fields['nplayers']]
-        fields['countries'] = {}
-        for name in countrylist:
-            fields['countries'][name] = None
+        #fields['countries'] = {}
+        #for name in countrylist:
+        #    fields['countries'][name] = None
+        fields['countries'] = []
         if fields['countriesassign'] == "random":
-            from nudiplomacy.helpers.mongo import longToObjid
             chosen = countrylist[0]
-            fields['countries'][chosen] = longToObjid(session.auth.user.id)
+            #fields['countries'][chosen] = longToObjid(session.auth.user.id)
+            fields['countries'].append({
+                'country': chosen,
+                'player': longToObjid(session.auth.user.id)})
         # init phases
-        fields['phases'] = [{"type": "pre-game"}]
+        fields['phases'] = [{"type": "pre-game", "countries": countrylist}]
         #: set next time
         fields['next'] = request.now + timedelta(minutes=fields['phasetime'])
 
@@ -165,6 +174,16 @@ class Game(Model):
     def add_global_chat(self, fields, gid):
         if fields['presstype'] != "none":
             self.db.Chat.insert(game=gid, users='["all"]')
+
+
+class Player(Model):
+    tablename = "players"
+
+    fields = [
+        Field("user", "reference auth_user"),
+        Field("game", "reference games"),
+        Field("country", "string")
+    ]
 
 
 class Orders(Model):

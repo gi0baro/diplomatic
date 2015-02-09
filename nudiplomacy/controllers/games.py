@@ -61,12 +61,13 @@ def play(gid):
             chats['global'] = r['id']
             continue
     if playercountry:
-        for country, player in game.countries.iteritems():
-            if country == playercountry:
+        #for country, player in game.countries.iteritems():
+        for el in game.countries:
+            if el['country'] == playercountry:
                 continue
             for r in chatsr:
-                if player in r['users']:
-                    chats[country] = r['id']
+                if el['player'] in r['users']:
+                    chats[el['country']] = r['id']
                     break
     #: ui stuffs
     timeleft = int((game.next-request.now).total_seconds())

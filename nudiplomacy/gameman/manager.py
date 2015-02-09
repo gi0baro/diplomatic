@@ -76,11 +76,11 @@ def open_game(gid):
     db._adapter.reconnect()
     game = db.Game(id=gid)
     #: init orders
-    for country, player in game.countries.iteritems():
+    for el in game.countries:
         orders = {}
         if game.buildonstart:
             for ttype in ["armies", "fleets"]:
-                for t in game.map.init["troops"][country][ttype]:
+                for t in game.map.init["troops"][el['country']][ttype]:
                     if ttype == "armies":
                         orders[t] = {"type": "build", "troop": "army"}
                     elif ttype == "fleets":
@@ -89,13 +89,14 @@ def open_game(gid):
                             orders[t]["mc"] = game.map.init["mc"][t]
         else:
             for ttype in ["armies", "fleets"]:
-                for t in game.map.init["troops"][country][ttype]:
+                for t in game.map.init["troops"][el['country']][ttype]:
                     orders[t] = {"type": "hold"}
-        db.Orders.insert(game=game.id, player=objidToLong(player), data=orders)
+        db.Orders.insert(
+            game=game.id, player=objidToLong(el['player']), data=orders)
     #: init chats
     presstype = game.presstype
     if presstype == "all":
-        plist = game.countries.values()
+        plist = [el['player'] for el in game.countries]
         for i in range(0, len(plist)-1):
             for j in range(i+1, len(plist)):
                 #db.Chat.insert(game=gid, users=[plist[i], plist[j]])
@@ -106,20 +107,20 @@ def open_game(gid):
     #: init game
     orders = {}
     territories = {}
-    for k in game.countries.keys():
+    countriesk = [el['country'] for el in game.countries]
+    for k in countriesk:
         orders[k] = {}
         territories[k] = game.map.init['territories'][k]
-    phasecountries = game.countries.keys()
     nphase = {
         "territories": territories,
         "mc": {},
         "dislodged": {},
         "orders": {},
-        "countries": phasecountries
+        "countries": countriesk
     }
     if game.buildonstart:
         troops = {}
-        for k in game.countries.keys():
+        for k in countriesk:
             troops[k] = {"armies": [], "fleets": []}
         nphase.update(
             year=game.map.year-1,
@@ -128,7 +129,7 @@ def open_game(gid):
         )
     else:
         troops = {}
-        for k in game.countries.keys():
+        for k in countriesk:
             troops[k] = game.map.init["troops"][k]
         nphase.update(
             year=game.map.year,
@@ -166,8 +167,9 @@ def process_game(gid):
     orders = {}
     for row in ordersrows:
         porders[row.player] = row.data
-    for k in game.phases[-1]['countries']:
-        orders[k] = porders[objidToLong(game.countries[k])]
+    for el in game.countries:
+        if el['country'] in game.phases[-1]['countries']:
+            orders[el['country']] = porders[objidToLong(el['player'])]
     app.log.info(orders)
     gamedata['phases'][-1]['orders'] = orders
     #: process the game
@@ -193,9 +195,9 @@ def process_game(gid):
         nextrun = datetime.utcnow()+timedelta(minutes=game.phasetime)
         #: store new empty orders
         orders_new = dict(proc.phase_new['orders'])
-        for k, v in game.countries.items():
-            co = orders_new.get(k, {})
-            pid = objidToLong(v)
+        for el in game.countries:
+            co = orders_new.get(el['country'], {})
+            pid = objidToLong(el['player'])
             db((db.Orders.game == gid) & (db.Orders.player == pid)).update(
                 ready=False, data=co)
     proc.phase_new['orders'] = {}
@@ -211,7 +213,11 @@ def process_game(gid):
         #: init chats
         db(db.Chat.game == gid).update(open=False)
         #: credits and points
-        winner = objidToLong(game.countries[proc.winner])
+        for el in game.countries:
+            if el['country'] == proc.winner:
+                winner = el['player']
+                break
+        #winner = objidToLong(game.countries[proc.winner])
         if game.pottype == "wta":
             won = game.bet * game.nplayers
             db(db.Userdata.user == winner).update(
