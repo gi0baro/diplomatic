@@ -2,4 +2,71 @@
 
 .container
     .row
-        = form
+        %h1.center
+            = T("Create a new game")
+        .row.m-15
+        %form.form-horizontal{enctype: "multipart/form-data", method: 'POST'}
+            %fieldset
+                - for field in ['map', 'name', 'lang', 'nplayers', 'bet', 'pottype', 'phasetime', 'buildew', 'buildonstart', 'anonymous', 'presstype']
+                    .form-group
+                        %label.col-sm-2.control-label
+                            = form.custom.label[field]
+                        .col-sm-10
+                            = form.custom.widget[field]
+                            - if form.custom.comment[field]
+                                %p.help-block
+                                    = form.custom.comment[field]
+                .form-group
+                    %label.col-sm-2.control-label
+                        = form.custom.label.countriesassign
+                    .col-sm-10
+                        = form.custom.widget.countriesassign
+                        #games_countries_c.row.m-15.nulled
+                            .form-group
+                                %label.col-sm-4.control-label
+                                    = T("Pick your country:")
+                                .col-sm-8
+                                    %select#games_countries.form-control
+                %textarea#games_countries_hide{name: "countries", style: "display: none;"}
+                .form-group
+                    %label.col-sm-2.control-label
+                        = form.custom.label.countriesenabled
+                    .col-sm-10
+                        = form.custom.widget.countriesenabled
+                        %p.help-block
+                            = form.custom.comment.countriesenabled
+                .form-group
+                    %label.col-sm-2.control-label
+                        = form.custom.label.access
+                    .col-sm-10
+                        = form.custom.widget.access
+                        #games_psw_c.row.m-15.nulled
+                            .form-group
+                                %label.col-sm-4.control-label
+                                    = T("Enter the password:")
+                                .col-sm-8
+                                    %input#games_psw_hide.form-control{type: 'password', name: 'password'}
+                .col-md-6.col-md-offset-3
+                    .row.m-15{style: "text-align: center;"}
+                        %h3{style: "color: #888"}
+                            %i.fa.fa-cog
+                            = T("Advanced settings")
+                        .btn.btn-default{onclick: "act._gameFormToggleAdv();"}
+                            %span#advanced-btn Show them
+                            %i#advanced-btn-i.fa.fa-angle-down
+                #advancedblock.col-md-12.nulled
+                    .box.border
+                        .row.m-15
+                            - for field in ['jointime', 'starton', 'targetsc', 'maxturns']
+                                .form-group
+                                    %label.col-sm-2.control-label
+                                        = form.custom.label[field]
+                                    .col-sm-10
+                                        = form.custom.widget[field]
+                                        - if form.custom.comment[field]
+                                            %p.help-block
+                                                = form.custom.comment[field]
+                .form-group
+                    .col-sm-10.col-sm-offset-2
+                        %input.btn.btn-primary{type: 'submit', value: 'Create'}
+                %input{name: '_csrf_token', type: 'hidden', value: '{{=form.formkey}}'}

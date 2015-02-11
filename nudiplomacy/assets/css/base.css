@@ -76,6 +76,21 @@
 }
 
 .game-item {
-    width: 33.3%;
+    /*width: 33.3%;*/
+    width: 100%;
     text-align: center;
+}
+
+.slider.slider-horizontal {
+    width: 100%;
+}
+
+.slider-selection {
+    background-image: linear-gradient(to bottom, #89cdef 0%, #81bfde 100%)
+}
+
+.flag {
+    position: absolute;
+    top: 18px;
+    left: 34px;
 }

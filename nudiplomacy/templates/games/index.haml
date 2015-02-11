@@ -1,54 +1,27 @@
 - extend 'layout.haml'
 
+:javascript
+    var ulist = '{{=url("games.query")}}';
+
 .container
     .row
-        .js-masonry
-            - for game in games
-                .card.game-item
-                    %h5.grey-light
-                        = game.map.name
-                    %h3
-                        = game.name
-                    .row
-                        .col-md-4
-                            %h6.grey-light
-                                = T("Players no.")
-                            = str(game.playersin())+"/"+str(game.nplayers)
-                        .col-md-4
-                            %h6.grey-light
-                                = T("Bet amount")
-                            = game.bet
-                        .col-md-4
-                            %h6.grey-light
-                                = T("Phase duration")
-                            = pretty_gamephasetime(game.phasetime)
-                    - if game.buildew
-                        .row
-                            .col-md-12
-                                %h6
-                                    %i.fa.fa-globe.fa-fw
-                                    = T("This is a build-everywhere game")
-                    - if game.buildonstart
-                        .row
-                            .col-md-12
-                                %h6
-                                    %i.fa.fa-truck.fa-fw
-                                    = T("This game will start with a build turn")
-                    %hr.divider
-                    .row
-                        - if not game.playercountry()
-                            .col-md-6
-                                %a{href: '{{=url("games.play", game.id)}}'}
-                                    .btn.btn-default
-                                        = T("Watch")
-                            .col-md-6
-                                .btn.btn-primary{onclick: 'javascript: act.joinGame("{{=game.id}}", "{{=game.bet}}");'}
-                                    = T("Join")
-                        - else
-                            .col-md-12
-                                %a{href: '{{=url("games.play", game.id)}}'}
-                                    .btn.btn-success
-                                        = T("Enter")
+        .col-sm-12{align: "center"}
+            %h1#title
+                = T("Discover open games") if show == "open" else T("Discover games")
+            %h4.pull-left
+                - if show == "open"
+                    %a.btn.btn-default.btn-md{href: '{{=url("games.all")}}'}
+                        Show all games
+                - else
+                    %a.btn.btn-default.btn-md{href: '{{=url("games.index")}}'}
+                        Show open games
+                %a.btn.btn-success.btn-md{href: '{{=url("games.new")}}'}
+                    = T("Create a new game")
+    %br
+    .row
+        #games.js-masonry
+            :javascript
+                ajax('{{=url("games.query", show)}}', [], 'games');
 
 #joinframe.container.nulled.overframe
     .backframe

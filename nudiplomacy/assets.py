@@ -1,9 +1,12 @@
 from nudiplomacy import app
 
-css_base = app.ext.Assets.css(['css/base.css'], output='base.css').minify()
+css_base = app.ext.Assets.css([
+    'helpers/bootstrap-slider.min.css',
+    'css/base.css'], output='base.css').minify()
 
 js_base = app.ext.Assets.js([
     'helpers/masonry.min.js',
+    'helpers/bootstrap-slider.min.js',
     'base/api.coffee',
     'base/act.coffee',
     'base/counter.coffee'], output="base.js").minify()

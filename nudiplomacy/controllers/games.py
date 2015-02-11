@@ -11,7 +11,25 @@ games.common_helpers = [BaseContext()]
 
 @games.expose("/")
 def index():
-    gamelist = db(db.Game.id > 0).select(orderby=~db.Game.created)
+    return dict(show="open")
+
+
+@games.expose(template="index.haml")
+def all():
+    return dict(show="all")
+
+
+@games.expose("/aj/list/<str:mode>")
+def query(mode):
+    if mode not in ["all", "open"]:
+        return dict(games=[])
+    step = request.vars.step or 0
+    limit = (step, step+20)
+    if mode == "open":
+        q = (db.Game.open == True)
+    else:
+        q = (db.Game.id > 0)
+    gamelist = db(q).select(orderby=~db.Game.created, limitby=limit)
     return dict(games=gamelist)
 
 
@@ -19,22 +37,40 @@ def index():
 @requires(auth.is_logged_in, url("main.account", "login"))
 def new():
     def validate(form):
+        #: variant check
         mapdata = db.Map(id=form.vars.map)
         if not mapdata:
             form.errors.map = "Invalid map"
             return
+        #: max players check
         maxplayers = len(mapdata.countries)
         if form.vars.nplayers < mapdata.minplayers or \
                 form.vars.nplayers > maxplayers:
             form.errors.nplayers = "Invalid number of players"
             return
-        if not form.vars.countriesenabled:
-            import json
-            form.vars.countriesenabled = json.dumps(
-                mapdata.countries.keys())
+        #: bet check
+        playerdata = db.UserData(user=auth.user.id)
+        if playerdata.credits < form.vars.bet:
+            form.errors.bet = "You have not enough credits to set this bet"
+            return
+        if form.vars.bet > 1 and form.vars.nplayers == 2:
+            form.errors.bet = "Maximum bet for 2 players is 1 credit"
+        #: countries enabled check
+        if not form.vars.countriesenabled or \
+                len(form.vars.countriesenabled) < form.vars.nplayers:
+            form.vars.countriesenabled = mapdata.countries.keys()
+        #: assign check
         if form.vars.countriesassign == "choose":
             # validate user chosen
-            pass
+            if form.vars.countries.get('me') not in form.vars.countriesenabled:
+                form.vars.countriesassign.error = "When players have to " + \
+                    "choose their countries, you must too."
+                return
+        #: access check
+        if form.vars.access == "password":
+            if not form.vars.password or len(form.vars.password) < 4:
+                form.vars.access.password = "When you protect your game " + \
+                    "with a password, it must be at least of 4 characters"
 
     form = Game.form(onvalidation=validate)
     return dict(form=form)

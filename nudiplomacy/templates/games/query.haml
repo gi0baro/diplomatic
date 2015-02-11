@@ -1,0 +1,76 @@
+- for game in games
+    ---
+        if game.bet >= 10 and game.bet < 30:
+            betclass = "alert alert-info"
+        elif game.bet >= 30 and game.bet < 50:
+            betclass = "alert alert-success"
+        elif game.bet >= 50 and game.bet < 85:
+            betclass = "alert alert-warning"
+        elif game.bet >= 85:
+            betclass = "alert alert-danger"
+        else:
+            betclass = ""
+        pass
+    .col-md-4
+        .card.game-item
+            %h5.grey-light
+                = game.map.name
+            %h3
+                = game.name
+            .row
+                .col-md-4
+                    %h5.grey-light
+                        = T("Players no.")
+                    = str(game.playersin())+"/"+str(game.nplayers)
+                .col-md-4{class: '{{=betclass}}'}
+                    %h5.grey-light
+                        = T("Bet amount")
+                    = game.bet
+                .col-md-4
+                    %h5.grey-light
+                        = T("Phase duration")
+                    = pretty_gamephasetime(game.phasetime)
+            - if game.buildew
+                .row
+                    .col-md-12
+                        %h6
+                            %i.fa.fa-globe.fa-fw
+                            = T("build-everywhere game")
+            - if game.buildonstart
+                .row
+                    .col-md-12
+                        %h6
+                            %i.fa.fa-truck.fa-fw
+                            = T("starts with a build turn")
+            .row
+                .col-md-12
+                    - if game.status == "pregame"
+                        %h5
+                            = T("Time left to join")
+                        - timer = game.timetonext()
+                        %h4{id: 'timer_{{=game.id}}'}
+                        :javascript
+                            counters.add('timer_{{=game.id}}', {{=timer.s}}, {{=timer.m}}, {{=timer.h}}, {{=timer.d}});
+                    - else
+                        %h5
+                            - if game.phases[-1].get('season') is not None
+                                = game.phases[-1]['season']+" "+str(game.phases[-1]['year'])
+                            - else
+                                = game.phases[-1]['type']+" "+str(game.phases[-1]['year'])
+            %hr.divider
+            .row
+                - if not game.playercountry()
+                    .col-md-6
+                        %a{href: '{{=url("games.play", game.id)}}'}
+                            .btn.btn-default
+                                = T("Watch")
+                    - if game.open
+                        .col-md-6
+                            .btn.btn-primary{onclick: 'javascript: act.joinGame("{{=game.id}}", "{{=game.bet}}");'}
+                                = T("Join")
+                - else
+                    .col-md-12
+                        %a{href: '{{=url("games.play", game.id)}}'}
+                            .btn.btn-success
+                                = T("Enter")
+            %img.flag{src: '{{=url("static", "images/flags/"+game.lang+".png")}}'}
