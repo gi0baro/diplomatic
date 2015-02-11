@@ -6,7 +6,8 @@ from weppy.dal import Field, Model, before_insert, after_insert, modelmethod, \
     fieldmethod
 from weppy.validators import inDb, isntEmpty, inSet, isIntInRange
 from nudiplomacy import app
-from nudiplomacy.helpers.widgets import games_map
+from nudiplomacy.helpers.widgets import games_map, games_nplayers, games_ce, \
+    games_phasetime, games_jointime, games_bet
 from nudiplomacy.helpers.mongo import longToObjid
 
 _repr_lang = {'en': "English", 'it': "Italiano"}
@@ -49,8 +50,9 @@ class Game(Model):
         Field("targetsc", "integer", default=0),
         #Field("skipprocess", "json"),
         Field("status", default="pregame"),
-        #Field("active", "boolean", default=False),
+        Field("active", "boolean", default=False),
         Field("open", "boolean", default=True),
+        Field("slots", "json", default="[]"),
         Field("ready", "boolean", default=False),
         Field("created", "datetime", default=lambda: request.now),
         Field("processed", "datetime", default=lambda: request.now),
@@ -62,9 +64,10 @@ class Game(Model):
     validators = {
         "name": isntEmpty(),
         "lang": inSet(app.config.langs, zero=None),
+        "bet": isIntInRange(1, 150),
         "pottype": inSet(["wta", "ppsc"], zero=None),
-        "phasetime": isIntInRange(5, 60*24*10),
-        "jointime": isIntInRange(5, 60*24*10),
+        "phasetime": isIntInRange(10, 60*24*10),
+        "jointime": isIntInRange(10, 60*24*10),
         "starton": inSet(["asap", "ontime"], zero=None),
         "presstype": inSet(["all", "globals", "none"], zero=None),
         "countriesassign": inSet(["random", "choose"], zero=None),
@@ -75,14 +78,13 @@ class Game(Model):
         "owner": (False, False),
         "status": (False, False),
         "active": (False, False),
+        "open": (False, False),
+        "slots": (False, False),
         "created": (False, False),
         "processed": (False, False),
         "next": (False, False),
         "ready": (False, False),
-        #"countries": (False, False),
         "phases": (False, False),
-        # temp disabled
-        "targetsc": (False, False)
     }
 
     labels = {
@@ -105,16 +107,31 @@ class Game(Model):
         "targetsc": T("Target SCs to win")
     }
 
+    comments = {
+        "maxturns": T("Limit how many turns are played."),
+        "countriesenabled": T("You can select which countries will be " +
+                              "available for assignment or can be chosen by " +
+                              "players. Remind that if you selected the " +
+                              "maximum no. of players, this setting has no " +
+                              "effect, all the countries will be available.")
+    }
+
     representation = {
         "lang": lambda value: _repr_lang[value],
         "pottype": lambda value: _repr_pot[value],
         "starton": lambda value: _repr_start[value],
         "presstype": lambda value: _repr_press[value],
-        "countriesassign": lambda value: _repr_assign[value]
+        "countriesassign": lambda value: _repr_assign[value],
+        "access": lambda value: _repr_access[value]
     }
 
     widgets = {
-        "map": lambda field, value: games_map(field, value)
+        "map": lambda field, value: games_map(field, value),
+        "nplayers": lambda field, value: games_nplayers(field, value),
+        "bet": lambda field, value: games_bet(field, value),
+        "countriesenabled": lambda field, value: games_ce(field, value),
+        "phasetime": lambda field, value: games_phasetime(field, value),
+        "jointime": lambda field, value: games_jointime(field, value)
     }
 
     def setup(self):
@@ -149,26 +166,51 @@ class Game(Model):
             return True
         return False
 
+    @fieldmethod('timetonext')
+    def get_next_timer(self, row):
+        timeleft = int((row.games.next-request.now).total_seconds())
+        timerdata = sdict(d=0, h=0, m=0, s=0)
+        if timeleft > 0:
+            timerdata.d = timeleft/(60*60*24)
+            timerdata.h = (timeleft/(60*60)) % 24
+            timerdata.m = (timeleft/60) % 60
+            timerdata.s = timeleft % 60
+        return timerdata
+
     @before_insert
     def setup_game(self, fields):
         # build countries based on selected preferences
-        ce = json.loads(fields['countriesenabled'])
+        #ce = json.loads(fields['countriesenabled'])
+        ce = fields['countriesenabled']
+        fields['countriesenabled'] = json.dumps(fields['countriesenabled'])
         random.shuffle(ce)
         countrylist = ce[:fields['nplayers']]
         #fields['countries'] = {}
         #for name in countrylist:
         #    fields['countries'][name] = None
-        fields['countries'] = []
         if fields['countriesassign'] == "random":
             chosen = countrylist[0]
-            #fields['countries'][chosen] = longToObjid(session.auth.user.id)
-            fields['countries'].append({
-                'country': chosen,
-                'player': longToObjid(session.auth.user.id)})
+        else:
+            chosen = fields['countries']['me']
+        fields['countries'] = []
+        #fields['countries'][chosen] = longToObjid(session.auth.user.id)
+        fields['countries'].append({
+            'country': chosen,
+            'player': longToObjid(session.auth.user.id)})
+        slots = list(countrylist)
+        slots.remove(chosen)
+        fields['slots'] = slots
         # init phases
-        fields['phases'] = [{"type": "pre-game", "countries": countrylist}]
+        fields['phases'] = json.dumps(
+            [{"type": "pre-game", "countries": countrylist}])
         #: set next time
         fields['next'] = request.now + timedelta(minutes=fields['phasetime'])
+
+    @after_insert
+    def get_owner_credits(self, fields, gid):
+        self.db.UserData(user=fields['owner']).update(
+            credits=self.db.Userdata.credits-fields['bet']
+        )
 
     @after_insert
     def add_global_chat(self, fields, gid):

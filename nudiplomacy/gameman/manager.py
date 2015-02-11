@@ -19,7 +19,6 @@ def manage():
         game.update_record(status="processing", ready=False)
         # enqueue
         queue.save(open_game, 'open', gid=game.id)
-    db.commit()
     # start ready pregames
     toStart = db(
         (db.Game.status == "pregame") & (db.Game.ready == True) &
@@ -30,13 +29,14 @@ def manage():
         game.update_record(status="processing", ready=False)
         # enqueue
         queue.save(open_game, 'open', gid=game.id)
-    db.commit()
     # cancel expired pregames
-    db(
+    toCancel = db(
         (db.Game.status == "pregame") & (db.Game.ready == False) &
         (db.Game.next <= now)
-    ).update(status="canceled")
-    db.commit()
+    ).select()
+    for game in toCancel:
+        game.update_record(status="processing", open=False)
+        queue.save(cancel_game, 'open', gid=game.id)
     # process new phases
     toProcess = db(
         (db.Game.status == "ingame") & (db.Game.ready == True)).select()
@@ -45,7 +45,6 @@ def manage():
         game.update_record(status="processing", ready=False)
         #enqueue
         queue.save(process_game, 'proc', gid=game.id)
-    db.commit()
     toProcess = db(
         (db.Game.status == "ingame") & (db.Game.ready == False) &
         (db.Game.next <= now)
@@ -55,7 +54,6 @@ def manage():
         game.update_record(status="processing")
         #enqueue
         queue.save(process_game, 'proc', gid=game.id)
-    db.commit()
 
 
 def process_orders(country, game, orders):
@@ -143,11 +141,24 @@ def open_game(gid):
     mdb.games.upd(
         {"id": gid},
         {"$set": {
-            "status": "ingame", "ready": False, "next": nextrun,
-            "processed": datetime.utcnow()},
+            "active": True, "status": "ingame", "ready": False,
+            "next": nextrun, "processed": datetime.utcnow()},
          "$push": {"phases": nphase}}
     )
     app.log.warning("Opened game "+str(gid))
+
+
+def cancel_game(gid):
+    db._adapter.reconnect()
+    game = db.Game(id=gid)
+    #: give credits back to users
+    for el in game.countries:
+        player = objidToLong(el['player'])
+        db(db.Userdata.user == player).update(
+            credits=db.Userdata.credits+game.bet
+        )
+    #: set as canceled
+    game.update_record(status="canceled")
 
 
 def process_game(gid):
@@ -208,20 +219,25 @@ def process_game(gid):
             "processed": datetime.utcnow()},
          "$push": {"phases": proc.phase_new}}
     )
+    #: finalize game end if needed
     if proc.end:
+        game.update_record(active=False)
         #: close chats
-        #: init chats
         db(db.Chat.game == gid).update(open=False)
-        #: credits and points
+        #: credits
         for el in game.countries:
             if el['country'] == proc.winner:
-                winner = el['player']
+                winner = objidToLong(el['player'])
                 break
-        #winner = objidToLong(game.countries[proc.winner])
         if game.pottype == "wta":
             won = game.bet * game.nplayers
             db(db.Userdata.user == winner).update(
                 credits=db.Userdata.credits+won)
         else:
             pass
+        #: give back original bet to all players
+        for el in game.countries:
+            player = objidToLong(el['player'])
+            db(db.Userdata.user == player).update(
+                credits=db.Userdata.credits+game.bet)
     app.log.warning("Processed game "+str(gid))

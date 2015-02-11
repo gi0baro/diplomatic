@@ -71,22 +71,14 @@ def game_join(gid):
             rv.data = "You've already joined the game"
             return rv
     #: evaluate available countries
-    #countrydict = {}
-    app.log.debug(gamedata.countries)
-    slots = list(gamedata.phases[0]['countries'])
-    for el in gamedata.countries:
-        slots.remove(el['country'])
-    #for k, v in gamedata.countries.items():
-    #    if v is None:
-    #        countrydict[k] = v
-    #    #: is the user already in game?
-    #    elif v == longToObjid(auth.user.id):
-    #        rv.data = "You've already joined the game"
-    #        return rv
-    #app.log.debug(countrydict)
-    app.log.debug(slots)
+    #app.log.debug(gamedata.countries)
+    #slots = list(gamedata.phases[0]['countries'])
+    #for el in gamedata.countries:
+    #    slots.remove(el['country'])
+    #app.log.debug(slots)
     #: does the game have available slots?
     #if not countrydict.keys():
+    slots = list(gamedata.slots)
     if not slots:
         rv.data = "No slots available"
         return rv
@@ -103,9 +95,11 @@ def game_join(gid):
             #    new=True
             #)
             updated = mdb.games.fandm(
-                {'id': gid, 'countries.country': {'$ne': chosen}},
-                {'$push': {'countries': {'country': chosen, 'player': poid}}},
-                fields=['countries'],
+                {'id': gid, 'open': True,
+                 'countries.country': {'$ne': chosen}},
+                {'$push': {'countries': {'country': chosen, 'player': poid}},
+                 '$pull': {'slots': chosen}},
+                fields=['countries', 'slots'],
                 new=True
             )
             if not updated:
@@ -118,11 +112,15 @@ def game_join(gid):
                 #    credits=db.UserData.credits-gamedata.bet)
                 playerdata.update_record(
                     credits=playerdata.credits-gamedata.bet)
-                #if all([v is not None for v in updated.countries.itervalues()]):
-                if len(updated.countries) == gamedata.phases[0]['countries']:
+                ##if all([v is not None for v in updated.countries.itervalues()]):
+                #if len(updated.countries) == gamedata.phases[0]['countries']:
+                if not updated.slots:
+                    toset = {'open': False}
+                    if gamedata.status == "pregame":
+                        toset['ready'] = True
                     mdb.games.upd(
-                        {"id": gid, "ready": False},
-                        {"$set": {"open": False, "ready": True}}
+                        {"id": gid, "open": True},
+                        {"$set": toset}
                     )
             if not slots:
                 break
@@ -143,7 +141,7 @@ def game_join(gid):
         #    new=True
         #)
         updated = mdb.games.fandm(
-            {'id': gid, 'countries.country': {'$ne': chosen}},
+            {'id': gid, 'open': True, 'countries.country': {'$ne': chosen}},
             {'$push': {'countries': {'country': chosen, 'player': poid}}},
             fields=['countries'],
             new=True
@@ -155,11 +153,15 @@ def game_join(gid):
             #db(db.UserData.user == auth.user.id).update(
             #    credits=db.UserData.credits-gamedata.bet)
             playerdata.update_record(credits=playerdata.credits-gamedata.bet)
-            #if all([v is not None for v in updated.countries.itervalues()]):
-            if len(updated.countries) == gamedata.phases[0]['countries']:
+            ##if all([v is not None for v in updated.countries.itervalues()]):
+            #if len(updated.countries) == gamedata.phases[0]['countries']:
+            if not updated.slots:
+                toset = {'open': False}
+                if gamedata.status == "pregame":
+                    toset['ready'] = True
                 mdb.games.upd(
-                    {"id": gid, "ready": False},
-                    {"$set": {"open": False, "ready": True}}
+                    {"id": gid, "open": True},
+                    {"$set": toset}
                 )
     rv.status = "Ok"
     rv.data = "Joined successfully"
@@ -267,7 +269,8 @@ def chat_post(cid):
     rv = sdict(status="Error")
     message = request.post_vars.msg
     if message:
-        chat = db.Chat(id=cid)
+        chat = db(
+            (db.Chat.id == cid) & (db.Chat.open == True)).select().first()
         if chat:
             pcountry = chat.game.playercountry()
             mdata = {'text': message, 'timeref': request.now, 'from': pcountry}
