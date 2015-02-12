@@ -587,7 +587,7 @@ class UI
             refcolor = app.screen.getColor(pos)
             tid = app.env.getTerritoryByColor(refcolor)
             if tid in app.game.phase().getCountryTroops()
-                menu_id = "build_menu_d"
+                menu_id = "#build_menu_d"
             else
                 menu_id = "#build_menu"
         if app.game.phase().type is "retreats"
