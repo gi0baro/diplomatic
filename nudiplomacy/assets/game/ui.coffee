@@ -375,7 +375,7 @@ class UI
         else
             $('#phase_ind').append '<span><em>Next</em></span>'
         @setPhaseStats(id)
-        if id is app.game.phase('last').id or id is 'next'
+        if id is app.game.phase('last').id or id in ['next', 'last']
             if app.game.phase('last').type is 'builds'
                 @showBuildsTip()
         return
