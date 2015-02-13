@@ -267,6 +267,9 @@ class GameProcessor(Processor):
             for tid in alltroops:
                 if tid in self.map["seas"]:
                     continue
+                if self.game["season"] == "spring" and \
+                        tid in self.map["supply"]:
+                    continue
                 if tid not in self._terrs[country]:
                     self._terrs[country].append(tid)
                     ## delete in others countries' terrs
@@ -341,8 +344,8 @@ class GameProcessor(Processor):
             else:
                 self.phase_new["type"] = "builds"
                 #self.phase_new["season"] = self.game["season"]
-                ## set countries' territories
-                self._updateTerrs()
+            ## set countries' territories
+            self._updateTerrs()
 
         ## update troops dict for defeated players
         for country in self.game["countries"]:
