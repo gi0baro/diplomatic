@@ -274,7 +274,11 @@ class Validator(object):
                 if order["type"] != "disband":
                     self.invalids.append(order_id)
                 continue
-            if not self._canMove(order_id, order["to"]):
+            if self._isFleet(order_id) and self._isMCoast(order["to"]):
+                if order.get("mc") not in [0, 1]:
+                    self.invalids.append(order_id)
+                    continue
+            if not self._canMove(order_id, order["to"], order.get("mc")):
                 self.log("Order " + str(order_id) +
                          " is a retreat to a terr cannot move")
                 self.invalids.append(order_id)
