@@ -1,3 +1,11 @@
+Array.prototype.insert = (item, index=0) ->
+    this.splice(index, 0, item)
+    return
+
+Array.prototype.last = ->
+    this[-1..][0]
+
+
 class App
     constructor: ->
         @net = new Network()

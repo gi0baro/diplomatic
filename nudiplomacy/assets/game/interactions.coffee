@@ -3,7 +3,7 @@ class Interactions
         @current = "none"
         @active = null
         @tracked = []
-        @trackedConvoys = {}
+        #@trackedConvoys = {}
         @trackedConvoyRoutes = {}
         @_trackedConvoyRST = []
         @trackedConvoyTerrs = []
@@ -623,7 +623,7 @@ class Interactions
         for i in @tracked
             app.screen.offTerritory(i)
         @tracked = []
-        @trackedConvoys = {}
+        #@trackedConvoys = {}
         @trackedConvoyRoutes = {}
         @_trackedConvoyRST = []
         @trackedConvoyTerrs = []
@@ -729,73 +729,56 @@ class Interactions
                     else
                         nears_res = app.env.moves.fleets[id_f]
             when "move_convoy"
-                if app.game.phase().isFleet(id_f)
-                    nears_res = []
-                else
-                    nears_o = app.env.moves.armies[id_f]
-                    nears = app.env.moves.fleets[id_f]
-                    nears_s = {}
-                    if nears
-                        for i in nears
-                            if app.game.phase().isFleet(i) and app.env.isSea(i)
-                                d =
-                                    step: 1
-                                    pre: null
-                                nears_s[i] = d
-                    console.log(nears_s)
-                    console.log($.isEmptyObject(nears_s))
-                    if $.isEmptyObject(nears_s)
-                        done = true
-                    else
-                        done = false
-                    console.log(done)
-                    while not done
-                        found = false
-                        for key, value of nears_s
-                            nears_t = app.env.moves.fleets[key]
-                            #found = false
-                            for j in nears_t
-                                if j not in (k for k of nears_s)
-                                    if app.game.phase().isFleet(j) and app.env.isSea(j)
-                                        nears_s[j] =
-                                            step: value.step + 1
-                                            pre: key
-                                        console.log(nears_s)
-                                        found = true
-                                        break
-                            if found
-                                break
-                        if not found
-                            done = true
-                    console.log(nears_s)
-                    @trackedConvoyRoutes = {}
-                    @_trackedConvoyRST = []
-                    for key of nears_s
-                        nears_t = app.env.moves.fleets[key]
-                        for j in nears_t
-                            if j isnt id_f
-                                if not app.env.isSea(j)
-                                    # set route
-                                    _stack = []
-                                    _fdata = nears_s[key]
-                                    _stack.push(key)
-                                    while _fdata.step > 1
-                                        _stack.push(_fdata.pre)
-                                        _fdata = nears_s[_fdata.pre]
-                                    _stack.reverse()
-                                    @_trackedConvoyRST.push(_stack)
-                                    _stackInd = @_trackedConvoyRST.length-1
-                                    if @trackedConvoyRoutes[id_f+"_"+j] is undefined
-                                        @trackedConvoyRoutes[id_f+"_"+j] = []
-                                    _rdata =
-                                        to: j
-                                        index: _stackInd
-                                    @trackedConvoyRoutes[id_f+"_"+j].push(_rdata)
-                                    #
-                                    if j not in nears_o
-                                        if j not in nears_res
-                                            nears_res.push(j)
-                    @trackedConvoys = nears_s
+                nears_res = []
+                if not app.game.phase().isFleet(id_f)
+                    army_links = app.env.moves.armies[id_f]
+                    fleet_links = app.env.moves.fleets[id_f]
+                    if not fleet_links
+                        fleet_links = []
+                    examine = []
+                    for terr in fleet_links
+                        examine.push([terr, 1])
+                    if not examine
+                        examine = []
+                    nodes = {}
+                    edges = {}
+                    _links = {}
+                    _routes = [[]]
+                    step = 1
+                    index = 0
+                    while examine.length > 0
+                        data = examine.pop()
+                        element = data[0]
+                        elstep = data[1]
+                        etype = "fleet"
+                        if not (app.game.phase().isFleet(element) and app.env.isSea(element))
+                            if step is 1
+                                continue
+                            else
+                                if app.game.phase().isCoast(element)
+                                    etype = "coast"
+                                else
+                                    continue
+                        if etype is "fleet"
+                            if elstep > step
+                                step++
+                            if elstep < step
+                                index++
+                                _routes.push(_routes.last()[0..step-1])
+                                step = elstep
+                            #: add node to processing list
+                            routes[index].push(element)
+                            node_links = app.env.moves.fleets[element]
+                            for node in node_links
+                                examine.insert([node, step])
+                        else
+                            #: close the route
+                            if @trackedConvoyRoutes[id_f+"_"+element] is undefined
+                                @trackedConvoyRoutes[id_f+"_"+element] = []
+                            @trackedConvoyRoutes[id_f+"_"+element].push(_routes[index])
+                            if element not in nears_res and element not in army_links
+                                nears_res.push(element)
+                    #@trackedConvoys = nears_s
                     @trackedConvoyTerrs = nears_res
             when "sup_hold"
                 if app.game.phase().isArmy(id_f)
@@ -1036,12 +1019,14 @@ class Interactions
         return conv_lst
 
     _getConvoysFromMove: (id_f, id_t) ->
+        #console.log(@trackedConvoys)
+        console.log(@trackedConvoyRoutes)
+        console.log(@_trackedConvoyRST)
         choosen = false
         choice = null
         choices = []
         routes = @trackedConvoyRoutes[id_f+"_"+id_t]
-        for rdata in routes
-            route = @_trackedConvoyRST[rdata.index]
+        for route in routes
             allmine = true
             for t in route
                 if t not in app.game.phase().getCountryTroops()
@@ -1056,6 +1041,9 @@ class Interactions
                 choice = ch.data
                 choosen = true
                 break
+        console.log(routes)
+        console.log(choices)
+        console.log(choosen)
         if not choosen
             choice = choices[0].data
         return choice
