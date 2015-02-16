@@ -197,6 +197,7 @@ class Validator(object):
             elif order["type"] == "disband":
                 if order_id not in self.troops:
                     self.invalids.append(order_id)
+                    self.log("Order "+str(order_id)+" is not in player troops")
                     continue
             ## check build of fleets is only on coasts supply centers
             if order["type"] == "build" and order["troop"] == "fleet":
@@ -217,9 +218,11 @@ class Validator(object):
                     continue
                 if order_id not in realsupply:
                     self.invalids.append(order_id)
+                    self.log("Order "+str(order_id)+" is not in player supply")
                     continue
                 if order["type"] == "disband":
                     self.invalids.append(order_id)
+                    self.log("Player must build, not disband: "+str(order_id))
                     continue
             allowedn = len(self.centers) - len(self.troops)
             buildorders = [i for i in self.orders.keys()
@@ -231,22 +234,26 @@ class Validator(object):
                 to_rem = buildorders[:diff]
                 for i in to_rem:
                     self.invalids.append(i)
+                    self.log("Order "+str(i)+" is exceeding quota")
         else:
             for order_id, order in self.orders.iteritems():
                 if order_id in self.invalids:
                     continue
                 if order["type"] == "build":
                     self.invalids.append(order_id)
+                    self.log("Player must disband, not build: "+str(order_id))
                     continue
             disbandn = len(self.troops) - len(self.centers)
             buildorders = [i for i in self.orders.keys()
-                           if i not in self.invalids]
+                           if i not in self.invalids and
+                           self.orders[i]["type"] == "disband"]
             if len(buildorders) > disbandn:
                 #: remove exceeding orders
                 diff = len(buildorders) - disbandn
                 to_rem = buildorders[:diff]
                 for i in to_rem:
                     self.invalids.append(i)
+                    self.log("Order "+str(i)+" is exceeding quota")
 
     def _process_retreats(self):
         prevmoveorders = []
