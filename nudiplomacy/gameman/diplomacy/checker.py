@@ -78,7 +78,7 @@ class Validator(object):
         index = 0
         _routes = [[]]
         while len(procstack) > 0:
-            node, nstep = procstack.pop()
+            node, nstep = procstack.pop(0)
             ntype = "fleet"
             if not (self._isFleet(node) and self._isSea(node)):
                 if self._isCoast(node):
@@ -107,7 +107,7 @@ class Validator(object):
                     res.append(node)
                 if procstack and procstack[0][1] == step:
                     index += 1
-                    _routes.append(_routes.last()[0:step-1])
+                    _routes.append(_routes[-1][0:step-1])
         return res
 
     def _convoy_maps(self, Id):
