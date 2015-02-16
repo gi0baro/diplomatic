@@ -301,9 +301,13 @@ class Interactions
                     @_onRetreatTo(@active)
                     app.ui.closeMenu()
             when "disband"
-                app.game.addBuild(@active, "disband")
-                app.ui.closeMenu()
-                @current = "none"
+                if app.game.phase('last').type is "builds"
+                    if not re_act
+                        @intent("disband", null)
+                        app.ui.closeMenu()
+                else
+                    @intent("disband", null)
+                    app.ui.closeMenu()
             when "close"
                 app.screen.offTerritory(@active)
                 app.ui.closeMenu()
@@ -614,6 +618,14 @@ class Interactions
                     @_offTracked()
                     app.screen.offTerritory(@active)
                     @current = "none"
+            when "disband"
+                if app.game.phase('last').type is "builds"
+                    app.game.addBuild(@active, "disband")
+                    app.screen.offTerritory(@active)
+                    @current = "none"
+                    app.screen.drawTroops()
+                else
+
         ## next phase auto swithing
         if app.game.phase().id isnt "next" and app.game.gotOrders()
             app.game.loadPhase("next", false)
