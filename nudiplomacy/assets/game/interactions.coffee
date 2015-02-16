@@ -737,12 +737,10 @@ class Interactions
                         fleet_links = []
                     examine = []
                     for terr in fleet_links
-                        examine.push([terr, 1])
+                        if app.game.phase().isFleet(terr) and app.env.isSea(terr)
+                            examine.push([terr, 1])
                     if not examine
                         examine = []
-                    nodes = {}
-                    edges = {}
-                    _links = {}
                     _routes = [[]]
                     step = 1
                     index = 0
@@ -752,13 +750,10 @@ class Interactions
                         elstep = data[1]
                         etype = "fleet"
                         if not (app.game.phase().isFleet(element) and app.env.isSea(element))
-                            if step is 1
-                                continue
+                            if app.game.phase().isCoast(element)
+                                etype = "coast"
                             else
-                                if app.game.phase().isCoast(element)
-                                    etype = "coast"
-                                else
-                                    continue
+                                continue
                         if etype is "fleet"
                             if elstep > step
                                 step++
