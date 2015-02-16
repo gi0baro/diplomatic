@@ -59,57 +59,49 @@ class Validator(object):
                     return True
         return False
 
-    def _set_convoy_route(self, fr, to, fleet_id, fleets):
-        fleet_data = fleets[fleet_id]
-        stack = [unicode(fleet_id)]
-        while fleet_data["step"] > 1:
-            stack.append(unicode(fleet_data["pre"]))
-            fleet_data = fleets[fleet_data["pre"]]
-        stack.reverse()
-        try:
-            index = self._convoy_routes_stacks.index(stack)
-        except:
-            self._convoy_routes_stacks.append(stack)
-            index = len(self._convoy_routes_stacks)-1
+    def _set_convoy_route(self, fr, to, stack):
         key = fr+"-"+to
         if self._convoy_routes.get(key) is None:
             self._convoy_routes[key] = []
-        self._convoy_routes[key].append(dict(to=to, index=index))
+        self._convoy_routes[key].append(stack)
 
     def _get_convoy_map(self, Id):
-        nears_f = {}
-        #nears_o = self.moves["armies"].get(Id)
-        nears = self.moves["fleets"].get(Id)
-        for terr in nears:
-            if self._isFleet(terr) and self._isSea(terr):
-                nears_f[terr] = dict(step=1, pre=None)
-        done = True if not nears_f else False
-        while not done:
-            found = False
-            for fleet, data in nears_f.iteritems():
-                nears_t = self.moves["fleets"].get(fleet)
-                #found = False
-                for terr in nears_t:
-                    if terr not in nears_f.iterkeys():
-                        if self._isFleet(terr) and self._isSea(terr):
-                            nears_f[terr] = dict(step=data["step"]+1,
-                                                 pre=fleet)
-                            found = True
-                            break
-                if found:
-                    break
-            if not found:
-                done = True
         res = []
-        for fleet in nears_f.iterkeys():
-            nears_t = self.moves["fleets"].get(fleet)
-            for terr in nears_t:
-                if terr != Id:
-                    if not self._isSea(terr):
-                        #if terr not in nears_o:
-                        self._set_convoy_route(Id, terr, fleet, nears_f)
-                        if terr not in res:
-                            res.append(terr)
+        procstack = []
+        #nears_o = self.moves["armies"].get(Id)
+        flinks = self.moves["fleets"].get(Id, [])
+        for terr in flinks:
+            if self._isFleet(terr) and self._isSea(terr):
+                #nears_f[terr] = dict(step=1, pre=None)
+                procstack.append((terr, 1))
+        step = 1
+        index = 0
+        _routes = [[]]
+        while len(procstack) > 0:
+            node, nstep = procstack.pop()
+            ntype = "fleet"
+            if not (self._isFleet(node) and self._isSea(node)):
+                if self._isCoast(node):
+                    ntype = "coast"
+                else:
+                    continue
+            if ntype is "fleet":
+                if nstep > step:
+                    step += 1
+                if nstep < step:
+                    index += 1
+                    _routes.append(_routes[-1][0:step])
+                    step = nstep
+                #: add node to processing list
+                _routes[index].append(node)
+                node_links = self.moves["fleets"].get(node, [])
+                for chnode in node_links:
+                    procstack.insert((chnode, step))
+            else:
+                #: close the route
+                self._set_convoy_route(Id, node, _routes[index])
+                if node not in res:
+                    res.append(node)
         return res
 
     def _convoy_maps(self, Id):
@@ -124,18 +116,7 @@ class Validator(object):
     #   return True
 
     def _get_convoy_routes(self, fr, to):
-        res = []
-        routes = self._convoy_routes.get(fr+"-"+to)
-        for route in routes:
-        #   rData = self._convoy_routes_stack_ver[route["index"]]
-        #   if not rData["verif"]:
-        #       succ = self._ver_convoy_route_stack(route["index"])
-        #       rData["verif"] = True
-        #       rData["succ"] = succ
-        #   if rData["succ"]:
-        #       res.append(self._convoy_routes_stacks[route["index"]])
-            res.append(self._convoy_routes_stacks[route["index"]])
-        return res
+        return self._convoy_routes.get(fr+"-"+to, [])
 
     def _check_neutrals(self):
         for order_id, order in self.orders.iteritems():
