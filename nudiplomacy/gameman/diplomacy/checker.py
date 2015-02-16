@@ -85,23 +85,29 @@ class Validator(object):
                     ntype = "coast"
                 else:
                     continue
+            if node in _routes[index]:
+                continue
+            if nstep > step:
+                step += 1
+            if nstep < step:
+                index += 1
+                _routes.append(_routes[-1][0:nstep-1])
+                step = nstep
             if ntype is "fleet":
-                if nstep > step:
-                    step += 1
-                if nstep < step:
-                    index += 1
-                    _routes.append(_routes[-1][0:step])
-                    step = nstep
                 #: add node to processing list
                 _routes[index].append(node)
                 node_links = self.moves["fleets"].get(node, [])
                 for chnode in node_links:
-                    procstack.insert((chnode, step))
+                    if chnode not in [node, Id]:
+                        procstack.insert(0, (chnode, step+1))
             else:
                 #: close the route
                 self._set_convoy_route(Id, node, _routes[index])
                 if node not in res:
                     res.append(node)
+                if procstack and procstack[0][1] == step:
+                    index += 1
+                    _routes.append(_routes.last()[0:step-1])
         return res
 
     def _convoy_maps(self, Id):

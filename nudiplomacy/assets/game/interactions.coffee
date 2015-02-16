@@ -739,40 +739,48 @@ class Interactions
                     for terr in fleet_links
                         if app.game.phase().isFleet(terr) and app.env.isSea(terr)
                             examine.push([terr, 1])
-                    if not examine
-                        examine = []
                     _routes = [[]]
                     step = 1
                     index = 0
                     while examine.length > 0
-                        data = examine.pop()
+                        data = examine.shift()
                         element = data[0]
                         elstep = data[1]
                         etype = "fleet"
                         if not (app.game.phase().isFleet(element) and app.env.isSea(element))
-                            if app.game.phase().isCoast(element)
+                            if app.env.isCoast(element)
                                 etype = "coast"
                             else
                                 continue
+                        if element in _routes[index]
+                            continue
+                        if elstep > step
+                            step++
+                        if elstep < step
+                            index++
+                            if elstep > 1
+                                _routes.push(_routes.last()[0..elstep-2])
+                            else
+                                _routes.push([])
+                            step = elstep
                         if etype is "fleet"
-                            if elstep > step
-                                step++
-                            if elstep < step
-                                index++
-                                _routes.push(_routes.last()[0..step-1])
-                                step = elstep
                             #: add node to processing list
-                            routes[index].push(element)
+                            _routes[index].push(element)
                             node_links = app.env.moves.fleets[element]
                             for node in node_links
-                                examine.insert([node, step])
+                                if node not in [element, id_f]
+                                    examine.insert([node, step+1])
                         else
                             #: close the route
                             if @trackedConvoyRoutes[id_f+"_"+element] is undefined
                                 @trackedConvoyRoutes[id_f+"_"+element] = []
                             @trackedConvoyRoutes[id_f+"_"+element].push(_routes[index])
-                            if element not in nears_res and element not in army_links
+                            if element not in nears_res and element not in army_links and element isnt id_f
                                 nears_res.push(element)
+                            if examine.length isnt 0
+                                if examine[0][1] is step
+                                    index++
+                                    _routes.push(_routes.last()[0..step-2])
                     #@trackedConvoys = nears_s
                     @trackedConvoyTerrs = nears_res
             when "sup_hold"
