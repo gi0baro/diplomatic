@@ -106,13 +106,6 @@ def play(gid):
                     chats[el['country']] = r['id']
                     break
     #: ui stuffs
-    timeleft = int((game.next-request.now).total_seconds())
-    timerdata = sdict(d=0, h=0, m=0, s=0)
-    if timeleft > 0:
-        timerdata.d = timeleft/(60*60*24)
-        timerdata.h = (timeleft/(60*60)) % 24
-        timerdata.m = (timeleft/60) % 60
-        timerdata.s = timeleft % 60
     scs = game.targetsc or game.map.scstowin
     if len(game.countries) < 3:
         statscol = 6
@@ -120,7 +113,7 @@ def play(gid):
         statscol = 4
     else:
         statscol = 3
-    return dict(game=game, scs=scs, chats=chats, timer=timerdata,
+    return dict(game=game, scs=scs, chats=chats, timer=game.timetonext(),
                 statscol=statscol)
 
 
