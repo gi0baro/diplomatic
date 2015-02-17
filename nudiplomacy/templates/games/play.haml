@@ -118,12 +118,27 @@
                             .stats_member{id: "stats_{{=country}}"}
                                 %h4{id: "stats_{{=country}}_name"}
                                     = country
-                                .row.stats_chart
-                                    %canvas{id: 'stats_{{=country}}_canv', height: '10', width: '10'}
-                                    .stats_over{id: 'stats_{{=country}}_perc'}
-                                .row.stats_mdata
-                                    .stats_uinfo
-                                    .stats_pinfo
+                                .row
+                                    .col-md-4.stats_chart
+                                        %canvas{id: 'stats_{{=country}}_canv', height: '10', width: '10'}
+                                        .stats_over{id: 'stats_{{=country}}_perc'}
+                                    .col-md-8.stats_pdata
+                                        .row
+                                            .col-md-12
+                                                %i.fa.fa-check.fa-fw{id: "stats_{{=country}}_ready"}
+                                                %h5{style: "display: inline-block;"}
+                                                    username
+                                            .col-md-12
+                                                .row
+                                                    .col-md-8
+                                                        = T("Troops: ")
+                                                    .col-md-4{id: "stats_{{=country}}_troops"}
+                                                    .col-md-3
+                                                        %img{src: '{{=url("static", "images/tank.png")}}'}
+                                                    .col-md-3{id: "stats_{{=country}}_armies"}
+                                                    .col-md-3
+                                                        %img{src: '{{=url("static", "images/ship.png")}}'}
+                                                    .col-md-3{id: "stats_{{=country}}_fleets"}
 
         #right_wrapper
             #ord_wrapper

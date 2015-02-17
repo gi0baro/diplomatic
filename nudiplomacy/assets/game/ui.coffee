@@ -337,7 +337,7 @@ class UI
                 width: w*0.7+"px"
                 height: w*0.7+"px"
                 top: -w*0.7+"px"
-                'line-height': w*0.7+"px"
+                'line-height': w*0.62+"px"
             $($('#stats_'+key+"_canv").parent()).css
                 height: w*0.7+"px"
             @_initStatsChart(key, color)
@@ -386,15 +386,22 @@ class UI
         #if id is "next"
         #    id = app.game._nextPhase.previous
         for country of app.env.countries
-            n = 0
+            scs = 0
+            fleets = 0
+            tanks = 0
             if id isnt 0
                 for terr in app.game.phase(id).territories[country]
                     if terr in app.env._supplylist
-                        n++
-            @_statsCharts[country].segments[0].value = n
-            @_statsCharts[country].segments[1].value = app.game.scsToWin-n
+                        scs++
+                fleets = app.game.phase(id).troops[country].fleets.length
+                tanks = app.game.phase(id).troops[country].armies.length
+            @_statsCharts[country].segments[0].value = scs
+            @_statsCharts[country].segments[1].value = app.game.scsToWin-scs
             @_statsCharts[country].update()
-            $('#stats_'+country+'_perc').html n
+            $('#stats_'+country+'_perc').html scs
+            $('#stats_'+country+'_troops').html fleets+tanks
+            $('#stats_'+country+'_armies').html tanks
+            $('#stats_'+country+'_fleets').html fleets
         return
 
     setOrdersPhase: (phase) ->
@@ -677,7 +684,7 @@ class UI
     closeStats: ->
         #$('#stats_wrapper').stop()
         $('#stats_wrapper').animate
-            bottom: '-50%'
+            bottom: '-35%'
             500
             'linear'
         return

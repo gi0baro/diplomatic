@@ -611,10 +611,10 @@ body, html {
     position: absolute;
     /*width: 10%;*/
     width: 50%;
-    height: 50%;
+    height: 35%;
     left: 25%;
     /*top: -52%;*/
-    bottom: -50%;
+    bottom: -35%;
     z-index: 1;
 }
 
@@ -675,12 +675,22 @@ body, html {
     padding: 15px 30px 15px;
     border-radius: 9px;
     text-align: center;
+    border: 1px solid #fff;
+    padding-top: 0;
+}
+
+.stats_chart {
+    padding: 0;
 }
 
 .stats_over {
     position: relative;
     margin: auto;
-    font-size: 28px;
+    font-size: 18px;
+}
+
+.stats_pdata {
+    color: #fff;
 }
 
 .ordrow {
