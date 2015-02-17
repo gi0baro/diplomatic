@@ -217,6 +217,23 @@ class Game(Model):
         if fields['presstype'] != "none":
             self.db.Chat.insert(game=gid, users='["all"]')
 
+    @modelmethod
+    def participating(db, entity, user=None):
+        uid = user or (session.auth.user.id if session.auth else None)
+        if not uid:
+            return []
+        from nudiplomacy import mdb
+        uoid = longToObjid(uid)
+        glist = mdb.games.find(
+            {'countries.player': uoid}, limit=10, sort=('processed', -1)
+        )
+        for game in glist:
+            for el in game.countries:
+                if el['player'] == uoid:
+                    game._playercountry = el['country']
+                    break
+        return glist
+
 
 class Player(Model):
     tablename = "players"

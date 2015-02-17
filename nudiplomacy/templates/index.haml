@@ -1,1 +1,45 @@
 - extend 'layout.haml'
+
+
+.row
+    .col-md-4
+        .box.border.white
+            .box-title
+                = T("News")
+
+    - if current_user()
+        .col-md-8
+            .box.border.white
+                .box-title
+                    = T("Your games")
+                .row.m-15
+                    - if not participating
+                        = T("You are not participating to any game")
+                    - for game in participating
+                        .col-md-12
+                            .row
+                                .col-md-6
+                                    = game.name
+                                .col-md-6
+                                    = game._playercountry
+                                .col-md-4
+                                    = game.status
+                                .col-md-4
+                                    - if game.phases[-1].get('season') is not None
+                                        = game.phases[-1]['season']+" "+str(game.phases[-1]['year'])
+                                    - else
+                                        = game.phases[-1]['type']+" "+str(game.phases[-1]['year'])
+                                .col-md-4
+                                    timeleft
+                                .col-md-2
+                                    = game.nplayers
+                                .col-md-2
+                                    = game.bet
+                                .col-md-2
+                                    o
+                                .col-md-2
+                                    r
+                                .col-md-4
+                                    %a{href: '{{=url("games.play", game.id)}}'}
+                                        .btn.btn-success
+                                            = T("Enter")

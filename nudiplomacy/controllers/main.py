@@ -1,11 +1,14 @@
 from weppy.helpers import stream_dbfile
-from nudiplomacy import app, auth, db
+from nudiplomacy import app, auth, db, Game
 from nudiplomacy.contexts import BaseContext
 
 
 @app.expose("/", helpers=[BaseContext()])
 def index():
-    return dict()
+    participating = []
+    if auth.user:
+        participating = Game.participating()
+    return dict(participating=participating)
 
 
 @app.expose("/account(/<str:f>)?(/<str:k>)?", helpers=[BaseContext()])
