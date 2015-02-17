@@ -455,7 +455,13 @@ class Screen
                     p1 = new Point2D(app.env.oxy[f_id].x, app.env.oxy[f_id].y)
                 if isFleet(f_id) and app.env.isMCoast(t_id)
                     #if f_id in (key for key of app.env.troops[app.play.country])
-                    movemc = if time is "past" then app.game.phase().pastMoves[f_id].mc else app.game.moves[f_id].mc
+                    if time is "past"
+                        if app.game.phase().pastMoves[f_id]
+                            movemc = app.game.phase().pastMoves[f_id].mc
+                        else
+                            movemc = null
+                    else
+                        movemc = app.game.moves[f_id].mc
                     if movemc in [0, 1]
                         p2 = new Point2D(app.env.mcoasts_oxy[t_id][movemc].x, app.env.mcoasts_oxy[t_id][movemc].y)
                     else
