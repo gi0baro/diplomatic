@@ -186,14 +186,12 @@ def process_game(gid):
     #: process the game
     proc = GameProcessor(gamedata, gamemap, app.log.info)
     proc.process()
-    app.log.info(proc.phase_new)
-    print proc.phase_new
     #game.update_record(status="ingame")
     #: last orders become public
     last_phase = str(len(gamedata['phases'])-1)
     mdb.games.upd(
         {"id": gid},
-        {"$set": {"phases."+last_phase+".orders": proc.orders_data}}
+        {"$set": {"phases."+last_phase+".orders": proc.finalOrders}}
     )
     #: store new phase, update game status
     if proc.end:

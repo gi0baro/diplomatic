@@ -403,36 +403,39 @@ class GameProcessor(Processor):
 
     def _cleanOrders(self):
         self.finalOrders = {}
-        for tid, data in self.orders.iteritems():
-            self.finalOrders[tid] = {
-                'type': data['type'],
-                'success': data.get('success', False)}
-            if data.get('mc') in [0, 1]:
-                self.finalOrders[tid]['mc'] = data['mc']
-            if self.game['phase'] == "diplomacy":
-                self.finalOrders[tid]['to'] = data['to']
-                if data.get('viaConvoy'):
-                    self.finalOrders[tid]['viaConvoy'] = data['viaConvoy']
-                if data['type'] in ["sup_move", "convoy"]:
-                    self.finalOrders[tid]['from'] = data['from']
-                if data['type'] == "convoy":
-                    # TODO: remove next line when UI will be ready
-                    self.finalOrders[tid]['convoy_route'] = \
-                        data['convoy_route']
-                    #
-                    self.finalOrders[tid]['convoy_routes'] = \
-                        data['convoy_routes']
-            elif self.game['phase'] == "builds":
-                if data['type'] == 'build':
-                    self.finalOrders[tid]['troop'] = data['troop']
-                    if data.get('mc') in [0, 1]:
-                        self.finalOrders[tid]['mc'] = data['mc']
-            else:
-                # retreats
-                if data.get('to'):
-                    self.finalOrders[tid]['to'] = data['to']
-                    if data.get('mc') in [0, 1]:
-                        self.finalOrders[tid]['mc'] = data['mc']
+        for country, orders in self.orders.iteritems():
+            self.finalOrders[country] = {}
+            for tid, data in orders.iteritems():
+                self.finalOrders[country][tid] = {
+                    'type': data['type'],
+                    'success': data.get('success', False)}
+                if data.get('mc') in [0, 1]:
+                    self.finalOrders[country][tid]['mc'] = data['mc']
+                if self.game['phase'] == "diplomacy":
+                    self.finalOrders[country][tid]['to'] = data['to']
+                    if data.get('viaConvoy'):
+                        self.finalOrders[country][tid]['viaConvoy'] = \
+                            data['viaConvoy']
+                    if data['type'] in ["sup_move", "convoy"]:
+                        self.finalOrders[country][tid]['from'] = data['from']
+                    if data['type'] == "convoy":
+                        # TODO: remove next line when UI will be ready
+                        self.finalOrders[country][tid]['convoy_route'] = \
+                            data['convoy_route']
+                        #
+                        self.finalOrders[country][tid]['convoy_routes'] = \
+                            data['convoy_routes']
+                elif self.game['phase'] == "builds":
+                    if data['type'] == 'build':
+                        self.finalOrders[country][tid]['troop'] = data['troop']
+                        if data.get('mc') in [0, 1]:
+                            self.finalOrders[country][tid]['mc'] = data['mc']
+                else:
+                    # retreats
+                    if data.get('to'):
+                        self.finalOrders[country][tid]['to'] = data['to']
+                        if data.get('mc') in [0, 1]:
+                            self.finalOrders[country][tid]['mc'] = data['mc']
 
     def _buildNewPhase(self):
         ## TODO: set next phase enabled countries
