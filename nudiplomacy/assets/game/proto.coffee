@@ -1,4 +1,4 @@
-Array.prototype.insert = (item, index=0) ->
+Array.prototype.insert = (index, item) ->
     @splice(index, 0, item)
     return
 

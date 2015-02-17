@@ -781,7 +781,7 @@ class Interactions
                             node_links = app.env.moves.fleets[element]
                             for node in node_links
                                 if node not in [element, id_f]
-                                    examine.insert([node, step+1])
+                                    examine.insert(0, [node, step+1])
                         else
                             #: close the route
                             if @trackedConvoyRoutes[id_f+"_"+element] is undefined
