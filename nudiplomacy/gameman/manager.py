@@ -145,6 +145,12 @@ def open_game(gid):
             "next": nextrun, "processed": datetime.utcnow()},
          "$push": {"phases": nphase}}
     )
+    #: add participation points
+    for el in game.countries:
+        player = objidToLong(el['player'])
+        db(db.Userdata.user == player).update(
+            points=db.Userdata.points+(1*game.nplayers)
+        )
     app.log.warning("Opened game "+str(gid))
 
 
@@ -223,6 +229,7 @@ def process_game(gid):
         #: close chats
         db(db.Chat.game == gid).update(open=False)
         #: credits
+        supply = gamemap['supply'].keys()
         for el in game.countries:
             if el['country'] == proc.winner:
                 winner = objidToLong(el['player'])
@@ -232,10 +239,30 @@ def process_game(gid):
             db(db.Userdata.user == winner).update(
                 credits=db.Userdata.credits+won)
         else:
-            pass
+            rel = game.bet * game.nplayers
+            for el in game.countries:
+                scs = [i for i in game.phases[-1]['territories'][el['country']]
+                       if i in supply]
+                if scs:
+                    to_add = int(round(scs*float(rel)/len(supply)))
+                    db(db.Userdata.user == winner).update(
+                        credits=db.Userdata.credits+to_add)
         #: give back original bet to all players
         for el in game.countries:
             player = objidToLong(el['player'])
             db(db.Userdata.user == player).update(
                 credits=db.Userdata.credits+game.bet)
+        #: points
+        db(db.Userdata.user == winner).update(
+            points=db.Userdata.points+(2*game.nplayers))
+        for el in game.countries:
+            if el['country'] == proc.winner:
+                continue
+            scs = [i for i in game.phases[-1]['territories'][el['country']]
+                   if i in supply]
+            if not scs:
+                uid = objidToLong(el['player'])
+                #: defeated
+                db(db.Userdata.user == uid).update(
+                    points=db.Userdata.points-(1*game.nplayers))
     app.log.warning("Processed game "+str(gid))
