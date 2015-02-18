@@ -145,11 +145,12 @@ def open_game(gid):
             "next": nextrun, "processed": datetime.utcnow()},
          "$push": {"phases": nphase}}
     )
-    #: add participation points
+    #: add participation points and update participation data
     for el in game.countries:
         player = objidToLong(el['player'])
         db(db.Userdata.user == player).update(
-            points=db.Userdata.points+(1*game.nplayers)
+            points=db.Userdata.points+(1*game.nplayers),
+            played=db.Userdata.played+1
         )
     #: stats
     moid = longToObjid(game.map.id)
@@ -165,7 +166,7 @@ def open_game(gid):
     mdb.stats_nplayers.upd({'map': moid}, {'$inc': {str(game.nplayers): 1}})
     ckeys = {}
     for k in countriesk:
-        ckeys["play."+k] = 1
+        ckeys["played."+k] = 1
     mdb.stats_countries.upd({'map': moid}, {'$inc': countriesk})
     app.log.warning("Opened game "+str(gid))
 
@@ -261,25 +262,41 @@ def process_game(gid):
                 scs = [i for i in game.phases[-1]['territories'][el['country']]
                        if i in supply]
                 if scs:
+                    uid = objidToLong(el['player'])
                     to_add = int(round(scs*float(rel)/len(supply)))
-                    db(db.Userdata.user == winner).update(
+                    db(db.Userdata.user == uid).update(
                         credits=db.Userdata.credits+to_add)
         #: give back original bet to all players
         for el in game.countries:
             player = objidToLong(el['player'])
             db(db.Userdata.user == player).update(
                 credits=db.Userdata.credits+game.bet)
-        #: points
+        #: points and stats
         db(db.Userdata.user == winner).update(
-            points=db.Userdata.points+(2*game.nplayers))
+            points=db.Userdata.points+(2*game.nplayers),
+            won=db.Userdata.won+1)
+        moid = longToObjid(gamemap['id'])
         for el in game.countries:
             if el['country'] == proc.winner:
+                mdb.stats_countries.upd(
+                    {'map': moid},
+                    {'$inc': {'won.'+el['country']: 1}})
                 continue
+            uid = objidToLong(el['player'])
             scs = [i for i in game.phases[-1]['territories'][el['country']]
                    if i in supply]
             if not scs:
-                uid = objidToLong(el['player'])
                 #: defeated
                 db(db.Userdata.user == uid).update(
-                    points=db.Userdata.points-(1*game.nplayers))
+                    points=db.Userdata.points-(1*game.nplayers),
+                    defeated=db.Userdata.defeated+1)
+                mdb.stats_countries.upd(
+                    {'map': moid},
+                    {'$inc': {'defeated.'+el['country']: 1}})
+            else:
+                db(db.Userdata.user == uid).update(
+                    survived=db.Userdata.survived+1)
+                mdb.stats_countries.upd(
+                    {'map': moid},
+                    {'$inc': {'survived.'+el['country']: 1}})
     app.log.warning("Processed game "+str(gid))

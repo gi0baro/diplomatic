@@ -37,8 +37,9 @@ class CountryStats(Model):
 
     fields = [
         Field("map", "reference maps"),
-        Field("play", "json", default={}),
-        Field("win", "json", default={}),
-        Field("survive", "json", default={}),
-        Field("defeat", "json", default={})
+        Field("played", "json", default={}),
+        Field("won", "json", default={}),
+        Field("survived", "json", default={}),
+        Field("defeated", "json", default={}),
+        Field("drawn", "json", default={})
     ]
