@@ -305,4 +305,8 @@ def process_game(gid):
                 mdb.stats_countries.upd(
                     {'map': moid},
                     {'$inc': {'survived.'+el['country']: 1}})
+        nturns = proc.phase_new['year']-gamemap['year']
+        mdb.stats_games.ioru(
+            {'map': moid}, {'$inc': {'turns.'+str(nturns): 1}}
+        )
     app.log.warning("Processed game "+str(gid))

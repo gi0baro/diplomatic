@@ -21,8 +21,8 @@ class GameStats(Model):
         Field("map", "reference maps"),
         Field("lang", "json", default={}),
         Field("nplayers", "json", default={}),
-        Field("pot", "json", default={'wta': 0, 'ppsc': 0})
-        # turns?
+        Field("pot", "json", default={'wta': 0, 'ppsc': 0}),
+        Field("turns", "json", default={})
     ]
 
 
