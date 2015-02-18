@@ -151,6 +151,22 @@ def open_game(gid):
         db(db.Userdata.user == player).update(
             points=db.Userdata.points+(1*game.nplayers)
         )
+    #: stats
+    moid = longToObjid(game.map.id)
+    dkey = '{:%m.%d}'.format(datetime.utcnow())
+    mdb.stats_time.ioru(
+        {'map': moid, 'year': datetime.utcnow().year},
+        {'$inc': {
+            'data.'+dkey.split(".")[0]: 1,
+            'data.'+dkey: 1
+        }}
+    )
+    mdb.stats_lang.upd({'map': moid}, {'$inc': {game.lang: 1}})
+    mdb.stats_nplayers.upd({'map': moid}, {'$inc': {str(game.nplayers): 1}})
+    ckeys = {}
+    for k in countriesk:
+        ckeys["play."+k] = 1
+    mdb.stats_countries.upd({'map': moid}, {'$inc': countriesk})
     app.log.warning("Opened game "+str(gid))
 
 
@@ -163,6 +179,7 @@ def cancel_game(gid):
         db(db.Userdata.user == player).update(
             credits=db.Userdata.credits+game.bet
         )
+    # TODO delete record and notify
     #: set as canceled
     game.update_record(status="canceled")
 

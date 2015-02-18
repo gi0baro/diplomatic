@@ -235,16 +235,6 @@ class Game(Model):
         return glist
 
 
-class Player(Model):
-    tablename = "players"
-
-    fields = [
-        Field("user", "reference auth_user"),
-        Field("game", "reference games"),
-        Field("country", "string")
-    ]
-
-
 class Orders(Model):
     tablename = "orders"
 

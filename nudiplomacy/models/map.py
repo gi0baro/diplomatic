@@ -1,4 +1,5 @@
-from weppy.dal import Field, Model, before_insert, before_update
+from weppy.dal import Field, Model, before_insert, before_update, after_insert
+from nudiplomacy import queue
 from nudiplomacy.helpers.images import create_map_image
 
 
@@ -31,6 +32,7 @@ class Map(Model):
         "thumb": (False, False)
     }
 
+    # TODO: use queue for images
     @before_insert
     def create_thumb(self, fields):
         create_map_image(fields)
@@ -38,3 +40,7 @@ class Map(Model):
     @before_update
     def update_thumb(self, set, fields):
         self.create_thumb(fields)
+
+    @after_insert
+    def init_stats(self, fields, id):
+        self.db.CountryStats.insert(map=id)
