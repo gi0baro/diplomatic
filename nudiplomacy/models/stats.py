@@ -14,21 +14,15 @@ class TimeStats(Model):
     ]
 
 
-class LangStats(Model):
-    tablename = "stats_lang"
+class GameStats(Model):
+    tablename = "stats_games"
 
     fields = [
         Field("map", "reference maps"),
-        Field("data", "json", default={})
-    ]
-
-
-class NPlayerStats(Model):
-    tablename = "stats_nplayers"
-
-    fields = [
-        Field("map", "reference maps"),
-        Field("data", "json", default={})
+        Field("lang", "json", default={}),
+        Field("nplayers", "json", default={}),
+        Field("pot", "json", default={'wta': 0, 'ppsc': 0})
+        # turns?
     ]
 
 

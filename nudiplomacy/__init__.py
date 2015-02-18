@@ -33,9 +33,11 @@ cache = Cache(
 from models.user import User, UserData
 from models.map import Map
 from models.game import Game, Orders, Chat
+from models.stats import TimeStats, GameStats, CountryStats
 db = DAL(app, adapter_args={'upload_in_blobs': True})
 auth = Auth(app, db, usermodel=User, mailer=False)
-db.define_models([UserData, Map, Game, Orders, Chat])
+db.define_models([
+    UserData, Map, Game, Orders, Chat, TimeStats, GameStats, CountryStats])
 from helpers.mongo import MongoDB
 mdb = MongoDB(db)
 

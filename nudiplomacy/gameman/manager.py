@@ -162,8 +162,14 @@ def open_game(gid):
             'data.'+dkey: 1
         }}
     )
-    mdb.stats_lang.upd({'map': moid}, {'$inc': {game.lang: 1}})
-    mdb.stats_nplayers.upd({'map': moid}, {'$inc': {str(game.nplayers): 1}})
+    mdb.stats_games.ioru(
+        {'map': moid},
+        {'$inc': {
+            'lang.'+game.lang: 1,
+            'nplayers.'+str(game.nplayers): 1,
+            'pot.'+game.pottype: 1
+        }}
+    )
     ckeys = {}
     for k in countriesk:
         ckeys["played."+k] = 1
