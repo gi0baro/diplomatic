@@ -1,4 +1,5 @@
 from weppy import App, DAL, sdict
+from weppy.cache import Cache, RamCache, RedisCache
 from weppy.sessions import SessionRedisManager
 from weppy.tools import Auth
 
@@ -21,6 +22,12 @@ redis = Redis(host=app.config.redis.host, port=app.config.redis.port,
               db=app.config.redis.db)
 from helpers.queues import Queue
 queue = Queue(app.config, redis)
+
+cache = Cache(
+    ram=RamCache(),
+    redis=RedisCache(
+        host=app.config.redis.host, port=app.config.redis.port,
+        db=app.config.redis.db))
 
 # db and auth
 from models.user import User, UserData

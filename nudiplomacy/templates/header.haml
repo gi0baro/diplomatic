@@ -33,6 +33,12 @@
                                     %img.img-circle.img-responsive{src:"{{=url('static', 'images/default-profile.png')}}"}
                                     %br
                             %li
+                                = T("Points")+": "
+                                = userdata()['points']
+                            %li
+                                = T("Credits")+": "
+                                = userdata()['credits']
+                            %li
                                 %a{href:"#"} Profile
                             %li
                                 %a{href:"{{=url('games.owned')}}"} My games

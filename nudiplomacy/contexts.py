@@ -1,5 +1,5 @@
 from weppy import Helper, T
-from nudiplomacy import auth
+from nudiplomacy import db, auth, cache
 
 
 class BaseContext(Helper):
@@ -8,6 +8,14 @@ class BaseContext(Helper):
     @staticmethod
     def current_user():
         return auth.user
+
+    @staticmethod
+    def userdata():
+        def _get():
+            return db.UserData(user=auth.user.id).as_dict()
+        if not auth.user:
+            return {}
+        return cache.redis("userdata_"+str(auth.user.id), _get)
 
     @staticmethod
     def pretty_gamephasetime(minutes):
