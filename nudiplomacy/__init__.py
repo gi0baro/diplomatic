@@ -26,7 +26,7 @@ queue = Queue(app.config, redis)
 from models.user import User, UserData
 from models.map import Map
 from models.game import Game, Orders, Chat
-db = DAL(app)
+db = DAL(app, adapter_args={'upload_in_blobs': True})
 auth = Auth(app, db, usermodel=User, mailer=False)
 db.define_models([UserData, Map, Game, Orders, Chat])
 from helpers.mongo import MongoDB

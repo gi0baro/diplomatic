@@ -1,4 +1,5 @@
-from weppy.dal import Field, Model
+from weppy.dal import Field, Model, before_insert, before_update
+from nudiplomacy.helpers.images import create_map_image
 
 
 class Map(Model):
@@ -7,6 +8,7 @@ class Map(Model):
     fields = [
         Field("name"),
         Field("image", "upload"),
+        Field("thumb", "upload"),
         Field("year", "integer"),
         Field("colors", "json"),
         Field("oxy", "json"),
@@ -24,3 +26,15 @@ class Map(Model):
         Field("scstowin", "integer"),
         Field("init", "json")
     ]
+
+    visibility = {
+        "thumb": (False, False)
+    }
+
+    @before_insert
+    def create_thumb(self, fields):
+        create_map_image(fields)
+
+    @before_update
+    def update_thumb(self, set, fields):
+        self.create_thumb(fields)
