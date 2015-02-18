@@ -60,3 +60,11 @@ def _q_process():
         qs = [Queue('process')]
         w = Worker(qs)
         w.work()
+
+
+@app.command('queue_misc')
+def _q_misc():
+    with Connection(connection=redis):
+        qs = [Queue('misc')]
+        w = Worker(qs)
+        w.work()

@@ -21,6 +21,9 @@ class Queue(object):
         self.queues.open = RQueue('open', connection=connect)
         self.queues.close = RQueue('close', connection=connect)
         self.queues.proc = RQueue('process', connection=connect)
+        self.queues.misc = RQueue('misc', connection=connect)
+        self.queues.notify = RQueue('notify', connection=connect)
+        self.queues.mail = RQueue('mail', connection=connect)
         #self.mailer = Mailer(config)
         #self.mail = Storage()
         #self.mail.send = self.mail_send
