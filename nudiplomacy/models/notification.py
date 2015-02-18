@@ -41,10 +41,6 @@ class Event(Model):
             what happened? for example:
             {"msg":"sent message", type: "user", "pic": imgurl}
             {"msg":"new turn", type: "game", "pic": imgurl}
-        `date`
-            when happened?
-        `read`
-            did user read this?
     """
     tablename = "notification_events"
 
@@ -66,8 +62,6 @@ class Event(Model):
 class Subscription(Model):
     """
     Contains data about single user subscriptions
-        `user`
-            is the id of the User
         `channel`
             identifies the channel user is subscribed to
             example: "user_[id]"
