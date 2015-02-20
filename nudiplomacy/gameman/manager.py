@@ -192,8 +192,18 @@ def cancel_game(gid):
 
 
 def process_game(gid):
+    _days_list = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+                  "Saturday", "Sunday"]
     db._adapter.reconnect()
     game = db.Game(id=gid)
+    if game.skipproc:
+        _now = datetime.utcnow()
+        _cur_day = _days_list[_now.weekday()]
+        if _cur_day in game.skipproc:
+            _next_proc = datetime(_now.year, _now.month, _now.day) + \
+                timedelta(hours=24)
+            game.update_record(status="ingame", next=_next_proc)
+            return
     gamemap = game.map.as_dict()
     gamedata = game.as_dict()
     # temp workaround for str->int conversion
