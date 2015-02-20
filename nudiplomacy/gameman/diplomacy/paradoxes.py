@@ -1,4 +1,5 @@
 from ._glob import G
+from .exceptions import ParadoxException
 
 log = lambda x: G['logger']("[Paradox] "+x)
 
@@ -38,8 +39,6 @@ class Paradox(object):
         for node in self._stack:
             if node.type == "Convoy":
                 return self._stack.index(node)
-        #if self._loop.type == "Convoy":
-        #   return self._stack.index(self._loop)
         return None
 
     def _resolve(self):
@@ -49,25 +48,20 @@ class Paradox(object):
             self._chain.rem_last()
         elif self._getConvoyInChain() is not None:
             log("convoy chain detected, solving the convoy..")
-            ## re-order chain
+            #: re-order chain
             i = self._getConvoyInChain()
             if i == 0:
                 new_chain = [self._stack[i]]
             else:
                 new_chain = self._stack[0:1]
                 new_chain.append(self._stack[i])
-            #new_chain = []
-            #for j in self._stack[:i]:
-            #   new_chain.append(j)
-            #for j in self._stack[i+1:]:
-            #   new_chain.append(j)
-            #new_chain.append(self._stack[i])
             self._chain._stack = new_chain
-            #: Convoy's solve force follow the Szykman law which states that
+            #: Convoy's solve force follow the "Szykman law" which states that
             #  the unit being convoyed is unsuccessful, and has no influence
             #  over the territory it is being convoyed to.
             self._chain.proc.solve_force()
             self._chain.rem_last()
         else:
-            log("ERROR, I don't know how to solve this.")
-            self._chain._stack = []
+            #: We should never get this.
+            log("ERROR: I don't know how to solve this.")
+            raise ParadoxException(self._stack)

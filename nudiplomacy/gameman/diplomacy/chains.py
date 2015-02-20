@@ -1,5 +1,6 @@
 import time
 from ._glob import G
+from .exceptions import ChainloopException
 from .paradoxes import Paradox
 
 log = lambda x: G['logger']("[Chain] "+x)
@@ -18,14 +19,6 @@ class Chain(object):
     def proc(self):
         return self._stack[-1]
 
-    #@property
-    #def has_paradox(self):
-    #   return self._paradox is not None
-
-    #@property
-    #def paradox(self):
-    #   return self._paradox
-
     def new(self, start):
         self.add(start)
 
@@ -42,13 +35,14 @@ class Chain(object):
         t_start = time.time()
         solvedNode = False
         while not solvedNode:
+            t_sub = time.time()
             paradox = (False, None)
             while self.list:
                 log("processing member "+str(self.proc))
                 self.proc.solve()
                 if not self.proc.solved:
                     log("unsolved dependency for "+str(self.proc))
-                    ## looping failure check
+                    #: paradox-loop eval
                     if self.proc.depends in self.list:
                         paradox = (True, self.proc.depends)
                         break
@@ -56,12 +50,12 @@ class Chain(object):
                 else:
                     log(str(self.proc)+" solved.")
                     self.rem_last()
-                ## ultra-safe loop check
-                ## we shouldn't need this
+                #: This is an ultra-safe loop check (500ms time limit)
+                #  We should never get this
                 t_now = time.time()
-                if round((t_now-t_start)*1000) > 500:
+                if round((t_now-t_sub)*1000) > 500:
                     log("ERROR: breaking SUB, too slow.")
-                    break
+                    raise ChainloopException('step', self._stack)
             if paradox[0]:
                 self._paradox = Paradox(self, paradox[1])
                 log("found PARADOX "+str(self.list))
@@ -69,10 +63,11 @@ class Chain(object):
                 self._paradox.solve()
                 self._paradox = None
             else:
-                #self._paradox = None
                 solvedNode = True
-            ## safe loop check
+            #: Safe loop check (2s time limit)
+            #  We should never get this
             t_now = time.time()
-            if round((t_now-t_start)*1000) > 500:
+            if round((t_now-t_start)*1000) > 2000:
                 log("ERROR: breaking MAIN, too slow.")
+                raise ChainloopException('main', self._stack)
                 break

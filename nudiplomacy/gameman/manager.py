@@ -196,6 +196,7 @@ def process_game(gid):
                   "Saturday", "Sunday"]
     db._adapter.reconnect()
     game = db.Game(id=gid)
+    #: do we have to skip processing today?
     if game.skipproc:
         _now = datetime.utcnow()
         _cur_day = _days_list[_now.weekday()]
@@ -225,8 +226,12 @@ def process_game(gid):
     gamedata['phases'][-1]['orders'] = orders
     #: process the game
     proc = GameProcessor(gamedata, gamemap, app.log.info)
-    proc.process()
-    #game.update_record(status="ingame")
+    try:
+        proc.process()
+    except:
+        app.log.exception("Game "+str(gid)+" processing failed.")
+        game.update_record(status="crashed")
+        return
     #: last orders become public
     last_phase = str(len(gamedata['phases'])-1)
     mdb.games.upd(
@@ -310,6 +315,7 @@ def process_game(gid):
                     {'map': moid},
                     {'$inc': {'defeated.'+el['country']: 1}})
             else:
+                #: survived
                 db(db.Userdata.user == uid).update(
                     survived=db.Userdata.survived+1)
                 mdb.stats_countries.upd(
