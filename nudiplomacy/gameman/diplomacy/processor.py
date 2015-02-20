@@ -246,19 +246,24 @@ class GameProcessor(Processor):
                 self.phase_new["dislodged"][country].append(tid)
 
     def _updatePositions(self, troops):
-        for troop, newp, country, mc in troops:
+        #: copy current troops data
+        newp = {}
+        for country, tdict in self._troops.iteritems():
+            newp[country] = {}
+            for tk, tlist in tdict.iteritems():
+                newp[country][tk] = list(tlist)
+        #: process movements
+        for troop, nowat, country, mc in troops:
             if troop in self._troops[country]["fleets"]:
-                self._troops[country]["fleets"].remove(troop)
-                self._troops[country]["fleets"].append(newp)
-                ## remove multi-coast position if no-longer necessary
-                #if troop in self.phase_new["mc_pos"].iterkeys():
-                #   del self.phase_new["mc_pos"][troop]
-                ## add multi-coast position if needed
+                newp[country]["fleets"].remove(troop)
+                newp[country]["fleets"].append(nowat)
                 if mc is not None:
-                    self.phase_new["mc"][newp] = mc
+                    self.phase_new["mc"][nowat] = mc
             else:
-                self._troops[country]["armies"].remove(troop)
-                self._troops[country]["armies"].append(newp)
+                newp[country]["armies"].remove(troop)
+                newp[country]["armies"].append(nowat)
+        #: update troops
+        self._troops = newp
 
     def _updateTerrs(self):
         for country, troops in self._troops.iteritems():
@@ -412,19 +417,19 @@ class GameProcessor(Processor):
                 if data.get('mc') in [0, 1]:
                     self.finalOrders[country][tid]['mc'] = data['mc']
                 if self.game['phase'] == "diplomacy":
-                    self.finalOrders[country][tid]['to'] = data['to']
+                    if data['type'] != 'hold':
+                        self.finalOrders[country][tid]['to'] = data['to']
                     if data.get('viaConvoy'):
                         self.finalOrders[country][tid]['viaConvoy'] = \
                             data['viaConvoy']
-                    if data['type'] in ["sup_move", "convoy"]:
-                        self.finalOrders[country][tid]['from'] = data['from']
-                    if data['type'] == "convoy":
                         # TODO: remove next line when UI will be ready
                         self.finalOrders[country][tid]['convoy_route'] = \
                             data['convoy_route']
                         #
                         self.finalOrders[country][tid]['convoy_routes'] = \
                             data['convoy_routes']
+                    if data['type'] in ["sup_move", "convoy"]:
+                        self.finalOrders[country][tid]['from'] = data['from']
                 elif self.game['phase'] == "builds":
                     if data['type'] == 'build':
                         self.finalOrders[country][tid]['troop'] = data['troop']
