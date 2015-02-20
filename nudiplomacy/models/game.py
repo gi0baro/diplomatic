@@ -4,10 +4,10 @@ from datetime import timedelta
 from weppy import request, session, T, sdict
 from weppy.dal import Field, Model, before_insert, after_insert, modelmethod, \
     fieldmethod
-from weppy.validators import inDb, isntEmpty, inSet, isIntInRange
+from weppy.validators import inDb, isntEmpty, inSet, isIntInRange, isListOf
 from nudiplomacy import app
 from nudiplomacy.helpers.widgets import games_map, games_nplayers, games_ce, \
-    games_phasetime, games_jointime, games_bet
+    games_phasetime, games_jointime, games_bet, games_skipproc
 from nudiplomacy.helpers.mongo import longToObjid
 
 _repr_lang = {'en': "English", 'it': "Italiano"}
@@ -22,6 +22,8 @@ _repr_assign = {'random': T("Random assignment"),
                 'choose': T("Every player choose its country")}
 _repr_access = {'free': T("Everyone can join the game"),
                 'password': T("Password-protect the game")}
+_days_list = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+              "Saturday", "Sunday"]
 
 
 class Game(Model):
@@ -48,7 +50,7 @@ class Game(Model):
         Field("access", default="free"),
         Field("maxturns", "integer", default=0),
         Field("targetsc", "integer", default=0),
-        #Field("skipprocess", "json"),
+        Field("skipproc", "list:string", default=[]),
         Field("status", default="pregame"),
         Field("active", "boolean", default=False),
         Field("open", "boolean", default=True),
@@ -71,7 +73,8 @@ class Game(Model):
         "starton": inSet(["asap", "ontime"], zero=None),
         "presstype": inSet(["all", "globals", "none"], zero=None),
         "countriesassign": inSet(["random", "choose"], zero=None),
-        "access": inSet(["free", "password"], zero=None)
+        "access": inSet(["free", "password"], zero=None),
+        "skipproc": isListOf(inSet(_days_list), 0, 6)
     }
 
     visibility = {
@@ -104,7 +107,8 @@ class Game(Model):
         "countriesenabled": T("Enabled countries"),
         "access": T("Game access"),
         "maxturns": T("Maximum turns"),
-        "targetsc": T("Target SCs to win")
+        "targetsc": T("Target SCs to win"),
+        "skipproc": T("Don't process the game on")
     }
 
     comments = {
@@ -131,7 +135,8 @@ class Game(Model):
         "bet": lambda field, value: games_bet(field, value),
         "countriesenabled": lambda field, value: games_ce(field, value),
         "phasetime": lambda field, value: games_phasetime(field, value),
-        "jointime": lambda field, value: games_jointime(field, value)
+        "jointime": lambda field, value: games_jointime(field, value),
+        "skipproc": lambda field, value: games_skipproc(field, value)
     }
 
     def setup(self):

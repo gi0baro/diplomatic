@@ -84,3 +84,23 @@ def games_jointime(field, value):
                      _style="display: none;"),
         tag.div(tag.span("1 day", _id="join_slider_text"), _class="col-sm-12")
     )
+
+
+def games_skipproc(field, value):
+    options = []
+    for d in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+              "Saturday", "Sunday"]:
+        options.append(
+            tag.div(
+                tag.div(d, _class="col-sm-8"),
+                tag.div(
+                    tag.input(_class="boolean checkbox daycheck",
+                              _type="checkbox", _value=d),
+                    _class="col-sm-4"
+                ),
+                _class="col-sm-4"))
+    return tag.div(
+        tag.div(*options, _id="games_sp", _class="col-sm-12"),
+        tag.textarea(_id="games_sp_hide", _name="skipproc",
+                     _style="display: none;")
+    )

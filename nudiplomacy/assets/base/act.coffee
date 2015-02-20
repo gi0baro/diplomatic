@@ -100,6 +100,10 @@ class Act
         $('#games_ce_hide').html JSON.stringify(mapdata[map_id].countries)
         $('.countrycheck').change ->
             act._gameFormCEUpdate()
+            return
+        $('.daycheck').change ->
+            act._gameFormSPUpdate()
+            return
         return
 
     _gameFormNPChange: ->
@@ -121,6 +125,14 @@ class Act
                 data.push $(this).val()
         $('#games_ce_hide').html JSON.stringify(data)
         @_gameFormCAChange()
+        return
+
+    _gameFormSPUpdate: (el) ->
+        data = []
+        $('.daycheck').each ->
+            if $(this).prop('checked')
+                data.push $(this).val()
+        $('#games_sp_hide').html JSON.stringify(data)
         return
 
     _gameFormSlideUpdate: (id, val) ->
