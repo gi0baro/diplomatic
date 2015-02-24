@@ -1,19 +1,22 @@
-from ._glob import G
 from .nodes import Nodes
 from .chains import Chain
 
 
 class Adjudicator(object):
     def __init__(self, orders, logger=None):
-        self._logger = logger or G['logger']
-        self.log = lambda x: self._logger("[Adjudicator] "+x)
+        self._logger = logger
+        self._logstack = ""
         self.orders_db = orders
         self.chains = []
         self.chained = []
         self._start()
 
+    def log(self, msg):
+        msg = "[Adjudicator] "+msg+"\n"
+        self._logstack += msg
+
     def _start(self):
-        self.orders = Nodes()
+        self.orders = Nodes(self)
         for order_id, order in self.orders_db.iteritems():
             self.orders.new(order_id, order)
             if order.get('convoy_routes') is not None:
@@ -24,7 +27,7 @@ class Adjudicator(object):
         #paradox = (False, None)
         startpoint = node.id
         if startpoint not in self.chained:
-            chain = Chain()
+            chain = Chain(self)
             self.chains.append(chain)
             chain.new(node)
             chain.solve()
@@ -40,3 +43,5 @@ class Adjudicator(object):
                 self._solve(node)
             else:
                 self.log(str(node)+" already solved.")
+        if self._logger:
+            self._logger(self._logstack)

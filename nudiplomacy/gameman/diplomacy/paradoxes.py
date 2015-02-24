@@ -1,7 +1,4 @@
-from ._glob import G
 from .exceptions import ParadoxException
-
-log = lambda x: G['logger']("[Paradox] "+x)
 
 
 class Paradox(object):
@@ -9,12 +6,16 @@ class Paradox(object):
         self._chain = chain
         self._loop = loop
 
+    def log(self, msg):
+        msg = "[Paradox] "+msg+"\n"
+        self._chain._adj._logstack += msg
+
     @property
     def _stack(self):
         return self._chain.list
 
     def solve(self):
-        log("solving "+str(self._stack))
+        self.log("solving "+str(self._stack))
         self._resolve()
 
     def _isMoveChain(self, getConvoy=False):
@@ -43,11 +44,11 @@ class Paradox(object):
 
     def _resolve(self):
         if self._isMoveChain():
-            log("this is a move chain, solving the first..")
+            self.log("this is a move chain, solving the first..")
             self._chain.proc.solve_force()
             self._chain.rem_last()
         elif self._getConvoyInChain() is not None:
-            log("convoy chain detected, solving the convoy..")
+            self.log("convoy chain detected, solving the convoy..")
             #: re-order chain
             i = self._getConvoyInChain()
             if i == 0:
@@ -63,5 +64,5 @@ class Paradox(object):
             self._chain.rem_last()
         else:
             #: We should never get this.
-            log("ERROR: I don't know how to solve this.")
-            raise ParadoxException(self._stack)
+            self.log("ERROR: I don't know how to solve this.")
+            raise ParadoxException(self)

@@ -1,10 +1,9 @@
-from ._glob import G
-
-log = lambda x: G['logger'](x)
+# -*- coding: utf-8 -*-
 
 
 class Nodes(object):
-    def __init__(self):
+    def __init__(self, adjudicator):
+        self._adj = adjudicator
         self._nodes = dict()
 
     def __getattr__(self, name):
@@ -70,6 +69,9 @@ class Nodes(object):
             res.append(l)
         return res
 
+    def log(self, msg):
+        self._adj._logstack += msg+"\n"
+
 
 class Node(object):
     def __init__(self, nodes, oid, data):
@@ -126,6 +128,9 @@ class Node(object):
         return '<Node %(country)s - %(id)s: %(name)s>' % dict(
             id=self.id, country=self.country, name=self.name)
 
+    def log(self, msg):
+        self._up.log(msg)
+
 
 class Hold(Node):
     def _start(self):
@@ -166,7 +171,7 @@ class Hold(Node):
         #dep_rem = []
         dependencies = [node for node in self.dependencies]
         for node in dependencies:
-            log("\tHold: solving "+str(node))
+            self.log("\tHold: solving "+str(node))
             if node in self.defenders:
                 if node.solved:
                     self._solved_dep(node)
@@ -189,17 +194,19 @@ class Hold(Node):
         if versus:
             if versus.type in ["Move", "MoveConv"]:
                 if versus.solved:
-                    log("\t\tDependency is solved for "+str(versus))
+                    self.log("\t\tDependency is solved for "+str(versus))
                     if versus.succeeded:
-                        log("\t\t-> Other army " + str(versus) +
+                        self.log(
+                            "\t\t-> Other army " + str(versus) +
                             " is succesful moving to me. I'm dislodged.")
                         return True
-                    log("\t\t-> Other army " + str(versus) +
+                    self.log(
+                        "\t\t-> Other army " + str(versus) +
                         " fail moving to me. I'm not dislodged.")
                     return False
                 #else:
                     #return num_compare()
-                log("\t\tDependency is not solved for "+str(versus))
+                self.log("\t\tDependency is not solved for "+str(versus))
                 return None
         return False
 
@@ -299,14 +306,14 @@ class Move(Hold):
         return False
 
     def _compare_num(self, versus, vCompare, sCompare, swap=False):
-        log("\t\tcomparing: my "+sCompare+" - vs "+vCompare)
+        self.log("\t\tcomparing: my "+sCompare+" - vs "+vCompare)
         s_attr = self.__getattribute__(sCompare)
         v_attr = versus.__getattribute__(vCompare)
         ## we try to rapidly solve checking two easy cases:
         ## 1) my min stregth > versus max strength: I'm winning on this
         ## dependency and the versus is failed
         if s_attr[0] > v_attr[1]:
-            log("\t\t\t-> min att > max comparing: solved")
+            self.log("\t\t\t-> min att > max comparing: solved")
             ## we had to check self dislodgement tries of me or versus player
             return True
         ## 2) my max strength <= versus min strength: I'm loosing at all.
@@ -317,38 +324,41 @@ class Move(Hold):
                     ## convoyed unit exception
                     if versus.type == "MoveConv" and self.type != "MoveConv":
                         if not versus.solved:
-                            log("\t\t\t-> max att < min comparing, but vs " +
+                            self.log(
+                                "\t\t\t-> max att < min comparing, but vs " +
                                 "army is convoyed: waiting for more details..")
                             return None
                         #else:
                         #   if not versus.succeeded:
                         #       return True
-                    log("\t\t\t-> max att < min comparing: solved")
+                    self.log("\t\t\t-> max att < min comparing: solved")
                     return False
                 ## my max att = versus min att
                 if s_attr[1] == v_attr[0]:
                     ## convoyed unit exception
                     if versus.type == "MoveConv" and self.type != "MoveConv":
                         if not versus.solved:
-                            log("\t\t\t-> att is the same but vs army is " +
+                            self.log(
+                                "\t\t\t-> att is the same but vs army is " +
                                 "convoyed: waiting for more details..")
                             return None
                         #else:
                         #   return not versus.succeeded
-                    log("\t\t\t-> att is the same: solved")
+                    self.log("\t\t\t-> att is the same: solved")
                     ## same attack strength
                     return False
-                log("\t\t\t-> numeric compare unsolved")
+                self.log("\t\t\t-> numeric compare unsolved")
                 return None
             else:
                 ## if we have a convoy swap we treat it quite differently:
                 if swap:
-                    log("\t\t\t-> swap: att is same of defense, solved as " +
+                    self.log(
+                        "\t\t\t-> swap: att is same of defense, solved as " +
                         "succeded")
                     return True
-            log("\t\t\t-> max att <= min comparing: solved")
+            self.log("\t\t\t-> max att <= min comparing: solved")
             return False
-        log("\t\t\t-> numeric compare unsolved")
+        self.log("\t\t\t-> numeric compare unsolved")
         return None
 
     def _compare(self, versus):
@@ -361,38 +371,41 @@ class Move(Hold):
             vCompare = "strength_def"
         if not move:
             ## the other unit is not moving (hold or support)
-            log("\t\t-> other unit is not moving..")
+            self.log("\t\t-> other unit is not moving..")
             return self._compare_num(versus, vCompare, "strength_att")
         elif move and versus.to == self.id:
             ## the other unit is moving to me
-            log("\t\t-> other unit is moving to me..")
+            self.log("\t\t-> other unit is moving to me..")
             if versus == self.holder and self.swapping:
-                log("\t\t -> units are swapping..")
+                self.log("\t\t -> units are swapping..")
                 vCompare = "strength_def"
                 return self._compare_num(versus, vCompare, "strength_att",
                                          True)
             return self._compare_num(versus, vCompare, "strength_att")
         elif move and versus.to == self.to:
             ## the other unit is moving to the same terr I'm moving to
-            log("\t\t-> other unit is moving to same terr..")
+            self.log("\t\t-> other unit is moving to same terr..")
             ## if one of the other attackers is in 1vs1 with my holder,
             ## I had to check more stuffs
             if versus != self.holder:
                 if self.holderMoving:
                     if self.holder.to == versus.id:
-                        log("\t\t-> other unit is in 1on1 with my holder..")
+                        self.log(
+                            "\t\t-> other unit is in 1on1 with my holder..")
                         ## I need to know if holder have succeded in the move
                         if self.holder.solved:
                             if self.holder.succeeded and not \
                                     self.holder.swapping:
-                                log("\t\t\t-> Other unit is loosing: has no " +
+                                self.log(
+                                    "\t\t\t-> Other unit is loosing: has no " +
                                     "power against me.")
                                 ## if so, I won't consider the versus because
                                 ## has no strength
                                 return True
                             ## else fall back to compare_num
                         else:
-                            log("\t\t\t-> I need more information about " +
+                            self.log(
+                                "\t\t\t-> I need more information about " +
                                 "this, dependency unsolved.")
                             return None
             sCompare = "strength_att"
@@ -408,20 +421,21 @@ class Move(Hold):
             #       vCompare = "strength_ssa"
             ## additional considerations for units swap
             if self.holderMoving:
-                log("\t\t-> Holder is moving..")
+                self.log("\t\t-> Holder is moving..")
                 if self.strength_att != self.strength_ssa:
-                    log("\t\t-> my s_att != s_ssa..")
+                    self.log("\t\t-> my s_att != s_ssa..")
                     if self.holder.solved:
-                        log("\t\t\t-> Holder move is solved, continue..")
+                        self.log("\t\t\t-> Holder move is solved, continue..")
                         if self.holder.succeeded:
                             sCompare = "strength_ssa"
                         else:
                             sCompare = "strength_att"
                     else:
-                        log("\t\t\t-> Holder move is unsolved, breaking..")
+                        self.log(
+                            "\t\t\t-> Holder move is unsolved, breaking..")
                         return None
                 if versus.strength_att != versus.strength_ssa:
-                    log("\t\t-> versus s_att != s_ssa..")
+                    self.log("\t\t-> versus s_att != s_ssa..")
                     #if self.holder.solved:
                     #   print "\t\t\t-> Holder move is solved, continue.."
                     #   if self.holder.succeeded:
@@ -435,14 +449,15 @@ class Move(Hold):
             return self._compare_num(versus, vCompare, sCompare)
         else:
             ## the other unit is moving to another terr
-            log("\t\t-> other unit is moving to another terr..")
+            self.log("\t\t-> other unit is moving to another terr..")
             if versus.solved:
                 if versus.succeeded:
-                    log("\t\t\t-> other unit moved, dependency solved.")
+                    self.log("\t\t\t-> other unit moved, dependency solved.")
                     return True
                 return self._compare_num(versus, "strength_def",
                                          "strength_att")
-            log("\t\t\t-> no information on other unit, dependency unsolved.")
+            self.log(
+                "\t\t\t-> no information on other unit, dependency unsolved.")
             return None
 
     def solve(self):
@@ -450,12 +465,12 @@ class Move(Hold):
         check_stack = True if self.success_var is None else False
         dependencies = [node for node in self.dependencies]
         for node in dependencies:
-            log("\tMove: comparing dependency "+str(node))
+            self.log("\tMove: comparing dependency "+str(node))
             if node in self.supporters:
-                log("\t\tdependency is a supporter")
+                self.log("\t\tdependency is a supporter")
                 if node.solved:
                     self._solved_dep(node)
-                    log("\t\tdependency is solved for "+str(node))
+                    self.log("\t\tdependency is solved for "+str(node))
             else:
                 ## get success on the single dependency
                 success = self._compare(node)
@@ -466,7 +481,7 @@ class Move(Hold):
                 if success is not None:
                     if not success:
                         ## we ended, there's someone powerful than me
-                        log("\tMove: movement failed.")
+                        self.log("\tMove: movement failed.")
                         self.success_var = False
                         #self._solved_deps_all()
                         ## TEST: maintaining support dependencies alive
@@ -490,12 +505,12 @@ class Move(Hold):
                     winner = False
                     break
             if winner:
-                log("\tMove: movement succeeded.")
+                self.log("\tMove: movement succeeded.")
                 self.success_var = True
                 self._solved_deps_all()
 
     def solve_force(self, val=True):
-        log("\tMove: forcing moving "+str(self))
+        self.log("\tMove: forcing moving "+str(self))
         self.success_var = val
         self._solved_deps_all()
 
@@ -552,12 +567,12 @@ class MoveConv(Move):
         move_check = False
         routes_fail = []
         for route in self._convoyers:
-            log("\tMoveViaConvoy: Processing route "+str(route))
+            self.log("\tMoveViaConvoy: Processing route "+str(route))
             convoy_succ = []
             conv_rem = []
             ## convoyers check in the route
             for convoyer in route:
-                log("\t\tProcessing convoyer "+str(convoyer))
+                self.log("\t\tProcessing convoyer "+str(convoyer))
                 #self._versus = convoyer
                 #self._convoyed = self.convoyed
                 #self._versus = None
@@ -581,7 +596,7 @@ class MoveConv(Move):
                         if node not in dep_rem:
                             dep_rem.append(node)
                 ## proceeed to the normal moves solving
-                log("\tMoveViaConvoy: route succeeded")
+                self.log("\tMoveViaConvoy: route succeeded")
                 move_check = True
                 break
             ## else we just remove solved dependencies
@@ -597,18 +612,18 @@ class MoveConv(Move):
             ## verify that all routes have failed
             if routes_fail == self._convoyers:
                 ## the movement is failing, removing all deps
-                log("\tMoveViaConvoy: all convoy routes failed.")
+                self.log("\tMoveViaConvoy: all convoy routes failed.")
                 self._convoyed = False
                 self.success_var = False
                 self._solved_deps_all()
             else:
-                log("\tMoveViaConvoy: convoy routes not solved..")
+                self.log("\tMoveViaConvoy: convoy routes not solved..")
                 for route in routes_fail:
                     self._convoyers.remove(route)
         else:
             ## normal movement solve
             self._convoyed = True
-            log("\tMoveViaConvoy: starting normal movement solving..")
+            self.log("\tMoveViaConvoy: starting normal movement solving..")
             Move.solve(self)
 
     def _solve_convoyer(self, convoyer):
@@ -635,7 +650,7 @@ class Convoy(Hold):
         compare_stack = []
         dependencies = [node for node in self.dependencies]
         for node in dependencies:
-            log("\tConvoy: force solving "+str(node))
+            self.log("\tConvoy: force solving "+str(node))
             self._versus = node
             #self._dislodged = self.dislodged_fake
             att = self.dislodged_fake(node)
@@ -650,7 +665,7 @@ class Convoy(Hold):
                 self._solved_dep(node)
                 compare_stack.append(att)
             else:
-                log("\tConvoy: cannot force solve node "+str(node))
+                self.log("\tConvoy: cannot force solve node "+str(node))
         m_att = max(compare_stack)
         m_count = 0
         for att in compare_stack:
@@ -676,7 +691,7 @@ class Convoy(Hold):
         return None
 
     def solve_force(self):
-        log("\tConvoy: force solving "+str(self))
+        self.log("\tConvoy: force solving "+str(self))
         self._solved_deps_all()
         self._dislodged = True
 
@@ -694,18 +709,18 @@ class Support(Hold):
         ## we just need 1 attack to have this solved
         dependencies = [node for node in self.dependencies]
         for node in dependencies:
-            log("\tSupportM: solving dependency "+str(node))
+            self.log("\tSupportM: solving dependency "+str(node))
             self._attacked = self.attacked(node)
             if self._attacked is not None:
                 if self._attacked:
-                    log("\tSupportM: I'm attacked. Support failed.")
+                    self.log("\tSupportM: I'm attacked. Support failed.")
                     self._solved_deps_all()
                     #dep_rem = []
                     break
                 #dep_rem.append(node)
                 self._solved_dep(node)
             else:
-                log("\tSupportM: dependency "+str(node)+" unsolved.")
+                self.log("\tSupportM: dependency "+str(node)+" unsolved.")
         #for node in dep_rem:
         #   self._solved_dep(node)
 

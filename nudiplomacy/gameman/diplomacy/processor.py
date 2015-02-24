@@ -7,19 +7,19 @@
 
     This is the orders and game processor classes file.
 """
-from ._glob import G
 
 
 class Processor(object):
-    def _set_logger(self, logger):
-        if logger is not None:
-            G['logger'] = logger
-        self.log = G['logger']
+    def log(self, msg):
+        if self._logger is not None:
+            self._logger(msg)
+        else:
+            print msg
 
 
 class OrdersProcessor(Processor):
     def __init__(self, country, game, gamemap, logger=None):
-        self._set_logger(logger)
+        self._logger = logger
         self.orders_data = None
         self.status = None
         self.error = None
@@ -102,7 +102,7 @@ class OrdersProcessor(Processor):
 
 class GameProcessor(Processor):
     def __init__(self, game, gamemap, logger=None):
-        self._set_logger(logger)
+        self._logger = logger
         self._loadMap(gamemap)
         self._loadGame(game)
         #self.orders = dict(self.orders)

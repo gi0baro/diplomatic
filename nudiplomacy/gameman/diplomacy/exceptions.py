@@ -2,19 +2,23 @@
 
 
 class ParadoxException(Exception):
-    def __init__(self, stack):
-        self.stack = stack
+    def __init__(self, paradox):
+        self.stack = paradox._stack
+        self.logstack = paradox._logstack
         Exception.__init__(self)
 
     def __str__(self):
-        return "Uknown paradox type for chain: "+str(self.stack)
+        return "Uknown paradox type for chain: " + str(self.stack) + \
+            "\nLog stack: \n" + self.logstack
 
 
 class ChainloopException(Exception):
-    def __init__(self, cycle, stack):
+    def __init__(self, cycle, chain):
         self.cycle = cycle
-        self.stack = stack
+        self.stack = chain._stack
+        self.logstack = chain._adj._logstack
         Exception.__init__(self)
 
     def __str__(self):
-        return "Chain loop too slow on "+self.cycle+": "+str(self.stack)
+        return "Chain loop too slow on "+self.cycle+": "+str(self.stack) + \
+            "\nLog stack: \n"+self.logstack

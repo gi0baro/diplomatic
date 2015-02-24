@@ -1,11 +1,8 @@
-from ._glob import G
 
 
 class Validator(object):
     def __init__(self, gdata, orders, logger=None):
-        self._logger = logger or G['logger']
-        self.log = lambda x: self._logger("[Validator] "+x)
-        self.log(str(gdata))
+        self._logger = logger
         self.orders = orders
         self.seas = gdata["seas"]
         self.coasts = gdata["coasts"]
@@ -25,6 +22,11 @@ class Validator(object):
         self._convoy_routes = {}
         self._convoy_routes_stacks = []
         self.invalids = []
+
+    def log(self, msg):
+        if not self._logger:
+            return
+        self._logger(msg)
 
     def _canMove(self, From, To, mc=None):
         if self._isFleet(From):
@@ -392,10 +394,14 @@ class Validator(object):
 
 class PreProcessor(object):
     def __init__(self, orders, logger=None):
-        self._logger = logger or G['logger']
-        self.log = lambda x: self._logger("[PreProc] "+x)
+        self._logger = logger
         self.orders = orders
         self.fails = []
+
+    def log(self, msg):
+        if not self._logger:
+            return
+        self._logger(msg)
 
     def _isMoving(self, Id):
         for orders_set in self.orders.itervalues():
