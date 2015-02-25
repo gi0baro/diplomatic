@@ -49,6 +49,14 @@ class Nodes(object):
                 if node.type == tClass and \
                         node.__getattribute__(tComp[dType]) == nid:
                     res.append(node)
+        #: support move to different terr removal
+        if dType == "supporters":
+            nrem = []
+            for node in res:
+                if node.to != self.get(nid).to:
+                    nrem.append(node)
+            for node in nrem:
+                res.remove(node)
         return res
 
     def _get_attackers(self, nid):
@@ -173,7 +181,8 @@ class Hold(Node):
         for node in dependencies:
             self.log("\tHold: solving "+str(node))
             if node in self.defenders:
-                if node.solved:
+                #if node.solved:
+                if node._attacked is not None:
                     self._solved_dep(node)
             else:
                 self._dislodged = self.dislodged(node)
@@ -309,6 +318,9 @@ class Move(Hold):
         self.log("\t\tcomparing: my "+sCompare+" - vs "+vCompare)
         s_attr = self.__getattribute__(sCompare)
         v_attr = versus.__getattribute__(vCompare)
+        self.log("\t\tcomparing values: " + str(s_attr[0]) + "," +
+                 str(s_attr[1]) + " - " + str(v_attr[0]) + "," +
+                 str(v_attr[1]))
         ## we try to rapidly solve checking two easy cases:
         ## 1) my min stregth > versus max strength: I'm winning on this
         ## dependency and the versus is failed
@@ -347,11 +359,15 @@ class Move(Hold):
                     self.log("\t\t\t-> att is the same: solved")
                     ## same attack strength
                     return False
-                self.log("\t\t\t-> numeric compare unsolved")
+                self.log("\t\t\t-> numeric compare unsolved (1)")
                 return None
             else:
                 ## if we have a convoy swap we treat it quite differently:
                 if swap:
+                    if versus.solved and not versus.succeeded:
+                        self.log(
+                            "\t\t\t-> swap: other army failed, me failing too")
+                        return False
                     self.log(
                         "\t\t\t-> swap: att is same of defense, solved as " +
                         "succeded")
@@ -540,7 +556,9 @@ class MoveConv(Move):
         a = []
         for l in self._convoyers:
             for node in l:
-                a.append(node)
+                #a.append(node)
+                if node not in a:
+                    a.append(node)
         b = Move._get_dependencies(self)
         return a+b
 
@@ -627,6 +645,10 @@ class MoveConv(Move):
             Move.solve(self)
 
     def _solve_convoyer(self, convoyer):
+        if not (convoyer.type == "Convoy" and convoyer.fr == self.id):
+            return False
+        if convoyer._dislodged:
+            return False
         if convoyer.solved:
             if convoyer.succeeded:
                 return True
@@ -692,7 +714,11 @@ class Convoy(Hold):
 
     def solve_force(self):
         self.log("\tConvoy: force solving "+str(self))
-        self._solved_deps_all()
+        #self._solved_deps_all()
+        dependencies = [node for node in self.dependencies]
+        for node in dependencies:
+            if node not in self.defenders:
+                self._solved_dep(node)
         self._dislodged = True
 
 
@@ -701,28 +727,44 @@ class Support(Hold):
         Hold._start(self)
         self._attacked = None
 
-    def _get_dependencies(self):
-        return self._up._get_attackers(self.id)
+    #def _get_dependencies(self):
+    #    return self._up._get_attackers(self.id)
 
     def solve(self):
         #dep_rem = []
         ## we just need 1 attack to have this solved
-        dependencies = [node for node in self.dependencies]
-        for node in dependencies:
-            self.log("\tSupportM: solving dependency "+str(node))
-            self._attacked = self.attacked(node)
-            if self._attacked is not None:
-                if self._attacked:
-                    self.log("\tSupportM: I'm attacked. Support failed.")
-                    self._solved_deps_all()
+        #dependencies = [node for node in self.dependencies]
+        #for node in dependencies:
+        dep_rem = []
+        attackers = [k for k in self.attackers if k in self.dependencies]
+        fail_attacks = 0
+        for node in attackers:
+            self.log("\tSupport: solving dependency "+str(node))
+            #self._attacked = self.attacked(node)
+            _attacked = self.attacked(node)
+            #if self._attacked is not None:
+            if _attacked is not None:
+                #if self._attacked:
+                if _attacked:
+                    self._attacked = True
+                    self.log("\tSupport: I'm attacked. Support failed.")
+                    #self._solved_deps_all()
+                    dep_rem = attackers
                     #dep_rem = []
                     break
-                #dep_rem.append(node)
+                else:
+                    self.log("\tSupport: attacker failed, still supporting.")
+                    fail_attacks += 1
                 self._solved_dep(node)
             else:
-                self.log("\tSupportM: dependency "+str(node)+" unsolved.")
-        #for node in dep_rem:
-        #   self._solved_dep(node)
+                self.log("\tSupport: dependency "+str(node)+" unsolved.")
+        for node in dep_rem:
+            if node in self.dependencies:
+                self._solved_dep(node)
+        if fail_attacks == len(self.attackers):
+            self._attacked = False
+        #: proc defenders!
+        Hold.solve(self)
 
     @property
     def success(self):
@@ -750,7 +792,8 @@ class SupportM(Support):
                 return False
             if versus.type == "MoveConv":
                 if versus.solved:
-                    if versus.succeeded:
+                    #if versus.succeeded:
+                    if versus.convoyed:
                         return True
                     return False
                 return None
@@ -770,7 +813,8 @@ class SupportH(Support):
                 if versus.solved:
                     ## return the result of the movement,
                     ## a faied move via convoy should not cut the support
-                    if versus.succeeded:
+                    #if versus.succeeded:
+                    if versus.convoyed:
                         return True
                     return False
                 return None

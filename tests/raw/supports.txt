@@ -1,0 +1,355 @@
+Feature: Support hold can prevent dislodgement
+    Given
+        Austria:
+            fleet in Adriatic Sea supports movement of Trieste to Venice
+            army in Trieste moves to Venice
+
+        Italy:
+            army in Venice holds
+            army in Tyrolia supports hold of Venice
+    Then
+        Trieste fails
+
+Feature: Move cuts support hold
+    Given
+         Austria:
+            fleet in Adriatic Sea supports movement of Trieste to Venice
+            army in Trieste moves to Venice
+            army in Vienna moves to Tyrolia
+
+        Italy:
+            army in Venice holds
+            army in Tyrolia supports hold of Venice
+    Then
+        Tyrolia fails
+        Venice fails
+        Vienna fails
+
+Feature: Move cuts support move
+    Given
+        Austria:
+            fleet in Adriatic Sea supports movement of Trieste to Venice
+            army in Trieste moves to Venice
+
+        Italy:
+            army in Venice holds
+            fleet in Ionian Sea moves to Adriatic Sea
+    Then
+        Ionian Sea fails
+        Adriatic Sea fails
+        Trieste fails
+
+Feature: Support hold a unit supporting a hold
+    Given
+        Germany:
+            army in Berlin supports hold of Kiel
+            fleet in Kiel supports hold of Berlin
+
+        Russia:
+            fleet in Baltic Sea supports movement of Prussia to Berlin
+            army in Prussia moves to Berlin
+    Then
+        Prussia fails
+        Berlin fails
+
+Feature: Support hold a unit supporting a move
+    Given
+        Germany:
+            army in Berlin supports movement of Munich to Silesia
+            fleet in Kiel supports hold of Berlin
+            army in Munich moves to Silesia
+
+        Russia:
+            fleet in Baltic Sea supports movement of Prussia to Berlin
+            army in Prussia moves to Berlin
+    Then
+        Prussia fails
+        Berlin fails
+
+Feature: Support hold a unit convoying
+    Given
+        Germany:
+            army in Berlin moves to Sweden
+            fleet in Baltic Sea convoys Berlin to Sweden
+            fleet in Prussia supports hold of Baltic Sea
+
+        Russia:
+            fleet in Livonia moves to Baltic Sea
+            fleet in Gulf of Bothnia supports movement of Livonia to Baltic Sea
+    Then
+        Livonia fails
+
+Feature: Support hold on a moving unit
+    Given
+        Germany:
+            fleet in Baltic Sea moves to Sweden
+            fleet in Prussia supports hold of Baltic Sea
+
+        Russia:
+            fleet in Livonia moves to Baltic Sea
+            fleet in Gulf of Bothnia supports movement of Livonia to Baltic Sea
+            army in Finland moves to Sweden
+    Then
+        Prussia fails
+        Baltic Sea fails
+        Finland fails
+
+Feature: Failed convoy cannot receive hold support
+    Given
+        Austria:
+            fleet in Ionian Sea holds
+            army in Serbia supports movement of Albania to Greece
+            army in Albania moves to Greece
+
+        Turkey:
+            army in Greece moves to Naples
+            army in Bulgaria supports hold of Greece
+    Then
+        Greece fails
+        Bulgaria fails
+
+Feature: Support move a holding unit
+    Given
+        Italy:
+            army in Venice moves to Trieste
+            army in Tyrolia supports movement of Venice to Trieste
+
+        Austria:
+            army in Albania supports movement of Trieste to Serbia
+            army in Trieste holds
+    Then
+        Albania fails
+        Trieste fails
+
+Feature: Avoid self dislodgements
+    Given
+        Germany:
+            army in Berlin holds
+            fleet in Kiel moves to Berlin
+            army in Munich supports movement of Kiel to Berlin
+    Then
+        Kiel fails
+
+Feature: Avoid self dislodgement of returning unit
+    Given
+        Germany:
+            army in Berlin moves to Prussia
+            fleet in Kiel moves to Berlin
+            army in Munich supports movement of Kiel to Berlin
+
+        Russia:
+            army in Warsaw moves to Prussia
+
+    Then
+        Berlin fails
+        Warsaw fails
+        Kiel fails
+
+Feature: Avoid support foreign unit to dislodge own unit
+    Given
+        Austria:
+            fleet in Trieste holds
+            army in Vienna supports movement of Venice to Trieste
+
+        Italy:
+            army in Venice moves to Trieste
+    Then
+        Venice fails
+
+Feature: Avoid support foreign unit to dislodge own unit on return
+    Given
+        Austria:
+            fleet in Trieste moves to Adriatic Sea
+            army in Vienna supports movement of Venice to Trieste
+
+        Italy:
+            army in Venice moves to Trieste
+            fleet in Apulia moves to Adriatic Sea
+    Then
+        Venice fails
+        Trieste fails
+        Apulia fails
+
+Feature: Supporting foreign unit not enough to prevent dislodgement
+    Given
+        Austria:
+            fleet in Trieste holds
+            army in Vienna supports movement of Venice to Trieste
+
+        Italy:
+            army in Venice moves to Trieste
+            army in Tyrolia supports movement of Venice to Trieste
+            fleet in Adriatic Sea supports movement of Venice to Trieste
+    Then
+        Trieste fails
+
+Feature: Defender cannot cut support for attack on itself
+    Given
+        Russia:
+            fleet in Constantinople supports movement of Black Sea to Ankara
+            fleet in Black Sea moves to Ankara
+
+        Turkey:
+            fleet in Ankara moves to Constantinople
+    Then
+        Ankara fails
+
+Feature: Convoying a unit dislodging a unit of same power
+    Given
+        England:
+            army in London holds
+            fleet in North Sea convoys Belgium to London
+
+        France:
+            fleet in English Channel supports movement of Belgium to London
+            army in Belgium moves to London
+    Then
+        London fails
+
+Feature: Dislodgement cuts support
+    Given
+        Russia:
+            fleet in Constantinople supports movement of Black Sea to Ankara
+            fleet in Black Sea moves to Ankara
+
+        Turkey:
+            fleet in Ankara moves to Constantinople
+            army in Smyrna supports movement of Ankara to Constantinople
+            army in Armenia moves to Ankara
+    Then
+        Constantinople fails
+        Black Sea fails
+        Armenia fails
+
+Feature: Surviving unit support
+    Given
+        Russia:
+            fleet in Constantinople supports movement of Black Sea to Ankara
+            fleet in Black Sea moves to Ankara
+            army in Bulgaria supports hold of Constantinople
+
+        Turkey:
+            fleet in Ankara moves to Constantinople
+            army in Smyrna supports movement of Ankara to Constantinople
+            army in Armenia moves to Ankara
+    Then
+        Ankara fails
+        Armenia fails
+
+Feature: Even when surviving is an alternative way
+    Given
+        Russia:
+            fleet in Constantinople supports movement of Black Sea to Ankara
+            fleet in Black Sea moves to Ankara
+            army in Bulgaria supports hold of Constantinople
+
+        Turkey:
+            fleet in Ankara moves to Constantinople
+    Then
+        Ankara fails
+
+Feature: Avoid support cut from same country
+    Given
+        England:
+            fleet in London supports movement of North Sea to English Channel
+            fleet in North Sea moves to English Channel
+            army in Yorkshire moves to London
+
+        France:
+            fleet in English Channel holds
+    Then
+        Yorkshire fails
+        English Channel fails
+
+Feature: Dislodgement doesn't cancel a support cut
+    Given
+        Austria:
+            fleet in Trieste holds
+
+        Italy:
+            army in Venice moves to Trieste
+            army in Tyrolia supports movement of Venice to Trieste
+
+        Germany:
+            army in Munich moves to Tyrolia
+
+        Russia:
+            army in Silesia moves to Munich
+            army in Berlin supports movement of Silesia to Munich
+    Then
+        Munich fails
+        Tyrolia fails
+        Venice fails
+
+Feature: Failing hold support can be supported
+    Given
+        Germany:
+            army in Berlin supports hold of Prussia
+            fleet in Kiel supports hold of Berlin
+
+        Russia:
+            fleet in Baltic Sea supports movement of Prussia to Berlin
+            army in Prussia moves to Berlin
+    Then
+        Prussia fails
+        Berlin fails
+
+Feature: Failing move support can be supported
+    Given
+        Germany:
+            army in Berlin supports movement of Prussia to Silesia
+            fleet in Kiel supports hold of Berlin
+
+        Russia:
+            fleet in Baltic Sea supports movement of Prussia to Berlin
+            army in Prussia moves to Berlin
+    Then
+        Prussia fails
+        Berlin fails
+
+Feature: Failing convoy can be supported
+    Given
+        England:
+            fleet in Sweden moves to Baltic Sea
+            fleet in Denmark supports movement of Sweden to Baltic Sea
+
+        Germany:
+            army in Berlin holds
+
+        Russia:
+            fleet in Baltic Sea convoys Berlin to Livonia
+            fleet in Prussia supports hold of Baltic Sea
+    Then
+        Baltic Sea fails
+        Sweden fails
+
+Feature: Unwanted support
+    Given
+        Austria:
+            army in Serbia moves to Budapest
+            army in Vienna moves to Budapest
+
+        Russia:
+            army in Galicia supports movement of Serbia to Budapest
+
+        Turkey:
+            army in Bulgaria moves to Serbia
+    Then
+        Vienna fails
+
+Feature: Avoid support targeting own territory
+    Given
+        Germany:
+            army in Berlin moves to Prussia
+            army in Silesia supports movement of Berlin to Prussia
+            fleet in Baltic Sea supports movement of Berlin to Prussia
+
+        Italy:
+            army in Prussia supports movement of Livonia to Prussia
+
+        Russia:
+            army in Warsaw supports movement of Livonia to Prussia
+            army in Livonia moves to Prussia
+    Then
+        Prussia fails
+        Livonia fails

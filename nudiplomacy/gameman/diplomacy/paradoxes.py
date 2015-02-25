@@ -42,26 +42,43 @@ class Paradox(object):
                 return self._stack.index(node)
         return None
 
+    def _getConvoysInChain(self):
+        rv = []
+        for node in self._stack:
+            if node.type == "Convoy":
+                rv.append(self._stack.index(node))
+        return rv
+
     def _resolve(self):
         if self._isMoveChain():
             self.log("this is a move chain, solving the first..")
             self._chain.proc.solve_force()
             self._chain.rem_last()
-        elif self._getConvoyInChain() is not None:
+        #elif self._getConvoyInChain() is not None:
+        elif self._getConvoysInChain():
             self.log("convoy chain detected, solving the convoy..")
             #: re-order chain
-            i = self._getConvoyInChain()
-            if i == 0:
-                new_chain = [self._stack[i]]
+            #i = self._getConvoyInChain()
+            #if i == 0:
+            #    new_chain = [self._stack[i]]
+            #else:
+            #    new_chain = self._stack[0:i]
+            #    new_chain.append(self._stack[i])
+            pos = self._getConvoysInChain()
+            mpos = min(pos)
+            if mpos == 0:
+                new_chain = []
             else:
-                new_chain = self._stack[0:1]
-                new_chain.append(self._stack[i])
-            self._chain._stack = new_chain
+                new_chain = self._stack[0:mpos]
+            #self._chain._stack = new_chain
             #: Convoy's solve force follow the "Szykman law" which states that
             #  the unit being convoyed is unsuccessful, and has no influence
             #  over the territory it is being convoyed to.
-            self._chain.proc.solve_force()
-            self._chain.rem_last()
+            #self._chain.proc.solve_force()
+            #self._chain.rem_last()
+            for p in pos:
+                self._chain._stack[p].solve_force()
+            self._chain._stack = new_chain
         else:
             #: We should never get this.
             self.log("ERROR: I don't know how to solve this.")

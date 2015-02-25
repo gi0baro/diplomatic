@@ -1,0 +1,62 @@
+Feature: Simple bounce
+    Given
+        Italy:
+            army in Venice moves to Tyrolia
+
+        Austria:
+            army in Vienna moves to Tyrolia
+    Then
+        Venice fails
+        Vienna fails
+
+Feature: 3 units bounce
+    Given
+        Italy:
+            army in Venice moves to Tyrolia
+
+        Austria:
+            army in Vienna moves to Tyrolia
+
+        Germany:
+            army in Munich moves to Tyrolia
+    Then
+        Venice fails
+        Vienna fails
+        Munich fails
+
+Feature: Support to unreachable coast allowed
+    Given
+        France:
+            fleet in Gascony moves to Spain (nc)
+            fleet in Marseilles supports movement of Gascony to Spain
+
+        Italy:
+            fleet in Western Mediterranean moves to Spain (sc)
+    Then
+        Western Mediterranean fails
+
+Feature: Support can be cut with other coast
+    Given
+        England:
+            fleet in Irish Sea supports movement of North Atlantic Ocean to Mid-Atlantic Ocean
+            fleet in North Atlantic Ocean moves to Mid-Atlantic Ocean
+
+        France:
+            fleet in Spain (nc) supports hold of Mid-Atlantic Ocean
+            fleet in Mid-Atlantic Ocean holds
+
+        Italy:
+            fleet in Gulf of Lyon moves to Spain (sc)
+    Then
+        Spain fails
+        Mid-Atlantic Ocean fails
+        Gulf of Lyon fails
+
+Feature: Coastal crawl not allowed
+    Given
+        Turkey:
+            fleet in Bulgaria (sc) moves to Constantinople
+            fleet in Constantinople moves to Bulgaria (nc)
+    Then
+        Bulgaria fails
+        Constantinople fails

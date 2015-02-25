@@ -4,7 +4,7 @@
 class ParadoxException(Exception):
     def __init__(self, paradox):
         self.stack = paradox._stack
-        self.logstack = paradox._logstack
+        self.logstack = paradox._chain._adj._logstack
         Exception.__init__(self)
 
     def __str__(self):

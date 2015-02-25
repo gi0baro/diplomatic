@@ -1,0 +1,362 @@
+Feature: Convoy bounce
+    Given
+        England:
+            fleet in English Channel convoys London to Brest
+            army in London moves to Brest
+
+        France:
+            army in Paris moves to Brest
+    Then
+        London fails
+        Paris fails
+
+Feature: Convoy support
+    Given
+        England:
+            fleet in English Channel convoys London to Brest
+            army in London moves to Brest
+            fleet in Mid-Atlantic Ocean supports movement of London to Brest
+
+        France:
+            army in Paris moves to Brest
+    Then
+        Paris fails
+
+Feature: Attacked convoy is not disrupted
+    Given
+        England:
+            fleet in North Sea convoys London to Holland
+            army in London moves to Holland
+
+        Germany:
+            fleet in Skagerrak moves to North Sea
+    Then
+        Skagerrak fails
+
+Feature: Beleaguered convoy is not disrupted
+    Given
+        England:
+            fleet in North Sea convoys London to Holland
+            army in London moves to Holland
+
+        France:
+            fleet in English Channel moves to North Sea
+            fleet in Belgium supports movement of English Channel to North Sea
+
+        Germany:
+            fleet in Skagerrak moves to North Sea
+            fleet in Denmark supports movement of Skagerrak to North Sea
+    Then
+        English Channel fails
+        Skagerrak fails
+
+Feature: Dislodged convoy doesn't cut a support
+    Given
+        England:
+            fleet in North Sea convoys London to Holland
+            army in London moves to Holland
+
+        Germany:
+            army in Holland supports hold of Belgium
+            army in Belgium supports hold of Holland
+            fleet in Helgoland Bight supports movement of Skagerrak to North Sea
+            fleet in Skagerrak moves to North Sea
+
+        France:
+            army in Picardy moves to Belgium
+            army in Burgundy supports movement of Picardy to Belgium
+    Then
+        North Sea fails
+        London fails
+        Belgium fails
+        Picardy fails
+
+Feature: Dislodged convoy doesn't cause a bounce
+    Given
+        England:
+            fleet in North Sea convoys London to Holland
+            army in London moves to Holland
+
+        Germany:
+            fleet in Helgoland Bight supports movement of Skagerrak to North Sea
+            fleet in Skagerrak moves to North Sea
+            army in Belgium moves to Holland
+    Then
+        North Sea fails
+        London fails
+
+Feature: Dislodge of multi-route convoy
+    Given
+        England:
+            fleet in English Channel convoys London to Belgium
+            fleet in North Sea convoys London to Belgium
+            army in London moves to Belgium
+
+        France:
+            fleet in Brest supports movement of Mid-Atlantic Ocean to English Channel
+            fleet in Mid-Atlantic Ocean moves to English Channel
+    Then
+        English Channel fails
+
+Feature: Dislodge of multi-route convoy (foreign)
+    Given
+        England:
+            fleet in North Sea convoys London to Belgium
+            army in London moves to Belgium
+
+        Germany:
+            fleet in English Channel convoys London to Belgium
+
+        France:
+            fleet in Brest supports movement of Mid-Atlantic Ocean to English Channel
+            fleet in Mid-Atlantic Ocean moves to English Channel
+    Then
+        English Channel fails
+
+Feature: Dislodge of multi-route convoy (foreign)
+    Given
+        England:
+            army in London moves to Belgium
+
+        Germany:
+            fleet in English Channel convoys London to Belgium
+
+        Russia:
+            fleet in North Sea convoys London to Belgium
+
+        France:
+            fleet in Brest supports movement of Mid-Atlantic Ocean to English Channel
+            fleet in Mid-Atlantic Ocean moves to English Channel
+    Then
+        English Channel fails
+
+Feature: The unwanted alternative
+    Given
+        England:
+            fleet in North Sea convoys London to Belgium
+            army in London moves to Belgium
+
+        France:
+            fleet in English Channel convoys London to Belgium
+
+        Germany:
+            fleet in Denmark moves to North Sea
+            fleet in Holland supports movement of Denmark to North Sea
+    Then
+        North Sea fails
+
+Feature: Simple convoy paradox
+    Given
+        England:
+            fleet in London supports movement of Wales to English Channel
+            fleet in Wales moves to English Channel
+
+        France:
+            army in Brest moves to London
+            fleet in English Channel convoys Brest to London
+    Then
+        English Channel fails
+        Brest fails
+
+Feature: Simple convoy paradox with additional convoy
+    Given
+        England:
+            fleet in London supports movement of Wales to English Channel
+            fleet in Wales moves to English Channel
+
+        France:
+            army in Brest moves to London
+            fleet in English Channel convoys Brest to London
+
+        Italy:
+            fleet in Irish Sea convoys North Africa to Wales
+            fleet in Mid-Atlantic Ocean convoys North Africa to Wales
+            army in North Africa moves to Wales
+    Then
+        English Channel fails
+        Brest fails
+
+Feature: Pandin's paradox
+    Given
+        England:
+            fleet in London supports movement of Wales to English Channel
+            fleet in Wales moves to English Channel
+
+        France:
+            army in Brest moves to London
+            fleet in English Channel convoys Brest to London
+
+        Germany:
+            fleet in North Sea supports movement of Belgium to English Channel
+            fleet in Belgium moves to English Channel
+    Then
+        English Channel fails
+        Brest fails
+        Wales fails
+        Belgium fails
+
+Feature: Pandin's extended paradox
+    Given
+        England:
+            fleet in London supports movement of Wales to English Channel
+            fleet in Wales moves to English Channel
+
+        France:
+            army in Brest moves to London
+            fleet in English Channel convoys Brest to London
+            fleet in Yorkshire supports movement of Brest to London
+
+        Germany:
+            fleet in North Sea supports movement of Belgium to English Channel
+            fleet in Belgium moves to English Channel
+    Then
+        English Channel fails
+        Brest fails
+        Wales fails
+        Belgium fails
+
+Feature: Betrayal paradox
+    Given
+        England:
+            fleet in North Sea convoys London to Belgium
+            army in London moves to Belgium
+            fleet in English Channel supports movement of London to Belgium
+
+        France:
+            fleet in Belgium supports hold of North Sea
+
+        Germany:
+            fleet in Helgoland Bight supports movement of Skagerrak to North Sea
+            fleet in Skagerrak moves to North Sea
+    Then
+        North Sea fails
+        London fails
+        Skagerrak fails
+
+Feature: Multi-route convoy disruption paradox
+    Given
+        France:
+            army in Tunis moves to Naples
+            fleet in Tyrrhenian Sea convoys Tunis to Naples
+            fleet in Ionian Sea convoys Tunis to Naples
+
+        Italy:
+            fleet in Naples supports movement of Rome to Tyrrhenian Sea
+            fleet in Rome moves to Tyrrhenian Sea
+    Then
+        Tunis fails
+        Naples fails
+        Rome fails
+
+Feature: Unwanted multi-route convoy paradox
+    Given
+        France:
+            army in Tunis moves to Naples
+            fleet in Tyrrhenian Sea convoys Tunis to Naples
+
+        Italy:
+            fleet in Naples supports hold of Ionian Sea
+            fleet in Ionian Sea convoys Tunis to Naples
+
+        Turkey:
+            fleet in Aegean Sea supports movement of Eastern Mediterranean to Ionian Sea
+            fleet in Eastern Mediterranean moves to Ionian Sea
+    Then
+        Ionian Sea fails
+        Tunis fails
+        Naples fails
+
+Feature: Dad's army convoy
+    Given
+        Russia:
+            army in Edinburgh supports movement of Norway to Clyde
+            fleet in Norwegian Sea convoys Norway to Clyde
+            army in Norway moves to Clyde
+
+        France:
+            fleet in Irish Sea supports movement of Mid-Atlantic Ocean to North Atlantic Ocean
+            fleet in Mid-Atlantic Ocean moves to North Atlantic Ocean
+
+        England:
+            army in Liverpool moves to Clyde
+            fleet in North Atlantic Ocean convoys Liverpool to Clyde
+            fleet in Clyde supports hold of North Atlantic Ocean
+    Then
+        Clyde fails
+        North Atlantic Ocean fails
+        Liverpool fails
+
+Feature: 2nd order paradox with 2 resolutions
+    Given
+        England:
+            fleet in Edinburgh moves to North Sea
+            fleet in London supports movement of Edinburgh to North Sea
+
+        France:
+            army in Brest moves to London
+            fleet in English Channel convoys Brest to London
+
+        Germany:
+            fleet in Belgium supports movement of Picardy to English Channel
+            fleet in Picardy moves to English Channel
+
+        Russia:
+            army in Norway moves to Belgium
+            fleet in North Sea convoys Norway to Belgium
+    Then
+        North Sea fails
+        English Channel fails
+        Brest fails
+        Norway fails
+
+Feature: 2nd order paradox with 2 exclusive convoys
+    Given
+        England:
+            fleet in Edinburgh moves to North Sea
+            fleet in London supports movement of Edinburgh to North Sea
+
+        France:
+            army in Brest moves to London
+            fleet in English Channel convoys Brest to London
+
+        Germany:
+            fleet in Belgium supports hold of English Channel
+            fleet in Picardy supports hold of North Sea
+
+        Italy:
+            fleet in Mid-Atlantic Ocean moves to English Channel
+            fleet in Irish Sea supports movement of Mid-Atlantic Ocean to English Channel
+
+        Russia:
+            army in Norway moves to Belgium
+            fleet in North Sea convoys Norway to Belgium
+    Then
+        North Sea fails
+        English Channel fails
+        Brest fails
+        Norway fails
+        Edinburgh fails
+        Mid-Atlantic Ocean fails
+
+Feature: 2nd order paradox with no resolution
+    Given
+        England:
+            fleet in Edinburgh moves to North Sea
+            fleet in London supports movement of Edinburgh to North Sea
+            fleet in Irish Sea moves to English Channel
+            fleet in Mid-Atlantic Ocean supports movement of Irish Sea to English Channel
+
+        France:
+            army in Brest moves to London
+            fleet in English Channel convoys Brest to London
+            fleet in Belgium supports hold of English Channel
+
+        Russia:
+            army in Norway moves to Belgium
+            fleet in North Sea convoys Norway to Belgium
+    Then
+        North Sea fails
+        English Channel fails
+        Brest fails
+        Norway fails
+        Irish Sea fails

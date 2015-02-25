@@ -1,0 +1,90 @@
+Feature: 3 army circular movement
+    Given
+        Turkey:
+            fleet in Ankara moves to Constantinople
+            army in Constantinople moves to Smyrna
+            army in Smyrna moves to Ankara
+
+Feature: 3 army circular movement with support
+    Given
+        Turkey:
+            fleet in Ankara moves to Constantinople
+            army in Constantinople moves to Smyrna
+            army in Smyrna moves to Ankara
+            army in Bulgaria supports movement of Ankara to Constantinople
+
+Feature: Disrupted 3 army circular movement
+    Given
+        Turkey:
+            fleet in Ankara moves to Constantinople
+            army in Constantinople moves to Smyrna
+            army in Smyrna moves to Ankara
+            army in Bulgaria moves to Constantinople
+    Then
+        Ankara fails
+        Constantinople fails
+        Smyrna fails
+        Bulgaria fails
+
+Feature: Circular movement with attacked convoy
+    Given
+        Austria:
+            army in Trieste moves to Serbia
+            army in Serbia moves to Bulgaria
+
+        Turkey:
+            army in Bulgaria moves to Trieste
+            fleet in Aegean Sea convoys Bulgaria to Trieste
+            fleet in Ionian Sea convoys Bulgaria to Trieste
+            fleet in Adriatic Sea convoys Bulgaria to Trieste
+
+        Italy:
+            fleet in Naples moves to Ionian Sea
+    Then
+        Naples fails
+
+Feature: Disrupted circular movement due to dislodged convoy
+    Given
+        Austria:
+            army in Trieste moves to Serbia
+            army in Serbia moves to Bulgaria
+
+        Turkey:
+            army in Bulgaria moves to Trieste
+            fleet in Aegean Sea convoys Bulgaria to Trieste
+            fleet in Ionian Sea convoys Bulgaria to Trieste
+            fleet in Adriatic Sea convoys Bulgaria to Trieste
+
+        Italy:
+            fleet in Naples moves to Ionian Sea
+            fleet in Tunis supports movement of Naples to Ionian Sea
+    Then
+        Ionian Sea fails
+        Bulgaria fails
+        Serbia fails
+        Trieste fails
+
+Feature: 2 armies with 2 convoys
+    Given
+        England:
+            fleet in North Sea convoys London to Belgium
+            army in London moves to Belgium
+
+        France:
+            fleet in English Channel convoys Belgium to London
+            army in Belgium moves to London
+
+Feature: Disrupted unit swap
+    Given
+        England:
+            fleet in North Sea convoys London to Belgium
+            army in London moves to Belgium
+
+        France:
+            fleet in English Channel convoys Belgium to London
+            army in Belgium moves to London
+            army in Burgundy moves to Belgium
+    Then
+        Burgundy fails
+        London fails
+        Belgium fails

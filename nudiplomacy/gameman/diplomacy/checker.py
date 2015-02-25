@@ -86,8 +86,14 @@ class Validator(object):
                 if self._isCoast(node):
                     ntype = "coast"
                 else:
+                    if procstack:
+                        index += 1
+                        _routes.append(_routes[-1][0:procstack[0][1]-1])
                     continue
             if node in _routes[index]:
+                if procstack:
+                    index += 1
+                    _routes.append(_routes[-1][0:procstack[0][1]-1])
                 continue
             if nstep > step:
                 step += 1
@@ -466,6 +472,18 @@ class PreProcessor(object):
                     ## terr fails
                     if not self._isMovingTo(order["from"], order["to"]):
                         self.fails.append((player, order_id))
+                        continue
+                    #: is the army moving viaConvoy?
+                    for otherp, otherordersset in self.orders.iteritems():
+                        otherfound = False
+                        for otheroid, otherorder in otherordersset.iteritems():
+                            if otheroid == order["from"]:
+                                if not otherorder.get("viaConvoy"):
+                                    self.fails.append((player, order_id))
+                                otherfound = True
+                                break
+                        if otherfound:
+                            break
                 ## add check for convoy route (move + viaConvoy)
                 elif order["type"] == "move":
                     if order.get("viaConvoy"):

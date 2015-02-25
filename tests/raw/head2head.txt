@@ -1,0 +1,252 @@
+Feature: Dislodged unit has no effect on attackers area
+    Given
+        Germany:
+            army in Berlin moves to Prussia
+            fleet in Kiel moves to Berlin
+            army in Silesia supports movement of Berlin to Prussia
+        Russia:
+            army in Prussia moves to Berlin
+    Then
+        Prussia fails
+
+Feature: Avoid self dislodgement on head2head
+    Given
+        Germany:
+            army in Berlin moves to Kiel
+            fleet in Kiel moves to Berlin
+            army in Munich supports movement of Berlin to Kiel
+    Then
+        Berlin fails
+        Kiel fails
+
+Feature: Avoid help in dislodging own unit
+    Given
+        Germany:
+            army in Berlin moves to Kiel
+            army in Munich supports movement of Kiel to Berlin
+
+        England:
+            amry in Kiel moves to Berlin
+    Then
+        Berlin fails
+        Kiel fails
+
+Feature: Non-dislodged loser keeps effect
+    Given
+        Germany:
+            fleet in Holland moves to North Sea
+            fleet in Helgoland Bight supports movement of Holland to North Sea
+            fleet in Skagerrak supports movement of Holland to North Sea
+
+        France:
+            fleet in North Sea moves to Holland
+            fleet in Belgium supports movement of North Sea to Holland
+
+        England:
+            fleet in Edinburgh supports movement of Norwegian Sea to North Sea
+            fleet in Yorkshire supports movement of Norwegian Sea to North Sea
+            fleet in Norwegian Sea moves to North Sea
+
+        Austria:
+            army in Kiel supports movement of Ruhr to Holland
+            army in Ruhr moves to Holland
+    Then
+        Holland fails
+        Norwegian Sea fails
+        North Sea fails
+        Ruhr fails
+
+Feature: Dislodged loser keeps effect
+    Given
+        Germany:
+            fleet in Holland moves to North Sea
+            fleet in Helgoland Bight supports movement of Holland to North Sea
+            fleet in Skagerrak supports movement of Holland to North Sea
+
+        France:
+            fleet in North Sea moves to Holland
+            fleet in Belgium supports movement of North Sea to Holland
+
+        England:
+            fleet in Edinburgh supports movement of Norwegian Sea to North Sea
+            fleet in Yorkshire supports movement of Norwegian Sea to North Sea
+            fleet in Norwegian Sea moves to North Sea
+            fleet in London supports movement of Norwegian Sea to North Sea
+
+        Austria:
+            army in Kiel supports movement of Ruhr to Holland
+            army in Ruhr moves to Holland
+    Then
+        Holland fails
+        North Sea fails
+        Ruhr fails
+
+Feature: Non-dislodged army because of self support keeps effect
+    Given
+        Germany:
+            fleet in Holland moves to North Sea
+            fleet in Helgoland Bight supports movement of Holland to North Sea
+
+        France:
+            fleet in North Sea moves to Holland
+            fleet in Belgium supports movement of North Sea to Holland
+            fleet in English Channel supports movement of Holland to North Sea
+
+        Austria:
+            army in Kiel supports movement of Ruhr to Holland
+            army in Ruhr moves to Holland
+    Then
+        Holland fails
+        North Sea fails
+        Ruhr fails
+
+Feature: Avoid self dislodgement with beleaguered garrison
+    Given
+        England:
+            fleet in North Sea holds
+            fleet in Yorkshire supports movement of Norway to North Sea
+
+        Germany:
+            fleet in Holland supports movement of Helgoland Bight to North Sea
+            fleet in Helgoland Bight moves to North Sea
+
+        Russia:
+            fleet in Skagerrak supports movement of Norway to North Sea
+            fleet in Norway moves to North Sea
+    Then
+        Norway fails
+        Helgoland Bight fails
+
+Feature: Avoid self dislodgement with beleaguered and head2head
+    Given
+        England:
+            fleet in North Sea moves to Norway
+            fleet in Yorkshire supports movement of Norway to North Sea
+
+        Germany:
+            fleet in Holland supports movement of Helgoland Bight to North Sea
+            fleet in Helgoland Bight moves to North Sea
+
+        Russia:
+            fleet in Skagerrak supports movement of Norway to North Sea
+            fleet in Norway moves to North Sea
+    Then
+        North Sea fails
+        Norway fails
+        Helgoland Bight fails
+
+Feature: Almost self dislodgement with beleaguered
+    Given
+        England:
+            fleet in North Sea moves to Norwegian Sea
+            fleet in Yorkshire supports movement of Norway to North Sea
+
+        Germany:
+            fleet in Holland supports movement of Helgoland Bight to North Sea
+            fleet in Helgoland Bight moves to North Sea
+
+        Russia:
+            fleet in Skagerrak supports movement of Norway to North Sea
+            fleet in Norway moves to North Sea
+    Then
+        Helgoland Bight fails
+
+Feature: Almost circular movement with no self dislodgement and beleaguered
+    Given
+        England:
+            fleet in North Sea moves to Denmark
+            fleet in Yorkshire supports movement of Norway to North Sea
+
+        Germany:
+            fleet in Holland supports movement of Helgoland Bight to North Sea
+            fleet in Helgoland Bight moves to North Sea
+            fleet in Denmark moves to Helgoland Bight
+
+        Russia:
+            fleet in Skagerrak supports movement of Norway to North Sea
+            fleet in Norway moves to North Sea
+    Then
+        North Sea fails
+        Norway fails
+        Helgoland Bight fails
+        Denmark fails
+
+Feature: Avoid self dislodgement with beleaguered, unit swap with convoy
+    Given
+        France:
+            army in Spain moves to Portugal
+            fleet in Mid-Atlantic Ocean convoys Spain to Portugal
+            fleet in Gulf of Lyon supports movement of Portugal to Spain
+
+        Germany:
+            army in Marseilles supports movement of Gascony to Spain
+            amry in Gascony moves to Spain
+
+        Italy:
+            fleet in Portugal moves to Spain (nc)
+            fleet in Western Mediterranean supports movement of Portugal to Spain
+    Then
+        Gascony fails
+
+Feature: Support move to self unit can be used for other means
+    Given
+        Austria:
+            army in Budapest moves to Rumania
+            army in Serbia supports movement of Vienna to Budapest
+
+        Italy:
+            army in Vienna moves to Budapest
+
+        Russia:
+            army in Galicia moves to Budapest
+            army in Rumania supports movement of Galicia to Budapest
+    Then
+        Budapest fails
+        Vienna fails
+        Galicia fails
+
+Feature: 3 way beleaguered garrison
+    Given
+        England:
+            fleet in Edinburgh supports movement of Yorkshire to North Sea
+            fleet in Yorkshire moves to North Sea
+
+        France:
+            fleet in Belgium moves to North Sea
+            fleet in English Channel supports movement of Belgium to North Sea
+
+        Germany:
+            fleet in North Sea holds
+
+        Russia:
+            fleet in Norwegian Sea moves to North Sea
+            fleet in Norway supports movement of Norwegian Sea to North Sea
+    Then
+        Yorkshire fails
+        Belgium fails
+        Norwegian Sea fails
+
+Feature: The friendly head2head battle
+    Given
+        England:
+            fleet in Holland supports movement of Ruhr to Kiel
+            army in Ruhr moves to Kiel
+
+        France:
+            army in Kiel moves to Berlin
+            army in Munich supports movement of Kiel to Berlin
+            army in Silesia supports movement of Kiel to Berlin
+
+        Germany:
+            army in Berlin moves to Kiel
+            fleet in Denmark supports movement of Berlin to Kiel
+            fleet in Helgoland Bight supports movement of Berlin to Kiel
+
+        Russia:
+            fleet in Baltic Sea supports movement of Prussia to Berlin
+            army in Prussia moves to Berlin
+    Then
+        Ruhr fails
+        Kiel fails
+        Berlin fails
+        Prussia fails

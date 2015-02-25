@@ -763,8 +763,14 @@ class Interactions
                             if app.env.isCoast(element)
                                 etype = "coast"
                             else
+                                if examine.length isnt 0
+                                    index++
+                                    _routes.push(_routes.last()[0..examine[0][1]-2])
                                 continue
                         if element in _routes[index]
+                            if examine.length isnt 0
+                                index++
+                                _routes.push(_routes.last()[0..examine[0][1]-2])
                             continue
                         if elstep > step
                             step++

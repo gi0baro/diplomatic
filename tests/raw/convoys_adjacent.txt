@@ -1,0 +1,193 @@
+Feature: Swap with convoy
+    Given
+        England:
+            army in Norway moves to Sweden
+            fleet in Skagerrak convoys Norway to Sweden
+
+        Russia:
+            army in Sweden moves to Norway
+
+Feature: Avoid army kidnapping
+    Given
+        England:
+            army in Norway moves to Sweden
+
+        Russia:
+            army in Sweden moves to Norway
+
+        Germany:
+            fleet in Skagerrak convoys Norway to Sweden
+    Then
+        Norway fails
+        Sweden fails
+        Skagerrak fails
+
+Feature: Avoid kidnap with disrupted convoy
+    Given
+        France:
+            fleet in Brest moves to English Channel
+            army in Picardy moves to Belgium
+            army in Burgundy supports movement of Picardy to Belgium
+            fleet in Mid-Atlantic Ocean supports movement of Brest to English Channel
+
+        England:
+            fleet in English Channel convoys Picardy to Belgium
+    Then
+        English Channel fails
+
+Feature: Avoid kidnap with disrupted convoy and opposite move
+    Given
+        France:
+            fleet in Brest moves to English Channel
+            army in Picardy moves to Belgium
+            army in Burgundy supports movement of Picardy to Belgium
+            fleet in Mid-Atlantic Ocean supports movement of Brest to English Channel
+
+        England:
+            fleet in English Channel convoys Picardy to Belgium
+            army in Belgium moves to Picardy
+    Then
+        English Channel fails
+        Belgium fails
+
+Feature: Swapped or head2head battle?
+    Given
+        England:
+            army in Norway moves to Sweden via convoy
+            fleet in Denmark supports movement of Norway to Sweden
+            fleet in Finland supports movement of Norway to Sweden
+
+        Germany:
+            fleet in Skagerrak convoys Norway to Sweden
+
+        Russia:
+            army in Sweden moves to Norway
+            fleet in Barents Sea supports movement of Sweden to Norway
+
+        France:
+            fleet in Norwegian Sea moves to Norway
+            fleet in North Sea supports movement of Norwegian Sea to Norway
+    Then
+        Sweden fails
+        Norwegian Sea fails
+
+Feature: Adjacent convoy with a paradox
+    Given
+        England:
+            fleet in Norway supports movement of North Sea to Skagerrak
+            fleet in North Sea moves to Skagerrak
+
+        Russia:
+            army in Sweden moves to Norway
+            fleet in Skagerrak convoys Sweden to Norway
+            fleet in Barents Sea supports movement of Sweden to Norway
+    Then
+        Skagerrak fails
+        Sweden fails
+
+Feature: Swapping 2 units with 2 convoys
+    Given
+        England:
+            army in Liverpool moves to Edinburgh
+            fleet in North Atlantic Ocean convoys Liverpool to Edinburgh
+            fleet in Norwegian Sea convoys Liverpool to Edinburgh
+
+        Germany:
+            army in Edinburgh moves to Liverpool
+            fleet in North Sea convoys Edinburgh to Liverpool
+            fleet in English Channel convoys Edinburgh to Liverpool
+            fleet in Irish Sea convoys Edinburgh to Liverpool
+
+Feature: Support cut on self attack with convoy
+    Given
+        Austria:
+            fleet in Adriatic Sea convoys Trieste to Venice
+            army in Trieste moves to Venice
+
+        Italy:
+            army in Venice supports movement of Albania to Trieste
+            fleet in Albania moves to Trieste
+    Then
+        Trieste fails
+
+Feature: Adjacent convoys bounce
+    Given
+        England:
+            army in Norway moves to Sweden
+            fleet in Denmark supports movement of Norway to Sweden
+            fleet in Finland supports movement of Norway to Sweden
+
+        France:
+            fleet in Norwegian Sea moves to Norway
+            fleet in North Sea supports movement of Norwegian Sea to Norway
+
+        Germany:
+            fleet in Skagerrak convoys Sweden to Norway
+
+        Russia:
+            army in Sweden moves to Norway via convoy
+            fleet in Barents Sea supports movement of Sweden to Norway
+    Then
+        Sweden fails
+        Norwegian Sea fails
+
+Feature: Bounce and dislodge with adjacent convoys
+    Given
+        England:
+            fleet in North Sea convoys London to Belgium
+            army in Holland supports movement of London to Belgium
+            army in Yorkshire moves to London
+            army in London moves to Belgium
+
+        France:
+            fleet in English Channel convoys Belgium to London
+            army in Belgium moves to London
+    Then
+        Yorkshire fails
+        Belgium fails
+
+Feature: Prevent 2 units in same area by convoy
+    Given
+        England:
+            army in Norway moves to Sweden
+            army in Denmark supports movement of Norway to Sweden
+            fleet in Baltic Sea supports movement of Norway to Sweden
+            fleet in North Sea moves to Norway
+
+        Russia:
+            army in Sweden moves to Norway
+            fleet in Skagerrak convoys Sweden to Norway
+            fleet in Norwegian Sea supports movement of Sweden to Norway
+    Then
+        North Sea fails
+
+Feature: Prevent 2 units in same area via land
+    Given
+        England:
+            army in Norway moves to Sweden
+            army in Denmark supports movement of Norway to Sweden
+            fleet in Baltic Sea supports movement of Norway to Sweden
+            fleet in Skagerrak convoys Norway to Sweden
+            fleet in North Sea moves to Norway
+
+        Russia:
+            army in Sweden moves to Norway
+            fleet in Norwegian Sea supports movement of Sweden to Norway
+    Then
+        North Sea fails
+
+Feature: Prevent 2 units in same area with 2 convoys
+    Given
+        England:
+            fleet in North Sea convoys London to Belgium
+            army in Holland supports movement of London to Belgium
+            army in Yorkshire moves to London
+            army in London moves to Belgium
+            army in Ruhr supports movement of London to Belgium
+
+        France:
+            fleet in English Channel convoys Belgium to London
+            army in Belgium moves to London
+            army in Wales supports movement of Belgium to London
+    Then
+        Yorkshire fails
