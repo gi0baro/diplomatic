@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 import random
 from datetime import timedelta
@@ -173,7 +175,9 @@ class Game(Model):
 
     @fieldmethod('timetonext')
     def get_next_timer(self, row):
-        timeleft = int((row.games.next-request.now).total_seconds())
+        timeleft = 0
+        if row.games.next:
+            timeleft = int((row.games.next-request.now).total_seconds())
         timerdata = sdict(d=0, h=0, m=0, s=0)
         if timeleft > 0:
             timerdata.d = timeleft/(60*60*24)
@@ -184,28 +188,25 @@ class Game(Model):
 
     @before_insert
     def setup_game(self, fields):
-        # build countries based on selected preferences
-        #ce = json.loads(fields['countriesenabled'])
+        #: build countries based on selected preferences
         ce = fields['countriesenabled']
         fields['countriesenabled'] = json.dumps(fields['countriesenabled'])
         random.shuffle(ce)
         countrylist = ce[:fields['nplayers']]
-        #fields['countries'] = {}
-        #for name in countrylist:
-        #    fields['countries'][name] = None
         if fields['countriesassign'] == "random":
             chosen = countrylist[0]
         else:
             chosen = fields['countries']['me']
+            if chosen not in countrylist:
+                countrylist[0] = chosen
         fields['countries'] = []
-        #fields['countries'][chosen] = longToObjid(session.auth.user.id)
         fields['countries'].append({
             'country': chosen,
             'player': longToObjid(session.auth.user.id)})
         slots = list(countrylist)
         slots.remove(chosen)
         fields['slots'] = slots
-        # init phases
+        #: init phases
         fields['phases'] = json.dumps(
             [{"type": "pre-game", "countries": countrylist}])
         #: set next time
@@ -214,7 +215,7 @@ class Game(Model):
     @after_insert
     def get_owner_credits(self, fields, gid):
         self.db.UserData(user=fields['owner']).update(
-            credits=self.db.Userdata.credits-fields['bet']
+            credits=self.db.UserData.credits-fields['bet']
         )
 
     @after_insert

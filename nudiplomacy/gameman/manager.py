@@ -148,9 +148,9 @@ def open_game(gid):
     #: add participation points and update participation data
     for el in game.countries:
         player = objidToLong(el['player'])
-        db(db.Userdata.user == player).update(
-            points=db.Userdata.points+(1*game.nplayers),
-            played=db.Userdata.played+1
+        db(db.UserData.user == player).update(
+            points=db.UserData.points+(1*game.nplayers),
+            played=db.UserData.played+1
         )
     #: stats
     moid = longToObjid(game.map.id)
@@ -183,8 +183,8 @@ def cancel_game(gid):
     #: give credits back to users
     for el in game.countries:
         player = objidToLong(el['player'])
-        db(db.Userdata.user == player).update(
-            credits=db.Userdata.credits+game.bet
+        db(db.UserData.user == player).update(
+            credits=db.UserData.credits+game.bet
         )
     # TODO delete record and notify
     #: set as canceled
@@ -275,8 +275,8 @@ def process_game(gid):
                 break
         if game.pottype == "wta":
             won = game.bet * game.nplayers
-            db(db.Userdata.user == winner).update(
-                credits=db.Userdata.credits+won)
+            db(db.UserData.user == winner).update(
+                credits=db.UserData.credits+won)
         else:
             rel = game.bet * game.nplayers
             for el in game.countries:
@@ -285,17 +285,17 @@ def process_game(gid):
                 if scs:
                     uid = objidToLong(el['player'])
                     to_add = int(round(scs*float(rel)/len(supply)))
-                    db(db.Userdata.user == uid).update(
-                        credits=db.Userdata.credits+to_add)
+                    db(db.UserData.user == uid).update(
+                        credits=db.UserData.credits+to_add)
         #: give back original bet to all players
         for el in game.countries:
             player = objidToLong(el['player'])
-            db(db.Userdata.user == player).update(
-                credits=db.Userdata.credits+game.bet)
+            db(db.UserData.user == player).update(
+                credits=db.UserData.credits+game.bet)
         #: points and stats
-        db(db.Userdata.user == winner).update(
-            points=db.Userdata.points+(2*game.nplayers),
-            won=db.Userdata.won+1)
+        db(db.UserData.user == winner).update(
+            points=db.UserData.points+(2*game.nplayers),
+            won=db.UserData.won+1)
         moid = longToObjid(gamemap['id'])
         for el in game.countries:
             if el['country'] == proc.winner:
@@ -308,16 +308,16 @@ def process_game(gid):
                    if i in supply]
             if not scs:
                 #: defeated
-                db(db.Userdata.user == uid).update(
-                    points=db.Userdata.points-(1*game.nplayers),
-                    defeated=db.Userdata.defeated+1)
+                db(db.UserData.user == uid).update(
+                    points=db.UserData.points-(1*game.nplayers),
+                    defeated=db.UserData.defeated+1)
                 mdb.stats_countries.upd(
                     {'map': moid},
                     {'$inc': {'defeated.'+el['country']: 1}})
             else:
                 #: survived
-                db(db.Userdata.user == uid).update(
-                    survived=db.Userdata.survived+1)
+                db(db.UserData.user == uid).update(
+                    survived=db.UserData.survived+1)
                 mdb.stats_countries.upd(
                     {'map': moid},
                     {'$inc': {'survived.'+el['country']: 1}})
