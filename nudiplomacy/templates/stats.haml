@@ -15,21 +15,22 @@
         %h5 Completed games
 %br
 %br
-.card
-    .row
-        .col-xs-12
-            %h2 Top played variants
-            %table.table.table-hover.table-responsive
-                %thead
-                    %tr
-                        %th Name:
-                        %th Games:
-                %tbody
-                    - for variant in pvariants
-                        %p
-                            %tr
-                                %td
-                                    %a{href: "#"}
-                                        = variant.name
-                                %td
-                                    = variant.ngames
+.row.m-15
+    .card
+        .row
+            .col-xs-12
+                %h2 Top played variants
+                %table.table.table-hover.table-responsive
+                    %thead
+                        %tr
+                            %th Name:
+                            %th Games:
+                    %tbody
+                        - for variant in pvariants
+                            %p
+                                %tr
+                                    %td
+                                        %a{href: "#"}
+                                            = variant.name
+                                    %td
+                                        = variant.ngames
