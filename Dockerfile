@@ -11,6 +11,7 @@ ENV TERM linux
 RUN apt-get update
 RUN apt-get install -y software-properties-common g++
 RUN apt-get install -y git python python-dev python-setuptools wget nodejs
+RUN apt-get install -y libjpeg-dev libfreetype6-dev zlib1g-dev
 
 # Build dependencies
 RUN easy_install pip

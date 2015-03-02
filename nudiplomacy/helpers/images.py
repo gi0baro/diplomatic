@@ -26,9 +26,9 @@ class MapImager(object):
         for territory in self.map['colors'].iterkeys():
             colors[territory] = self.groundc
         for territory in self.map['neutrals']:
-            colors[territory] = self.neutralc
+            colors[str(territory)] = self.neutralc
         for territory in self.map['seas']:
-            colors[territory] = self.seac
+            colors[str(territory)] = self.seac
         for territory, color in self.map['colors'].iteritems():
             s = str(color[0])+"_"+str(color[1])+"_"+str(color[2])
             ref[s] = territory
@@ -46,13 +46,24 @@ class MapImager(object):
                     color = colors[terrid]
                     self.src.putpixel((x, y), color)
         self.out = StringIO()
-        self.src.save(self.out)
+        self.src.save(self.out, "PNG")
 
 
-def create_map_image(fields):
+#def create_map_image(fields):
+#    imager = MapImager(fields["image_blob"], fields)
+#    imager.create()
+#    fields["thumb_blob"] = imager.out
+#    fname = fields["image"].split(".")
+#    thumb_string = fname[0]+".thumb."+".".join(s for s in fname[2:])
+#    fields["thumb"] = thumb_string
+
+def create_map_image(rid):
+    from nudiplomacy import db
+    db._adapter.reconnect()
+    row = db.Map(id=rid)
+    fields = row.as_dict()
     imager = MapImager(fields["image_blob"], fields)
     imager.create()
-    fields["thumb_blob"] = imager.out
-    fname = fields["image"].split(".")
-    thumb_string = fname[0]+".thumb."+".".join(s for s in fname[2:])
-    fields["thumb"] = thumb_string
+    thumb = imager.out.getvalue()
+    row.update_record(thumb=db.Map.thumb.store(thumb, fields["image"]),
+                      thumb_blob=thumb)

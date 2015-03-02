@@ -1,0 +1,15 @@
+- extend 'layout.haml'
+
+.row.m-15
+    .col-xs-12
+        %h2{style: "text-align: center;"}
+            = map.name
+        %br
+        .row
+            .col-md-8
+                %img{src: '{{=url("download", map.thumb)}}', style: 'width: 90%; margin-left: 5%;'}
+            .col-md-4
+                .col-md-8
+                    Water territories
+                .col-md-4
+                    = len(map.seas)

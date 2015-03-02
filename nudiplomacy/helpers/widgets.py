@@ -1,5 +1,5 @@
 import json
-from weppy import tag, cat, asis
+from weppy import tag, cat, asis, url
 
 
 _games_map_js = """<script type="text/javascript">
@@ -14,7 +14,8 @@ _games_map_js = """<script type="text/javascript">
 def games_map(field, value):
     db = field._db
     maps = db(db.Map.id > 0).select(
-        db.Map.id, db.Map.name, db.Map.countries, db.Map.minplayers
+        db.Map.id, db.Map.name, db.Map.countries, db.Map.minplayers,
+        db.Map.thumb
     ).as_list()
     choices = []
     jsref = {}
@@ -22,12 +23,21 @@ def games_map(field, value):
         choices.append(tag.option(el['name'], _value=el['id']))
         jsref[str(el['id'])] = {
             'countries': el['countries'].keys(),
-            'nplayers': [el['minplayers'], len(el['countries'])]
+            'nplayers': [el['minplayers'], len(el['countries'])],
+            'thumb': url("main.download", el['thumb'])
         }
     script = _games_map_js % dict(mapref=json.dumps(jsref))
-    return tag.div(
-        tag.select(*choices, _id="games_map", _name="map",
-                   _class="form-control"),
+    return cat(
+        tag.div(
+            tag.select(*choices, _id="games_map", _name="map",
+                       _class="form-control"),
+            _class="col-md-6"),
+        tag.div(
+            tag.img(
+                _src=url(url("main.download", maps[0]['thumb'])),
+                _style="width: 80%; margin-left: 10%",
+                _id="games_map_img"),
+            _class="col-md-6"),
         asis(script))
 
 

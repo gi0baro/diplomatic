@@ -1,2 +1,19 @@
 - extend 'layout.haml'
 
+.card
+    .row
+        .col-xs-12
+            %h2 Variants
+            %table.table.table-hover.table-responsive
+                %thead
+                    %tr
+                        %th Name:
+                        %th Games:
+                %tbody
+                    - for map in maps
+                        %p
+                            %tr
+                                %td
+                                    %a{href: '{{=url("maps.details", map.id)}}'}
+                                        = map.name
+                                %td

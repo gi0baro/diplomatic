@@ -1,3 +1,4 @@
+pillow
 pymongo
 redis
 rq
