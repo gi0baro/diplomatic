@@ -1,13 +1,12 @@
 from weppy.helpers import stream_dbfile
 from nudiplomacy import app, auth, db, Game
+from nudiplomacy.handlers import AppStatus
 from nudiplomacy.contexts import BaseContext
 
 
-@app.expose("/", helpers=[BaseContext()])
+@app.expose("/", helpers=[AppStatus(), BaseContext()])
 def index():
-    participating = []
-    if auth.user:
-        participating = Game.participating()
+    participating = Game.participating() if auth.user else []
     return dict(participating=participating)
 
 
@@ -17,14 +16,14 @@ def account(f, k):
     return dict(form=form, req=f)
 
 
-@app.expose(helpers=[BaseContext()])
+@app.expose(helpers=[AppStatus(), BaseContext()])
 def ranking():
     rlist = db(db.UserData.id > 0).select(
         orderby=~db.UserData.points, limitby=(0, 100))
     return dict(ranks=rlist)
 
 
-@app.expose(helpers=[BaseContext()])
+@app.expose(helpers=[AppStatus(), BaseContext()])
 def stats():
     active = db(db.Game.active == True).count()
     completed = db((db.Game.active == False) &

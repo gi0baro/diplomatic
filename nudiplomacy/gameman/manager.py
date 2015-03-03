@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from weppy import sdict
 from nudiplomacy import app, db, mdb, queue
 from nudiplomacy.helpers.mongo import objidToLong, longToObjid
+from nudiplomacy.helpers.system import isAppOnline
 from .diplomacy import OrdersProcessor, GameProcessor
 
 
@@ -9,6 +10,9 @@ def manage():
     now = datetime.utcnow()
     app.log.debug("Manager: start run at "+str(now))
     db._adapter.reconnect()
+    if not isAppOnline():
+        app.log.debug("Manager: skipping due to maintainance.")
+        return
     # start ready-asap pregames
     toStart = db(
         (db.Game.status == "pregame") & (db.Game.ready == True) &
