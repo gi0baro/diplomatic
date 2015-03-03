@@ -10,3 +10,15 @@ class SysProp(Model):
         Field("name", "string"),
         Field("data", "json")
     ]
+
+
+class SysActCode(Model):
+    tablename = "sys_actcodes"
+
+    fields = [
+        Field("code"),
+        Field("limit", "integer", default=50),
+        Field("count", "integer", default=0),
+        Field("active", "boolean", default=True)
+    ]
+
