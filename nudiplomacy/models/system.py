@@ -21,4 +21,3 @@ class SysActCode(Model):
         Field("count", "integer", default=0),
         Field("active", "boolean", default=True)
     ]
-

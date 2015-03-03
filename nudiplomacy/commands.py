@@ -15,6 +15,7 @@ def setup():
     u = auth.get_or_create_user(udata, login=False)
     gid = auth.add_group("admin", "admin")
     auth.add_membership(gid, u.id)
+    db.SysActCode.insert(code="foobar")
 
 
 # temp
