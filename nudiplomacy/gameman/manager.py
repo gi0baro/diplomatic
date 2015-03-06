@@ -1,3 +1,4 @@
+from time import time
 from datetime import datetime, timedelta
 from weppy import sdict
 from nudiplomacy import app, db, mdb, queue
@@ -201,6 +202,7 @@ def cancel_game(gid):
 def process_game(gid):
     _days_list = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
                   "Saturday", "Sunday"]
+    t0 = time()
     db._adapter.reconnect()
     game = db.Game(id=gid)
     #: do we have to skip processing today?
@@ -336,4 +338,5 @@ def process_game(gid):
         mdb.stats_games.ioru(
             {'map': moid}, {'$inc': {'turns.'+str(nturns): 1}}
         )
-    app.log.warning("Processed game "+str(gid))
+    dt = time() - t0
+    app.log.warning("Processed game "+str(gid)+" in "+str(dt))
