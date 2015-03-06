@@ -223,6 +223,14 @@ class Game(Model):
         if fields['presstype'] != "none":
             self.db.Chat.insert(game=gid, users='["all"]')
 
+    @after_insert
+    def add_notify_obj(self, fields, gid):
+        cname = "game_"+str(gid)
+        nid = self.db.NObject.insert(channel=cname, type="game_process")
+        nobj = self.db.NObject(id=nid)
+        from nudiplomacy import NSubscription
+        NSubscription.subscribe(fields['author'], cname, nobj)
+
     @modelmethod
     def participating(db, entity, user=None):
         uid = user or (session.auth.user.id if session.auth else None)

@@ -182,6 +182,7 @@ def open_game(gid):
 
 
 def cancel_game(gid):
+    from nudiplomacy.helpers.notifications import game_canceled
     db._adapter.reconnect()
     game = db.Game(id=gid)
     #: give credits back to users
@@ -190,9 +191,11 @@ def cancel_game(gid):
         db(db.UserData.user == player).update(
             credits=db.UserData.credits+game.bet
         )
-    # TODO delete record and notify
+    game_canceled(game)
     #: set as canceled
-    game.update_record(status="canceled")
+    #game.update_record(status="canceled")
+    #: delete the game record
+    del db.Game[game.id]
 
 
 def process_game(gid):
@@ -248,6 +251,7 @@ def process_game(gid):
         nextrun = None
         #: clean orders collection
         db(db.Orders.game == gid).delete()
+        #: notify game won
     else:
         nextstatus = 'ingame'
         nextrun = datetime.utcnow()+timedelta(minutes=game.phasetime)
@@ -258,6 +262,9 @@ def process_game(gid):
             pid = objidToLong(el['player'])
             db((db.Orders.game == gid) & (db.Orders.player == pid)).update(
                 ready=False, data=co)
+        #: notify new phase
+        from nudiplomacy.helpers.notifications import game_new_phase
+        game_new_phase(game)
     proc.phase_new['orders'] = {}
     mdb.games.upd(
         {"id": gid},

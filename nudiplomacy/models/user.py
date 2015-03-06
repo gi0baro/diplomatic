@@ -5,6 +5,7 @@ class User(AuthModel):
     @after_insert
     def insert_udata(self, fields, oid):
         self.db.UserData.insert(user=oid)
+        self.db.UserSettings.insert(user=oid)
 
 
 class UserData(Model):
@@ -19,4 +20,13 @@ class UserData(Model):
         Field("survived", "integer", default=0),
         Field("defeated", "integer", default=0),
         Field("drawn", "integer", default=0)
+    ]
+
+
+class UserSettings(Model):
+    tablename = "usersettings"
+
+    fields = [
+        Field("user", "reference auth_user"),
+        Field("notifications", "json", default={'email': True})
     ]

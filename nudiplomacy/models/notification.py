@@ -5,7 +5,7 @@ from weppy.dal import Field, Model, modelmethod
 from nudiplomacy.helpers.mongo import longToObjid, objidToLong
 
 
-class Object(Model):
+class NObject(Model):
     """
     Contains main data about notifications
         `type`
@@ -28,7 +28,7 @@ class Object(Model):
         return db(_query).select().first()
 
 
-class Event(Model):
+class NEvent(Model):
     """
     Contains data about single user notification
         `object`
@@ -59,7 +59,7 @@ class Event(Model):
         return db((entity.recipient == uid) & (entity.read == False)).select()
 
 
-class Subscription(Model):
+class NSubscription(Model):
     """
     Contains data about single user subscriptions
         `channel`
@@ -80,8 +80,16 @@ class Subscription(Model):
     def find_subscribers(db, entity, channel, obj):
         from nudiplomacy import mdb
         rows = mdb.notification_subscriptions.find(
-            {"channel": channel, "objects": longToObjid(obj)})
+            {"channel": channel, "objects": longToObjid(obj.id)})
         return [objidToLong(row.user) for row in rows]
+
+    @modelmethod
+    def subscribe(db, entity, user, channel, notify_obj):
+        from nudiplomacy import mdb
+        mdb.notification_subscriptions.ioru(
+            {"user": longToObjid(user), "channel": channel},
+            {"$push": {"objects": longToObjid(notify_obj.id)}}
+        )
 
     @modelmethod
     def unsuscribe(db, entity, channel, objs, user=None):

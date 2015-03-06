@@ -21,7 +21,7 @@ from redis import Redis
 redis = Redis(host=app.config.redis.host, port=app.config.redis.port,
               db=app.config.redis.db)
 from helpers.queues import Queue
-queue = Queue(app.config, redis)
+queue = Queue(app, redis)
 
 cache = Cache(
     ram=RamCache(),
@@ -31,15 +31,16 @@ cache = Cache(
 
 # db and auth
 from models.system import SysProp, SysActCode
-from models.user import User, UserData
+from models.user import User, UserData, UserSettings
 from models.map import Map
 from models.game import Game, Orders, Chat
+from models.notification import NObject, NEvent, NSubscription
 from models.stats import TimeStats, GameStats, CountryStats
 db = DAL(app, adapter_args={'uploads_in_blob': True})
 auth = Auth(app, db, usermodel=User, mailer=False)
 db.define_models([
-    SysProp, SysActCode, UserData, Map, Game, Orders, Chat, TimeStats,
-    GameStats, CountryStats])
+    SysProp, SysActCode, UserData, UserSettings, Map, Game, Orders, Chat,
+    NObject, NEvent, NSubscription, TimeStats, GameStats, CountryStats])
 from helpers.mongo import MongoDB
 mdb = MongoDB(db)
 
