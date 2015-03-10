@@ -1,11 +1,12 @@
 from weppy import AppModule, url, abort, Form, Field
 from weppy.tools import requires
 from nudiplomacy import app, auth, db, Map
+from nudiplomacy.handlers import AppStatus
 from nudiplomacy.contexts import BaseContext
 
 maps = AppModule(app, "maps", __name__, url_prefix="maps",
                  template_folder="maps")
-maps.common_helpers = [BaseContext()]
+maps.common_helpers = [AppStatus(), BaseContext()]
 
 
 @maps.expose("/")
@@ -38,7 +39,11 @@ def newffile():
     if form.accepted:
         import json
         jdata = json.loads(form.vars.data)
-        db.Map.insert(image=form.vars.image, **jdata)
+        db.Map.insert(
+            image=db.Map.image.store(form.vars.image.file,
+                                     form.vars.image.filename),
+            image_blob=form.vars.image.file.read(),
+            **jdata)
     return dict(form=form)
 
 
