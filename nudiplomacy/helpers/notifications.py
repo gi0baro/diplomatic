@@ -66,3 +66,38 @@ def game_new_phase(game):
                     game=game.name
                 )
             )
+
+
+_new_msg_mail_text = """Dear %(user)s,
+%(source)s sent a new message in the game %(game)s.
+Ensure you review it before the next turn!
+
+See you soon,
+nuDiplomacy team
+"""
+
+
+def game_new_message(game, to, source):
+    nchan = "game_"+str(game.id)
+    nobj = NObject.get_one(nchan, "msg_"+to)
+    users = NSubscription.find_subscribers(nchan, nobj)
+    for user in users:
+        if to == "all" and user == source['id']:
+            continue
+        db.NEvent.insert(
+            object=nobj, recipient=user, actor=source['country'],
+            data={"msg": "Sent a new message", "type": "message"},
+            date=datetime.utcnow()
+        )
+        usettings = db.UserSettings(user=user)
+        if usettings.notification['email']:
+            recipient = db.User(id=user)
+            queue.mail_send(
+                to=recipient.email,
+                subject="Game "+game.name+" has been updated",
+                message=_new_msg_mail_text % dict(
+                    user=recipient.nickname,
+                    source=source['country'],
+                    game=game.name
+                )
+            )

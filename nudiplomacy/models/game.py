@@ -145,15 +145,14 @@ class Game(Model):
         self.entity.map.requires = inDb(self.db, self.db.maps.id, zero=None)
 
     @fieldmethod('playercountry')
-    def get_country(self, row):
-        uid = session.auth.user.id if session.auth else None
+    def get_country(self, row, user=None):
+        if user:
+            uid = user
+        else:
+            uid = session.auth.user.id if session.auth else None
         if not uid:
             return None
-        #from nudiplomacy.helpers.mongo import objidToLong
         poid = longToObjid(uid)
-        #for k, v in row.games.countries.items():
-        #    if objidToLong(v) == uid:
-        #        return k
         for el in row.games.countries:
             if el['player'] == poid:
                 return el['country']
@@ -226,9 +225,16 @@ class Game(Model):
     @after_insert
     def add_notify_obj(self, fields, gid):
         cname = "game_"+str(gid)
+        #: processing notifications
         nid = self.db.NObject.insert(channel=cname, type="game_process")
         nobj = self.db.NObject(id=nid)
         from nudiplomacy import NSubscription
+        NSubscription.subscribe(fields['author'], cname, nobj)
+        #: messages notifications
+        nobj = self.db.NObject.insert(channel=cname, type="msg_all")
+        NSubscription.subscribe(fields['author'], cname, nobj)
+        country = fields['countries'][0]['country']
+        nobj = self.db.NObject.insert(channel=cname, type="msg_"+country)
         NSubscription.subscribe(fields['author'], cname, nobj)
 
     @modelmethod
