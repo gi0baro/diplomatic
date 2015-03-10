@@ -28,6 +28,11 @@ _days_list = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
               "Saturday", "Sunday"]
 
 
+def _validate_skipproc(value):
+    v = json.loads(value) if value else value
+    return isListOf(inSet(_days_list), 0, 6)(v)
+
+
 class Game(Model):
     tablename = "games"
 
@@ -76,7 +81,8 @@ class Game(Model):
         "presstype": inSet(["all", "globals", "none"], zero=None),
         "countriesassign": inSet(["random", "choose"], zero=None),
         "access": inSet(["free", "password"], zero=None),
-        "skipproc": isListOf(inSet(_days_list), 0, 6)
+        #"skipproc": isListOf(inSet(_days_list), 0, 6)
+        "skipproc": _validate_skipproc
     }
 
     visibility = {
@@ -204,7 +210,7 @@ class Game(Model):
             'player': longToObjid(session.auth.user.id)})
         slots = list(countrylist)
         slots.remove(chosen)
-        fields['slots'] = slots
+        fields['slots'] = json.dumps(slots)
         #: init phases
         fields['phases'] = json.dumps(
             [{"type": "pre-game", "countries": countrylist}])
@@ -227,15 +233,14 @@ class Game(Model):
         cname = "game_"+str(gid)
         #: processing notifications
         nid = self.db.NObject.insert(channel=cname, type="game_process")
-        nobj = self.db.NObject(id=nid)
         from nudiplomacy import NSubscription
-        NSubscription.subscribe(fields['author'], cname, nobj)
+        NSubscription.subscribe(fields['owner'], cname, nid=nid)
         #: messages notifications
-        nobj = self.db.NObject.insert(channel=cname, type="msg_all")
-        NSubscription.subscribe(fields['author'], cname, nobj)
+        nid = self.db.NObject.insert(channel=cname, type="msg_all")
+        NSubscription.subscribe(fields['owner'], cname, nid=nid)
         country = fields['countries'][0]['country']
-        nobj = self.db.NObject.insert(channel=cname, type="msg_"+country)
-        NSubscription.subscribe(fields['author'], cname, nobj)
+        nid = self.db.NObject.insert(channel=cname, type="msg_"+country)
+        NSubscription.subscribe(fields['owner'], cname, nid=nid)
 
     @modelmethod
     def participating(db, entity, user=None):

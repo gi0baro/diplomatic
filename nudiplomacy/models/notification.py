@@ -77,18 +77,22 @@ class NSubscription(Model):
     ]
 
     @modelmethod
-    def find_subscribers(db, entity, channel, obj):
+    def find_subscribers(db, entity, channel, nobj):
         from nudiplomacy import mdb
         rows = mdb.notification_subscriptions.find(
-            {"channel": channel, "objects": longToObjid(obj.id)})
+            {"channel": channel, "objects": longToObjid(nobj.id)})
         return [objidToLong(row.user) for row in rows]
 
     @modelmethod
-    def subscribe(db, entity, user, channel, notify_obj):
+    def subscribe(db, entity, user, channel, nobj=None, nid=None):
         from nudiplomacy import mdb
+        if nid:
+            nid = longToObjid(nid)
+        else:
+            nid = longToObjid(nobj.id)
         mdb.notification_subscriptions.ioru(
             {"user": longToObjid(user), "channel": channel},
-            {"$push": {"objects": longToObjid(notify_obj.id)}}
+            {"$push": {"objects": nid}}
         )
 
     @modelmethod
