@@ -10,6 +10,23 @@
                 %img{src: '{{=url("download", map.thumb)}}', style: 'width: 90%; margin-left: 5%;'}
             .col-md-4
                 .col-md-8
-                    Water territories
+                    = T("Land territories")
+                .col-md-4
+                    = len(map.colors)-len(map.seas)-len(map.neutrals)
+                .col-md-8
+                    = T("Water territories")
                 .col-md-4
                     = len(map.seas)
+                .col-md-8
+                    = T("Coastal territories")
+                .col-md-4
+                    = len(map.coasts)
+                .col-md-8
+                    = T("Supply centers")
+                .col-md-4
+                    = len(map.supply)
+                .col-md-8
+                    = T("Supply centers to win")
+                .col-md-4
+                    = map.scstowin
+
