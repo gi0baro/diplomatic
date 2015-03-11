@@ -32,22 +32,12 @@ class Map(Model):
         "thumb": (False, False)
     }
 
-    # TODO: use queue for images
-    #@before_insert
-    #def create_thumb(self, fields):
-    #    create_map_image(fields)
-
-    #@before_update
-    #def update_thumb(self, set, fields):
-    #    self.create_thumb(fields)
-
     @after_insert
     def init_stats(self, fields, id):
         self.db.CountryStats.insert(map=id)
 
     @after_insert
     def create_thumb(self, fields, id):
-        #queue.save(create_map_image, 'misc', fields=fields)
         queue.save(create_map_image, 'misc', rid=id)
 
     @after_update
@@ -62,14 +52,16 @@ class Map(Model):
             mapdata = row.as_dict()
             del mapdata["image_blob"]
             del mapdata["thumb_blob"]
+            return mapdata
         fields = []
         for field in entity:
             if not field.name.endswith("blob"):
                 fields.append(field.name)
         sel = [entity[fname] for fname in fields]
-        mapdata = db(entity.id == mid).select(*sel).first().as_dict()
+        mapdata = db(entity.id == mid).select(*sel).first()
         if not mapdata:
             return dict()
+        mapdata = mapdata.as_dict()
         ch = ["neutrals", "seas", "coasts"]
         for c in ch:
             for i in range(0, len(mapdata[c])):

@@ -37,5 +37,5 @@ class UserSettings(Model):
 
     fields = [
         Field("user", "reference auth_user"),
-        Field("notifications", "json", default={'email': True})
+        Field("notification", "json", default={'email': True})
     ]

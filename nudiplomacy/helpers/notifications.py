@@ -36,6 +36,38 @@ def game_canceled(game):
             )
 
 
+_opened_mail_text = """Dear %(user)s,
+the game %(game)s has started.
+Start doing some diplomacy and insert your orders!
+
+See you soon,
+nuDiplomacy team
+"""
+
+
+def game_opened(game):
+    nchan = "game_"+str(game.id)
+    nobj = NObject.get_one(nchan, "game_process")
+    users = NSubscription.find_subscribers(nchan, nobj)
+    for user in users:
+        db.NEvent.insert(
+            object=nobj, recipient=user, actor="game "+game.name,
+            data={"msg": "Game has started", "type": "game"},
+            date=datetime.utcnow()
+        )
+        usettings = db.UserSettings(user=user)
+        if usettings.notification['email']:
+            recipient = db.User(id=user)
+            queue.mail_send(
+                to=recipient.email,
+                subject="Game "+game.name+" has started",
+                message=_opened_mail_text % dict(
+                    user=recipient.nickname,
+                    game=game.name
+                )
+            )
+
+
 _new_phase_mail_text = """Dear %(user)s,
 the game %(game)s was updated to a new phase.
 Review what's happened and set your orders for the next turn!

@@ -157,12 +157,13 @@ def open_game(gid):
             {'$inc': {'points': 1*game.nplayers, 'played': 1}})
     #: stats
     moid = longToObjid(game.map.id)
-    dkey = '{:%m.%d}'.format(datetime.utcnow())
+    mkey = '{:%m}'.format(datetime.utcnow())
+    dkey = '{:%d}'.format(datetime.utcnow())
     mdb.stats_time.ioru(
         {'map': moid, 'year': datetime.utcnow().year},
         {'$inc': {
-            'data.'+dkey.split(".")[0]: 1,
-            'data.'+dkey: 1
+            'data.'+mkey+'.count': 1,
+            'data.'+mkey+'.days.'+dkey: 1
         }}
     )
     mdb.stats_games.ioru(
@@ -176,7 +177,9 @@ def open_game(gid):
     ckeys = {}
     for k in countriesk:
         ckeys["played."+k] = 1
-    mdb.stats_countries.upd({'map': moid}, {'$inc': countriesk})
+    mdb.stats_countries.upd({'map': moid}, {'$inc': ckeys})
+    from nudiplomacy.helpers.notifications import game_opened
+    game_opened(game)
     app.log.warning("Opened game "+str(gid))
 
 
