@@ -17,6 +17,8 @@
                 = game.map.name
             %h3
                 = game.name
+            - if not game.anonymous
+                = "by "+game.owner.username
             .row
                 .col-md-4
                     %h5.grey-light

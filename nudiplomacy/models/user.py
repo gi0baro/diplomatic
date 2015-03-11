@@ -2,6 +2,11 @@ from weppy.dal import Field, Model, AuthModel, after_insert
 
 
 class User(AuthModel):
+    fields = [
+        Field("avatarsrc"),
+        Field("avatarimg", "upload")
+    ]
+
     @after_insert
     def insert_udata(self, fields, oid):
         self.db.UserData.insert(user=oid)

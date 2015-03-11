@@ -12,6 +12,7 @@ auth:
   registration_requires_verification: False
   registration_requires_approval: False
   #registration_requires_invitation: False
+  use_username: True
 # Mailer
 mail:
   server: localhost

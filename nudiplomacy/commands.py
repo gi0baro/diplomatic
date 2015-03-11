@@ -10,7 +10,8 @@ def setup():
         email="admin@nudiplomacy.com",
         first_name="Giovanni",
         last_name="Barillari",
-        password=Crypt()("testing")[0]
+        password=Crypt()("testing")[0],
+        username="admin"
     )
     u = auth.get_or_create_user(udata, login=False)
     gid = auth.add_group("admin", "admin")
