@@ -1,0 +1,19 @@
+- extend 'admin/base.haml'
+
+.col-md-12
+    .box.border.white
+        .box-title Codes
+        .row{style: "margin: 0;"}
+            - for code in codes
+                .col-md-12
+                    .col-md-6
+                        = code.code
+                    .col-md-2
+                        = code.limit
+                    .col-md-2
+                        = code.count
+                    .col-md-2
+                        = code.active
+
+.col-md-12
+    = form

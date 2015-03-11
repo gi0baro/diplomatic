@@ -2,7 +2,7 @@
 
 from weppy import AppModule, url
 from weppy.handlers import RequireHandler
-from nudiplomacy import app, mdb, auth, cache
+from nudiplomacy import app, db, mdb, auth, cache, SysActCode
 from nudiplomacy.contexts import BaseContext
 from nudiplomacy.helpers.system import isAppOnline
 
@@ -31,3 +31,18 @@ def change_appstatus():
     if newstatus:
         return "$('#online-status').html('online');"
     return "$('#online-status').html('offline');"
+
+
+@admin.expose()
+def regcodes():
+    codes = db(db.SysActCode.id > 0).select()
+    form = SysActCode.form()
+    return locals()
+
+
+@admin.expose()
+def notifications():
+    objs = mdb.notification_objects.find({})
+    events = mdb.notification_events.find({})
+    subs = mdb.notification_subscriptions.find({})
+    return locals()

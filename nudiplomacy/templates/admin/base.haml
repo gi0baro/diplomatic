@@ -9,6 +9,22 @@
 
 - end
 
-- block admin
-- include
-- end
+
+.row.m-15
+    %h1 Admin panel
+    .pull-right
+        %a{href: '{{=url(".index")}}'}
+            .btn.btn-default
+                Home
+        %a{href: '{{=url(".regcodes")}}'}
+            .btn.btn-default
+                Registration codes
+        %a{href: '{{=url(".notifications")}}'}
+            .btn.btn-default
+                Notifications
+    %br
+    %hr
+    %br
+    - block admin
+    - include
+    - end
