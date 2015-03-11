@@ -152,11 +152,9 @@ def open_game(gid):
     )
     #: add participation points and update participation data
     for el in game.countries:
-        player = objidToLong(el['player'])
-        db(db.UserData.user == player).update(
-            points=db.UserData.points+(1*game.nplayers),
-            played=db.UserData.played+1
-        )
+        mdb.userdata.upd(
+            {'player': el['player']},
+            {'$inc': {'points': 1*game.nplayers, 'played': 1}})
     #: stats
     moid = longToObjid(game.map.id)
     dkey = '{:%m.%d}'.format(datetime.utcnow())
@@ -188,10 +186,9 @@ def cancel_game(gid):
     game = db.Game(id=gid)
     #: give credits back to users
     for el in game.countries:
-        player = objidToLong(el['player'])
-        db(db.UserData.user == player).update(
-            credits=db.UserData.credits+game.bet
-        )
+        mdb.userdata.upd(
+            {'player': el['player']},
+            {'$inc': {'credits': game.bet}})
     game_canceled(game)
     #: set as canceled
     #game.update_record(status="canceled")
@@ -278,31 +275,30 @@ def process_game(gid):
         supply = gamemap['supply'].keys()
         for el in game.countries:
             if el['country'] == proc.winner:
-                winner = objidToLong(el['player'])
+                winner = el['player']
                 break
         if game.pottype == "wta":
             won = game.bet * game.nplayers
-            db(db.UserData.user == winner).update(
-                credits=db.UserData.credits+won)
+            mdb.userdata.upd({'player': winner}, {'$inc': {'credits': won}})
         else:
             rel = game.bet * game.nplayers
             for el in game.countries:
                 scs = [i for i in game.phases[-1]['territories'][el['country']]
                        if i in supply]
                 if scs:
-                    uid = objidToLong(el['player'])
                     to_add = int(round(scs*float(rel)/len(supply)))
-                    db(db.UserData.user == uid).update(
-                        credits=db.UserData.credits+to_add)
+                    mdb.userdata.upd(
+                        {'player': el['player']},
+                        {'$inc': {'credits': to_add}})
         #: give back original bet to all players
         for el in game.countries:
-            player = objidToLong(el['player'])
-            db(db.UserData.user == player).update(
-                credits=db.UserData.credits+game.bet)
+            mdb.userdata.upd(
+                {'player': el['player']},
+                {'$inc': {'credits': game.bet}})
         #: points and stats
-        db(db.UserData.user == winner).update(
-            points=db.UserData.points+(2*game.nplayers),
-            won=db.UserData.won+1)
+        mdb.userdata.upd(
+            {'player': winner},
+            {'$inc': {'points': 2*game.nplayers, 'won': 1}})
         moid = longToObjid(gamemap['id'])
         for el in game.countries:
             if el['country'] == proc.winner:
@@ -310,21 +306,21 @@ def process_game(gid):
                     {'map': moid},
                     {'$inc': {'won.'+el['country']: 1}})
                 continue
-            uid = objidToLong(el['player'])
             scs = [i for i in game.phases[-1]['territories'][el['country']]
                    if i in supply]
             if not scs:
                 #: defeated
-                db(db.UserData.user == uid).update(
-                    points=db.UserData.points-(1*game.nplayers),
-                    defeated=db.UserData.defeated+1)
+                mdb.userdata.upd(
+                    {'player': el['player']},
+                    {'$inc': {'points': -game.nplayers, 'defeated': 1}})
                 mdb.stats_countries.upd(
                     {'map': moid},
                     {'$inc': {'defeated.'+el['country']: 1}})
             else:
                 #: survived
-                db(db.UserData.user == uid).update(
-                    survived=db.UserData.survived+1)
+                mdb.userdata.upd(
+                    {'player': el['player']},
+                    {'$inc': {'survived': 1}})
                 mdb.stats_countries.upd(
                     {'map': moid},
                     {'$inc': {'survived.'+el['country']: 1}})

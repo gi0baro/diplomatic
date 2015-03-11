@@ -92,7 +92,8 @@ def game_join(gid):
                 NSubscription.subscribe(auth.user.id, "game_"+str(gid), nobj)
                 nobj = NObject.get_one("game_"+str(gid), "msg_all")
                 NSubscription.subscribe(auth.user.id, "game_"+str(gid), nobj)
-                nid = db.NObject.insert("game_"+str(gid), "msg_"+chosen)
+                nid = db.NObject.insert(channel="game_"+str(gid),
+                                        type="msg_"+chosen)
                 NSubscription.subscribe(auth.user.id, "game_"+str(gid),
                                         nid=nid)
                 #: set game to ready if needed
@@ -132,7 +133,8 @@ def game_join(gid):
             NSubscription.subscribe(auth.user.id, "game_"+str(gid), nobj)
             nobj = NObject.get_one("game_"+str(gid), "msg_all")
             NSubscription.subscribe(auth.user.id, "game_"+str(gid), nobj)
-            nid = db.NObject.insert("game_"+str(gid), "msg_"+chosen)
+            nid = db.NObject.insert(channel="game_"+str(gid),
+                                    type="msg_"+chosen)
             NSubscription.subscribe(auth.user.id, "game_"+str(gid), nid=nid)
             #: set game to ready if needed
             if not updated.slots:

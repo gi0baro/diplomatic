@@ -7,6 +7,10 @@ class User(AuthModel):
         Field("avatarimg", "upload")
     ]
 
+    register_visibility = {
+        'username': (True, True)
+    }
+
     @after_insert
     def insert_udata(self, fields, oid):
         self.db.UserData.insert(user=oid)
