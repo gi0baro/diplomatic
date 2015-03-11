@@ -1,7 +1,7 @@
 from time import time
 from datetime import datetime, timedelta
 from weppy import sdict
-from nudiplomacy import app, db, mdb, queue
+from nudiplomacy import app, db, mdb, queue, Map
 from nudiplomacy.helpers.mongo import objidToLong, longToObjid
 from nudiplomacy.helpers.system import isAppOnline
 from .diplomacy import OrdersProcessor, GameProcessor
@@ -214,14 +214,8 @@ def process_game(gid):
                 timedelta(hours=24)
             game.update_record(status="ingame", next=_next_proc)
             return
-    gamemap = game.map.as_dict()
+    gamemap = Map.get_data(row=game.map)
     gamedata = game.as_dict()
-    # temp workaround for str->int conversion
-    ch = ["neutrals", "seas", "coasts"]
-    for c in ch:
-        for i in range(0, len(gamemap[c])):
-            gamemap[c][i] = str(gamemap[c][i])
-    #
     #: get game orders
     ordersrows = db(db.Orders.game == gid).select()
     porders = {}
@@ -263,7 +257,7 @@ def process_game(gid):
             co = orders_new.get(el['country'], {})
             pid = objidToLong(el['player'])
             db((db.Orders.game == gid) & (db.Orders.player == pid)).update(
-                ready=False, data=co)
+                ready=False, raw=True, data=co)
         #: notify new phase
         from nudiplomacy.helpers.notifications import game_new_phase
         game_new_phase(game)

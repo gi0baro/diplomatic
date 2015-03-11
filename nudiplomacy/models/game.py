@@ -10,7 +10,7 @@ from weppy.validators import inDb, isntEmpty, inSet, isIntInRange, isListOf
 from nudiplomacy import app
 from nudiplomacy.helpers.widgets import games_map, games_nplayers, games_ce, \
     games_phasetime, games_jointime, games_bet, games_skipproc
-from nudiplomacy.helpers.mongo import longToObjid
+from nudiplomacy.helpers.mongo import longToObjid, objidToLong
 
 _repr_lang = {'en': "English", 'it': "Italiano"}
 _repr_pot = {'wta': T("Winner takes all"),
@@ -150,6 +150,13 @@ class Game(Model):
     def setup(self):
         self.entity.map.requires = inDb(self.db, self.db.maps.id, zero=None)
 
+    @staticmethod
+    def _get_country(countries, poid):
+        for el in countries:
+            if el['player'] == poid:
+                return el['country']
+        return None
+
     @fieldmethod('playercountry')
     def get_country(self, row, user=None):
         if user:
@@ -158,11 +165,7 @@ class Game(Model):
             uid = session.auth.user.id if session.auth else None
         if not uid:
             return None
-        poid = longToObjid(uid)
-        for el in row.games.countries:
-            if el['player'] == poid:
-                return el['country']
-        return None
+        return self._get_country(row.games.countries, longToObjid(uid))
 
     @fieldmethod('playersin')
     def get_players_in(self, row):
@@ -178,11 +181,11 @@ class Game(Model):
             return True
         return False
 
-    @fieldmethod('timetonext')
-    def get_next_timer(self, row):
+    @staticmethod
+    def _get_next_timer(r):
         timeleft = 0
-        if row.games.next:
-            timeleft = int((row.games.next-request.now).total_seconds())
+        if r.next:
+            timeleft = int((r.next-request.now).total_seconds())
         timerdata = sdict(d=0, h=0, m=0, s=0)
         if timeleft > 0:
             timerdata.d = timeleft/(60*60*24)
@@ -190,6 +193,10 @@ class Game(Model):
             timerdata.m = (timeleft/60) % 60
             timerdata.s = timeleft % 60
         return timerdata
+
+    @fieldmethod('timetonext')
+    def get_next_timer(self, row):
+        return self._get_next_timer(row.games)
 
     @before_insert
     def setup_game(self, fields):
@@ -243,20 +250,27 @@ class Game(Model):
         NSubscription.subscribe(fields['owner'], cname, nid=nid)
 
     @modelmethod
-    def participating(db, entity, user=None):
+    def participating(db, entity, full=True, user=None):
         uid = user or (session.auth.user.id if session.auth else None)
         if not uid:
             return []
         from nudiplomacy import mdb
         uoid = longToObjid(uid)
         glist = mdb.games.find(
-            {'countries.player': uoid}, limit=10, sort=('processed', -1)
+            {'countries.player': uoid}, limit=10, sort=('processed', 1)
         )
         for game in glist:
-            for el in game.countries:
-                if el['player'] == uoid:
-                    game._playercountry = el['country']
-                    break
+            variant = db(db.Map.id == objidToLong(game.map)).select(
+                db.Map.name).first()
+            game._map = variant.name
+            game._playercountry = Game._get_country(game.countries, uoid)
+            game._timetonext = Game._get_next_timer(game)
+            orders = db(
+                (db.Orders.player == uid) & (db.Orders.game == game.id)
+            ).select().first()
+            if orders:
+                game._playerorders = not orders.raw
+                game._playerready = orders.ready
         return glist
 
 
@@ -267,6 +281,7 @@ class Orders(Model):
         Field("player", "reference auth_user"),
         Field("game", "reference games"),
         Field("data", "json"),
+        Field("raw", "boolean", default=True),
         Field("ready", "boolean", default=False)
     ]
 

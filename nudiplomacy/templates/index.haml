@@ -12,34 +12,64 @@
             .box.border.white
                 .box-title
                     = T("Your games")
-                .row.m-15
+                .row{style: "margin: 0;"}
                     - if not participating
-                        = T("You are not participating to any game")
-                    - for game in participating
                         .col-md-12
+                            = T("You are not participating to any game")
+                    - for game in participating
+                        .col-md-12.dashboard-game
                             .row
-                                .col-md-6
-                                    = game.name
-                                .col-md-6
-                                    = game._playercountry
-                                .col-md-4
-                                    = game.status
-                                .col-md-4
-                                    - if game.phases[-1].get('season') is not None
-                                        = game.phases[-1]['season']+" "+str(game.phases[-1]['year'])
-                                    - else
-                                        = game.phases[-1]['type']+" "+str(game.phases[-1]['year'])
-                                .col-md-4
-                                    timeleft
-                                .col-md-2
-                                    = game.nplayers
-                                .col-md-2
-                                    = game.bet
-                                .col-md-2
-                                    o
-                                .col-md-2
-                                    r
-                                .col-md-4
-                                    %a{href: '{{=url("games.play", game.id)}}'}
-                                        .btn.btn-success
-                                            = T("Enter")
+                                .col-md-9
+                                    .row
+                                        .col-md-6
+                                            %h4
+                                                = game.name
+                                        .col-md-6
+                                            %h5
+                                                = game._playercountry+" on "+game._map
+                                    .row
+                                        .col-md-4
+                                            - if game.status == "pregame"
+                                                Pre-game
+                                            - elif game.end
+                                                = T("Ended")
+                                            - else
+                                                -if game.phases[-1].get('season') is not None
+                                                    = game.phases[-1]['season']+" "+str(game.phases[-1]['year'])
+                                                - else
+                                                    = game.phases[-1]['type']+" "+str(game.phases[-1]['year'])
+                                        .col-md-2
+                                            %i.fa.fa-users.fa-fw
+                                            = game.nplayers
+                                        .col-md-2
+                                            %i.fa.fa-usd.fa-fw
+                                            = game.bet
+                                        .col-md-2
+                                            = T("Orders:")
+                                            - if game.status == "pregame"
+                                                = "-"
+                                            - else
+                                                - if game._playerorders
+                                                    %i.fa.fa-check
+                                                - else
+                                                    %i.fa.fa-warning
+                                        .col-md-2
+                                            = T("Ready:")
+                                            - if game.status == "pregame"
+                                                = "-"
+                                            - else
+                                                - if game._playerready
+                                                    %i.fa.fa-check
+                                                - else
+                                                    %i.fa.fa-warning
+                                .col-md-3{style: "text-align: center;"}
+                                    .row
+                                        .col-md-12
+                                            %a{href: '{{=url("games.play", game.id)}}'}
+                                                .btn.btn-success
+                                                    = T("Enter")
+                                    .row
+                                        - timer = game._timetonext
+                                        %h5{id: 'timer_{{=game.id}}'}
+                                        :javascript
+                                            counters.add('timer_{{=game.id}}', {{=timer.s}}, {{=timer.m}}, {{=timer.h}}, {{=timer.d}});

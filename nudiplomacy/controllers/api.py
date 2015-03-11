@@ -1,7 +1,7 @@
 import random
 from weppy import AppModule, request, sdict
 from weppy.tools import ServiceHandler, requires
-from nudiplomacy import app, auth, db, mdb, Orders, NObject, NSubscription
+from nudiplomacy import app, auth, db, mdb, Map, Orders, NObject, NSubscription
 from nudiplomacy.helpers.mongo import longToObjid
 from nudiplomacy.gameman import process_orders
 
@@ -15,16 +15,7 @@ def access_error():
 
 @api.expose("/map/<int:mid>")
 def map_get(mid):
-    mapdata = db(db.Map.id == mid).select().first().as_dict()
-    if not mapdata:
-        return dict()
-    # temp workaround for str->int conversion
-    ch = ["neutrals", "seas", "coasts"]
-    for c in ch:
-        for i in range(0, len(mapdata[c])):
-            mapdata[c][i] = str(mapdata[c][i])
-    #
-    return mapdata
+    return Map.get_data(mid)
 
 
 @api.expose("/game/<int:gid>")
@@ -197,7 +188,7 @@ def orders_save(gid):
             row.data[k] = v
         #: update in db
         db((db.Orders.game == game.id) &
-           (db.Orders.player == auth.user.id)).update(data=row.data)
+           (db.Orders.player == auth.user.id)).update(data=row.data, raw=False)
     if validated.error:
         rv.data = validated.error
         return rv

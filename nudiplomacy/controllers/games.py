@@ -1,4 +1,4 @@
-from weppy import AppModule, url, abort, request, sdict
+from weppy import AppModule, url, abort, request, redirect
 from weppy.tools import requires
 from nudiplomacy import app, db, mdb, auth, Game
 from nudiplomacy.handlers import AppStatus
@@ -74,6 +74,8 @@ def new():
                     "with a password, it must be at least of 4 characters"
 
     form = Game.form(onvalidation=validate)
+    if form.accepted:
+        redirect(url('.play', form.vars.id))
     return dict(form=form)
 
 
@@ -107,7 +109,6 @@ def play(gid):
                     chats[el['country']] = r['id']
                     break
     #: ui stuffs
-    scs = game.targetsc or game.map.scstowin
     if len(game.countries) < 3:
         statscol = 6
     elif len(game.countries) >= 3 and len(game.countries) < 4:

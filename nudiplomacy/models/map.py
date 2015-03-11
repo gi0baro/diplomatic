@@ -1,4 +1,4 @@
-from weppy.dal import Field, Model, after_insert, after_update
+from weppy.dal import Field, Model, after_insert, after_update, modelmethod
 from nudiplomacy import queue
 from nudiplomacy.helpers.images import create_map_image
 
@@ -55,3 +55,23 @@ class Map(Model):
         if fields.get('image'):
             row = set.select().first()
             queue.save(create_map_image, 'misc', rid=row.id)
+
+    @modelmethod
+    def get_data(db, entity, mid=None, row=None):
+        if row:
+            mapdata = row.as_dict()
+            del mapdata["image_blob"]
+            del mapdata["thumb_blob"]
+        fields = []
+        for field in entity:
+            if not field.name.endswith("blob"):
+                fields.append(field.name)
+        sel = [entity[fname] for fname in fields]
+        mapdata = db(entity.id == mid).select(*sel).first().as_dict()
+        if not mapdata:
+            return dict()
+        ch = ["neutrals", "seas", "coasts"]
+        for c in ch:
+            for i in range(0, len(mapdata[c])):
+                mapdata[c][i] = str(mapdata[c][i])
+        return mapdata
