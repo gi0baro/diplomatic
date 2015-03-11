@@ -17,14 +17,14 @@
                         = T("Games")
                 %li
                     %a{href: '{{=url("main.ranking")}}'}
-                        = T("Players")
+                        = T("Ranking")
                 %li
                     %a{href: '{{=url("main.stats")}}'}
                         = T("Stats")
                 - if current_user()
                     %li.dropdown.pull-right
                         %a.dropdown-toggle{href:"#", data-toggle:"dropdown"}
-                            {{=current_user().first_name}}
+                            {{=current_user().username}}
                             %b.caret
                         %ul.dropdown-menu
                             %li
@@ -33,11 +33,13 @@
                                     %img.img-circle.img-responsive{src:"{{=url('static', 'images/default-profile.png')}}"}
                                     %br
                             %li
-                                = T("Points")+": "
-                                = userdata()['points']
+                                %a{href:"#"}
+                                    = T("Points")+": "
+                                    = userdata()['points']
                             %li
-                                = T("Credits")+": "
-                                = userdata()['credits']
+                                %a{href:"#"}
+                                    = T("Credits")+": "
+                                    = userdata()['credits']
                             %li
                                 %a{href:"#"} Profile
                             %li

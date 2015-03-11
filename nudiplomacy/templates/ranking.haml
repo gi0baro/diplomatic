@@ -13,21 +13,22 @@
         %h5
 %br
 %br
-.card
-    .row
-        .col-xs-12
-            %h2 High score players
-            %table.table.table-hover.table-responsive
-                %thead
-                    %tr
-                        %th Name:
-                        %th Points:
-                %tbody
-                    - for rank in ranks
-                        %p
-                            %tr
-                                %td
-                                    %a{href: "#"}
-                                        = rank.user.first_name
-                                %td
-                                    = rank.points
+.row.m-15
+    .card
+        .row
+            .col-xs-12
+                %h2 High score players
+                %table.table.table-hover.table-responsive
+                    %thead
+                        %tr
+                            %th Name:
+                            %th Points:
+                    %tbody
+                        - for rank in ranks
+                            %p
+                                %tr
+                                    %td
+                                        %a{href: "#"}
+                                            = rank.user.username
+                                    %td
+                                        = rank.points
