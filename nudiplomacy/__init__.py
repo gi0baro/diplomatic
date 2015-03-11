@@ -59,7 +59,7 @@ app.use_extension(Assets)
 app.use_extension(BS3)
 
 # routes
-from controllers import main, games, maps, api
+from controllers import main, admin, games, maps, api
 
 import assets
 import commands

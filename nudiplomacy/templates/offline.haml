@@ -1,9 +1,47 @@
-- extend 'layout.haml'
+!!! 5
+%html
+    %head
+        %title {{=current.response.meta.title or 'nuDiplomacy'}}
+        %meta{name: "viewport", content:"width=device-width, initial-scale=1"}
 
-.row
-    .col-sm-12{align: "center"}
-        %h1 Maintainance
-    %br
-    .col-sm-12{align: "center"}
-        %h4
-            We're sorry for the inconvenience, we will back shortly.
+        - include_meta
+        - block head
+        - end
+
+        - include_helpers
+        - include_bs3
+
+        - assets 'css_base'
+        - assets 'js_base'
+
+    %body
+        %nav.navbar.navbar-default.navbar-fixed-top{role: "navigation", style: "color:white;"}
+            .container-fluid
+                .navbar-header
+                    %button.navbar-toggle{type: "button", data-toggle:"collapse", data-target:"#bs-example-navbar-collapse-1"}
+                        %span.sr-only Toggle navigation
+                        %span.icon-bar
+                        %span.icon-bar
+                        %span.icon-bar
+                    %a.navbar-brand{href:"/"}
+                        / %img{src:"{{=url('static', 'images/logo.png')}}"}
+                        nuDiplomacy
+                / Collect the nav links, forms, and other content for toggling
+                #bs-example-navbar-collapse-1.collapse.navbar-collapse
+                    %ul.nav.navbar-nav.nav-pills.pull-right
+                        - if not current.session.auth
+                            %li
+                                %a{href:"{{=url('main.account', 'login')}}"} Sign in
+
+        .content
+            .row
+                .col-sm-12{align: "center"}
+                    %h1 Maintainance
+                %br
+                .col-sm-12{align: "center"}
+                    %h4
+                        We're sorry for the inconvenience, we will back shortly.
+
+        %footer
+            .pull-left nuDiplomacy 0.1 beta
+            .pull-right crafted with weppy framework

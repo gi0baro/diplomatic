@@ -1,0 +1,14 @@
+- extend 'layout.haml'
+
+- block head
+
+:javascript
+    change_appstatus = function() {
+        ajax("{{=url('admin.change_appstatus')}}", [], ':eval');
+    }
+
+- end
+
+- block admin
+- include
+- end

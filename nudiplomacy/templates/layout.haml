@@ -3,16 +3,16 @@
     %head
         %title {{=current.response.meta.title or 'nuDiplomacy'}}
         %meta{name: "viewport", content:"width=device-width, initial-scale=1"}
-
         - include_meta
-        - block head
-        - end
 
         - include_helpers
         - include_bs3
 
         - assets 'css_base'
         - assets 'js_base'
+
+        - block head
+        - end
 
     %body
         - include 'header.haml'
