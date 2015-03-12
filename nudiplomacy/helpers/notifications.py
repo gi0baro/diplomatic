@@ -24,13 +24,13 @@ def game_canceled(game):
             date=datetime.utcnow()
         )
         usettings = db.UserSettings(user=user)
-        if usettings.notification['email']:
+        if usettings.notification['email']['processing']:
             recipient = db.User(id=user)
             queue.mail_send(
                 to=recipient.email,
                 subject="Game "+game.name+" was canceled",
                 message=_canceled_mail_text % dict(
-                    user=recipient.nickname,
+                    user=recipient.username,
                     game=game.name
                 )
             )
@@ -56,13 +56,13 @@ def game_opened(game):
             date=datetime.utcnow()
         )
         usettings = db.UserSettings(user=user)
-        if usettings.notification['email']:
+        if usettings.notification['email']['processing']:
             recipient = db.User(id=user)
             queue.mail_send(
                 to=recipient.email,
                 subject="Game "+game.name+" has started",
                 message=_opened_mail_text % dict(
-                    user=recipient.nickname,
+                    user=recipient.username,
                     game=game.name
                 )
             )
@@ -88,13 +88,13 @@ def game_new_phase(game):
             date=datetime.utcnow()
         )
         usettings = db.UserSettings(user=user)
-        if usettings.notification['email']:
+        if usettings.notification['email']['processing']:
             recipient = db.User(id=user)
             queue.mail_send(
                 to=recipient.email,
                 subject="Game "+game.name+" has been updated",
                 message=_new_phase_mail_text % dict(
-                    user=recipient.nickname,
+                    user=recipient.username,
                     game=game.name
                 )
             )
@@ -122,13 +122,13 @@ def game_new_message(game, to, source):
             date=datetime.utcnow()
         )
         usettings = db.UserSettings(user=user)
-        if usettings.notification['email']:
+        if usettings.notification['email']['messages']:
             recipient = db.User(id=user)
             queue.mail_send(
                 to=recipient.email,
                 subject="Game "+game.name+" has been updated",
                 message=_new_msg_mail_text % dict(
-                    user=recipient.nickname,
+                    user=recipient.username,
                     source=source['country'],
                     game=game.name
                 )

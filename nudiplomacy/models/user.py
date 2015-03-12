@@ -32,10 +32,18 @@ class UserData(Model):
     ]
 
 
+_default_notif_settings = {
+    'email': {
+        'processing': True,
+        'messages': False
+    }
+}
+
+
 class UserSettings(Model):
     tablename = "usersettings"
 
     fields = [
         Field("user", "reference auth_user"),
-        Field("notification", "json", default={'email': True})
+        Field("notification", "json", default=_default_notif_settings)
     ]

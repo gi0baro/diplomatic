@@ -281,7 +281,7 @@ def chat_post(cid):
                     #        break
                     game_new_message(
                         chat.game,
-                        chat.game.playercountry(user=chat.users[0]),
+                        chat.game.playercountry(uoid=chat.users[0]),
                         {'id': auth.user.id, 'country': pcountry})
                 rv.status = "Ok"
                 rv.data = mdata

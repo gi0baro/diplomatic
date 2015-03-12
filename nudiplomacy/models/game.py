@@ -158,14 +158,16 @@ class Game(Model):
         return None
 
     @fieldmethod('playercountry')
-    def get_country(self, row, user=None):
-        if user:
-            uid = user
-        else:
-            uid = session.auth.user.id if session.auth else None
-        if not uid:
-            return None
-        return self._get_country(row.games.countries, longToObjid(uid))
+    def get_country(self, row, user=None, uoid=None):
+        if not uoid:
+            if user:
+                uid = user
+            else:
+                uid = session.auth.user.id if session.auth else None
+            if not uid:
+                return None
+            uoid = longToObjid(uid)
+        return self._get_country(row.games.countries, uoid)
 
     @fieldmethod('playersin')
     def get_players_in(self, row):
