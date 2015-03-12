@@ -13,6 +13,9 @@
                             = form.custom.label[field]
                         .col-sm-10
                             = form.custom.widget[field]
+                            - if form.errors[field]
+                                %p.text-danger
+                                    = form.errors[field]
                             - if form.custom.comment[field]
                                 %p.help-block
                                     = form.custom.comment[field]
@@ -27,6 +30,9 @@
                                     = T("Pick your country:")
                                 .col-sm-8
                                     %select#games_countries.form-control
+                                    - if form.errors["countriesassign"]
+                                        %p.text-danger
+                                            = form.errors["countriesassign"]
                 %textarea#games_countries_hide{name: "countries", style: "display: none;"}
                 .form-group
                     %label.col-sm-2.control-label
@@ -46,6 +52,9 @@
                                     = T("Enter the password:")
                                 .col-sm-8
                                     %input#games_psw_hide.form-control{type: 'password', name: 'password'}
+                                    - if form.errors["password"]
+                                        %p.text-danger
+                                            = form.errors["password"]
                 .col-md-6.col-md-offset-3
                     .row.m-15{style: "text-align: center;"}
                         %h3{style: "color: #888"}
@@ -63,6 +72,9 @@
                                         = form.custom.label[field]
                                     .col-sm-10
                                         = form.custom.widget[field]
+                                        - if form.errors[field]
+                                            %p.text-danger
+                                                = form.errors[field]
                                         - if form.custom.comment[field]
                                             %p.help-block
                                                 = form.custom.comment[field]
