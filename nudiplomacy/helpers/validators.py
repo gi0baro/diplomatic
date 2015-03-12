@@ -1,8 +1,8 @@
 from weppy import session
-from weppy.validators import isInSet
+from weppy.validators import inSet
 
 
-class UserAvatarSet(isInSet):
+class UserAvatarSet(inSet):
     def __init__(self, theset, labels=None, error_message='Value not allowed',
                  multiple=False, zero='', sort=False):
         self.multiple = multiple

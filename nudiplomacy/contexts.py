@@ -20,13 +20,13 @@ class BaseContext(Helper):
 
     @staticmethod
     def userpic():
-        if auth.user.avatar_source == "gravatar":
+        if auth.user.avatarsrc == "gravatar":
             return Gravatar(auth.user.email).thumb
-        elif auth.user.avatar_source == "facebook":
+        elif auth.user.avatarsrc == "facebook":
             return "https://graph.facebook.com/" + auth.user.facebook + \
                 "/picture?type=normal"
         else:
-            return url('download', auth.user.thumbnail)
+            return url('download', auth.user.avatarimg)
 
     @staticmethod
     def pretty_gamephasetime(minutes):
