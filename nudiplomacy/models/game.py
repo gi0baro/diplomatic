@@ -262,18 +262,19 @@ class Game(Model):
         glist = mdb.games.find(
             {'countries.player': uoid}, limit=10, sort=('processed', 1)
         )
-        for game in glist:
-            variant = db(db.Map.id == objidToLong(game.map)).select(
-                db.Map.name).first()
-            game._map = variant.name
-            game._playercountry = Game._get_country(game.countries, uoid)
-            game._timetonext = Game._get_next_timer(game)
-            orders = db(
-                (db.Orders.player == uid) & (db.Orders.game == game.id)
-            ).select().first()
-            if orders:
-                game._playerorders = not orders.raw
-                game._playerready = orders.ready
+        if full:
+            for game in glist:
+                variant = db(db.Map.id == objidToLong(game.map)).select(
+                    db.Map.name).first()
+                game._map = variant.name
+                game._playercountry = Game._get_country(game.countries, uoid)
+                game._timetonext = Game._get_next_timer(game)
+                orders = db(
+                    (db.Orders.player == uid) & (db.Orders.game == game.id)
+                ).select().first()
+                if orders:
+                    game._playerorders = not orders.raw
+                    game._playerready = orders.ready
         return glist
 
 

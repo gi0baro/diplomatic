@@ -46,7 +46,7 @@
                                             = game.bet
                                         .col-md-2
                                             = T("Orders:")
-                                            - if game.status in ["pregame", "win"]
+                                            - if game._playercountry not in game.phases[-1].get('countries', []) or game.status in ["pregame", "win"]
                                                 = "-"
                                             - else
                                                 - if game._playerorders
@@ -55,7 +55,7 @@
                                                     %i.fa.fa-warning
                                         .col-md-2
                                             = T("Ready:")
-                                            - if game.status in ["pregame", "win"]
+                                            - if game._playercountry not in game.phases[-1].get('countries', []) or game.status in ["pregame", "win"]
                                                 = "-"
                                             - else
                                                 - if game._playerready
