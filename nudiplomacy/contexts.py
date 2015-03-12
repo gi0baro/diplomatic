@@ -1,4 +1,5 @@
-from weppy import Helper, T
+from gravatar import Gravatar
+from weppy import Helper, T, url
 from nudiplomacy import db, auth, cache
 
 
@@ -16,6 +17,16 @@ class BaseContext(Helper):
         if not auth.user:
             return {}
         return cache.redis("userdata_"+str(auth.user.id), _get)
+
+    @staticmethod
+    def userpic():
+        if auth.user.avatar_source == "gravatar":
+            return Gravatar(auth.user.email).thumb
+        elif auth.user.avatar_source == "facebook":
+            return "https://graph.facebook.com/" + auth.user.facebook + \
+                "/picture?type=normal"
+        else:
+            return url('download', auth.user.thumbnail)
 
     @staticmethod
     def pretty_gamephasetime(minutes):
