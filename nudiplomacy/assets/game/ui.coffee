@@ -261,6 +261,7 @@ class UI
         return
 
     initMessages: ->
+        self = this
         if app.game.presstype isnt "none"
             $('#left_wrapper').removeClass('nulled')
             $('#msg_sel_global').removeClass('nulled')
@@ -268,6 +269,13 @@ class UI
             @_initMessagesDims('global')
             @_msgChatUnread['global'] = false
             app.net.getMessages(cid, 'global')
+            $('#msg_text_global').on('keydown', (e) ->
+                if e.which is 13
+                    e.preventDefault()
+                    cid = $('#msg_conv_global').data('cid')
+                    self.sendMessage("global", cid)
+                return
+            )
             if app.game.presstype is "all"
                 for key, val of app.env.countries
                     if key is app.game.country
@@ -283,6 +291,13 @@ class UI
                     @_msgChatUnread[key] = false
                     cid = $('#msg_conv_'+key).data('cid')
                     app.net.getMessages(cid, key)
+                    $('#msg_text_'+key).on('keydown', (e) ->
+                        if e.which is 13
+                            e.preventDefault()
+                            cid = $('#msg_conv_'+key).data('cid')
+                            self.sendMessage(key, cid)
+                        return
+                    )
             setInterval(->
                 app.ui.setMessagesRead()
             , 5000)
