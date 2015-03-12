@@ -126,8 +126,9 @@
                                         .row
                                             .col-md-12
                                                 %i.fa.fa-check.fa-fw{id: "stats_{{=country}}_ready"}
-                                                %h5{style: "display: inline-block;"}
-                                                    username
+                                                - if not game.anonymous
+                                                    %h5{style: "display: inline-block;"}
+                                                        = unames[country]
                                             .col-md-12
                                                 .row
                                                     .col-md-8

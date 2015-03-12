@@ -5,7 +5,7 @@ from weppy.tools import requires
 from nudiplomacy import app, db, mdb, auth, Game
 from nudiplomacy.handlers import AppStatus
 from nudiplomacy.contexts import BaseContext
-from nudiplomacy.helpers.mongo import longToObjid
+from nudiplomacy.helpers.mongo import longToObjid, objidToLong
 
 games = AppModule(app, "games", __name__, url_prefix="games",
                   template_folder="games")
@@ -119,8 +119,11 @@ def play(gid):
         statscol = 4
     else:
         statscol = 3
+    usernames = {}
+    for el in game.countries:
+        usernames[el['country']] = db.User(id=objidToLong(el['player'])).username
     return dict(game=game, scs=scs, chats=chats, timer=game.timetonext(),
-                statscol=statscol)
+                statscol=statscol, unames=usernames)
 
 
 @games.expose("/mine")
