@@ -83,6 +83,20 @@ class Game
                     @moves[k] = v
                     if not @moves[k].from
                         @moves[k].from = k
+                    #: add expected movements
+                    if v.type is "sup_move" and v.from not in @_nextPhase.getCountryTroops()
+                        @moves[v.from] =
+                            from: v.from
+                            to: v.to
+                            type: 'move'
+                    if v.type is "move" and v.viaConvoy
+                        for r in v.croutes
+                            for ct in r
+                                if ct not in @_nextPhase.getCountryTroops()
+                                    @moves[ct] =
+                                        from: v.from
+                                        to: v.to
+                                        type: 'convoy'
         return
 
     _setStartingColors: ->
@@ -284,7 +298,7 @@ class Game
         if data.type is "move"
             if data.viaConvoy
                 @orders[id]["viaConvoy"] = data.viaConvoy
-                @orders[id]["convoy_route"] = data.croute
+                @orders[id]["croutes"] = [data.croute]
             if app.env.isMCoast(data.to)
                 #@orders[id]["mc"] = @moves_mc[id]
                 @orders[id]["mc"] = data.mc

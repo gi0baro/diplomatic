@@ -337,9 +337,9 @@ class Validator(object):
                         self.invalids.append(order_id)
                         continue
                     ## check convoy route present (needed for ui)
-                    if not order.get("convoy_route"):
+                    if not isinstance(order.get("croutes", []), list):
                         self.log("Order " + str(order_id) +
-                                 " is a move viaConvoy without route")
+                                 " is a move viaConvoy without routes")
                         self.invalids.append(order_id)
                         continue
                     ## check move via convoy ability
@@ -351,11 +351,12 @@ class Validator(object):
                         ## verify routes (find out orders built without ui)
                         convoy_routes = self._get_convoy_routes(order_id,
                                                                 order["to"])
-                        if order["convoy_route"] not in convoy_routes:
-                            self.log("Order " + str(order_id) +
-                                     " is a move viaConvoy with invalid route")
-                            self.invalids.append(order_id)
-                            continue
+                        for selected_route in order["croutes"]:
+                            if selected_route not in convoy_routes:
+                                self.log("Order " + str(order_id) + " is a " +
+                                         "move viaConvoy with invalid route")
+                                self.invalids.append(order_id)
+                                continue
                         ## store convoy routes (needed for proc)
                         order["convoy_routes"] = convoy_routes
             elif order["type"] == "sup_move":
