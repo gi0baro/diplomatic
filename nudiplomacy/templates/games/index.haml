@@ -37,6 +37,17 @@
                         = T("In order to join this game you will spend")
                         %h3#betwarn
                         = T("of your credits.")
+                    #joinerr.col-md-12.bg-warning.nulled
+                    #joinpsw.col-md-12.nulled
+                        .form-group
+                            %label{for: "psw"}
+                                = T("This game requires the password")
+                            %input#joinpswinput.form-control{type: "password", name: "psw"}
+                    #joincountry.nulled
+                        .form-group
+                            %label{for: "country"}
+                                = T("Choose the country")
+                            %select#joincountrysel.form-control{name: "country"}
                     #joinbtn.col-md-12{style: 'margin-top: 15px;'}
                         .btn.btn-success{onclick: 'javascript: act.confirmJoinGame(act.jgid)'}
                             = T("Join the game")

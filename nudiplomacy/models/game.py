@@ -55,6 +55,7 @@ class Game(Model):
         Field("countriesassign", default="random"),
         Field("countriesenabled", "json"),
         Field("access", default="free"),
+        Field("password"),
         Field("maxturns", "integer", default=0),
         Field("targetsc", "integer", default=0),
         Field("skipproc", "list:string", default=[]),

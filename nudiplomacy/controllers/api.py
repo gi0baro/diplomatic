@@ -41,7 +41,7 @@ def game_status(gid):
     return dict(status=game.status, phase=len(game.phases)-1)
 
 
-@api.expose("/join/<int:gid>")
+@api.expose("/join/<int:gid>", methods=['post'])
 @requires(auth.is_logged_in, access_error)
 def game_join(gid):
     rv = sdict(status="Error")
@@ -66,6 +66,12 @@ def game_join(gid):
     if not slots:
         rv.data = "No slots available"
         return rv
+    #: is game password protected?
+    if gamedata.access == "password":
+        upass = request.post_vars.password
+        if upass != gamedata.password:
+            rv.data = "Wrong password"
+            return rv
     if gamedata.countriesassign == "random":
         #: try to pick a random country
         joined = False
@@ -111,7 +117,7 @@ def game_join(gid):
             rv.data = "No slots available"
             return rv
     else:
-        chosen = request.get_vars.country
+        chosen = request.post_vars.country
         #: has the user chosen a country?
         if chosen not in slots:
             rv.data = "You have to pick a country"

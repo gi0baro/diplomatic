@@ -1,6 +1,8 @@
 class Act
     constructor: ->
         @jgid = null
+        @jce = {}
+        @jLastMsg = ""
 
     _showJoinFrame: ->
         $('#joinframe').fadeToggle 350
@@ -15,22 +17,45 @@ class Act
             )
         return
 
-    joinGame: (gid, bet) ->
+    joinGame: (gid, bet, chcountry="nope", password="none") ->
         @jgid = gid
         $('#betwarn').html bet
+        if chcountry isnt "nope"
+            $('#joincountrysel').html ''
+            $('#joincountry').removeClass 'nulled'
+            clist = @jce[@jgid]
+            for i in clist
+                $('#joincountrysel').append '<option value="'+i+'">'+i+'</option>'
+        else
+            $('#joincountry').addClass 'nulled'
+        if password isnt "none"
+            $('#joinpsw').removeClass 'nulled'
+        else
+            $('#joinpsw').addClass 'nulled'
+        $('#joinerr').addClass 'nulled'
         @_showJoinFrame()
         return
 
     confirmJoinGame: (gid) ->
+        $('#joinerr').addClass 'nulled'
+        psw = null
+        country = null
+        @jLastMsg = $('#joinmsg').html()
         $('#joinmsg').html "Joining.."
-        $('#joinbtn').attr
+        $($('#joinbtn').children()[0]).attr
             disabled: 'disabled'
-        api.join(gid)
+        if not $('#joinpsw').hasClass('nulled')
+            psw = $('#joinpswinput').val()
+        if not $('#joincountry').hasClass('nulled')
+            country = $('#joincountrysel').val()
+        api.join(gid, country, psw)
         return
 
     joinedGame: ->
         self = this
         $('#joinmsg').html "You joined the game successfully."
+        $('#joinpsw').addClass 'nulled'
+        $('#joincountry').addClass 'nulled'
         $('#joinbtn').css
             display: 'none'
         setTimeout(
@@ -42,8 +67,11 @@ class Act
         return
 
     cannotJoin: (msg) ->
-        $('#joinmsg').html msg
-        $('#joinbtn').html "Error"
+        $('#joinmsg').html @jLastMsg
+        $('#joinerr').html msg
+        $('#joinerr').removeClass 'nulled'
+        $($('#joinbtn').children()[0]).attr
+            disabled: false
         return
 
     createGame: ->

@@ -7,20 +7,23 @@ class API
         @urls[name] = url
         return
 
-    join: (gid, country=null) ->
+    join: (gid, country=null, psw=null) ->
         url = @urls.join + "/" + gid
-        if country isnt null
-            url = url + "?country=" + country
+        d =
+            country: country
+            password: psw
         $.ajax url,
-            type: 'GET'
+            type: 'POST'
+            contentType: "application/json"
+            data: JSON.stringify(d)
             success: (data) ->
                 if data.status is "Ok"
                     act.joinedGame()
-                    return
                 else
-                    console.log(data.data)
+                    act.cannotJoin(data.data)
                 return
             error: ->
+                act.cannotJoin("Unknown error")
                 return
         return
 

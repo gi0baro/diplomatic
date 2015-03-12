@@ -75,7 +75,11 @@
                                 = T("Watch")
                     - if game.open
                         .col-md-6
-                            .btn.btn-primary{onclick: 'javascript: act.joinGame("{{=game.id}}", "{{=game.bet}}");'}
+                            - gp = game.password if game.access == "password" else "none"
+                            - gc = "yes" if game.countriesassign == "choose" else "nope"
+                            :javascript
+                                act.jce['{{=game.id}}'] = {{=asis(game._jslots)}};
+                            .btn.btn-primary{id: 'joinb_{{=game.id}}', onclick: 'javascript: act.joinGame("{{=game.id}}", "{{=game.bet}}", "{{=gc}}", "{{=gp}}");'}
                                 = T("Join")
                 - else
                     .col-md-12

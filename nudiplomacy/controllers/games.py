@@ -1,3 +1,5 @@
+
+import json
 from weppy import AppModule, url, abort, request, redirect
 from weppy.tools import requires
 from nudiplomacy import app, db, mdb, auth, Game
@@ -31,6 +33,8 @@ def query(mode):
     else:
         q = (db.Game.id > 0)
     gamelist = db(q).select(orderby=~db.Game.created, limitby=limit)
+    for game in gamelist:
+        game._jslots = json.dumps(game.slots)
     return dict(games=gamelist)
 
 
