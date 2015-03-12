@@ -49,14 +49,6 @@ class MapImager(object):
         self.src.save(self.out, "PNG")
 
 
-#def create_map_image(fields):
-#    imager = MapImager(fields["image_blob"], fields)
-#    imager.create()
-#    fields["thumb_blob"] = imager.out
-#    fname = fields["image"].split(".")
-#    thumb_string = fname[0]+".thumb."+".".join(s for s in fname[2:])
-#    fields["thumb"] = thumb_string
-
 def create_map_image(rid):
     from nudiplomacy import db
     db._adapter.reconnect()
@@ -67,3 +59,21 @@ def create_map_image(rid):
     thumb = imager.out.getvalue()
     row.update_record(thumb=db.Map.thumb.store(thumb, fields["image"]),
                       thumb_blob=thumb)
+
+
+def _thumber(image):
+    if not image:
+        return image
+    try:
+        img = Image.open(StringIO(image))
+        img.thumbnail((120, 120), Image.ANTIALIAS)
+        thumb = StringIO()
+        img.save(thumb, img.format)
+        return thumb.getvalue()
+    except Exception:
+        return image
+
+
+def thumb_on_send(fields, fname):
+    thumb = _thumber(fields[fname+"_blob"])
+    fields[fname+"_blob"] = thumb
