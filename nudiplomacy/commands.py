@@ -6,18 +6,22 @@ from nudiplomacy.helpers.scheduler import Scheduler
 
 @app.command('setup')
 def setup():
+    from yaml import load as ymlload
+    f = open(app.config_path+'/setup.yml')
+    rd = f.read()
+    f.close()
+    configdata = ymlload(rd)
     udata = dict(
-        email="admin@nudiplomacy.com",
-        first_name="Giovanni",
-        last_name="Barillari",
-        password=Crypt()("testing")[0],
-        username="admin"
+        email=configdata['email'],
+        first_name=configdata['first_name'],
+        last_name=configdata['last_name'],
+        password=Crypt()(configdata['password'])[0],
+        username=configdata['username']
     )
     u = auth.get_or_create_user(udata, login=False)
     gid = auth.add_group("admin", "admin")
     auth.add_membership(gid, u.id)
     db.SysProp.insert(name="sys_online", data={'value': False})
-    db.SysActCode.insert(code="foobar")
 
 
 # temp

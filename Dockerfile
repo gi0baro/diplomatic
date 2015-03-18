@@ -21,6 +21,8 @@ WORKDIR /root
 ADD http://www.random.org/strings/?num=10&len=8&digits=on&upperalpha=on&loweralpha=on&unique=on&format=plain&rnd=new uuid
 RUN git clone https://github.com/gi0baro/weppy.git weppy
 RUN cd weppy && python setup.py install
+RUN git clone https://github.com/gi0baro/weppy-haml.git weppy-haml
+RUN cd weppy-haml && python setup.py install
 
 # install python requirements
 RUN mkdir /home/app
