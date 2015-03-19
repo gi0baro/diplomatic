@@ -18,6 +18,8 @@ def account(f, k):
             redirect(url("regcode"))
     if f != "register" and session.regCode:
         del session.regCode
+    if f == "login":
+        session._auth_next = url('games.index')
     form = auth(f, k)
     return dict(form=form, req=f)
 

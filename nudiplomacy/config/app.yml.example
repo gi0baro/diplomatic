@@ -16,7 +16,7 @@ auth:
 # Mailer
 mail:
   server: localhost
-  sender: "noreply@answerto.it"
+  sender: "noreply@nudiplomacy.com"
   login: ""
   tls: False
 # Redis (mail queue)
