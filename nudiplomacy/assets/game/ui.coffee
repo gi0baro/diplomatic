@@ -292,6 +292,8 @@ class UI
                     cid = $('#msg_conv_'+key).data('cid')
                     app.net.getMessages(cid, key)
                     $('#msg_text_'+key).on('keydown', (e) ->
+                        key = $(this).id.split("msg_text_")[1]
+                        console.log(key)
                         if e.which is 13
                             e.preventDefault()
                             cid = $('#msg_conv_'+key).data('cid')
