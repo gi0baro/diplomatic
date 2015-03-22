@@ -216,6 +216,7 @@ def process_game(gid):
             return
     gamemap = Map.get_data(row=game.map)
     gamedata = game.as_dict()
+    gamedata['countries'] = []
     #: get game orders
     ordersrows = db(db.Orders.game == gid).select()
     porders = {}
@@ -223,6 +224,7 @@ def process_game(gid):
     for row in ordersrows:
         porders[row.player] = row.data
     for el in game.countries:
+        gamedata['countries'].append(el['country'])
         if el['country'] in game.phases[-1]['countries']:
             orders[el['country']] = porders[objidToLong(el['player'])]
     app.log.info(orders)

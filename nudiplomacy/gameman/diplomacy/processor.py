@@ -119,8 +119,7 @@ class GameProcessor(Processor):
     def _loadGame(self, game):
         self.game = dict()
         phase = len(game["phases"])-1
-        self.game["countries"] = [country for country in
-                                  game["countries"].iterkeys()]
+        self.game["countries"] = game["countries"]
         self.game["terrs"] = game["phases"][phase]["territories"]
         #self.game["supply"] = [i for i in self.map["supply"].iterkeys()] \
         #    if game["build_ew"] else self.map["home"]
