@@ -61,6 +61,14 @@ def _q_open():
         w.work()
 
 
+@app.command('queue_close')
+def _q_close():
+    with Connection(connection=redis):
+        qs = [Queue('close')]
+        w = Worker(qs)
+        w.work()
+
+
 @app.command('queue_proc')
 def _q_process():
     with Connection(connection=redis):
@@ -73,5 +81,21 @@ def _q_process():
 def _q_misc():
     with Connection(connection=redis):
         qs = [Queue('misc')]
+        w = Worker(qs)
+        w.work()
+
+
+@app.command('queue_notify')
+def _q_notify():
+    with Connection(connection=redis):
+        qs = [Queue('notify')]
+        w = Worker(qs)
+        w.work()
+
+
+@app.command('queue_mail')
+def _q_mail():
+    with Connection(connection=redis):
+        qs = [Queue('mail')]
         w = Worker(qs)
         w.work()

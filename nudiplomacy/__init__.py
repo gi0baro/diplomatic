@@ -36,7 +36,7 @@ from models.map import Map
 from models.game import Game, Orders, Chat
 from models.notification import NObject, NEvent, NSubscription
 from models.stats import TimeStats, GameStats, CountryStats
-db = DAL(app, adapter_args={'uploads_in_blob': True})
+db = DAL(app, pool_size=5, adapter_args={'uploads_in_blob': True})
 auth = Auth(app, db, usermodel=User, mailer=False)
 db.define_models([
     SysProp, SysActCode, UserData, UserSettings, Map, Game, Orders, Chat,
