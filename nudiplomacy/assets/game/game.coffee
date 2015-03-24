@@ -45,6 +45,22 @@ class Game
             @win = data.phases[@_nphases-1].winner
         return
 
+    reload: (data, orders) ->
+        @_phases = {}
+        for phase in data.phases
+            cstr = i+''
+            @_phases[cstr] = new Phase(i, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.mc, phase.dislodged, phase.orders)
+            i++
+        @_nphases = data.phases.length
+        @_currentPhase = @_nphases-1
+        @_nextPhase = new PhaseNext()
+        @orders = orders.data
+        @moves = {}
+        @moves_mc = {}
+        @moves_queue = []
+        @_initOrders()
+        return
+
     phase: (id='current') ->
         if id is 'next' or (id is 'current' and @_currentPhase is 'next')
             return @_nextPhase

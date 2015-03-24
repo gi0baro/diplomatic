@@ -1236,12 +1236,41 @@ class UI
                 console.log('changed phase')
                 @showTip("Game has changed, going to next phase in 3 seconds..")
                 setTimeout (->
-                    app.ui.restart()
+                    app.reload()
                 ), 3400
         return
 
-    restart: ->
-        location.reload()
-        return
+    reload: ->
+        npid = app.game.phase().id
+        #: create wrapper for new phase orders
+        wrapper = '<div class="ord_phase_wrapper" id="orders_'+npid+'">'
+        for country, orders of app.game.phase().orders
+            divid = "orders_"+npid+"_"+country
+            inner = '<div class="ord_pin" id="'+divid+'">'
+            inner += '<div class="ord_pin_head" id="'+divid+'_head">'
+            inner += '<div class="ord_pin_icon" id="'+divid+'_icon">'
+            inner += '<i class="fa fa-caret-right"></i>'
+            inner += '</div>'
+            inner += '<div class="ord_pin_text ord_pin_text_off" id="'+divid+'_text">'
+            inner += country+' orders'
+            inner += '</div></div>'
+            inner += '<div class="orders" id="'+divid+'_data"></div>'
+            inner += '</div>'
+            $('#ord_wrapper').append(wrapper+inner+'</div>')
+        #: rebuild orders
+        $('#orders_next_me_data').html('')
+        for id, data of app.game.orders
+            order_str = @_buildOrderString(id, data)
+            $('#orders_next_me_data').append '<div class="order" id="ord_next_'+id+'">'+order_str+'</div>'
+        @ordersClick("orders_next_me_head")
+        for country, orders of app.game.phase().orders
+            for id, data of orders
+                order_str = @_buildOrderString(id, data)
+                $('#orders_'+npid+'_'+country+'_data').append '<div class="order" id="ord_'+npid+'_'+id+'">'+order_str+'</div>'
+        @ordersClick("orders_"+npid+"_"+app.game.country+"_head")
+        #: turn off icons
+        @iconOff('ord')
+        @iconOff('ready')
+        @iconOff('save')
 
 window.UI = UI

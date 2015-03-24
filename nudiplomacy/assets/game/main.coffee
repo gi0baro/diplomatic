@@ -56,4 +56,12 @@ class App
             @ui.win()
         return
 
+    reload: ->
+        gameData = @net.getGame()
+        orders = @net.getOrders()
+        @game.reload(gameData, orders)
+        @ui.reload()
+        @game.loadPhase(@game.phase('last').id)
+        return
+
 window.app = new App()
