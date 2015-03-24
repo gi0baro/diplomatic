@@ -59,6 +59,7 @@ def manage():
         game.update_record(status="processing")
         #enqueue
         queue.save(process_game, 'proc', gid=game.id)
+    db._adapter.close()
 
 
 def process_orders(country, game, orders):
@@ -181,6 +182,7 @@ def open_game(gid):
     from nudiplomacy.helpers.notifications import game_opened
     game_opened(game)
     app.log.warning("Opened game "+str(gid))
+    db._adapter.close()
 
 
 def cancel_game(gid):
@@ -197,6 +199,7 @@ def cancel_game(gid):
     #game.update_record(status="canceled")
     #: delete the game record
     del db.Game[game.id]
+    db._adapter.close()
 
 
 def process_game(gid):
@@ -213,6 +216,7 @@ def process_game(gid):
             _next_proc = datetime(_now.year, _now.month, _now.day) + \
                 timedelta(hours=24)
             game.update_record(status="ingame", next=_next_proc)
+            db._adapter.close()
             return
     gamemap = Map.get_data(row=game.map)
     gamedata = game.as_dict()
@@ -335,3 +339,4 @@ def process_game(gid):
         )
     dt = time() - t0
     app.log.warning("Processed game "+str(gid)+" in "+str(dt))
+    db._adapter.close()

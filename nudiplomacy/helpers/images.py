@@ -59,6 +59,7 @@ def create_map_image(rid):
     thumb = imager.out.getvalue()
     row.update_record(thumb=db.Map.thumb.store(thumb, fields["image"]),
                       thumb_blob=thumb)
+    db._adapter.close()
 
 
 def _thumber(image):
