@@ -57,6 +57,9 @@ class App
         return
 
     reload: ->
+        if preGame
+            location.reload()
+            return
         gameData = @net.getGame()
         orders = @net.getOrders()
         @game.reload(gameData, orders)
