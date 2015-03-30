@@ -93,3 +93,6 @@
                             .btn.btn-success
                                 = T("Enter")
             %img.flag{src: '{{=url("static", "images/flags/"+game.lang+".png")}}'}
+- if not games
+    %h3
+        = T("Seems we don't have any game to show up.")
