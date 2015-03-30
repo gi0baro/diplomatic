@@ -1,4 +1,4 @@
-from weppy import App, DAL, sdict
+from weppy import App, DAL, url
 from weppy.cache import Cache, RamCache, RedisCache
 from weppy.sessions import SessionRedisManager
 from weppy.tools import Auth
@@ -60,6 +60,8 @@ app.use_extension(BS3)
 
 # routes
 from controllers import main, admin, games, maps, api
+
+auth.settings.login_next = url('games.index')
 
 import assets
 import commands
