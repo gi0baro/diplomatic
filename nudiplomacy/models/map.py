@@ -52,16 +52,16 @@ class Map(Model):
             mapdata = row.as_dict()
             del mapdata["image_blob"]
             del mapdata["thumb_blob"]
-            return mapdata
-        fields = []
-        for field in entity:
-            if not field.name.endswith("blob"):
-                fields.append(field.name)
-        sel = [entity[fname] for fname in fields]
-        mapdata = db(entity.id == mid).select(*sel).first()
-        if not mapdata:
-            return dict()
-        mapdata = mapdata.as_dict()
+        else:
+            fields = []
+            for field in entity:
+                if not field.name.endswith("blob"):
+                    fields.append(field.name)
+            sel = [entity[fname] for fname in fields]
+            mapdata = db(entity.id == mid).select(*sel).first()
+            if not mapdata:
+                return dict()
+            mapdata = mapdata.as_dict()
         ch = ["neutrals", "seas", "coasts"]
         for c in ch:
             for i in range(0, len(mapdata[c])):
