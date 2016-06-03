@@ -97,7 +97,7 @@ class Act
         $('#games_nplayers').change ->
             act._gameFormNPChange()
             return
-        $('#games_countriesassign').change ->
+        $('#games_countries_assign').change ->
             act._gameFormCAChange()
             return
         $('#games_countries').change ->
@@ -219,7 +219,7 @@ class Act
         return
 
     _gameFormCAChange: ->
-        val = $('#games_countriesassign').val()
+        val = $('#games_countries_assign').val()
         $('#games_countries').html ''
         $('#games_countries_hide').html ''
         if val is "random"

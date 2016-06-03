@@ -5,13 +5,13 @@ from nudiplomacy.handlers import AppStatus
 from nudiplomacy.contexts import BaseContext
 
 
-@app.expose("/", helpers=[AppStatus(), BaseContext()])
+@app.route("/", helpers=[AppStatus(), BaseContext()])
 def index():
     participating = Game.participating() if auth.user else []
     return dict(participating=participating)
 
 
-@app.expose("/account(/<str:f>)?(/<str:k>)?", helpers=[BaseContext()])
+@app.route("/account(/<str:f>)?(/<str:k>)?", helpers=[BaseContext()])
 def account(f, k):
     if f == "register" and app.config.registration_codes:
         if not session.regCode:
@@ -22,13 +22,13 @@ def account(f, k):
     return dict(form=form, req=f)
 
 
-@app.expose(helpers=[BaseContext()])
+@app.route(helpers=[BaseContext()])
 def regcode():
     def proc_form(form):
-        if not form.vars.code:
+        if not form.params.code:
             form.errors.code = "You need a code to register"
             return
-        row = db.SysActCode(code=form.vars.code)
+        row = db.SysJoincode(code=form.params.code)
         if not row:
             form.errors.code = "Code you provided is not valid"
             return
@@ -39,19 +39,19 @@ def regcode():
 
     form = Form(Field("code"), onvalidation=proc_form)
     if form.accepted:
-        session.regCode = form.vars.code
+        session.regCode = form.params.code
         redirect(url("account", "register"))
     return dict(form=form)
 
 
-@app.expose(helpers=[AppStatus(), BaseContext()])
+@app.route(helpers=[AppStatus(), BaseContext()])
 def ranking():
     rlist = db(db.UserData.id > 0).select(
         orderby=~db.UserData.points, limitby=(0, 100))
     return dict(ranks=rlist)
 
 
-@app.expose(helpers=[AppStatus(), BaseContext()])
+@app.route(helpers=[AppStatus(), BaseContext()])
 def stats():
     active = db(db.Game.active == True).count()
     completed = db((db.Game.active == False) &
@@ -60,6 +60,6 @@ def stats():
     return locals()
 
 
-@app.expose("/download/<str:filename>")
+@app.route("/download/<str:filename>")
 def download(filename):
     stream_dbfile(db, filename)

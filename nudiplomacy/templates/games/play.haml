@@ -20,7 +20,7 @@
         }
     });
 
-- ocountries = [el['country'] for el in game.countries if el['country'] != game.playercountry()]
+- ocountries = [el['country'] for el in game.countries if el['country'] != game.player_country()]
 .container.container_ce
     %section#main.main.row
         #left_wrapper.nulled
@@ -108,7 +108,7 @@
                 #stats_button
                     #stats_dot
                     #stats_text
-                        = game.playercountry() or 'stats'
+                        = game.player_country() or 'stats'
                     #stats_c
             #stats_content
                 .row{style: "margin: 0;"}
@@ -199,5 +199,5 @@
     .navbar-inner
         .container
         .container_foot
-            .copyright.pull-left Copyright &#169; 2015 nuDiplomacy
+            .copyright.pull-left Copyright &#169; 2016 nuDiplomacy
             #poweredBy.pull-right coded by gi0baro with TONS of caffeine

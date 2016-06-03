@@ -55,8 +55,8 @@ class Validator(object):
         return Id in self.mcoasts
 
     def _isConvoying(self, Id):
-        for orders_set in self.orders.itervalues():
-            for order_id, order in orders_set.iteritems():
+        for orders_set in self.orders.values():
+            for order_id, order in orders_set.items():
                 if order_id == Id and order["type"] == "convoy":
                     return True
         return False
@@ -133,7 +133,7 @@ class Validator(object):
         return self._convoy_routes.get(fr+"-"+to, [])
 
     def _check_neutrals(self):
-        for order_id, order in self.orders.iteritems():
+        for order_id, order in self.orders.items():
             if order_id in self.neutrals:
                 self.invalids.append(order_id)
                 self.log("Order "+str(order_id)+" is made on neutral state")
@@ -148,7 +148,7 @@ class Validator(object):
                          "neutral state")
 
     def _check_troops(self):
-        for order_id in self.orders.iterkeys():
+        for order_id in self.orders.keys():
             ## check order is on player's armies
             if order_id not in self.troops:
                 self.invalids.append(order_id)
@@ -181,7 +181,7 @@ class Validator(object):
 
     def _process_builds(self):
         ## process builds
-        for order_id, order in self.orders.iteritems():
+        for order_id, order in self.orders.items():
             ## check order integrity
             if order.get("type") not in ["hold", "build", "disband"]:
                 self.invalids.append(order_id)
@@ -221,7 +221,7 @@ class Validator(object):
         if len(self.centers) > len(self.troops):
             realsupply = [i for i in self.supply if i in self.terrs and
                           i not in self.troops]
-            for order_id, order in self.orders.iteritems():
+            for order_id, order in self.orders.items():
                 if order_id in self.invalids:
                     continue
                 if order_id not in realsupply:
@@ -244,7 +244,7 @@ class Validator(object):
                     self.invalids.append(i)
                     self.log("Order "+str(i)+" is exceeding quota")
         else:
-            for order_id, order in self.orders.iteritems():
+            for order_id, order in self.orders.items():
                 if order_id in self.invalids:
                     continue
                 if order["type"] == "build":
@@ -265,11 +265,11 @@ class Validator(object):
 
     def _process_retreats(self):
         prevmoveorders = []
-        for c, d in self.prev["orders"].iteritems():
-            for tid, tdata in d.iteritems():
+        for c, d in self.prev["orders"].items():
+            for tid, tdata in d.items():
                 if tdata["type"] == "move":
                     prevmoveorders.append(tdata["to"])
-        for order_id, order in self.orders.iteritems():
+        for order_id, order in self.orders.items():
             if not order.get("to"):
                 ## we process only retreats
                 #self.invalids.append(order_id)
@@ -291,7 +291,7 @@ class Validator(object):
                 continue
 
     def _process_diplomacy(self):
-        for order_id, order in self.orders.iteritems():
+        for order_id, order in self.orders.items():
             ## order should have:
             ##      - id: terr in which the army is
             ##      - type: type of order (should be in
@@ -411,23 +411,23 @@ class PreProcessor(object):
         self._logger(msg)
 
     def _isMoving(self, Id):
-        for orders_set in self.orders.itervalues():
-            for order_id, order in orders_set.iteritems():
+        for orders_set in self.orders.value():
+            for order_id, order in orders_set.items():
                 if order_id == Id and order["type"] == "move":
                     return True
         return False
 
     def _isMovingTo(self, Id, To):
-        for orders_set in self.orders.itervalues():
-            for order_id, order in orders_set.iteritems():
+        for orders_set in self.orders.values():
+            for order_id, order in orders_set.items():
                 if order_id == Id and order["type"] == "move" and \
                         order["to"] == To:
                     return True
         return False
 
     def _isConvoyingFT(self, Id, fr, to):
-        for orders_set in self.orders.itervalues():
-            for order_id, order in orders_set.iteritems():
+        for orders_set in self.orders.values():
+            for order_id, order in orders_set.items():
                 if order_id == Id:
                     if order["type"] == "convoy" and order["to"] == to and \
                             order["from"] == fr:
@@ -438,14 +438,14 @@ class PreProcessor(object):
     def _process_retreats(self):
         fails = []
         retreats = dict()
-        for player, orders_set in self.orders.iteritems():
-            for order_id, order in orders_set.iteritems():
+        for player, orders_set in self.orders.items():
+            for order_id, order in orders_set.items():
                 if order["type"] == "retreat":
                     if not retreats.get(order["to"]):
                         retreats[order["to"]] = dict(count=0, data=[])
                     retreats[order["to"]]["count"] += 1
                     retreats[order["to"]]["data"].append((player, order_id))
-        for retreat in retreats.itervalues():
+        for retreat in retreats.values():
             if retreat["count"] > 1:
                 ## fails all
                 for el in retreat["data"]:
@@ -453,8 +453,8 @@ class PreProcessor(object):
         return fails
 
     def _process_diplomacy(self):
-        for player, orders_set in self.orders.iteritems():
-            for order_id, order in orders_set.iteritems():
+        for player, orders_set in self.orders.items():
+            for order_id, order in orders_set.items():
                 #order_id = player+":"+order["id"]
                 if order["type"] == "sup_hold":
                     ## support hold to moving units fails
@@ -475,9 +475,9 @@ class PreProcessor(object):
                         self.fails.append((player, order_id))
                         continue
                     #: is the army moving viaConvoy?
-                    for otherp, otherordersset in self.orders.iteritems():
+                    for otherp, otherordersset in self.orders.items():
                         otherfound = False
-                        for otheroid, otherorder in otherordersset.iteritems():
+                        for otheroid, otherorder in otherordersset.items():
                             if otheroid == order["from"]:
                                 if not otherorder.get("viaConvoy"):
                                     self.fails.append((player, order_id))

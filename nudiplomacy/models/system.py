@@ -4,20 +4,12 @@ from weppy.dal import Model, Field
 
 
 class SysProp(Model):
-    tablename = "sys_prop"
-
-    fields = [
-        Field("name", "string"),
-        Field("data", "json")
-    ]
+    name = Field()
+    data = Field('json')
 
 
-class SysActCode(Model):
-    tablename = "sys_actcodes"
-
-    fields = [
-        Field("code"),
-        Field("limit", "integer", default=50),
-        Field("count", "integer", default=0),
-        Field("active", "boolean", default=True)
-    ]
+class SysJoincode(Model):
+    code = Field()
+    limit = Field('int', default=50)
+    count = Field('int', default=0)
+    active = Field('bool')

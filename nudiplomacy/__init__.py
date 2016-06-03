@@ -20,7 +20,7 @@ app.config_from_yaml('db.yml', 'db')
 from redis import Redis
 redis = Redis(host=app.config.redis.host, port=app.config.redis.port,
               db=app.config.redis.db)
-from helpers.queues import Queue
+from .helpers.queues import Queue
 queue = Queue(app, redis)
 
 cache = Cache(
@@ -30,21 +30,21 @@ cache = Cache(
         db=app.config.redis.db))
 
 # db and auth
-from models.system import SysProp, SysActCode
-from models.user import User, UserData, UserSettings
-from models.map import Map
-from models.game import Game, Orders, Chat
-from models.notification import NObject, NEvent, NSubscription
-from models.stats import TimeStats, GameStats, CountryStats
+from .models.system import SysProp, SysJoincode
+from .models.user import User, UserData, UserSettings
+from .models.map import Map
+from .models.game import Game, Orders, Chat
+from .models.notification import NObject, NEvent, NSubscription
+from .models.stats import TimeStats, GameStats, CountryStats
 db = DAL(app, pool_size=5, adapter_args={'uploads_in_blob': True})
 auth = Auth(app, db, usermodel=User, mailer=False)
 db.define_models([
-    SysProp, SysActCode, UserData, UserSettings, Map, Game, Orders, Chat,
+    SysProp, SysJoincode, UserData, UserSettings, Map, Game, Orders, Chat,
     NObject, NEvent, NSubscription, TimeStats, GameStats, CountryStats])
-from helpers.mongo import MongoDB
+from .helpers.mongo import MongoDB
 mdb = MongoDB(db)
 
-app.expose.common_handlers = [
+app.common_handlers = [
     SessionRedisManager(redis),
     db.handler,
     auth.handler
@@ -59,9 +59,9 @@ app.use_extension(Assets)
 app.use_extension(BS3)
 
 # routes
-from controllers import main, admin, games, maps, api
+from .controllers import main, admin, games, maps, api
 
 auth.settings.login_next = url('games.index')
 
-import assets
-import commands
+from . import assets
+from . import commands

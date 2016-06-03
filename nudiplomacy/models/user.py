@@ -1,51 +1,50 @@
-from weppy.dal import Field, Model, AuthModel, after_insert, before_update
+from weppy.dal import Field, Model, belongs_to, after_insert, before_update
+from weppy.tools.auth import AuthUser
 from nudiplomacy import app
 from nudiplomacy.helpers.validators import UserAvatarSet
 from nudiplomacy.helpers.images import thumb_on_send
 
 
-class User(AuthModel):
-    fields = [
-        Field("avatarsrc", default="gravatar"),
-        Field("avatarimg", "upload"),
-        Field("facebook")
-    ]
+class User(AuthUser):
+    username = Field()
+    avatar_src = Field()
+    avatar_img = Field('upload')
+    facebook = Field()
 
-    register_visibility = {
-        'username': (True, True)
+    form_registration_rw = {
+        'username': True
     }
-    profile_visibility = {
-        'avatarsrc': (True, True)
+    form_profile_rw = {
+        'avatar_src': True,
+        'avatar_img': True
     }
 
-    validators = {
-        'avatarsrc': UserAvatarSet(app.config.auth.photo_source, zero=None),
+    validation = {
+        'username': {'presence': True},
+        'avatar_src': UserAvatarSet(app.config.auth.photo_source, zero=None)
     }
 
     @after_insert
-    def insert_udata(self, fields, oid):
-        self.db.UserData.insert(user=oid)
-        self.db.UserSettings.insert(user=oid)
+    def insert_udata(self, fields, rid):
+        self.db.UserData.insert(user=rid)
+        self.db.UserSettings.insert(user=rid)
 
     @before_update
-    def update_avatar_thumb(self, s, fields):
-        if fields.get('avatarimg'):
-            thumb_on_send(fields, "avatarimg")
+    def update_avatar_thumb(self, dbset, fields):
+        if fields.get('avatar_img'):
+            thumb_on_send(fields, "avatar_img")
 
 
 class UserData(Model):
-    tablename = "userdata"
+    belongs_to('user')
 
-    fields = [
-        Field("user", "reference auth_user"),
-        Field("credits", "integer", default=100),
-        Field("points", "integer", default=0),
-        Field("played", "integer", default=0),
-        Field("won", "integer", default=0),
-        Field("survived", "integer", default=0),
-        Field("defeated", "integer", default=0),
-        Field("drawn", "integer", default=0)
-    ]
+    credits = Field('int', default=100)
+    points = Field('int', default=0)
+    played = Field('int', default=0)
+    won = Field('int', default=0)
+    survived = Field('int', default=0)
+    defeated = Field('int', default=0)
+    drawn = Field('int', default=0)
 
 
 _default_notif_settings = {
@@ -57,9 +56,6 @@ _default_notif_settings = {
 
 
 class UserSettings(Model):
-    tablename = "usersettings"
+    belongs_to('user')
 
-    fields = [
-        Field("user", "reference auth_user"),
-        Field("notification", "json", default=_default_notif_settings)
-    ]
+    notification = Field('json', default=_default_notif_settings)

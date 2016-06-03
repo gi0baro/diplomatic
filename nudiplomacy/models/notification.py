@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from weppy import session
-from weppy.dal import Field, Model, modelmethod
+from weppy.dal import Field, Model, belongs_to
 from nudiplomacy.helpers.mongo import longToObjid, objidToLong
 
 
@@ -17,15 +17,13 @@ class NObject(Model):
     """
     tablename = "notification_objects"
 
-    fields = [
-        Field("channel", "string"),
-        Field("type", "string")
-    ]
+    channel = Field()
+    type = Field()
 
-    @modelmethod
-    def get_one(db, entity, channel=None, t=None):
-        _query = (entity.channel == channel) & (entity.type == t)
-        return db(_query).select().first()
+    @classmethod
+    def get_one(cls, channel=None, t=None):
+        _query = (cls.channel == channel) & (cls.type == t)
+        return cls.db(_query).select().first()
 
 
 class NEvent(Model):
@@ -44,19 +42,17 @@ class NEvent(Model):
     """
     tablename = "notification_events"
 
-    fields = [
-        Field("object", "reference notification_objects"),
-        Field("recipient", "reference auth_user"),
-        Field("actor", "string"),
-        Field("data", "json"),
-        Field("date", "datetime"),
-        Field("read", "boolean", default=False)
-    ]
+    belongs_to({'object': 'NObject'}, {'recipient': 'User'})
 
-    @modelmethod
-    def find_unread(db, entity, user=None):
+    actor = Field()
+    data = Field('json')
+    occurred_at = Field('datetime')
+    is_read = Field('bool', default=False)
+
+    @classmethod
+    def find_unread(cls, user=None):
         uid = user or (session.auth.user.id if session.auth else None)
-        return db((entity.recipient == uid) & (entity.read == False)).select()
+        return cls((cls.recipient == uid) & (cls.is_read == False)).select()
 
 
 class NSubscription(Model):
@@ -70,21 +66,20 @@ class NSubscription(Model):
     """
     tablename = "notification_subscriptions"
 
-    fields = [
-        Field("user", "reference auth_user"),
-        Field("channel", "string"),
-        Field("objects", "list:reference notification_objects")
-    ]
+    belongs_to('user')
 
-    @modelmethod
-    def find_subscribers(db, entity, channel, nobj):
+    channel = Field()
+    objects = Field('list:reference notification_objects')
+
+    @classmethod
+    def find_subscribers(cls, channel, nobj):
         from nudiplomacy import mdb
         rows = mdb.notification_subscriptions.find(
             {"channel": channel, "objects": longToObjid(nobj.id)})
         return [objidToLong(row.user) for row in rows]
 
-    @modelmethod
-    def subscribe(db, entity, user, channel, nobj=None, nid=None):
+    @classmethod
+    def subscribe(cls, user, channel, nobj=None, nid=None):
         from nudiplomacy import mdb
         if nid:
             nid = longToObjid(nid)
@@ -95,12 +90,12 @@ class NSubscription(Model):
             {"$push": {"objects": nid}}
         )
 
-    @modelmethod
-    def unsuscribe(db, entity, channel, objs, user=None):
+    @classmethod
+    def unsuscribe(cls, channel, objs, user=None):
         uid = user or (session.auth.user.id if session.auth else None)
         if objs == "all":
-            _query = (entity.channel == channel) & (entity.user == uid)
-            db(_query).update(objects=[])
+            _query = (cls.channel == channel) & (cls.user == uid)
+            cls.db(_query).update(objects=[])
         else:
             if not isinstance(objs, list):
                 objs = [objs]

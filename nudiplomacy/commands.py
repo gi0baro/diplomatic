@@ -7,9 +7,8 @@ from nudiplomacy.helpers.scheduler import Scheduler
 @app.command('setup')
 def setup():
     from yaml import load as ymlload
-    f = open(app.config_path+'/setup.yml')
-    rd = f.read()
-    f.close()
+    with open(app.config_path + '/setup.yml', 'r') as f:
+        rd = f.read()
     configdata = ymlload(rd)
     udata = dict(
         email=configdata['email'],
@@ -28,7 +27,7 @@ def setup():
 @app.command('addtester')
 def addtester():
     db._adapter.reconnect()
-    c = db(db.auth_user.id > 0).count()
+    c = db(db.User).count()
     udata = dict(
         email="tester"+str(c)+"@nudiplomacy.com",
         first_name="Tester",

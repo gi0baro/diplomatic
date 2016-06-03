@@ -41,7 +41,7 @@ class Environment
         @same = data.same
         @seas = data.seas
         @coasts = data.coasts
-        @mcoasts_oxy = data.mcoasts
+        @mcoasts_oxy = data.multi_coasts
         @supply = data.supply
         @_supplylist = (key for key of @supply)
         @homes = data.homes

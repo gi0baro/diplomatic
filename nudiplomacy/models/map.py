@@ -1,64 +1,60 @@
-from weppy.dal import Field, Model, after_insert, after_update, modelmethod
+from weppy.dal import Field, Model, after_insert, after_update
 from nudiplomacy import queue
 from nudiplomacy.helpers.images import create_map_image
 
 
 class Map(Model):
-    tablename = "maps"
+    name = Field()
+    image = Field('upload')
+    thumb = Field('upload')
+    year = Field('int')
+    colors = Field('json')
+    oxy = Field('json')
+    neutrals = Field('json')
+    seas = Field('json')
+    coasts = Field('json')
+    multi_coasts = Field('json')
+    same = Field('json')
+    links = Field('json')
+    supply = Field('json')
+    homes = Field('json')
+    names = Field('json')
+    countries = Field('json')
+    min_players = Field('int')
+    scs_towin = Field('int')
+    init = Field('json')
 
-    fields = [
-        Field("name"),
-        Field("image", "upload"),
-        Field("thumb", "upload"),
-        Field("year", "integer"),
-        Field("colors", "json"),
-        Field("oxy", "json"),
-        Field("neutrals", "json"),
-        Field("seas", "json"),
-        Field("coasts", "json"),
-        Field("mcoasts", "json"),
-        Field("same", "json"),
-        Field("links", "json"),
-        Field("supply", "json"),
-        Field("homes", "json"),
-        Field("names", "json"),
-        Field("countries", "json"),
-        Field("minplayers", "integer"),
-        Field("scstowin", "integer"),
-        Field("init", "json")
-    ]
-
-    visibility = {
-        "thumb": (False, False)
+    form_rw = {
+        'thumb': False
     }
 
     @after_insert
-    def init_stats(self, fields, id):
-        self.db.CountryStats.insert(map=id)
+    def init_stats(self, fields, rid):
+        self.db.CountryStats.insert(map=rid)
 
     @after_insert
-    def create_thumb(self, fields, id):
-        queue.save(create_map_image, 'misc', rid=id)
+    def create_thumb(self, fields, rid):
+        queue.save(create_map_image, 'misc', rid=rid)
 
     @after_update
-    def update_thumb(self, set, fields):
+    def update_thumb(self, dbset, fields):
         if fields.get('image'):
-            row = set.select().first()
+            row = dbset.select().first()
             queue.save(create_map_image, 'misc', rid=row.id)
 
-    @modelmethod
-    def get_data(db, entity, mid=None, row=None):
+    @classmethod
+    def get_data(cls, mid=None, row=None):
         if row:
             mapdata = row.as_dict()
-            del mapdata["image_blob"]
-            del mapdata["thumb_blob"]
+            #del mapdata["image_blob"]
+            #del mapdata["thumb_blob"]
         else:
             fields = []
-            for field in entity:
+            for field in cls.table:
                 if not field.name.endswith("blob"):
                     fields.append(field.name)
-            sel = [entity[fname] for fname in fields]
-            mapdata = db(entity.id == mid).select(*sel).first()
+            sel = [cls.table[fname] for fname in fields]
+            mapdata = cls.db(cls.id == mid).select(*sel).first()
             if not mapdata:
                 return dict()
             mapdata = mapdata.as_dict()

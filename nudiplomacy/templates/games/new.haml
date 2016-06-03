@@ -7,7 +7,7 @@
         .row.m-15
         %form.form-horizontal{enctype: "multipart/form-data", method: 'POST'}
             %fieldset
-                - for field in ['map', 'name', 'lang', 'nplayers', 'bet', 'pottype', 'phasetime', 'buildew', 'buildonstart', 'anonymous', 'presstype']
+                - for field in ['map', 'name', 'lang', 'nplayers', 'bet', 'pot_type', 'phase_time', 'build_ew', 'build_onstart', 'anonymous', 'press_type']
                     .form-group
                         %label.col-sm-2.control-label
                             = form.custom.label[field]
@@ -21,26 +21,26 @@
                                     = form.custom.comment[field]
                 .form-group
                     %label.col-sm-2.control-label
-                        = form.custom.label.countriesassign
+                        = form.custom.label.countries_assign
                     .col-sm-10
-                        = form.custom.widget.countriesassign
+                        = form.custom.widget.countries_assign
                         #games_countries_c.row.m-15.nulled
                             .form-group
                                 %label.col-sm-4.control-label
                                     = T("Pick your country:")
                                 .col-sm-8
                                     %select#games_countries.form-control
-                                    - if form.errors["countriesassign"]
+                                    - if form.errors["countries_assign"]
                                         %p.text-danger
-                                            = form.errors["countriesassign"]
+                                            = form.errors["countries_assign"]
                 %textarea#games_countries_hide{name: "countries", style: "display: none;"}
                 .form-group
                     %label.col-sm-2.control-label
-                        = form.custom.label.countriesenabled
+                        = form.custom.label.countries_enabled
                     .col-sm-10
-                        = form.custom.widget.countriesenabled
+                        = form.custom.widget.countries_enabled
                         %p.help-block
-                            = form.custom.comment.countriesenabled
+                            = form.custom.comment.countries_enabled
                 .form-group
                     %label.col-sm-2.control-label
                         = form.custom.label.access
@@ -66,7 +66,7 @@
                 #advancedblock.col-md-12.nulled
                     .box.border
                         .row.m-15
-                            - for field in ['jointime', 'starton', 'targetsc', 'maxturns', 'skipproc']
+                            - for field in ['join_time', 'starts_on', 'target_sc', 'max_turns', 'skip_proc']
                                 .form-group
                                     %label.col-sm-2.control-label
                                         = form.custom.label[field]

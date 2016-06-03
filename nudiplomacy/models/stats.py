@@ -1,39 +1,36 @@
 # -*- coding: utf-8 -*-
 
 from weppy import request
-from weppy.dal import Field, Model
+from weppy.dal import Field, Model, belongs_to
 
 
 class TimeStats(Model):
     tablename = "stats_time"
 
-    fields = [
-        Field("map", "reference maps"),
-        Field("year", "integer", default=lambda: request.now.year),
-        Field("data", "json", default={})
-    ]
+    belongs_to('map')
+
+    year = Field('int', default=lambda: request.now.year)
+    data = Field('json')
 
 
 class GameStats(Model):
     tablename = "stats_games"
 
-    fields = [
-        Field("map", "reference maps"),
-        Field("lang", "json", default={}),
-        Field("nplayers", "json", default={}),
-        Field("pot", "json", default={'wta': 0, 'ppsc': 0}),
-        Field("turns", "json", default={})
-    ]
+    belongs_to('map')
+
+    lang = Field('json', default={})
+    nplayers = Field('json', default={})
+    pot = Field('json', default={'wta': 0, 'ppsc': 0})
+    turns = Field('json', default={})
 
 
 class CountryStats(Model):
     tablename = "stats_countries"
 
-    fields = [
-        Field("map", "reference maps"),
-        Field("played", "json", default={}),
-        Field("won", "json", default={}),
-        Field("survived", "json", default={}),
-        Field("defeated", "json", default={}),
-        Field("drawn", "json", default={})
-    ]
+    belongs_to('map')
+
+    played = Field('json', default={})
+    won = Field('json', default={})
+    survived = Field('json', default={})
+    defeated = Field('json', default={})
+    drawn = Field('json', default={})

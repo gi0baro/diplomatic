@@ -9,60 +9,63 @@ from .diplomacy import OrdersProcessor, GameProcessor
 
 def manage():
     now = datetime.utcnow()
-    app.log.debug("Manager: start run at "+str(now))
+    app.log.debug("Manager: start run at " + str(now))
     db._adapter.reconnect()
     if not isAppOnline():
         app.log.debug("Manager: skipping due to maintainance.")
         return
     # start ready-asap pregames
     toStart = db(
-        (db.Game.status == "pregame") & (db.Game.ready == True) &
-        (db.Game.starton == "asap")
+        (db.Game.status == "pregame") & (db.Game.is_ready == True) &
+        (db.Game.starts_on == "asap")
     ).select()
     app.log.debug(toStart)
     for game in toStart:
-        game.update_record(status="processing", ready=False)
+        game.update_record(status="processing", is_ready=False)
         # enqueue
         queue.save(open_game, 'open', gid=game.id)
     # start ready pregames
     toStart = db(
-        (db.Game.status == "pregame") & (db.Game.ready == True) &
-        (db.Game.starton == "ontime") & (db.Game.next <= now)
+        (db.Game.status == "pregame") & (db.Game.is_ready == True) &
+        (db.Game.starts_on == "ontime") & (db.Game.next_at <= now)
     ).select()
     app.log.debug(toStart)
     for game in toStart:
-        game.update_record(status="processing", ready=False)
+        game.update_record(status="processing", is_ready=False)
         # enqueue
         queue.save(open_game, 'open', gid=game.id)
     # cancel expired pregames
     toCancel = db(
-        (db.Game.status == "pregame") & (db.Game.ready == False) &
-        (db.Game.next <= now)
+        (db.Game.status == "pregame") & (db.Game.is_ready == False) &
+        (db.Game.next_at <= now)
     ).select()
     for game in toCancel:
         game.update_record(status="processing", open=False)
         queue.save(cancel_game, 'open', gid=game.id)
     # process new phases
     toProcess = db(
-        (db.Game.status == "ingame") & (db.Game.ready == True)).select()
+        (db.Game.status == "ingame") & (db.Game.is_ready == True)).select()
     app.log.debug(toProcess)
     for game in toProcess:
-        game.update_record(status="processing", ready=False)
-        #enqueue
+        game.update_record(status="processing", is_ready=False)
+        # enqueue
         queue.save(process_game, 'proc', gid=game.id)
     toProcess = db(
-        (db.Game.status == "ingame") & (db.Game.ready == False) &
-        (db.Game.next <= now)
+        (db.Game.status == "ingame") & (db.Game.is_ready == False) &
+        (db.Game.next_at <= now)
     ).select()
     app.log.debug(toProcess)
     for game in toProcess:
         game.update_record(status="processing")
-        #enqueue
+        # enqueue
         queue.save(process_game, 'proc', gid=game.id)
     db._adapter.close()
 
 
 def process_orders(country, game, orders):
+    app.log.debug(game)
+    app.log.debug(game.map)
+    app.log.debug(game.map.name)
     gamemap = game.map.as_dict()
     game = game.as_dict()
     # temp workaround for str->int conversion
@@ -82,7 +85,7 @@ def open_game(gid):
     #: init orders
     for el in game.countries:
         orders = {}
-        if game.buildonstart:
+        if game.build_onstart:
             for ttype in ["armies", "fleets"]:
                 for t in game.map.init["troops"][el['country']][ttype]:
                     if ttype == "armies":
@@ -98,15 +101,15 @@ def open_game(gid):
         db.Orders.insert(
             game=game.id, player=objidToLong(el['player']), data=orders)
     #: init chats
-    presstype = game.presstype
+    presstype = game.press_type
     if presstype == "all":
         plist = [el['player'] for el in game.countries]
-        for i in range(0, len(plist)-1):
-            for j in range(i+1, len(plist)):
-                #db.Chat.insert(game=gid, users=[plist[i], plist[j]])
+        for i in range(0, len(plist) - 1):
+            for j in range(i + 1, len(plist)):
+                # db.Chat.insert(game=gid, users=[plist[i], plist[j]])
                 mdb.chats.save(
                     {'game': longToObjid(gid), 'users': [plist[i], plist[j]],
-                     'open': True, 'messages': []}
+                     'is_open': True, 'messages': []}
                 )
     #: init game
     orders = {}
@@ -122,12 +125,12 @@ def open_game(gid):
         "orders": {},
         "countries": countriesk
     }
-    if game.buildonstart:
+    if game.build_onstart:
         troops = {}
         for k in countriesk:
             troops[k] = {"armies": [], "fleets": []}
         nphase.update(
-            year=game.map.year-1,
+            year=game.map.year - 1,
             type="builds",
             troops=troops
         )
@@ -143,19 +146,19 @@ def open_game(gid):
         )
         if game.map.init["mc"]:
             nphase.update(mc=game.map.init["mc"])
-    nextrun = datetime.utcnow()+timedelta(minutes=game.phasetime)
+    nextrun = datetime.utcnow() + timedelta(minutes=game.phase_time)
     mdb.games.upd(
         {"id": gid},
         {"$set": {
-            "active": True, "status": "ingame", "ready": False,
-            "next": nextrun, "processed": datetime.utcnow()},
+            "is_active": True, "status": "ingame", "is_ready": False,
+            "next_at": nextrun, "processed_at": datetime.utcnow()},
          "$push": {"phases": nphase}}
     )
     #: add participation points and update participation data
     for el in game.countries:
         mdb.userdata.upd(
             {'player': el['player']},
-            {'$inc': {'points': 1*game.nplayers, 'played': 1}})
+            {'$inc': {'points': 1 * game.nplayers, 'played': 1}})
     #: stats
     moid = longToObjid(game.map.id)
     mkey = '{:%m}'.format(datetime.utcnow())
@@ -163,25 +166,25 @@ def open_game(gid):
     mdb.stats_time.ioru(
         {'map': moid, 'year': datetime.utcnow().year},
         {'$inc': {
-            'data.'+mkey+'.count': 1,
-            'data.'+mkey+'.days.'+dkey: 1
+            'data.' + mkey + '.count': 1,
+            'data.' + mkey + '.days.' + dkey: 1
         }}
     )
     mdb.stats_games.ioru(
         {'map': moid},
         {'$inc': {
-            'lang.'+game.lang: 1,
-            'nplayers.'+str(game.nplayers): 1,
-            'pot.'+game.pottype: 1
+            'lang.' + game.lang: 1,
+            'nplayers.' + str(game.nplayers): 1,
+            'pot.' + game.pot_type: 1
         }}
     )
     ckeys = {}
     for k in countriesk:
-        ckeys["played."+k] = 1
+        ckeys["played." + k] = 1
     mdb.stats_countries.upd({'map': moid}, {'$inc': ckeys})
     from nudiplomacy.helpers.notifications import game_opened
     game_opened(game)
-    app.log.warning("Opened game "+str(gid))
+    app.log.warning("Opened game " + str(gid))
     db._adapter.close()
 
 
@@ -196,7 +199,7 @@ def cancel_game(gid):
             {'$inc': {'credits': game.bet}})
     game_canceled(game)
     #: set as canceled
-    #game.update_record(status="canceled")
+    # game.update_record(status="canceled")
     #: delete the game record
     del db.Game[game.id]
     db._adapter.close()
@@ -209,15 +212,18 @@ def process_game(gid):
     db._adapter.reconnect()
     game = db.Game(id=gid)
     #: do we have to skip processing today?
-    if game.skipproc:
+    if game.skip_proc:
         _now = datetime.utcnow()
         _cur_day = _days_list[_now.weekday()]
-        if _cur_day in game.skipproc:
+        if _cur_day in game.skip_proc:
             _next_proc = datetime(_now.year, _now.month, _now.day) + \
                 timedelta(hours=24)
-            game.update_record(status="ingame", next=_next_proc)
+            game.update_record(status="ingame", next_at=_next_proc)
             db._adapter.close()
             return
+    print(game)
+    print(game.map)
+    print(game.map.name)
     gamemap = Map.get_data(row=game.map)
     gamedata = game.as_dict()
     gamedata['countries'] = []
@@ -238,14 +244,14 @@ def process_game(gid):
     try:
         proc.process()
     except:
-        app.log.exception("Game "+str(gid)+" processing failed.")
+        app.log.exception("Game " + str(gid) + " processing failed.")
         game.update_record(status="crashed")
         return
     #: last orders become public
-    last_phase = str(len(gamedata['phases'])-1)
+    last_phase = str(len(gamedata['phases']) - 1)
     mdb.games.upd(
         {"id": gid},
-        {"$set": {"phases."+last_phase+".orders": proc.finalOrders}}
+        {"$set": {"phases." + last_phase + ".orders": proc.finalOrders}}
     )
     #: store new phase, update game status
     if proc.end:
@@ -256,14 +262,14 @@ def process_game(gid):
         #: notify game won
     else:
         nextstatus = 'ingame'
-        nextrun = datetime.utcnow()+timedelta(minutes=game.phasetime)
+        nextrun = datetime.utcnow() + timedelta(minutes=game.phase_time)
         #: store new empty orders
         orders_new = dict(proc.phase_new['orders'])
         for el in game.countries:
             co = orders_new.get(el['country'], {})
             pid = objidToLong(el['player'])
             db((db.Orders.game == gid) & (db.Orders.player == pid)).update(
-                ready=False, raw=True, data=co)
+                is_player_ready=False, are_raw=True, data=co)
         #: notify new phase
         from nudiplomacy.helpers.notifications import game_new_phase
         game_new_phase(game)
@@ -271,8 +277,8 @@ def process_game(gid):
     mdb.games.upd(
         {"id": gid},
         {"$set": {
-            "status": nextstatus, "next": nextrun,
-            "processed": datetime.utcnow()},
+            "status": nextstatus, "next_at": nextrun,
+            "processed_at": datetime.utcnow()},
          "$push": {"phases": proc.phase_new}}
     )
     #: finalize game end if needed
@@ -286,7 +292,7 @@ def process_game(gid):
             if el['country'] == proc.winner:
                 winner = el['player']
                 break
-        if game.pottype == "wta":
+        if game.pot_type == "wta":
             won = game.bet * game.nplayers
             mdb.userdata.upd({'player': winner}, {'$inc': {'credits': won}})
         else:
@@ -295,7 +301,7 @@ def process_game(gid):
                 scs = [i for i in game.phases[-1]['territories'][el['country']]
                        if i in supply]
                 if scs:
-                    to_add = int(round(scs*float(rel)/len(supply)))
+                    to_add = int(round(scs * float(rel) / len(supply)))
                     mdb.userdata.upd(
                         {'player': el['player']},
                         {'$inc': {'credits': to_add}})
@@ -307,13 +313,13 @@ def process_game(gid):
         #: points and stats
         mdb.userdata.upd(
             {'player': winner},
-            {'$inc': {'points': 2*game.nplayers, 'won': 1}})
+            {'$inc': {'points': 2 * game.nplayers, 'won': 1}})
         moid = longToObjid(gamemap['id'])
         for el in game.countries:
             if el['country'] == proc.winner:
                 mdb.stats_countries.upd(
                     {'map': moid},
-                    {'$inc': {'won.'+el['country']: 1}})
+                    {'$inc': {'won.' + el['country']: 1}})
                 continue
             scs = [i for i in game.phases[-1]['territories'][el['country']]
                    if i in supply]
@@ -324,7 +330,7 @@ def process_game(gid):
                     {'$inc': {'points': -game.nplayers, 'defeated': 1}})
                 mdb.stats_countries.upd(
                     {'map': moid},
-                    {'$inc': {'defeated.'+el['country']: 1}})
+                    {'$inc': {'defeated.' + el['country']: 1}})
             else:
                 #: survived
                 mdb.userdata.upd(
@@ -332,11 +338,11 @@ def process_game(gid):
                     {'$inc': {'survived': 1}})
                 mdb.stats_countries.upd(
                     {'map': moid},
-                    {'$inc': {'survived.'+el['country']: 1}})
-        nturns = proc.phase_new['year']-gamemap['year']
+                    {'$inc': {'survived.' + el['country']: 1}})
+        nturns = proc.phase_new['year'] - gamemap['year']
         mdb.stats_games.ioru(
-            {'map': moid}, {'$inc': {'turns.'+str(nturns): 1}}
+            {'map': moid}, {'$inc': {'turns.' + str(nturns): 1}}
         )
     dt = time() - t0
-    app.log.warning("Processed game "+str(gid)+" in "+str(dt))
+    app.log.warning("Processed game " + str(gid) + " in " + str(dt))
     db._adapter.close()

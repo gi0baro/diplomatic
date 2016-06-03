@@ -31,11 +31,11 @@ class Nodes(object):
 
     @property
     def ids(self):
-        return self._nodes.iterkeys()
+        return self._nodes.keys()
 
     @property
     def list(self):
-        return self._nodes.itervalues()
+        return self._nodes.values()
 
     def _get_deps(self, nid, dType):
         tClasses = {

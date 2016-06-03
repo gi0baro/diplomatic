@@ -1,6 +1,6 @@
 web:
   build: .
-  command: python run.py
+  command: python3 run.py
   volumes:
     - .:/home/app
   ports:

@@ -14,7 +14,7 @@ class Processor(object):
         if self._logger is not None:
             self._logger(msg)
         else:
-            print msg
+            print(msg)
 
 
 class OrdersProcessor(Processor):
@@ -32,7 +32,7 @@ class OrdersProcessor(Processor):
         self.map["seas"] = gamemap["seas"]
         self.map["coasts"] = gamemap["coasts"]
         self.map["neutrals"] = gamemap["neutrals"]
-        self.map["mcoasts"] = [i for i in gamemap["mcoasts"].iterkeys()]
+        self.map["mcoasts"] = list(gamemap["multi_coasts"].keys())
         self.map["supply"] = gamemap["supply"]
         self.map["home"] = gamemap["homes"]
         self.map["names"] = gamemap["names"]
@@ -41,11 +41,11 @@ class OrdersProcessor(Processor):
         self.game = {}
         phase = len(game["phases"])-1
         self.game["terrs"] = game["phases"][phase]["territories"][pcountry]
-        self.game["supply"] = [i for i in self.map["supply"].iterkeys()] \
-            if game["buildew"] else self.map["home"][pcountry]
+        self.game["supply"] = list(self.map["supply"].keys()) \
+            if game["build_ew"] else self.map["home"][pcountry]
         self.game["armies"] = []
         self.game["fleets"] = []
-        for country, troops in game["phases"][phase]["troops"].iteritems():
+        for country, troops in game["phases"][phase]["troops"].items():
             for el in troops["armies"]:
                 self.game["armies"].append(el)
             for el in troops["fleets"]:
@@ -54,7 +54,7 @@ class OrdersProcessor(Processor):
         self.game["mc_pos"] = game["phases"][phase].get("mc", {})
         self.game["phase"] = game["phases"][phase]["type"]
         self.game["centers"] = []
-        for k in self.map["supply"].iterkeys():
+        for k in self.map["supply"].keys():
             if k in self.game["terrs"]:
                 self.game["centers"].append(k)
         self.game["prev"] = game["phases"][phase-1]
@@ -85,7 +85,7 @@ class OrdersProcessor(Processor):
         #: clean orders from invalid ones
         for fail_id in checker.invalids:
             #to_del = None
-            if fail_id in self.orders_data.iterkeys():
+            if fail_id in self.orders_data.keys():
                 if self.game["phase"] in ["diplomacy", "builds"]:
                     self.orders_data[fail_id] = dict(type="hold")
                 elif self.game["phase"] == "retreats":
@@ -114,7 +114,7 @@ class GameProcessor(Processor):
         self.map["names"] = gamemap["names"]
         self.map["supply"] = gamemap["supply"]
         self.map["home"] = gamemap["homes"]
-        self.map["scstowin"] = gamemap["scstowin"]
+        self.map["scstowin"] = gamemap["scs_towin"]
 
     def _loadGame(self, game):
         self.game = dict()
@@ -126,7 +126,7 @@ class GameProcessor(Processor):
         self.game["troops"] = game["phases"][phase]["troops"]
         self.game["armies"] = []
         self.game["fleets"] = []
-        for country, troops in self.game["troops"].iteritems():
+        for country, troops in self.game["troops"].items():
             for el in troops["armies"]:
                 self.game["armies"].append(el)
             for el in troops["fleets"]:
@@ -136,8 +136,8 @@ class GameProcessor(Processor):
         self.game["season"] = game["phases"][phase].get("season")
         self.game["year"] = game["phases"][phase]["year"]
         self.game["dislodged"] = game["phases"][phase].get("dislodged", {})
-        self.game["buildew"] = game["buildew"]
-        self.game["scstowin"] = game["targetsc"] or self.map["scstowin"]
+        self.game["buildew"] = game["build_ew"]
+        self.game["scstowin"] = game["target_sc"] or self.map["scstowin"]
         self.orders = game["phases"][phase]["orders"]
 
     def _preproc(self):
@@ -153,8 +153,8 @@ class GameProcessor(Processor):
     def _adjudicate(self):
         from .adjudicator import Adjudicator
         adjOrders = dict()
-        for country, order in self.orders.iteritems():
-            for tid, data in order.iteritems():
+        for country, order in self.orders.items():
+            for tid, data in order.items():
                 adjOrders[tid] = data
                 adjOrders[tid]['country'] = country
                 ## remove next line in production?
@@ -176,7 +176,7 @@ class GameProcessor(Processor):
     def _proc_builds(self):
         # if country has to disband and not enough orders are set to disband,
         # randomly add disbands
-        for country, orders in self.orders.iteritems():
+        for country, orders in self.orders.items():
             supplyc = [i for i in self.map["supply"]
                        if i in self.game["terrs"][country]]
             troops = self.game["troops"][country]["armies"] + \
@@ -185,7 +185,7 @@ class GameProcessor(Processor):
                 disbandn = len(troops) - len(supplyc)
                 disbanding = []
                 others = []
-                for oid, odata in orders.iteritems():
+                for oid, odata in orders.items():
                     if odata["type"] == "disband":
                         disbanding.append(oid)
                     else:
@@ -197,8 +197,8 @@ class GameProcessor(Processor):
                         self.orders[country][i] = {'type': 'disband'}
 
     def _proc_retreats(self):
-        for country, orders in self.orders.iteritems():
-            for oid, odata in orders.iteritems():
+        for country, orders in self.orders.items():
+            for oid, odata in orders.items():
                 if odata["type"] == "hold":
                     odata["type"] = "disband"
 
@@ -247,9 +247,9 @@ class GameProcessor(Processor):
     def _updatePositions(self, troops):
         #: copy current troops data
         newp = {}
-        for country, tdict in self._troops.iteritems():
+        for country, tdict in self._troops.items():
             newp[country] = {}
-            for tk, tlist in tdict.iteritems():
+            for tk, tlist in tdict.items():
                 newp[country][tk] = list(tlist)
         #: process movements
         for troop, nowat, country, mc in troops:
@@ -265,7 +265,7 @@ class GameProcessor(Processor):
         self._troops = newp
 
     def _updateTerrs(self):
-        for country, troops in self._troops.iteritems():
+        for country, troops in self._troops.items():
             alltroops = troops["armies"]+troops["fleets"]
             #for tid in troops["armies"]:
             for tid in alltroops:
@@ -277,7 +277,7 @@ class GameProcessor(Processor):
                 if tid not in self._terrs[country]:
                     self._terrs[country].append(tid)
                     ## delete in others countries' terrs
-                    for country_other, terrs in self._terrs.iteritems():
+                    for country_other, terrs in self._terrs.items():
                         if country_other != country:
                             if tid in terrs:
                                 self._terrs[country_other].remove(tid)
@@ -285,9 +285,9 @@ class GameProcessor(Processor):
     def _setActivePlayers(self):
         country_list = []
         if self.phase_new["type"] == "diplomacy":
-            country_list = [country for country in self._troops.iterkeys()]
+            country_list = list(self._troops.keys())
         elif self.phase_new["type"] == "builds":
-            for country, troops in self._troops.iteritems():
+            for country, troops in self._troops.items():
                 supplyc = [i for i in self.map["supply"]
                            if i in self._terrs[country]]
                 troop_n = len(troops["armies"])+len(troops["fleets"])
@@ -295,17 +295,17 @@ class GameProcessor(Processor):
                     country_list.append(country)
         else:
             #: retreats
-            for country in self.phase_new["dislodged"].iterkeys():
+            for country in self.phase_new["dislodged"].keys():
                 country_list.append(country)
         #if country_list:
         self.phase_new["countries"] = country_list
 
     def _removeOldMc(self):
         fleets = []
-        for country, troops in self._troops.iteritems():
+        for country, troops in self._troops.items():
             fleets += troops["fleets"]
         todel = []
-        for tid in self.phase_new["mc"].iterkeys():
+        for tid in self.phase_new["mc"].keys():
             if tid not in fleets and tid not in todel:
                 todel.append(tid)
         for tid in todel:
@@ -316,7 +316,7 @@ class GameProcessor(Processor):
         for country in self.phase_new["countries"]:
             self.phase_new["orders"][country] = dict()
             if self.phase_new["type"] == "diplomacy":
-                for troops in self.phase_new["troops"][country].itervalues():
+                for troops in self.phase_new["troops"][country].values():
                     for troop in troops:
                         self.phase_new["orders"][country][troop] = \
                             dict(type="hold")
@@ -386,7 +386,7 @@ class GameProcessor(Processor):
         if self.phase_new["type"] != "builds":
             return
         gotSCs = []
-        for country, troops in self._troops.iteritems():
+        for country, troops in self._troops.items():
             supplyc = [i for i in self.map["supply"]
                        if i in self._terrs[country]]
             if len(supplyc) >= self.game["scstowin"]:
@@ -407,9 +407,9 @@ class GameProcessor(Processor):
 
     def _cleanOrders(self):
         self.finalOrders = {}
-        for country, orders in self.orders.iteritems():
+        for country, orders in self.orders.items():
             self.finalOrders[country] = {}
-            for tid, data in orders.iteritems():
+            for tid, data in orders.items():
                 self.finalOrders[country][tid] = {
                     'type': data['type'],
                     'success': data.get('success', False)}
@@ -450,8 +450,8 @@ class GameProcessor(Processor):
         if self.game["phase"] == "builds":
             disbands = []
             builds = []
-            for country, orders in self.orders.iteritems():
-                for order_id, order in orders.iteritems():
+            for country, orders in self.orders.items():
+                for order_id, order in orders.items():
                     if order["type"] == "build":
                         builds.append((order_id, country, order["troop"]))
                     if order["type"] == "disband":
@@ -463,7 +463,7 @@ class GameProcessor(Processor):
             ## disband units
             disbands = []
             moves = []
-            for country, tlist in self.game["dislodged"].iteritems():
+            for country, tlist in self.game["dislodged"].items():
                 for troop in tlist:
                     disband = True
                     orders = self.orders[country]
@@ -485,8 +485,8 @@ class GameProcessor(Processor):
             self._updateTroops("dislodge", self.dislodged)
             ## make moves
             moves = []
-            for country, orders in self.orders.iteritems():
-                for order_id, order in orders.iteritems():
+            for country, orders in self.orders.items():
+                for order_id, order in orders.items():
                     if order["type"] == "move" and order.get("success", False):
                         moves.append(
                             [order_id, order["to"], country, order.get("mc")]

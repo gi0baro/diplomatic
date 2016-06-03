@@ -21,7 +21,7 @@ def game_canceled(game):
         db.NEvent.insert(
             object=nobj, recipient=user, actor="game "+game.name,
             data={"msg": "Game was canceled", "type": "game"},
-            date=datetime.utcnow()
+            occurred_at=datetime.utcnow()
         )
         usettings = db.UserSettings(user=user)
         if usettings.notification['email']['processing']:
@@ -53,7 +53,7 @@ def game_opened(game):
         db.NEvent.insert(
             object=nobj, recipient=user, actor="game "+game.name,
             data={"msg": "Game has started", "type": "game"},
-            date=datetime.utcnow()
+            occurred_at=datetime.utcnow()
         )
         usettings = db.UserSettings(user=user)
         if usettings.notification['email']['processing']:
@@ -85,7 +85,7 @@ def game_new_phase(game):
         db.NEvent.insert(
             object=nobj, recipient=user, actor="game "+game.name,
             data={"msg": "Game has been processed", "type": "game"},
-            date=datetime.utcnow()
+            occurred_at=datetime.utcnow()
         )
         usettings = db.UserSettings(user=user)
         if usettings.notification['email']['processing']:
@@ -119,7 +119,7 @@ def game_new_message(game, to, source):
         db.NEvent.insert(
             object=nobj, recipient=user, actor=source['country'],
             data={"msg": "Sent a new message", "type": "message"},
-            date=datetime.utcnow()
+            occurred_at=datetime.utcnow()
         )
         usettings = db.UserSettings(user=user)
         if usettings.notification['email']['messages']:

@@ -17,7 +17,7 @@ class Adjudicator(object):
 
     def _start(self):
         self.orders = Nodes(self)
-        for order_id, order in self.orders_db.iteritems():
+        for order_id, order in self.orders_db.items():
             self.orders.new(order_id, order)
             if order.get('convoy_routes') is not None:
                 self.orders.get(order_id).set_routes(order["convoy_routes"])

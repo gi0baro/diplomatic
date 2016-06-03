@@ -16,24 +16,24 @@ class BaseContext(Helper):
             return db.UserData(user=auth.user.id).as_dict()
         if not auth.user:
             return {}
-        return cache.redis("userdata_"+str(auth.user.id), _get)
+        return cache.redis("userdata_" + str(auth.user.id), _get)
 
     @staticmethod
     def userpic():
-        if auth.user.avatarsrc == "gravatar":
+        if auth.user.avatar_src == "gravatar":
             return Gravatar(auth.user.email).thumb
-        elif auth.user.avatarsrc == "facebook":
+        elif auth.user.avatar_src == "facebook":
             return "https://graph.facebook.com/" + auth.user.facebook + \
                 "/picture?type=normal"
         else:
-            return url('download', auth.user.avatarimg)
+            return url('download', auth.user.avatar_img)
 
     @staticmethod
     def pretty_gamephasetime(minutes):
-        hours = minutes/60
+        hours = minutes // 60
         m = minutes
         h = 0
-        d = hours/24
+        d = hours // 24
         if hours != 0:
             if d != 0:
                 h = hours % 24

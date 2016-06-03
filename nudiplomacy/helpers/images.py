@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from cStringIO import StringIO
+from io import BytesIO
 from PIL import Image
 
 
@@ -12,7 +12,7 @@ class MapImager(object):
     def __init__(self, src, mapdata):
         self.out = None
         try:
-            self.src = Image.open(StringIO(src))
+            self.src = Image.open(BytesIO(src))
             self.w, self.h = self.src.size
             self.map = mapdata
         except:
@@ -23,16 +23,16 @@ class MapImager(object):
             return
         colors = {}
         ref = {}
-        for territory in self.map['colors'].iterkeys():
+        for territory in self.map['colors'].keys():
             colors[territory] = self.groundc
         for territory in self.map['neutrals']:
             colors[str(territory)] = self.neutralc
         for territory in self.map['seas']:
             colors[str(territory)] = self.seac
-        for territory, color in self.map['colors'].iteritems():
+        for territory, color in self.map['colors'].items():
             s = str(color[0])+"_"+str(color[1])+"_"+str(color[2])
             ref[s] = territory
-        for country, terrs in self.map['init']['territories'].iteritems():
+        for country, terrs in self.map['init']['territories'].items():
             cdict = self.map['countries'][country]
             color = (cdict['r'], cdict['g'], cdict['b'])
             for territory in terrs:
@@ -45,7 +45,7 @@ class MapImager(object):
                     terrid = ref[s]
                     color = colors[terrid]
                     self.src.putpixel((x, y), color)
-        self.out = StringIO()
+        self.out = BytesIO()
         self.src.save(self.out, "PNG")
 
 
@@ -53,12 +53,10 @@ def create_map_image(rid):
     from nudiplomacy import db
     db._adapter.reconnect()
     row = db.Map(id=rid)
-    fields = row.as_dict()
-    imager = MapImager(fields["image_blob"], fields)
+    imager = MapImager(row.image_blob, row)
     imager.create()
     thumb = imager.out.getvalue()
-    row.update_record(thumb=db.Map.thumb.store(thumb, fields["image"]),
-                      thumb_blob=thumb)
+    row.update_record(thumb=db.Map.thumb.store(thumb, row.image), thumb_blob=thumb)
     db._adapter.close()
 
 
@@ -66,9 +64,9 @@ def _thumber(image):
     if not image:
         return image
     try:
-        img = Image.open(StringIO(image))
+        img = Image.open(BytesIO(image))
         img.thumbnail((120, 120), Image.ANTIALIAS)
-        thumb = StringIO()
+        thumb = BytesIO()
         img.save(thumb, img.format)
         return thumb.getvalue()
     except Exception:

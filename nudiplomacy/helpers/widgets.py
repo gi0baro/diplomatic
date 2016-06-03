@@ -14,7 +14,7 @@ _games_map_js = """<script type="text/javascript">
 def games_map(field, value):
     db = field._db
     maps = db(db.Map.id > 0).select(
-        db.Map.id, db.Map.name, db.Map.countries, db.Map.minplayers,
+        db.Map.id, db.Map.name, db.Map.countries, db.Map.min_players,
         db.Map.thumb
     ).as_list()
     choices = []
@@ -22,8 +22,8 @@ def games_map(field, value):
     for el in maps:
         choices.append(tag.option(el['name'], _value=el['id']))
         jsref[str(el['id'])] = {
-            'countries': el['countries'].keys(),
-            'nplayers': [el['minplayers'], len(el['countries'])],
+            'countries': list(el['countries'].keys()),
+            'nplayers': [el['min_players'], len(el['countries'])],
             'thumb': url("main.download", el['thumb'])
         }
     script = _games_map_js % dict(mapref=json.dumps(jsref))
@@ -49,7 +49,7 @@ def games_nplayers(field, value):
 def games_ce(field, value):
     return tag.div(
         tag.div(_id="games_ce", _class="col-sm-12"),
-        tag.textarea(_id="games_ce_hide", _name="countriesenabled",
+        tag.textarea(_id="games_ce_hide", _name="countries_enabled",
                      _style="display: none;")
     )
 
@@ -76,7 +76,7 @@ def games_phasetime(field, value):
                     'slider-min': 1, 'slider-max': 34,
                     'slider-step': 1, 'slider-value': 21}
             ), _class="col-sm-12"),
-        tag.textarea(60*24, _id="phase_slider_hide", _name="phasetime",
+        tag.textarea(60*24, _id="phase_slider_hide", _name="phase_time",
                      _style="display: none;"),
         tag.div(tag.span("1 day", _id="phase_slider_text"), _class="col-sm-12")
     )
@@ -90,7 +90,7 @@ def games_jointime(field, value):
                     'slider-min': 1, 'slider-max': 34,
                     'slider-step': 1, 'slider-value': 21}
             ), _class="col-sm-12"),
-        tag.textarea(60*24, _id="join_slider_hide", _name="jointime",
+        tag.textarea(60*24, _id="join_slider_hide", _name="join_time",
                      _style="display: none;"),
         tag.div(tag.span("1 day", _id="join_slider_text"), _class="col-sm-12")
     )
@@ -111,6 +111,6 @@ def games_skipproc(field, value):
                 _class="col-sm-4"))
     return tag.div(
         tag.div(*options, _id="games_sp", _class="col-sm-12"),
-        tag.textarea(_id="games_sp_hide", _name="skipproc",
+        tag.textarea(_id="games_sp_hide", _name="skip_proc",
                      _style="display: none;")
     )

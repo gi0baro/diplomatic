@@ -1,14 +1,13 @@
 from weppy import session
-from weppy.validators import inSet
+from weppy.validators import Validator, inSet
 
 
 class UserAvatarSet(inSet):
-    def __init__(self, theset, labels=None, error_message='Value not allowed',
-                 multiple=False, zero='', sort=False):
+    def __init__(self, theset, labels=None, multiple=False, zero=None, sort=False, message=None):
+        Validator.__init__(self, message)
         self.multiple = multiple
         self._theset = theset
         self.labels = labels
-        self.error_message = error_message
         self.zero = zero
         self.sort = sort
 
