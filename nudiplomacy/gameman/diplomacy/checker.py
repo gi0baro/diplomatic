@@ -411,7 +411,7 @@ class PreProcessor(object):
         self._logger(msg)
 
     def _isMoving(self, Id):
-        for orders_set in self.orders.value():
+        for orders_set in self.orders.values():
             for order_id, order in orders_set.items():
                 if order_id == Id and order["type"] == "move":
                     return True

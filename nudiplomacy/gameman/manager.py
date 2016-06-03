@@ -221,10 +221,7 @@ def process_game(gid):
             game.update_record(status="ingame", next_at=_next_proc)
             db._adapter.close()
             return
-    print(game)
-    print(game.map)
-    print(game.map.name)
-    gamemap = Map.get_data(row=game.map)
+    gamemap = Map.get_data(game.map)
     gamedata = game.as_dict()
     gamedata['countries'] = []
     #: get game orders

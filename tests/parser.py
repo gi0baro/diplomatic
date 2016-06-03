@@ -106,8 +106,9 @@ def _convoys_fixture(mapref, tests, troops):
     i = 0
     for test in tests:
         gdata = dict()
-        for key in ["seas", "coasts", "mcoasts", "neutrals"]:
+        for key in ["seas", "coasts", "multi_coasts", "neutrals"]:
             gdata[key] = mapref[key]
+        gdata["mcoasts"] = gdata['multi_coasts']
         gdata["moves"] = mapref["links"]
         for key in ["terrs", "supply", "centers", "phase", "prev", "mc_pos"]:
             gdata[key] = None
