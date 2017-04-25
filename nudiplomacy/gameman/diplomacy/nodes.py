@@ -742,6 +742,7 @@ class Support(Hold):
             #self._attacked = self.attacked(node)
             _attacked = self.attacked(node)
             #if self._attacked is not None:
+            print('attacked', _attacked)
             if _attacked is not None:
                 #if self._attacked:
                 if _attacked:
@@ -784,8 +785,7 @@ class SupportM(Support):
                     return False
                 ## or is not a dislodge case
                 disl = self.dislodged(versus)
-                if disl is not None:
-                    return disl
+                return disl
             ## an army of my country cannot cut my support
             if versus.country == self.country:
                 return False
