@@ -38,16 +38,25 @@ class Chain(object):
         solvedNode = False
         while not solvedNode:
             t_sub = time.time()
+            in_loop = False
             paradox = (False, None)
             while self.list:
+                print(self.list)
                 self.log("processing member "+str(self.proc))
                 self.proc.solve()
                 if not self.proc.solved:
                     self.log("unsolved dependency for "+str(self.proc))
                     #: paradox-loop eval
                     if self.proc.depends in self.list:
-                        paradox = (True, self.proc.depends)
-                        break
+                        if in_loop:
+                            self.rem_last()
+                            paradox = (True, self.proc.depends)
+                            break
+                        print('re-looping')
+                        in_loop = True
+                    else:
+                        print('continuing with deps')
+                        in_loop = False
                     self.add(self.proc.depends)
                 else:
                     self.log(str(self.proc)+" solved.")
@@ -64,6 +73,7 @@ class Chain(object):
                 self.log("paradox stuck on "+str(self.proc.depends))
                 self._paradox.solve()
                 self._paradox = None
+                in_loop = False
             else:
                 solvedNode = True
             #: Safe loop check (2s time limit)
