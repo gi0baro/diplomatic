@@ -14,7 +14,7 @@ def _get_raw_data(fname):
 def _parse_raw_data(raw, mapref, tests, troops, mcpos, expected):
     #: build inverse dict for map reference
     nameref = {}
-    for k, v in mapref['names'].iteritems():
+    for k, v in mapref['names'].items():
         nameref[v] = k
     #: process
     reading = None
@@ -115,21 +115,21 @@ def _convoys_fixture(mapref, tests, troops):
         gdata["troops"] = {'armies': [], 'fleets': []}
         gdata["armies"] = []
         gdata["fleets"] = []
-        for country, tdata in troops[i].iteritems():
+        for country, tdata in troops[i].items():
             for troop in tdata["armies"]:
                 gdata["armies"].append(troop)
             for troop in tdata["fleets"]:
                 gdata["fleets"].append(troop)
         validator = Validator(gdata, test['data'])
-        for country, cdata in test['data'].iteritems():
-            for k, order in cdata.iteritems():
+        for country, cdata in test['data'].items():
+            for k, order in cdata.items():
                 if order['type'] == "move":
                     if k in troops[i][country]['armies']:
                         make_convoy = False
                         if order.get('viaConvoy'):
                             make_convoy = True
                         if not make_convoy:
-                            for kc, orderc in cdata.iteritems():
+                            for kc, orderc in cdata.items():
                                 if orderc['type'] == "convoy" and \
                                         orderc.get('from', 0) == k:
                                     make_convoy = True
@@ -152,8 +152,8 @@ def _test_f(obj, testn):
     for fail_tup in checker.fails:
         test['data'][fail_tup[0]][fail_tup[1]]['failed'] = True
     adjOrders = dict()
-    for country, order in test['data'].iteritems():
-        for tid, data in order.iteritems():
+    for country, order in test['data'].items():
+        for tid, data in order.items():
             adjOrders[tid] = data
             adjOrders[tid]['country'] = country
             adjOrders[tid]['name'] = obj.mapref["names"][tid]

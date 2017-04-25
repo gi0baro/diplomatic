@@ -7,9 +7,9 @@ class Nodes(object):
         self._nodes = dict()
 
     def __getattr__(self, name):
-        if not hasattr(self, name):
-            return self.get(name)
-        return object.__getattribute__(self, name)
+        # if not hasattr(self, name):
+        return self.get(name)
+        # return object.__getattribute__(self, name)
 
     def new(self, oid, data):
         if data["type"] == "move":
@@ -46,8 +46,7 @@ class Nodes(object):
         res = []
         for node in self.list:
             for tClass in tClasses[dType]:
-                if node.type == tClass and \
-                        node.__getattribute__(tComp[dType]) == nid:
+                if node.type == tClass and getattr(node, tComp[dType]) == nid:
                     res.append(node)
         #: support move to different terr removal
         if dType == "supporters":
@@ -316,8 +315,8 @@ class Move(Hold):
 
     def _compare_num(self, versus, vCompare, sCompare, swap=False):
         self.log("\t\tcomparing: my "+sCompare+" - vs "+vCompare)
-        s_attr = self.__getattribute__(sCompare)
-        v_attr = versus.__getattribute__(vCompare)
+        s_attr = getattr(self, sCompare)
+        v_attr = getattr(versus, vCompare)
         self.log("\t\tcomparing values: " + str(s_attr[0]) + "," +
                  str(s_attr[1]) + " - " + str(v_attr[0]) + "," +
                  str(v_attr[1]))
