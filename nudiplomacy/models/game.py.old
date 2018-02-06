@@ -1,0 +1,313 @@
+# -*- coding: utf-8 -*-
+
+import json
+import random
+from datetime import timedelta
+from weppy import request, session, T, sdict
+from weppy.dal import Field, Model, belongs_to, before_insert, after_insert, fieldmethod
+from weppy.validators import inSet, isList
+from nudiplomacy import app
+from nudiplomacy.helpers.widgets import games_map, games_nplayers, games_ce, \
+    games_phasetime, games_jointime, games_bet, games_skipproc
+from nudiplomacy.helpers.mongo import longToObjid, objidToLong
+
+_repr_lang = {'en': "English", 'it': "Italiano"}
+_repr_pot = {'wta': T("Winner takes all"),
+             'ppsc': T("Points per supply center")}
+_repr_start = {'asap': T("As soon as enough players have joined"),
+               'ontime': T("Wait for the join time to expire")}
+_repr_press = {'all': T("Allow all"),
+               'globals': T("Allow only global chat"),
+               'none': T("Disable game messages")}
+_repr_assign = {'random': T("Random assignment"),
+                'choose': T("Every player choose its country")}
+_repr_access = {'free': T("Everyone can join the game"),
+                'password': T("Password-protect the game")}
+_days_list = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+              "Saturday", "Sunday"]
+
+
+def _validate_skipproc(value):
+    v = json.loads(value) if value else value
+    v, error = isList(inSet(_days_list))(v)
+    if not (0 <= len(v) <= 6):
+        error = "Number of days to skip processing should be between 0 and 6"
+    return v, error
+
+
+class Game(Model):
+    belongs_to({'owner': 'User'}, 'map')
+
+    name = Field()
+    lang = Field()
+    nplayers = Field('int')
+    bet = Field('int')
+    pot_type = Field()
+    phase_time = Field('int')
+    join_time = Field('int')
+    starts_on = Field()
+    build_ew = Field('bool')
+    build_onstart = Field('bool')
+    anonymous = Field('bool')
+    press_type = Field()
+    countries_assign = Field()
+    countries_enabled = Field('json')
+    access = Field()
+    password = Field()
+    max_turns = Field('int')
+    target_sc = Field('int')
+    skip_proc = Field('list:string')
+    status = Field()
+    is_active = Field('bool')
+    is_open = Field('bool')
+    slots = Field('json')
+    is_ready = Field('bool')
+    created_at = Field('datetime')
+    processed_at = Field('datetime')
+    next_at = Field('datetime')
+    countries = Field('json')
+    phases = Field('json')
+
+    default_values = {
+        'owner': lambda: session.auth.user.id,
+        'bet': 10,
+        'pot_type': 'wta',
+        'phase_time': 60 * 24,
+        'join_time': 60 * 24,
+        'starts_on': 'asap',
+        'build_ew': False,
+        'build_onstart': False,
+        'anonymous': False,
+        'press_type': 'all',
+        'countries_assign': 'random',
+        'access': 'free',
+        'max_turns': 0,
+        'target_sc': 0,
+        'skip_proc': [],
+        'status': 'pregame',
+        'is_active': False,
+        'is_open': True,
+        'slots': "[]",
+        'is_ready': False,
+        'created_at': lambda: request.now,
+        'processed_at': lambda: request.now
+    }
+
+    validation = {
+        'name': {'presence': True},
+        'lang': {'in': app.config.langs},
+        'bet': {'in': {'range': (1, 150)}},
+        'pot_type': {'in': ['wta', 'ppsc']},
+        'phase_time': {'in': {'range': (10, 60 * 24 * 10)}},
+        'join_time': {'in': {'range': (10, 60 * 24 * 10)}},
+        'starts_on': {'in': ['asap', 'ontime']},
+        'press_type': {'in': ['all', 'globals', 'none']},
+        'countries_assign': {'in': ['random', 'choose']},
+        'access': {'in': ['free', 'password']},
+        'skip_proc': _validate_skipproc,
+        'countries': {'allow': 'empty'}
+    }
+
+    form_rw = {
+        "owner": False,
+        "status": False,
+        "is_active": False,
+        "is_open": False,
+        "slots": False,
+        "created_at": False,
+        "processed_at": False,
+        "next_at": False,
+        "is_ready": False,
+        "phases": False
+    }
+
+    form_labels = {
+        "map": T("Variant"),
+        "lang": T("Language"),
+        "nplayers": T("Num. of players"),
+        "bet": T("Bet amount"),
+        "pot_type": T("Pot type"),
+        "phase_time": T("Phase period length"),
+        "join_time": T("Joining period length"),
+        "starts_on": T("Start game"),
+        "build_ew": T("Build everywhere"),
+        "build_onstart": T("Start game with a build phase"),
+        "anonymous": T("Anonymous players"),
+        "press_type": T("In-game messaging"),
+        "countries_assign": T("Countries assignment"),
+        "countries_enabled": T("Enabled countries"),
+        "access": T("Game access"),
+        "max_turns": T("Maximum turns"),
+        "target_sc": T("Target SCs to win"),
+        "skip_proc": T("Don't process the game on")
+    }
+
+    form_info = {
+        "max_turns": T("Limit how many turns are played."),
+        "countries_enabled": T(
+            "You can select which countries will be available for assignment or can be chosen by players. " +
+            "Remind that if you selected the maximum no. of players, this setting has no effect, all the countries " +
+            "will be available.")
+    }
+
+    repr_values = {
+        "lang": lambda value: _repr_lang[value],
+        "pot_type": lambda value: _repr_pot[value],
+        "starts_on": lambda value: _repr_start[value],
+        "press_type": lambda value: _repr_press[value],
+        "countries_assign": lambda value: _repr_assign[value],
+        "access": lambda value: _repr_access[value]
+    }
+
+    form_widgets = {
+        "map": lambda field, value: games_map(field, value),
+        "nplayers": lambda field, value: games_nplayers(field, value),
+        "bet": lambda field, value: games_bet(field, value),
+        "countries_enabled": lambda field, value: games_ce(field, value),
+        "phase_time": lambda field, value: games_phasetime(field, value),
+        "join_time": lambda field, value: games_jointime(field, value),
+        "skip_proc": lambda field, value: games_skipproc(field, value)
+    }
+
+    # def setup(self):
+    #     self.entity.map.requires = inDb(self.db, self.db.maps.id, zero=None)
+
+    @staticmethod
+    def _get_player_country(row, user=None, uoid=None):
+        if not uoid:
+            if user:
+                uid = user
+            else:
+                uid = session.auth.user.id if session.auth else None
+            if not uid:
+                return None
+            uoid = longToObjid(uid)
+        for el in row.countries:
+            if el['player'] == uoid:
+                return el['country']
+        return None
+
+    @fieldmethod('player_country')
+    def get_player_country(self, row, user=None, uoid=None):
+        return self._get_player_country(row, user, uoid)
+
+    @fieldmethod('players_in')
+    def get_players_in(self, row):
+        return len(row.countries)
+
+    @fieldmethod('is_joinable')
+    def is_joinable(self, row):
+        if row.players_in() != row.nplayers:
+            return True
+        return False
+
+    @staticmethod
+    def _get_time_to_next(row):
+        timeleft = 0
+        if row.next_at:
+            timeleft = int((row.next_at - request.now).total_seconds())
+        timerdata = sdict(d=0, h=0, m=0, s=0)
+        if timeleft > 0:
+            timerdata.d = timeleft // (60 * 60 * 24)
+            timerdata.h = (timeleft // (60 * 60)) % 24
+            timerdata.m = (timeleft // 60) % 60
+            timerdata.s = timeleft % 60
+        return timerdata
+
+    @fieldmethod('time_to_next')
+    def get_time_to_next(self, row):
+        return self._get_time_to_next(row)
+
+    @before_insert
+    def setup_game(self, fields):
+        #: build countries based on selected preferences
+        ce = fields['countries_enabled']
+        fields['countries_enabled'] = json.dumps(fields['countries_enabled'])
+        random.shuffle(ce)
+        countrylist = ce[:fields['nplayers']]
+        if fields['countries_assign'] == "random":
+            chosen = countrylist[0]
+        else:
+            chosen = fields['countries']['me']
+            if chosen not in countrylist:
+                countrylist[0] = chosen
+        fields['countries'] = []
+        fields['countries'].append({
+            'country': chosen,
+            'player': longToObjid(session.auth.user.id)})
+        slots = list(countrylist)
+        slots.remove(chosen)
+        fields['slots'] = json.dumps(slots)
+        #: init phases
+        fields['phases'] = json.dumps([{"type": "pre-game", "countries": countrylist}])
+        #: set next time
+        fields['next_at'] = request.now + timedelta(minutes=fields['phase_time'])
+
+    @after_insert
+    def get_owner_credits(self, fields, gid):
+        self.db.UserData(user=fields['owner']).update(credits=self.db.UserData.credits - fields['bet'])
+
+    @after_insert
+    def add_global_chat(self, fields, gid):
+        if fields['press_type'] != "none":
+            self.db.Chat.insert(game=gid, users='["all"]')
+
+    @after_insert
+    def add_notify_obj(self, fields, gid):
+        cname = "game_" + str(gid)
+        #: processing notifications
+        nid = self.db.NObject.insert(channel=cname, type="game_process")
+        from nudiplomacy import NSubscription
+        NSubscription.subscribe(fields['owner'], cname, nid=nid)
+        #: messages notifications
+        nid = self.db.NObject.insert(channel=cname, type="msg_all")
+        NSubscription.subscribe(fields['owner'], cname, nid=nid)
+        country = fields['countries'][0]['country']
+        nid = self.db.NObject.insert(channel=cname, type="msg_" + country)
+        NSubscription.subscribe(fields['owner'], cname, nid=nid)
+
+    @classmethod
+    def participating(cls, full=True, user=None):
+        uid = user or (session.auth.user.id if session.auth else None)
+        if not uid:
+            return []
+        from nudiplomacy import mdb
+        uoid = longToObjid(uid)
+        glist = mdb.games.find({'countries.player': uoid}, limit=10, sort=('processed', 1))
+        if full:
+            for game in glist:
+                variant = cls.db(cls.db.Map.id == objidToLong(game.map)).select(cls.db.Map.name).first()
+                game._map = variant.name
+                game._playercountry = cls._get_player_country(game, uoid=uoid)
+                game._timetonext = cls._get_time_to_next(game)
+                orders = cls.db((cls.db.Orders.player == uid) & (cls.db.Orders.game == game.id)).select().first()
+                if orders:
+                    game._playerorders = not orders.are_raw
+                    game._playerready = orders.is_player_ready
+        return glist
+
+
+class Orders(Model):
+    belongs_to({'player': 'User'}, 'game')
+
+    data = Field('json')
+    are_raw = Field('bool', default=True)
+    is_player_ready = Field('bool', default=False)
+
+    @classmethod
+    def owned(cls, gid, owner=None):
+        uid = owner or (session.auth.user.id if session.auth else None)
+        if not uid:
+            return sdict(data={})
+        rv = cls.db((cls.game == gid) & (cls.player == uid)).select().first()
+        if not rv:
+            return sdict(data={})
+        return sdict(data=rv.data, ready=rv.is_player_ready)
+
+
+class Chat(Model):
+    belongs_to('game')
+
+    is_open = Field('bool', default=True)
+    users = Field('json')
+    messages = Field('json', default="[]")
