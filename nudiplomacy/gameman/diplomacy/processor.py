@@ -9,6 +9,10 @@
 """
 
 
+class adict(dict):
+    pass
+
+
 class Processor(object):
     def log(self, msg):
         if self._logger is not None:
@@ -18,46 +22,52 @@ class Processor(object):
 
 
 class OrdersProcessor(Processor):
-    def __init__(self, country, game, gamemap, logger=None):
+    def __init__(self, country, game_data, map_data, logger=None):
         self._logger = logger
         self.orders_data = None
         self.status = None
         self.error = None
-        self._loadMap(gamemap)
-        self._loadGame(game, country)
+        self.map = self._load_map(map_data)
+        self.game = self._load_game(game_data, country)
 
-    def _loadMap(self, gamemap):
-        self.map = {}
-        self.map["moves"] = gamemap["links"]
-        self.map["seas"] = gamemap["seas"]
-        self.map["coasts"] = gamemap["coasts"]
-        self.map["neutrals"] = gamemap["neutrals"]
-        self.map["mcoasts"] = list(gamemap["multi_coasts"].keys())
-        self.map["supply"] = gamemap["supply"]
-        self.map["home"] = gamemap["homes"]
-        self.map["names"] = gamemap["names"]
+    @staticmethod
+    def _load_map(self, data):
+        return adict(
+            seas=data["seas"],
+            coasts=data["coasts"],
+            neutrals=data["neutrals"],
+            multi_coasts=list(data["multi_coasts"].keys()),
+            supply_centers=data["supply"],
+            homes=data["homes"],
+            links=data["links"],
+            names=data["names"])
 
-    def _loadGame(self, game, pcountry):
-        self.game = {}
-        phase = len(game["phases"])-1
-        self.game["terrs"] = game["phases"][phase]["territories"][pcountry]
-        self.game["supply"] = list(self.map["supply"].keys()) \
-            if game["build_ew"] else self.map["home"][pcountry]
-        self.game["armies"] = []
-        self.game["fleets"] = []
+    @staticmethod
+    def _load_game(self, game, pcountry):
+        phase = len(game["phases"]) - 1
+        rv = adict(
+            territories=game["phases"][phase]["territories"][pcountry],
+            supply_centers=(
+                list(self.map.supply_centers.keys())
+                if game["build_everywhere"] else self.map.homes[pcountry]),
+            armies=[],
+            fleets=[],
+            troops=game["phases"][phase]["troops"][pcountry],
+            multi_coasts_positions=game["phases"][phase].get("mc", {}),
+            phase=game["phases"][phase]["type"],
+            country_supply_centers=[],
+            previous_phase=game["phases"][phase - 1]
+        )
         for country, troops in game["phases"][phase]["troops"].items():
             for el in troops["armies"]:
-                self.game["armies"].append(el)
+                rv.armies.append(el)
             for el in troops["fleets"]:
-                self.game["fleets"].append(el)
-        self.game["troops"] = game["phases"][phase]["troops"][pcountry]
-        self.game["mc_pos"] = game["phases"][phase].get("mc", {})
-        self.game["phase"] = game["phases"][phase]["type"]
-        self.game["centers"] = []
-        for k in self.map["supply"].keys():
-            if k in self.game["terrs"]:
-                self.game["centers"].append(k)
-        self.game["prev"] = game["phases"][phase-1]
+                rv.fleets.append(el)
+        for k in (
+            set(self.map.supply_centers.keys()) & set(self.game.territories)
+        ):
+            self.game.country_supply_centers.append(k)
+        return rv
 
     def _validate(self):
         if not self.orders_data:

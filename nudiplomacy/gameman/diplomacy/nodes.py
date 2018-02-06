@@ -1,165 +1,179 @@
 # -*- coding: utf-8 -*-
 
 
-class Nodes(object):
-    def __init__(self, adjudicator):
-        self._adj = adjudicator
-        self._nodes = dict()
+class cachedprop(object):
+    pass
+
+
+class World(object):
+    def __init__(self, judge):
+        self.judge = judge
+        self.nodes = {}
+        #: map types
+        self._nodes_cls = {
+            'hold': Hold,
+            'move': Move,
+            'move_through': MoveThrough,
+            'support_move': SupportMove,
+            'support_hold': SupportHold,
+            'convoy': Convoy
+        }
+        self._nodes_by_type = {v: [] for v in self._nodes_cls.values()}
+        self._nodes_mapper = {}
+        for key in self._nodes_cls.keys():
+            self._nodes_mapper[key] = lambda data: self._nodes_cls[key]
+        self._nodes_mapper['move'] = lambda data: (
+            self._nodes_cls['move_through'] if data.get('viaConvoy')
+            else self._nodes_cls['move'])
+        #: map dependencies
+        self._dependency_cls = {
+            'attackers': [Move, MoveThrough],
+            'defenders': [SupportHold],
+            'supporters': [SupportMove]
+        }
+        self._dependency_compare_attrs = {
+            'attackers': 'dst',
+            'defenders': 'dst',
+            'supporters': 'src'
+        }
 
     def __getattr__(self, name):
-        # if not hasattr(self, name):
         return self.get(name)
-        # return object.__getattribute__(self, name)
 
-    def new(self, oid, data):
-        if data["type"] == "move":
-            if data.get("viaConvoy"):
-                self._nodes[oid] = MoveConv(self, oid, data)
-            else:
-                self._nodes[oid] = Move(self, oid, data)
-        elif data["type"] == "sup_move":
-            self._nodes[oid] = SupportM(self, oid, data)
-        elif data["type"] == "sup_hold":
-            self._nodes[oid] = SupportH(self, oid, data)
-        elif data["type"] == "convoy":
-            self._nodes[oid] = Convoy(self, oid, data)
-        else:
-            self._nodes[oid] = Hold(self, oid, data)
-
-    def get(self, oid):
-        return self._nodes.get(oid, None)
+    def get(self, node_id):
+        return self.nodes.get(node_id)
 
     @property
     def ids(self):
-        return self._nodes.keys()
+        return self.nodes.keys()
 
     @property
     def list(self):
-        return self._nodes.values()
+        return self.nodes.values()
 
-    def _get_deps(self, nid, dType):
-        tClasses = {
-            "attackers": ["Move", "MoveConv"],
-            "defenders": ["SupportH"],
-            "supporters": ["SupportM"]}
-        tComp = {"attackers": "to", "defenders": "to", "supporters": "fr"}
-        res = []
-        for node in self.list:
-            for tClass in tClasses[dType]:
-                if node.type == tClass and getattr(node, tComp[dType]) == nid:
-                    res.append(node)
+    def create_node(self, node_id, data):
+        node_cls = self._nodes_mapper[data['type']](data)
+        self.nodes[node_id] = node_cls(self, node_id, data)
+        self._nodes_by_type[node_cls].append(self.nodes[node_id])
+
+    def get_dependencies(self, node_id, dependency_type):
+        rv = []
+        for node_cls in self._dependency_cls[dependency_type]:
+            for node in self._nodes_by_type[node_cls]:
+                if (
+                    getattr(
+                        node, self._dependency_compare_attrs[dependency_type]
+                    ) == node_id
+                ):
+                    rv.append(node)
+        return rv
+
+    def get_attackers(self, node_id):
+        return self.get_dependencies(node_id, "attackers")
+
+    def get_defenders(self, node_id):
+        return self.get_dependencies(node_id, "defenders")
+
+    def get_supporters(self, node_id):
+        rv = self.get_dependencies(node_id, "supporters")
         #: support move to different terr removal
-        if dType == "supporters":
-            nrem = []
-            for node in res:
-                if node.to != self.get(nid).to:
-                    nrem.append(node)
-            for node in nrem:
-                res.remove(node)
-        return res
+        nrem = []
+        for node in rv:
+            if node.to != self.get(node_id).to:
+                nrem.append(node)
+        return list(set(rv) - set(nrem))
 
-    def _get_attackers(self, nid):
-        return self._get_deps(nid, "attackers")
+    def get_convoyers(self, routes):
+        rv = []
+        for elements in routes:
+            rv.append([self.get(node_id) for node_id in elements])
+        return rv
 
-    def _get_defenders(self, nid):
-        return self._get_deps(nid, "defenders")
-
-    def _get_supporters(self, nid):
-        return self._get_deps(nid, "supporters")
-
-    def _get_convoyers(self, llid):
-        res = []
-        for lid in llid:
-            l = []
-            for nid in lid:
-                l.append(self.get(nid))
-            res.append(l)
-        return res
-
-    def log(self, msg):
-        self._adj._logstack += msg+"\n"
+    def log(self, msg, indent=0):
+        self.judge._logstack.append(" " * 2 * indent + msg)
 
 
 class Node(object):
-    def __init__(self, nodes, oid, data):
-        self._up = nodes
-        self.id = oid
+    def __init__(self, world, node_id, data):
+        self.world = world
+        self.id = node_id
         self.country = data.get("country")
         ## TEMP, remove next var in productioN!!!
         self.name = data.get("name")
         ##
-        self.type = self.__class__.__name__
-        self.fr = data.get("from")
-        self.to = data.get("to")
-        self._failed = data.get("failed") or False
-        self._start()
+        # self.type = self.__class__.__name__
+        self.src = data.get("from")
+        self.dst = data.get("to")
+        self.failed = data.get("failed") or False
+        self.init()
 
-    def _start(self):
+    def init(self):
         pass
+
+    @property
+    def type(self):
+        return self.__class__
 
     def _get_dependencies(self):
         return []
 
-    def _solved_dep(self, dep=None):
-        if not dep:
-            self._dependencies.pop(0)
-        else:
-            self._dependencies.remove(dep)
+    @cachedprop
+    def dependencies(self):
+        return self._get_dependencies()
 
-    def _solved_deps_all(self):
-        self._dependencies = []
+    def remove_dependency(self, dep=None):
+        if not dep:
+            self.dependencies.pop(0)
+        else:
+            self.dependencies.remove(dep)
+
+    def remove_all_dependencies(self):
+        self.dependencies.clear()
 
     @property
-    def depends(self):
+    def depends_on(self):
         return self.dependencies[0] if self.dependencies else None
 
     @property
-    def dependencies(self):
-        if not hasattr(self, "_dependencies"):
-            self._dependencies = self._get_dependencies()
-        return self._dependencies
-
-    @property
     def solved(self):
-        if self._failed:
+        if self.failed:
             return True
-        return False if self.depends else True
+        return False if self.depends_on else True
+
+    def compute_success(self):
+        return None
 
     @property
     def succeeded(self):
-        if self._failed:
+        if self.failed:
             return False
-        return self.success
+        return self.compute_success()
 
     def __repr__(self):
         return '<Node %(country)s - %(id)s: %(name)s>' % dict(
             id=self.id, country=self.country, name=self.name)
 
-    def log(self, msg):
-        self._up.log(msg)
+    def log(self, *args, **kwargs):
+        self.world.log(*args, **kwargs)
 
 
 class Hold(Node):
-    def _start(self):
-        self._dislodged = None
+    def init(self):
+        self.dislodged_status = None
 
     def _get_dependencies(self):
-        return self.defenders+self.attackers
+        return self.defenders + self.attackers
 
-    @property
+    @cachedprop
     def attackers(self):
-        if not hasattr(self, "_attackers"):
-            self._attackers = self._up._get_attackers(self.id)
-        return self._attackers
+        return self.world.get_attackers(self.id)
 
     @property
     def defenders(self):
-        if not hasattr(self, "_defenders"):
-            self._defenders = self._up._get_defenders(self.id)
-        return self._defenders
+        return self.world.get_defenders(self.id)
 
     @property
-    def strength_def(self):
+    def strength_defense(self):
         strength = (1, 1)
         for node in self.defenders:
             addmin, addmax = 0, 0
@@ -169,171 +183,153 @@ class Hold(Node):
                     addmax += 1
             else:
                 addmax += 1
-            strength = (strength[0]+addmin, strength[1]+addmax)
+            strength = (strength[0] + addmin, strength[1] + addmax)
         return strength
 
-    def solve(self):
-        ## we just need 1 successful attack with strength > 1 to solve
-        #print self.dependencies
-        #dep_rem = []
-        dependencies = [node for node in self.dependencies]
+    def resolve(self):
+        #: we just need 1 successful attack with strength > 1 to solve this
+        dependencies = list(self.dependencies)
         for node in dependencies:
-            self.log("\tHold: solving "+str(node))
+            self.log("Hold: solving {}".format(node), indent=1)
             if node in self.defenders:
-                #if node.solved:
-                if node._attacked is not None:
-                    self._solved_dep(node)
+                if node.attacked_status is not None:
+                    self.remove_dependency(node)
             else:
-                self._dislodged = self.dislodged(node)
-                if self._dislodged is not None:
-                    if self._dislodged:
-                        self._solved_deps_all()
-                        #dep_rem = []
+                self.dislodged_status = self.compute_dislodgement(node)
+                if self.dislodged_status is not None:
+                    if self.dislodged_status:
+                        self.remove_all_dependencies()
                         break
-                    #print "removing "+str(node)
-                    #dep_rem.append(node)
-                    self._solved_dep(node)
-        #for node in dep_rem:
-        #   self._solved_dep(node)
+                    self.remove_dependency(node)
 
-    def dislodged(self, versus=None):
-        if not versus:
-            versus = self.depends
-        if versus:
-            if versus.type in ["Move", "MoveConv"]:
-                if versus.solved:
-                    self.log("\t\tDependency is solved for "+str(versus))
-                    if versus.succeeded:
-                        self.log(
-                            "\t\t-> Other army " + str(versus) +
-                            " is succesful moving to me. I'm dislodged.")
-                        return True
-                    self.log(
-                        "\t\t-> Other army " + str(versus) +
-                        " fail moving to me. I'm not dislodged.")
-                    return False
-                #else:
-                    #return num_compare()
-                self.log("\t\tDependency is not solved for "+str(versus))
-                return None
-        return False
+    def compute_dislodgement(self, versus=None):
+        versus = versus or self.depends_on
+        if not versus or versus.type not in [Move, MoveThrough]:
+            return False
+        if versus.solved:
+            self.log("Dependency is solved for {}".format(versus), indent=2)
+            if versus.succeeded:
+                self.log(
+                    "-> Other army " + str(versus) +
+                    " is succesful moving to me. I'm dislodged.", indent=2)
+                return True
+            self.log(
+                "-> Other army " + str(versus) +
+                " fail moving to me. I'm not dislodged.", indent=2)
+            return False
+        self.log("Dependency is not solved for {}".format(versus), indent=2)
+        return None
 
-    def _dislodge_u(self):
-        ## teorically we load this only if order is failed
+    def compute_success(self):
+        if self.dislodged_status is not None:
+            return not self.dislodged_status
+        return not self.compute_dislodgement()
+
+    @property
+    def is_unit_dislodged(self):
+        if self.type == Hold:
+            return not self.succeeded
         for node in self.attackers:
             if node.succeeded:
                 return True
         return False
 
-    @property
-    def success(self):
-        if self._dislodged is not None:
-            return not self._dislodged
-        return not self.dislodged()
-
-    @property
-    def dislodged_unit(self):
-        if self.type == "Hold":
-            return not self.succeeded
-        return self._dislodge_u()
-
 
 class Move(Hold):
-    def _start(self):
-        Hold._start(self)
-        self.success_var = None
+    def init(self):
+        super().init()
+        self.success_status = None
 
     def _get_dependencies(self):
         holder = []
-        if not self.to_empty:
+        if not self.has_empty_dst:
             holder.append(self.holder)
             attackers_others = list(self.holder.attackers)
-        ## note: cannot use _up.get in next line because self.to can be empty
+        ## note: cannot use world.get in next line because self.dst can be empty
         else:
-            attackers_others = self._up._get_attackers(self.to)
+            attackers_others = self.world.get_attackers(self.dst)
         ### TO IMPROVE: removing myself
         if self in attackers_others:
             attackers_others.remove(self)
-        return self.supporters+holder+attackers_others
+        return self.supporters + holder + attackers_others
 
-    @property
+    @cachedprop
     def holder(self):
-        if not hasattr(self, "_holder"):
-            self._holder = self._up.get(self.to)
-        return self._holder
+        return self.world.get(self.dst)
 
-    @property
+    @cachedprop
     def supporters(self):
-        if not hasattr(self, "_supporters"):
-            self._supporters = self._up._get_supporters(self.id)
-        return self._supporters
+        return self.world.get_supporters(self.id)
 
-    def _strength_att(self, countrycheck=True):
+    def _strength_attack(self, countrycheck=True):
         strength = (1, 1)
-        vs = self._up.get(self.to)
+        vs = self.world.get(self.dst)
         country = vs.country if vs else None
         for node in self.supporters:
-            proc_node = True
+            skip_node = False
             if countrycheck:
-                proc_node = True if node.country != country else False
-            if proc_node:
-                addmin, addmax = 0, 0
-                if node.solved:
-                    if node.succeeded:
-                        addmin += 1
-                        addmax += 1
-                else:
+                skip_node = True if node.country == country else False
+            if skip_node:
+                continue
+            addmin, addmax = 0, 0
+            if node.solved:
+                if node.succeeded:
+                    addmin += 1
                     addmax += 1
-                strength = (strength[0]+addmin, strength[1]+addmax)
+            else:
+                addmax += 1
+            strength = (strength[0] + addmin, strength[1] + addmax)
         return strength
 
     @property
-    def strength_att(self):
-        return self._strength_att()
+    def strength_attack(self):
+        return self._strength_attack()
 
     @property
-    def strength_ssa(self):
-        return self._strength_att(False)
+    def strength_attack_ss(self):
+        return self.strength_attack(False)
 
     @property
-    def to_empty(self):
+    def has_empty_dst(self):
         return self.holder is None
 
     @property
-    def holderMoving(self):
-        if self.to_empty:
+    def holder_is_moving(self):
+        if self.has_empty_dst:
             return False
-        return self.holder.type in ["Move", "MoveConv"]
+        return self.holder.type in [Move, MoveThrough]
 
     @property
-    def swapping(self):
-        if self.holderMoving:
-            if self.holder.to == self.id and self.to == self.holder.id:
-                if "MoveConv" in [self.type, self.holder.type]:
-                    return True
+    def is_swapping(self):
+        if (
+            self.holder_is_moving and
+            self.holder.dst == self.id and self.dst == self.holder.id and
+            MoveThrough in [self.type, self.holder.type]
+        ):
+            return True
         return False
 
-    def _compare_num(self, versus, vCompare, sCompare, swap=False):
-        self.log("\t\tcomparing: my "+sCompare+" - vs "+vCompare)
-        s_attr = getattr(self, sCompare)
-        v_attr = getattr(versus, vCompare)
-        self.log("\t\tcomparing values: " + str(s_attr[0]) + "," +
-                 str(s_attr[1]) + " - " + str(v_attr[0]) + "," +
-                 str(v_attr[1]))
+    def compare_numerically(self, versus, vCompare, sCompare, swap=False):
+        self.log("comparing: mine {} - vs {}".format(sCompare, vCompare), indent=2)
+        s_attr_min, s_attr_max = getattr(self, sCompare)
+        v_attr_min, v_attr_max = getattr(versus, vCompare)
+        self.log(
+            "comparing values: {}, {} - {}, {}".format(
+                s_attr_min, s_attr_max, v_attr_min, v_attr_max), indent=2)
         ## we try to rapidly solve checking two easy cases:
         ## 1) my min stregth > versus max strength: I'm winning on this
         ## dependency and the versus is failed
-        if s_attr[0] > v_attr[1]:
-            self.log("\t\t\t-> min att > max comparing: solved")
+        if s_attr_min > v_attr_max:
+            self.log("-> min att > max comparing: solved", indent=3)
             ## we had to check self dislodgement tries of me or versus player
             return True
         ## 2) my max strength <= versus min strength: I'm loosing at all.
-        if s_attr[1] <= v_attr[0]:
+        if s_attr_max <= v_attr_min:
             if vCompare in ["strength_att", "strength_ssa"]:
                 ## my max att < versus min att
-                if s_attr[1] < v_attr[0]:
+                if s_attr_max < v_attr_min:
                     ## convoyed unit exception
-                    if versus.type == "MoveConv" and self.type != "MoveConv":
+                    if versus.type == MoveThrough and self.type != MoveThrough:
                         if not versus.solved:
                             self.log(
                                 "\t\t\t-> max att < min comparing, but vs " +
@@ -345,9 +341,9 @@ class Move(Hold):
                     self.log("\t\t\t-> max att < min comparing: solved")
                     return False
                 ## my max att = versus min att
-                if s_attr[1] == v_attr[0]:
+                if s_attr_max == v_attr_min:
                     ## convoyed unit exception
-                    if versus.type == "MoveConv" and self.type != "MoveConv":
+                    if versus.type == MoveThrough and self.type != MoveThrough:
                         if not versus.solved:
                             self.log(
                                 "\t\t\t-> att is the same but vs army is " +
@@ -376,41 +372,43 @@ class Move(Hold):
         self.log("\t\t\t-> numeric compare unsolved")
         return None
 
-    def _compare(self, versus):
+    def compare_attacks(self, versus):
         ## we need to compare attack power, so we need to count supporters
         move = False
-        if versus.type in ["Move", "MoveConv"]:
-            vCompare = "strength_att"
+        if versus.type in [Move, MoveThrough]:
+            vCompare = "strength_attack"
             move = True
         else:
-            vCompare = "strength_def"
+            vCompare = "strength_defense"
         if not move:
             ## the other unit is not moving (hold or support)
             self.log("\t\t-> other unit is not moving..")
-            return self._compare_num(versus, vCompare, "strength_att")
-        elif move and versus.to == self.id:
+            return self.compare_numerically(versus, vCompare, "strength_attack")
+        elif move and versus.dst == self.id:
             ## the other unit is moving to me
             self.log("\t\t-> other unit is moving to me..")
-            if versus == self.holder and self.swapping:
+            if versus == self.holder and self.is_swapping:
                 self.log("\t\t -> units are swapping..")
-                vCompare = "strength_def"
-                return self._compare_num(versus, vCompare, "strength_att",
-                                         True)
-            return self._compare_num(versus, vCompare, "strength_att")
-        elif move and versus.to == self.to:
+                vCompare = "strength_defense"
+                return self.compare_numerically(
+                    versus, vCompare, "strength_attack", True)
+            return self.compare_numerically(versus, vCompare, "strength_attack")
+        elif move and versus.dst == self.dst:
             ## the other unit is moving to the same terr I'm moving to
             self.log("\t\t-> other unit is moving to same terr..")
             ## if one of the other attackers is in 1vs1 with my holder,
             ## I had to check more stuffs
             if versus != self.holder:
-                if self.holderMoving:
-                    if self.holder.to == versus.id:
+                if self.holder_is_moving:
+                    if self.holder.dst == versus.id:
                         self.log(
                             "\t\t-> other unit is in 1on1 with my holder..")
                         ## I need to know if holder have succeded in the move
                         if self.holder.solved:
-                            if self.holder.succeeded and not \
-                                    self.holder.swapping:
+                            if (
+                                self.holder.succeeded and not
+                                self.holder.is_swapping
+                            ):
                                 self.log(
                                     "\t\t\t-> Other unit is loosing: has no " +
                                     "power against me.")
@@ -423,45 +421,26 @@ class Move(Hold):
                                 "\t\t\t-> I need more information about " +
                                 "this, dependency unsolved.")
                             return None
-            sCompare = "strength_att"
-            ## complete strength if holder is moving and country is same
-            #if self.holderMoving:
-            #   if self.country == self.holder.country:
-            #       print "\t\t-> holder is moving and my country is same.."
-                    ## use complete strength of myself
-            #       sCompare = "strength_ssa"
-            #   if versus.country == self.holder.country:
-            #       print "\t\t-> holder is moving and versus country is same."
-                    ## use complete strength of versus
-            #       vCompare = "strength_ssa"
+            sCompare = "strength_attack"
             ## additional considerations for units swap
-            if self.holderMoving:
+            if self.holder_is_moving:
                 self.log("\t\t-> Holder is moving..")
-                if self.strength_att != self.strength_ssa:
+                if self.strength_attack != self.strength_attack_ss:
                     self.log("\t\t-> my s_att != s_ssa..")
                     if self.holder.solved:
                         self.log("\t\t\t-> Holder move is solved, continue..")
                         if self.holder.succeeded:
-                            sCompare = "strength_ssa"
+                            sCompare = "strength_attack_ss"
                         else:
-                            sCompare = "strength_att"
+                            sCompare = "strength_attack"
                     else:
                         self.log(
                             "\t\t\t-> Holder move is unsolved, breaking..")
                         return None
-                if versus.strength_att != versus.strength_ssa:
+                if versus.strength_attack != versus.strength_attack_ss:
                     self.log("\t\t-> versus s_att != s_ssa..")
-                    #if self.holder.solved:
-                    #   print "\t\t\t-> Holder move is solved, continue.."
-                    #   if self.holder.succeeded:
-                    #       vCompare = "strength_ssa"
-                    #   else:
-                    #       vCompare = "strength_att"
-                    #else:
-                    #   print "\t\t\t-> Holder move is unsolved, breaking.."
-                    #   return None
-                    vCompare = "strength_ssa"
-            return self._compare_num(versus, vCompare, sCompare)
+                    vCompare = "strength_attack_ss"
+            return self.compare_numerically(versus, vCompare, sCompare)
         else:
             ## the other unit is moving to another terr
             self.log("\t\t-> other unit is moving to another terr..")
@@ -469,26 +448,27 @@ class Move(Hold):
                 if versus.succeeded:
                     self.log("\t\t\t-> other unit moved, dependency solved.")
                     return True
-                return self._compare_num(versus, "strength_def",
-                                         "strength_att")
+                return self.compare_numerically(
+                    versus, "strength_defense", "strength_attack")
             self.log(
                 "\t\t\t-> no information on other unit, dependency unsolved.")
             return None
 
-    def solve(self):
+    def resolve(self):
         compare_stack = []
-        check_stack = True if self.success_var is None else False
-        dependencies = [node for node in self.dependencies]
+        check_stack = self.success_status is None
+        dependencies = list(self.dependencies)
         for node in dependencies:
-            self.log("\tMove: comparing dependency "+str(node))
+            self.log("Move: comparing dependency {}".format(node), indent=1)
             if node in self.supporters:
-                self.log("\t\tdependency is a supporter")
+                self.log("dependency is a supporter", indent=2)
                 if node.solved:
-                    self._solved_dep(node)
-                    self.log("\t\tdependency is solved for "+str(node))
+                    self.remove_dependency(node)
+                    self.log(
+                        "dependency is solved for {}".format(node), indent=2)
             else:
                 ## get success on the single dependency
-                success = self._compare(node)
+                success = self.compare_attacks(node)
                 if success is not False:
                     ## store in the compare stack, as we need to check every
                     ## dependency is won to move
@@ -496,20 +476,17 @@ class Move(Hold):
                 if success is not None:
                     if not success:
                         ## we ended, there's someone powerful than me
-                        self.log("\tMove: movement failed.")
-                        self.success_var = False
-                        #self._solved_deps_all()
-                        ## TEST: maintaining support dependencies alive
-                        #for dep in self.dependencies:
-                        for dep in [d for d in self.dependencies]:
-                            if dep not in self.supporters:
-                                self._solved_dep(dep)
-                        ##
+                        self.log("Move: movement failed.", indent=1)
+                        self.success_status = False
+                        for dep in (
+                            set(list(self.dependencies)) - set(self.supporters)
+                        ):
+                            self.remove_dependency(dep)
                         check_stack = False
                         break
                     else:
                         ## I've solved this dependency
-                        self._solved_dep(node)
+                        self.remove_dependency(node)
         ## check for winner on every dependency (if solved all)
         if check_stack:
             winner = True
@@ -520,133 +497,120 @@ class Move(Hold):
                     winner = False
                     break
             if winner:
-                self.log("\tMove: movement succeeded.")
-                self.success_var = True
-                self._solved_deps_all()
+                self.log("Move: movement succeeded.", indent=1)
+                self.success_status = True
+                self.remove_all_dependencies()
 
-    def solve_force(self, val=True):
-        self.log("\tMove: forcing moving "+str(self))
-        self.success_var = val
-        self._solved_deps_all()
+    def force_resolution(self, val=True):
+        self.log("Move: forcing moving {}".format(self), indent=1)
+        self.success_status = val
+        self.remove_all_dependencies()
 
-    #@property
-    #def solved(self):
-    #   if self._failed:
-    #       return True
-    #   return self.success_var is not None
-
-    @property
-    def success(self):
-        if self.success_var is None:
-            self.solve()
-        return self.success_var
+    def compute_success(self):
+        if self.success_status is None:
+            self.resolve()
+        return self.success_status
 
 
-class MoveConv(Move):
-    def _start(self):
-        Move._start(self)
-        self._convoyed = None
+class MoveThrough(Move):
+    def init(self):
+        super().init()
+        self.convoy_status = None
 
-    def set_routes(self, llid):
-        self._convoy_routes = llid
+    def set_routes(self, routes):
+        self._convoy_routes = routes
+
+    @cachedprop
+    def convoyers(self):
+        return self.world.get_convoyers(self._convoy_routes)
 
     def _get_dependencies(self):
-        self._convoyers = self._up._get_convoyers(self._convoy_routes)
-        a = []
-        for l in self._convoyers:
-            for node in l:
-                #a.append(node)
-                if node not in a:
-                    a.append(node)
-        b = Move._get_dependencies(self)
-        return a+b
+        move_deps = super()._get_dependencies()
+        deps = []
+        for route in self.convoyers:
+            avoid_set = set(deps) & set(route)
+            for node in route:
+                if node in avoid_set:
+                    continue
+                deps.append(node)
+        return deps + move_deps
 
     @property
-    def strength_att(self):
+    def strength_attack(self):
         if self.convoyed is False:
             return (0, 0)
-        return self._strength_att()
+        return self.strength_attack()
 
     @property
-    def strength_ssa(self):
+    def strength_attack_ss(self):
         if self.convoyed is False:
             return (0, 0)
-        return self._strength_att(False)
+        return self.strength_attack(False)
 
-    def solve(self):
-        # TO IMPROVE: duplicates nodes (different routes can have common nodes)
+    def resolve(self):
         ## we need succesful convoy and then sove with Move class
         dep_rem = []
-        ## NEED NEXT check:
-        if not hasattr(self, "_convoyers"):
-            #self._get_dependencies()
-            self.dependencies
         move_check = False
-        routes_fail = []
-        for route in self._convoyers:
-            self.log("\tMoveViaConvoy: Processing route "+str(route))
-            convoy_succ = []
+        failed_routes = []
+        for route in self.convoyers:
+            self.log(
+                "MoveViaConvoy: Processing route {}".format(route), indent=1)
+            succeeded_convoyers = 0
             conv_rem = []
             ## convoyers check in the route
             for convoyer in route:
-                self.log("\t\tProcessing convoyer "+str(convoyer))
-                #self._versus = convoyer
-                #self._convoyed = self.convoyed
-                #self._versus = None
+                self.log("Processing convoyer {}".format(convoyer), indent=2)
                 convoyed = self._solve_convoyer(convoyer)
                 if convoyed is not None:
                     ## solved node, add dependency to remove list
                     conv_rem.append(convoyer)
                     if not convoyed:
                         ## fail the route and break the cycle
-                        routes_fail.append(route)
+                        failed_routes.append(route)
                         break
                     else:
                         ## append node to success stack
-                        convoy_succ.append(True)
+                        succeeded_convoyers += 1
             ## if the success stack len is the same as the route, the convoy
             ## chain is successful
-            if len(convoy_succ) == len(route):
+            if succeeded_convoyers == len(route):
                 ## IS IT ENOUGH? I THINK SO; I DON'T CONSIDER OTHER ROUTES
-                for r in self._convoyers:
-                    for node in r:
-                        if node not in dep_rem:
-                            dep_rem.append(node)
+                for route in self.convoyers:
+                    for node in route:
+                        dep_rem.append(node)
                 ## proceeed to the normal moves solving
-                self.log("\tMoveViaConvoy: route succeeded")
+                self.log("MoveViaConvoy: route succeeded", indent=1)
                 move_check = True
                 break
             ## else we just remove solved dependencies
             else:
                 for node in conv_rem:
-                    #self._solved_dep(node)
-                    if node not in dep_rem:
-                        dep_rem.append(node)
-        for node in dep_rem:
-            if node in self.dependencies:
-                self._solved_dep(node)
+                    dep_rem.append(node)
+        for node in set(dep_rem) & set(self.dependencies):
+            self.remove_dependency(node)
         if not move_check:
             ## verify that all routes have failed
-            if routes_fail == self._convoyers:
+            if failed_routes == self.convoyers:
                 ## the movement is failing, removing all deps
-                self.log("\tMoveViaConvoy: all convoy routes failed.")
-                self._convoyed = False
-                self.success_var = False
-                self._solved_deps_all()
+                self.log("MoveViaConvoy: all convoy routes failed.", indent=1)
+                self.convoy_status = False
+                self.success_status = False
+                self.remove_all_dependencies()
             else:
-                self.log("\tMoveViaConvoy: convoy routes not solved..")
-                for route in routes_fail:
-                    self._convoyers.remove(route)
+                self.log("MoveViaConvoy: convoy routes not solved..", indent=1)
+                for route in failed_routes:
+                    self.convoyers.remove(route)
         else:
             ## normal movement solve
-            self._convoyed = True
-            self.log("\tMoveViaConvoy: starting normal movement solving..")
-            Move.solve(self)
+            self.convoy_status = True
+            self.log(
+                "MoveViaConvoy: starting normal movement solving..", indent=1)
+            super().resolve(self)
 
     def _solve_convoyer(self, convoyer):
-        if not (convoyer.type == "Convoy" and convoyer.fr == self.id):
+        if not (convoyer.type == Convoy and convoyer.src == self.id):
             return False
-        if convoyer._dislodged:
+        if convoyer.dislodged_status:
             return False
         if convoyer.solved:
             if convoyer.succeeded:
@@ -656,167 +620,132 @@ class MoveConv(Move):
 
     @property
     def convoyed(self):
-        if self._convoyed is None:
-            self.solve()
-        return self._convoyed
+        if self.convoy_status is None:
+            self.resolve()
+        return self.convoy_status
 
 
 class Convoy(Hold):
-    def _start(self):
-        Hold._start(self)
-        #self._versus = None
-
-    def _solve_force(self):
-        #dep_rem = []
+    def _force_resolution(self):
         compare_stack = []
-        dependencies = [node for node in self.dependencies]
+        dependencies = list(self.dependencies)
         for node in dependencies:
-            self.log("\tConvoy: force solving "+str(node))
+            self.log("Convoy: force solving {}".format(node), indent=1)
             self._versus = node
-            #self._dislodged = self.dislodged_fake
-            att = self.dislodged_fake(node)
-            #self._versus = None
-            #if self._dislodged is not None:
-            if att is not None:
-                #if self._dislodged:
-                #   self._solved_deps_all()
-                    #dep_rem = []
-                #   break
-                #dep_rem.append(node)
-                self._solved_dep(node)
-                compare_stack.append(att)
+            vs_attack_strength = self.get_fake_dislodgement(node)
+            if vs_attack_strength is not None:
+                self.remove_dependency(node)
+                compare_stack.append(vs_attack_strength)
             else:
-                self.log("\tConvoy: cannot force solve node "+str(node))
-        m_att = max(compare_stack)
-        m_count = 0
-        for att in compare_stack:
-            if att == m_att:
-                m_count += 1
-        if m_count == 1 and m_att > 1:
-            self._dislodged = True
-            self._solved_deps_all()
+                self.log(
+                    "Convoy: cannot force solve node {}".format(node),
+                    indent=1)
+        max_attack_strength = max(compare_stack)
+        max_count = 0
+        for attack_strength in compare_stack:
+            if attack_strength == max_attack_strength:
+                max_count += 1
+        if max_count == 1 and max_attack_strength > 1:
+            self.dislodged_status = True
+            self.remove_all_dependencies()
         else:
-            self._dislodged = False
-        #for node in dep_rem:
-        #   self._solved_dep(node)
+            self.dislodged_status = False
 
-    #@property
-    def dislodged_fake(self, by=None):
+    def get_fake_dislodgement(self, by=None):
         if not by:
-            by = self.depends
-        if by.type == "Move":
-            #if by.strength_att[1] > 1:
-            #   return True
-            #return False
-            return by.strength_att[1]
+            by = self.depends_on
+        if by.type == Move:
+            return by.strength_attack[1]
         return None
 
-    def solve_force(self):
-        self.log("\tConvoy: force solving "+str(self))
-        #self._solved_deps_all()
-        dependencies = [node for node in self.dependencies]
-        for node in dependencies:
-            if node not in self.defenders:
-                self._solved_dep(node)
-        self._dislodged = True
+    def force_resolution(self):
+        self.log("Convoy: force solving {}".format(self), indent=1)
+        for node in set(self.dependencies) - set(self.defenders):
+            self.remove_dependency(node)
+        self.dislodged_status = True
 
 
 class Support(Hold):
-    def _start(self):
-        Hold._start(self)
-        self._attacked = None
+    def init(self):
+        super().init()
+        self.attacked_status = None
 
-    #def _get_dependencies(self):
-    #    return self._up._get_attackers(self.id)
-
-    def solve(self):
-        #dep_rem = []
+    #def solve(self):
         ## we just need 1 attack to have this solved
-        #dependencies = [node for node in self.dependencies]
-        #for node in dependencies:
         dep_rem = []
         attackers = [k for k in self.attackers if k in self.dependencies]
-        fail_attacks = 0
+        failed_attacks = 0
         for node in attackers:
-            self.log("\tSupport: solving dependency "+str(node))
-            #self._attacked = self.attacked(node)
-            _attacked = self.attacked(node)
-            #if self._attacked is not None:
-            print('attacked', _attacked)
-            if _attacked is not None:
-                #if self._attacked:
-                if _attacked:
-                    self._attacked = True
-                    self.log("\tSupport: I'm attacked. Support failed.")
-                    #self._solved_deps_all()
+            self.log("Support: solving dependency {}".format(node), indent=1)
+            attacked_status = self.is_attacked(node)
+            if attacked_status is not None:
+                if attacked_status:
+                    self.attacked_status = True
+                    self.log("Support: I'm attacked. Support failed.", indent=1)
                     dep_rem = attackers
-                    #dep_rem = []
                     break
                 else:
-                    self.log("\tSupport: attacker failed, still supporting.")
-                    fail_attacks += 1
-                self._solved_dep(node)
+                    self.log("Support: attacker failed, still supporting.", indent=1)
+                    failed_attacks += 1
+                self.remove_dependency(node)
             else:
-                self.log("\tSupport: dependency "+str(node)+" unsolved.")
-        for node in dep_rem:
-            if node in self.dependencies:
-                self._solved_dep(node)
-        if fail_attacks == len(self.attackers):
-            self._attacked = False
+                self.log("Support: dependency {} unsolved.".format(node), indent=1)
+        for node in set(dep_rem) & set(self.dependencies):
+            self.remove_dependency(node)
+        if failed_attacks == len(self.attackers):
+            self.attacked_status = False
         #: proc defenders!
-        Hold.solve(self)
+        Hold.resolve(self)
 
     @property
     def success(self):
-        if self._attacked is not None:
-            return not self._attacked
-        return not self.attacked()
+        if self.attacked_status is not None:
+            return not self.attacked_status
+        return not self.is_attacked()
 
 
-class SupportM(Support):
-    def attacked(self, versus=None):
+class SupportMove(Support):
+    def is_attacked(self, versus=None):
         if not versus:
-            versus = self.depends
-        if versus:
-            ## the army I'm supporting against cannot cut my support
-            if versus.id == self.to:
-                ## only if the army have stregth 1
-                if self._up.get(self.to).strength_att[1] == 1:
-                    return False
-                ## or is not a dislodge case
-                disl = self.dislodged(versus)
-                return disl
-            ## an army of my country cannot cut my support
-            if versus.country == self.country:
+            versus = self.depends_on
+        if not versus:
+            return False
+        ## the army I'm supporting against cannot cut my support
+        if versus.id == self.dst:
+            ## only if the army have stregth 1
+            if self.world.get(self.dst).strength_attack[1] == 1:
                 return False
-            if versus.type == "MoveConv":
-                if versus.solved:
-                    #if versus.succeeded:
-                    if versus.convoyed:
-                        return True
-                    return False
-                return None
-            return True
-        return False
+            ## or is not a dislodge case
+            disl = self.compute_dislodgement(versus)
+            return disl
+        ## an army of my country cannot cut my support
+        if versus.country == self.country:
+            return False
+        if versus.type == MoveThrough:
+            if versus.solved:
+                if versus.convoyed:
+                    return True
+                return False
+            return None
+        return True
 
 
-class SupportH(Support):
-    def attacked(self, versus=None):
+class SupportHold(Support):
+    def is_attacked(self, versus=None):
         ## load a defined versus or first dependency
         if not versus:
-            versus = self.depends
-        if versus:
-            ## if move is via convoy we should check if succeeded
-            if versus.type == "MoveConv":
-                ## if not solved we should process it
-                if versus.solved:
-                    ## return the result of the movement,
-                    ## a faied move via convoy should not cut the support
-                    #if versus.succeeded:
-                    if versus.convoyed:
-                        return True
-                    return False
-                return None
-            ## if move is not via convoy the support is cut
-            return True
-        return False
+            versus = self.depends_on
+        if not versus:
+            return False
+        ## if move is via convoy we should check if succeeded
+        if versus.type == MoveThrough:
+            ## if not solved we should process it
+            if versus.solved:
+                ## return the result of the movement,
+                ## a faied move via convoy should not cut the support
+                if versus.convoyed:
+                    return True
+                return False
+            return None
+        ## if move is not via convoy the support is cut
+        return True

@@ -1,65 +1,63 @@
+# -*- coding: utf-8 -*-
+
 import time
 from .exceptions import ChainloopException
 from .paradoxes import Paradox
 
 
 class Chain(object):
-    def __init__(self, adjudicator):
-        self._adj = adjudicator
-        self._stack = []
-        self._paradox = None
+    def __init__(self, judge):
+        self.judge = judge
+        self.stack = []
 
     def log(self, msg):
-        msg = "[Chain] "+msg+"\n"
-        self._adj._logstack += msg
+        msg = "[Chain] " + msg
+        self.judge._logstack += msg
 
     @property
     def list(self):
-        return self._stack
+        return self.stack
 
     @property
-    def proc(self):
-        return self._stack[-1]
-
-    def new(self, start):
-        self.add(start)
+    def current_node(self):
+        return self.stack[-1]
 
     def add(self, node):
-        self._stack.append(node)
+        self.stack.append(node)
 
     def rem(self, node):
-        self._stack.remove(node)
+        self.stack.remove(node)
 
     def rem_last(self):
-        self._stack.pop()
+        self.stack.pop()
 
-    def solve(self):
+    def resolve(self):
         t_start = time.time()
-        solvedNode = False
-        while not solvedNode:
+        solved_node = False
+        while not solved_node:
             t_sub = time.time()
             in_loop = False
-            paradox = (False, None)
-            while self.list:
-                print(self.list)
-                self.log("processing member "+str(self.proc))
-                self.proc.solve()
-                if not self.proc.solved:
-                    self.log("unsolved dependency for "+str(self.proc))
+            found_paradox = False
+            while self.stack:
+                print(self.stack)
+                self.log("processing member {}".format(self.current_node))
+                self.current_node.solve()
+                if not self.current_node.solved:
+                    self.log("unsolved dependency for {}".format(self.current_node))
                     #: paradox-loop eval
-                    if self.proc.depends in self.list:
+                    if self.current_node.depends_on in self.stack:
                         if in_loop:
                             self.rem_last()
-                            paradox = (True, self.proc.depends)
+                            found_paradox = True
                             break
                         print('re-looping')
                         in_loop = True
                     else:
                         print('continuing with deps')
                         in_loop = False
-                    self.add(self.proc.depends)
+                    self.add(self.current_node.depends_on)
                 else:
-                    self.log(str(self.proc)+" solved.")
+                    self.log("{} solved.".format(self.current_node))
                     self.rem_last()
                 #: This is an ultra-safe loop check (500ms time limit)
                 #  We should never get this
@@ -67,15 +65,15 @@ class Chain(object):
                 if round((t_now-t_sub)*1000) > 500:
                     self.log("ERROR: breaking SUB, too slow.")
                     raise ChainloopException('step', self)
-            if paradox[0]:
-                self._paradox = Paradox(self, paradox[1])
-                self.log("found PARADOX "+str(self.list))
-                self.log("paradox stuck on "+str(self.proc.depends))
-                self._paradox.solve()
-                self._paradox = None
+            if found_paradox:
+                paradox = Paradox(self)
+                self.log("found PARADOX {}".format(self.stack))
+                self.log("paradox stuck on {}".format(self.current_node.depends_on))
+                paradox.resolve()
+                del paradox
                 in_loop = False
             else:
-                solvedNode = True
+                solved_node = True
             #: Safe loop check (2s time limit)
             #  We should never get this
             t_now = time.time()
