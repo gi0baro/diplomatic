@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
     nuDiplomacy app
 
@@ -10,7 +12,8 @@
 
 
 class adict(dict):
-    pass
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
 
 
 class Processor(object):
