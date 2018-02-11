@@ -33,7 +33,7 @@ class Judge(object):
         chain = Chain(self)
         self.chains.append(chain)
         chain.add(node)
-        chain.solve()
+        chain.resolve()
         for node in chain.list:
             self.chained.append(node.id)
 

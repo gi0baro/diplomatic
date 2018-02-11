@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
-
-class cachedprop(object):
-    pass
+from .helpers import cachedprop
 
 
 class World(object):
@@ -21,9 +19,9 @@ class World(object):
         self._nodes_by_type = {v: [] for v in self._nodes_cls.values()}
         self._nodes_mapper = {}
         for key in self._nodes_cls.keys():
-            self._nodes_mapper[key] = lambda data: self._nodes_cls[key]
+            self._nodes_mapper[key] = lambda data, key=key: self._nodes_cls[key]
         self._nodes_mapper['move'] = lambda data: (
-            self._nodes_cls['move_through'] if data.get('viaConvoy')
+            self._nodes_cls['move_through'] if data.get('through')
             else self._nodes_cls['move'])
         #: map dependencies
         self._dependency_cls = {
@@ -60,11 +58,7 @@ class World(object):
         rv = []
         for node_cls in self._dependency_cls[dependency_type]:
             for node in self._nodes_by_type[node_cls]:
-                if (
-                    getattr(
-                        node, self._dependency_compare_attrs[dependency_type]
-                    ) == node_id
-                ):
+                if getattr(node, self._dependency_compare_attrs[dependency_type]) == node_id:
                     rv.append(node)
         return rv
 
@@ -79,7 +73,7 @@ class World(object):
         #: support move to different terr removal
         nrem = []
         for node in rv:
-            if node.to != self.get(node_id).to:
+            if node.dst != self.get(node_id).dst:
                 nrem.append(node)
         return list(set(rv) - set(nrem))
 
@@ -102,8 +96,9 @@ class Node(object):
         self.name = data.get("name")
         ##
         # self.type = self.__class__.__name__
-        self.src = data.get("from")
-        self.dst = data.get("to")
+        self.src = data.get('src')
+        self.dst = data.get('dst')
+        self.log('FAILED {}'.format(data.get("failed")))
         self.failed = data.get("failed") or False
         self.init()
 
@@ -168,23 +163,22 @@ class Hold(Node):
     def attackers(self):
         return self.world.get_attackers(self.id)
 
-    @property
+    # @property
+    @cachedprop
     def defenders(self):
         return self.world.get_defenders(self.id)
 
     @property
     def strength_defense(self):
-        strength = (1, 1)
+        strength_min, strength_max = 1, 1
         for node in self.defenders:
-            addmin, addmax = 0, 0
             if node.solved:
                 if node.succeeded:
-                    addmin += 1
-                    addmax += 1
+                    strength_min += 1
+                    strength_max += 1
             else:
-                addmax += 1
-            strength = (strength[0] + addmin, strength[1] + addmax)
-        return strength
+                strength_max += 1
+        return strength_min, strength_max
 
     def resolve(self):
         #: we just need 1 successful attack with strength > 1 to solve this
@@ -287,7 +281,7 @@ class Move(Hold):
 
     @property
     def strength_attack_ss(self):
-        return self.strength_attack(False)
+        return self._strength_attack(False)
 
     @property
     def has_empty_dst(self):
@@ -317,7 +311,7 @@ class Move(Hold):
             "comparing values: {}, {} - {}, {}".format(
                 s_attr_min, s_attr_max, v_attr_min, v_attr_max), indent=2)
         ## we try to rapidly solve checking two easy cases:
-        ## 1) my min stregth > versus max strength: I'm winning on this
+        ## 1) my min strength > versus max strength: I'm winning on this
         ## dependency and the versus is failed
         if s_attr_min > v_attr_max:
             self.log("-> min att > max comparing: solved", indent=3)
@@ -332,13 +326,13 @@ class Move(Hold):
                     if versus.type == MoveThrough and self.type != MoveThrough:
                         if not versus.solved:
                             self.log(
-                                "\t\t\t-> max att < min comparing, but vs " +
-                                "army is convoyed: waiting for more details..")
+                                "-> max att < min comparing, but vs " +
+                                "army is convoyed: waiting for more details..", indent=3)
                             return None
                         #else:
                         #   if not versus.succeeded:
                         #       return True
-                    self.log("\t\t\t-> max att < min comparing: solved")
+                    self.log("-> max att < min comparing: solved", indent=3)
                     return False
                 ## my max att = versus min att
                 if s_attr_max == v_attr_min:
@@ -346,30 +340,30 @@ class Move(Hold):
                     if versus.type == MoveThrough and self.type != MoveThrough:
                         if not versus.solved:
                             self.log(
-                                "\t\t\t-> att is the same but vs army is " +
-                                "convoyed: waiting for more details..")
+                                "-> att is the same but vs army is " +
+                                "convoyed: waiting for more details..", indent=3)
                             return None
                         #else:
                         #   return not versus.succeeded
-                    self.log("\t\t\t-> att is the same: solved")
+                    self.log("-> att is the same: solved", indent=3)
                     ## same attack strength
                     return False
-                self.log("\t\t\t-> numeric compare unsolved (1)")
+                self.log("-> numeric compare unsolved (1)", indent=3)
                 return None
             else:
                 ## if we have a convoy swap we treat it quite differently:
                 if swap:
                     if versus.solved and not versus.succeeded:
                         self.log(
-                            "\t\t\t-> swap: other army failed, me failing too")
+                            "-> swap: other army failed, me failing too", indent=3)
                         return False
                     self.log(
-                        "\t\t\t-> swap: att is same of defense, solved as " +
-                        "succeded")
+                        "-> swap: att is same of defense, solved as " +
+                        "succeded", indent=3)
                     return True
-            self.log("\t\t\t-> max att <= min comparing: solved")
+            self.log("-> max att <= min comparing: solved", indent=3)
             return False
-        self.log("\t\t\t-> numeric compare unsolved")
+        self.log("-> numeric compare unsolved", indent=3)
         return None
 
     def compare_attacks(self, versus):
@@ -382,27 +376,27 @@ class Move(Hold):
             vCompare = "strength_defense"
         if not move:
             ## the other unit is not moving (hold or support)
-            self.log("\t\t-> other unit is not moving..")
+            self.log("-> other unit is not moving..", indent=2)
             return self.compare_numerically(versus, vCompare, "strength_attack")
         elif move and versus.dst == self.id:
             ## the other unit is moving to me
-            self.log("\t\t-> other unit is moving to me..")
+            self.log("-> other unit is moving to me..", indent=2)
             if versus == self.holder and self.is_swapping:
-                self.log("\t\t -> units are swapping..")
+                self.log("-> units are swapping..", indent=2)
                 vCompare = "strength_defense"
                 return self.compare_numerically(
                     versus, vCompare, "strength_attack", True)
             return self.compare_numerically(versus, vCompare, "strength_attack")
         elif move and versus.dst == self.dst:
             ## the other unit is moving to the same terr I'm moving to
-            self.log("\t\t-> other unit is moving to same terr..")
+            self.log("-> other unit is moving to same terr..", indent=2)
             ## if one of the other attackers is in 1vs1 with my holder,
             ## I had to check more stuffs
             if versus != self.holder:
                 if self.holder_is_moving:
                     if self.holder.dst == versus.id:
                         self.log(
-                            "\t\t-> other unit is in 1on1 with my holder..")
+                            "-> other unit is in 1on1 with my holder..", indent=2)
                         ## I need to know if holder have succeded in the move
                         if self.holder.solved:
                             if (
@@ -410,48 +404,48 @@ class Move(Hold):
                                 self.holder.is_swapping
                             ):
                                 self.log(
-                                    "\t\t\t-> Other unit is loosing: has no " +
-                                    "power against me.")
+                                    "-> Other unit is loosing: has no " +
+                                    "power against me.", indent=3)
                                 ## if so, I won't consider the versus because
                                 ## has no strength
                                 return True
                             ## else fall back to compare_num
                         else:
                             self.log(
-                                "\t\t\t-> I need more information about " +
-                                "this, dependency unsolved.")
+                                "-> I need more information about " +
+                                "this, dependency unsolved.", indent=3)
                             return None
             sCompare = "strength_attack"
             ## additional considerations for units swap
             if self.holder_is_moving:
-                self.log("\t\t-> Holder is moving..")
+                self.log("-> Holder is moving..", indent=2)
                 if self.strength_attack != self.strength_attack_ss:
-                    self.log("\t\t-> my s_att != s_ssa..")
+                    self.log("-> my s_att != s_ssa..", indent=2)
                     if self.holder.solved:
-                        self.log("\t\t\t-> Holder move is solved, continue..")
+                        self.log("-> Holder move is solved, continue..", indent=2)
                         if self.holder.succeeded:
                             sCompare = "strength_attack_ss"
                         else:
                             sCompare = "strength_attack"
                     else:
                         self.log(
-                            "\t\t\t-> Holder move is unsolved, breaking..")
+                            "-> Holder move is unsolved, breaking..", indent=3)
                         return None
                 if versus.strength_attack != versus.strength_attack_ss:
-                    self.log("\t\t-> versus s_att != s_ssa..")
+                    self.log("-> versus s_att != s_ssa..", indent=2)
                     vCompare = "strength_attack_ss"
             return self.compare_numerically(versus, vCompare, sCompare)
         else:
             ## the other unit is moving to another terr
-            self.log("\t\t-> other unit is moving to another terr..")
+            self.log("-> other unit is moving to another terr..", indent=2)
             if versus.solved:
                 if versus.succeeded:
-                    self.log("\t\t\t-> other unit moved, dependency solved.")
+                    self.log("-> other unit moved, dependency solved.", indent=3)
                     return True
                 return self.compare_numerically(
                     versus, "strength_defense", "strength_attack")
             self.log(
-                "\t\t\t-> no information on other unit, dependency unsolved.")
+                "-> no information on other unit, dependency unsolved.", indent=3)
             return None
 
     def resolve(self):
@@ -539,13 +533,13 @@ class MoveThrough(Move):
     def strength_attack(self):
         if self.convoyed is False:
             return (0, 0)
-        return self.strength_attack()
+        return self._strength_attack()
 
     @property
     def strength_attack_ss(self):
         if self.convoyed is False:
             return (0, 0)
-        return self.strength_attack(False)
+        return self._strength_attack(False)
 
     def resolve(self):
         ## we need succesful convoy and then sove with Move class
@@ -605,7 +599,7 @@ class MoveThrough(Move):
             self.convoy_status = True
             self.log(
                 "MoveViaConvoy: starting normal movement solving..", indent=1)
-            super().resolve(self)
+            super().resolve()
 
     def _solve_convoyer(self, convoyer):
         if not (convoyer.type == Convoy and convoyer.src == self.id):
@@ -670,10 +664,10 @@ class Support(Hold):
         super().init()
         self.attacked_status = None
 
-    #def solve(self):
-        ## we just need 1 attack to have this solved
+    def resolve(self):
+        #: we just need 1 attack to have this solved
         dep_rem = []
-        attackers = [k for k in self.attackers if k in self.dependencies]
+        attackers = list(set(self.attackers) & set(self.dependencies))
         failed_attacks = 0
         for node in attackers:
             self.log("Support: solving dependency {}".format(node), indent=1)
@@ -694,11 +688,10 @@ class Support(Hold):
             self.remove_dependency(node)
         if failed_attacks == len(self.attackers):
             self.attacked_status = False
-        #: proc defenders!
-        Hold.resolve(self)
+        #: proc defenders
+        super().resolve()
 
-    @property
-    def success(self):
+    def compute_success(self):
         if self.attacked_status is not None:
             return not self.attacked_status
         return not self.is_attacked()
@@ -712,12 +705,11 @@ class SupportMove(Support):
             return False
         ## the army I'm supporting against cannot cut my support
         if versus.id == self.dst:
-            ## only if the army have stregth 1
+            ## only if the army have strength 1
             if self.world.get(self.dst).strength_attack[1] == 1:
                 return False
             ## or is not a dislodge case
-            disl = self.compute_dislodgement(versus)
-            return disl
+            return self.compute_dislodgement(versus)
         ## an army of my country cannot cut my support
         if versus.country == self.country:
             return False

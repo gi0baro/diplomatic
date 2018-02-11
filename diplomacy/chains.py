@@ -12,7 +12,7 @@ class Chain(object):
 
     def log(self, msg):
         msg = "[Chain] " + msg
-        self.judge._logstack += msg
+        self.judge._logstack.append(msg)
 
     @property
     def list(self):
@@ -41,7 +41,7 @@ class Chain(object):
             while self.stack:
                 print(self.stack)
                 self.log("processing member {}".format(self.current_node))
-                self.current_node.solve()
+                self.current_node.resolve()
                 if not self.current_node.solved:
                     self.log("unsolved dependency for {}".format(self.current_node))
                     #: paradox-loop eval

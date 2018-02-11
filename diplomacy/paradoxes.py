@@ -9,7 +9,7 @@ class Paradox(object):
 
     def log(self, msg):
         msg = "[Paradox] " + msg
-        self.chain.judge._logstack += msg
+        self.chain.judge._logstack.append(msg)
 
     @property
     def stack(self):

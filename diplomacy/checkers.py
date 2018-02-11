@@ -20,7 +20,7 @@ class ValidationPipeline(object):
 
 
 class Validator(object):
-    processors = registry()
+    pipelines = registry()
 
     def __init__(
         self, map_data, player_troops, territories, armies, fleets,
@@ -158,7 +158,7 @@ class Validator(object):
                 continue
             if order.get('dst') in self.neutrals:
                 self.invalids.append(territory_id)
-                self.log("Order " + str(territory_id) + " has 'from' set to a " + "neutral state")
+                self.log("Order " + str(territory_id) + " has 'src' set to a " + "neutral state")
 
     def _check_troops(self):
         #: check order is on player's armies
@@ -261,145 +261,135 @@ class Validator(object):
         for country, previous_orders in self.prev["orders"].items():
             for territory_id, order in previous_orders.items():
                 if order["type"] == "move":
-                    previous_phase_movements.append(order["to"])
+                    previous_phase_movements.append(order['dst'])
         previous_phase_movements = set(previous_phase_movements)
         for territory_id, order in orders.items():
-            if not order.get("to"):
+            if not order.get('dst'):
                 #: we process retreats only
                 if order["type"] != "disband":
                     invalids.append(territory_id)
                 continue
-            if self._is_fleet(territory_id) and self._is_multi_coast(order["to"]):
+            if self._is_fleet(territory_id) and self._is_multi_coast(order['dst']):
                 if order.get("mc") not in [0, 1]:
                     invalids.append(territory_id)
                     continue
-            if not self._can_move(territory_id, order["to"], order.get("mc")):
+            if not self._can_move(territory_id, order['dst'], order.get("mc")):
                 self.log("Order " + str(territory_id) + " is a retreat to a terr cannot move")
                 invalids.append(territory_id)
                 continue
             # cannot move to a terr where was a move
-            if order["to"] in previous_phase_movements:
+            if order['dst'] in previous_phase_movements:
                 invalids.append(territory_id)
                 continue
         return invalids
 
-    def _process_diplomacy(self):
-        for territory_id, order in self.orders.items():
-            ## order should have:
-            ##      - id: terr in which the army is
-            ##      - type: type of order (should be in
-            ##              ["move", "sup_move", "sup_hold", "convoy"])
-            ##      - (from): id of terr in which the order starts
-            ##      - (to): id of terr in which the order ends (if not hold)
-            ##      - (viaConvoy): True if is a move via convoy
-            ##      - (mc): id of multi coast to move (if needed)
-            if order["type"] != "hold" and not order.get("to"):
-                self.invalids.append(territory_id)
+    def _validate_diplomacy(self, orders):
+        #: orders should have:
+        #   - id: territory where the army is located
+        #   - type: type of order ("move", "support_move", "support_hold", "convoy")
+        #   - (from): territory from where the order starts
+        #   - (to): territory where the order ends (if not hold)
+        #   - (through): True if movement is via convoy
+        #   - (mc): coast to move in case of multiple coasts
+        invalids = []
+        for territory_id, order in orders.items():
+            if order["type"] != "hold" and not order.get('dst'):
+                invalids.append(territory_id)
                 continue
-            if order["type"] in ["sup_move", "convoy"]:
-                if not order.get("from"):
-                    self.invalids.append(territory_id)
+            if order["type"] in ["support_move", "convoy"]:
+                if not order.get('src'):
+                    invalids.append(territory_id)
                     continue
-            ## check basics movements rules
+            #: check basics movements rules
             if order["type"] == "move":
-                if not order.get("viaConvoy"):
-                    ## mc parameter check
-                    if self._is_fleet(territory_id) and self._is_multi_coast(order["to"]):
-                        #if not order.get("mc"):
-                        #   self.invalids.append(territory_id)
-                        #   continue
+                if not order.get("through"):
+                    #: mc parameter check
+                    if self._is_fleet(territory_id) and self._is_multi_coast(order['dst']):
                         if order.get("mc") not in [0, 1]:
-                            self.log("Order "+str(territory_id)+" has a bad mc")
-                            self.invalids.append(territory_id)
+                            self.log("Order " + str(territory_id) + " has a bad mc")
+                            invalids.append(territory_id)
                             continue
                     else:
                         if order.get("mc"):
                             del order["mc"]
-                    ## check move ability
+                    #: check move ability
                     mc = None
                     if self._is_fleet(territory_id) and self._is_multi_coast(territory_id):
-                        mc = self.mc_pos[territory_id]
-                    if not self._can_move(territory_id, order["to"], mc):
+                        mc = self.multi_coasts_positions[territory_id]
+                    if not self._can_move(territory_id, order['dst'], mc):
                         self.log("Order " + str(territory_id) +
                                  " is a move to a terr cannot move")
-                        self.invalids.append(territory_id)
+                        invalids.append(territory_id)
                 else:
-                    ## cannot convoy fleets
+                    #: cannot convoy fleets
                     if self._is_fleet(territory_id):
-                        self.log("Order "+str(territory_id)+" is a fleet convoyed")
-                        self.invalids.append(territory_id)
+                        self.log("Order " + str(territory_id) + " is a fleet convoyed")
+                        invalids.append(territory_id)
                         continue
-                    ## check convoy route present (needed for ui)
+                    #: check convoy route present (needed for ui)
                     if not isinstance(order.get("croutes", []), list):
-                        self.log("Order " + str(territory_id) +
-                                 " is a move viaConvoy without routes")
-                        self.invalids.append(territory_id)
+                        self.log("Order " + str(territory_id) + " is a move through without routes")
+                        invalids.append(territory_id)
                         continue
-                    ## check move via convoy ability
-                    if order["to"] not in self._convoy_maps(territory_id):
-                        self.log("Order " + str(territory_id) +
-                                 " is a move viaConvoy to a terr cannot move")
-                        self.invalids.append(territory_id)
+                    #: check move via convoy ability
+                    if order['dst'] not in self._convoy_maps(territory_id):
+                        self.log("Order " + str(territory_id) + " is a move through to a terr cannot move")
+                        invalids.append(territory_id)
                     else:
-                        ## verify routes (find out orders built without ui)
-                        convoy_routes = self._get_convoy_routes(territory_id,
-                                                                order["to"])
-                        for selected_route in order["croutes"]:
+                        #: verify routes (find out orders built without ui)
+                        convoy_routes = self._get_convoy_routes(territory_id, order['dst'])
+                        for selected_route in order["convoy_routes"]:
                             if selected_route not in convoy_routes:
-                                self.log("Order " + str(territory_id) + " is a " +
-                                         "move viaConvoy with invalid route")
-                                self.invalids.append(territory_id)
+                                self.log("Order " + str(territory_id) + " is a move through with invalid route")
+                                invalids.append(territory_id)
                                 continue
-                        ## store convoy routes (needed for proc)
+                        #: store convoy routes (needed for processor)
                         order["convoy_routes"] = convoy_routes
-            elif order["type"] == "sup_move":
-                if not self._can_move(territory_id, order["to"]):
-                    self.log("Order " + str(territory_id) +
-                             " is a sup_move against a terr cannot move")
-                    self.invalids.append(territory_id)
+            elif order["type"] == "support_move":
+                if not self._can_move(territory_id, order['dst']):
+                    self.log("Order " + str(territory_id) + " is a support_move against a terr cannot move")
+                    invalids.append(territory_id)
                     continue
-                ## check if there's an army or ship in to terr
-                if self._is_empty_territory(order["from"]):
-                    self.log("Order " + str(territory_id) +
-                             " is a sup_move to an empty terr")
-                    self.invalids.append(territory_id)
-            elif order["type"] == "sup_hold":
-                if not self._can_move(territory_id, order["to"]):
-                    self.log("Order " + str(territory_id) +
-                             " is a sup_hold to a terr cannot move")
-                    self.invalids.append(territory_id)
+                #: check if there's an army or ship in to terr
+                if self._is_empty_territory(order['src']):
+                    self.log("Order " + str(territory_id) + " is a support_move to an empty terr")
+                    invalids.append(territory_id)
+            elif order["type"] == "support_hold":
+                if not self._can_move(territory_id, order['dst']):
+                    self.log("Order " + str(territory_id) + " is a support_hold to a terr cannot move")
+                    invalids.append(territory_id)
                     continue
-                ## check if there's an army or ship in to terr
-                if self._is_empty_territory(order["to"]):
-                    self.log("Order " + str(territory_id) +
-                             " is a sup_hold to an empty terr")
-                    self.invalids.append(territory_id)
+                #: check if there's something to support
+                if self._is_empty_territory(order['dst']):
+                    self.log("Order " + str(territory_id) + " is a support_hold to an empty terr")
+                    invalids.append(territory_id)
             elif order["type"] == "convoy":
                 if not self._is_fleet(territory_id):
-                    self.log("Order "+str(territory_id)+" is a convoy by an army")
-                    self.invalids.append(territory_id)
+                    self.log("Order " + str(territory_id) + " is a convoy by an army")
+                    invalids.append(territory_id)
             else:
                 if order["type"] != "hold":
-                    self.log("Order "+str(territory_id)+" is an invalid type")
-                    self.invalids.append(territory_id)
+                    self.log("Order " + str(territory_id) + " is an invalid type")
+                    invalids.append(territory_id)
                     continue
                 if len(order) > 1:
                     order = dict(type="hold")
+        return invalids
 
-    @processors.register('builds')
+    @pipelines.register('builds')
     def process_builds(self, orders):
         return ValidationPipeline(
             self._check_neutrals,
             self._validate_builds).process(orders)
 
-    @processors.register('retreats')
+    @pipelines.register('retreats')
     def process_retreats(self, orders):
         return ValidationPipeline(
             self._check_neutrals,
             self._check_troops,
             self._validate_retreats).process(orders)
 
-    @processors.register('diplomacy')
+    @pipelines.register('diplomacy')
     def process_diplomacy(self, orders):
         return ValidationPipeline(
             self._check_neutrals,
@@ -407,122 +397,117 @@ class Validator(object):
             self._validate_diplomacy).process(orders)
 
     def process(self, orders):
-        return self.processors.call(self.phase_type, orders)
+        return self.pipelines.call(self.phase_type, self, orders)
 
 
 class PreProcessor(object):
-    def __init__(self, orders, logger=None):
+    pipelines = registry()
+
+    def __init__(self, phase_orders, logger=lambda *args: None):
+        self.orders = phase_orders
         self._logger = logger
-        self.orders = orders
-        self.fails = []
 
-    def log(self, msg):
-        if not self._logger:
-            return
-        self._logger(msg)
+    def log(self, *msg):
+        # self._logger(msg)
+        print(msg)
 
-    def _isMoving(self, territory_id):
+    def _is_moving(self, territory_id):
         for orders_set in self.orders.values():
-            for territory_id, order in orders_set.items():
-                if territory_id == territory_id and order["type"] == "move":
-                    return True
+            if orders_set.get(territory_id, {}).get('type') == 'move':
+                return True
         return False
 
-    def _isMovingTo(self, territory_id, To):
+    def _is_moving_to(self, territory_id, dst):
         for orders_set in self.orders.values():
-            for territory_id, order in orders_set.items():
-                if territory_id == territory_id and order["type"] == "move" and \
-                        order["to"] == To:
-                    return True
+            order = orders_set.get(territory_id, {})
+            if order.get('type') == 'move' and order.get('dst') == dst:
+                return True
         return False
 
-    def _is_convoyingFT(self, territory_id, fr, to):
+    def _is_convoying_between(self, territory_id, src, dst):
         for orders_set in self.orders.values():
-            for territory_id, order in orders_set.items():
-                if territory_id == territory_id:
-                    if order["type"] == "convoy" and order["to"] == to and \
-                            order["from"] == fr:
-                        return True
-                    break
+            order = orders_set.get(territory_id, {})
+            if order.get('type') == 'convoy' and order.get('src') == src and order.get('dst') == dst:
+                return True
         return False
 
+    @pipelines.register('retreats')
     def _process_retreats(self):
-        fails = []
+        failed = []
         retreats = dict()
         for player, orders_set in self.orders.items():
             for territory_id, order in orders_set.items():
                 if order["type"] == "retreat":
-                    if not retreats.get(order["to"]):
-                        retreats[order["to"]] = dict(count=0, data=[])
-                    retreats[order["to"]]["count"] += 1
-                    retreats[order["to"]]["data"].append((player, territory_id))
+                    if not retreats.get(order['dst']):
+                        retreats[order['dst']] = dict(count=0, data=[])
+                    retreats[order['dst']]["count"] += 1
+                    retreats[order['dst']]["data"].append((player, territory_id))
         for retreat in retreats.values():
             if retreat["count"] > 1:
-                ## fails all
+                #: fail all
                 for el in retreat["data"]:
-                    fails.append(el)
-        return fails
+                    failed.append(el)
+        return failed
 
+    @pipelines.register('diplomacy')
     def _process_diplomacy(self):
+        failed = []
         for player, orders_set in self.orders.items():
             for territory_id, order in orders_set.items():
-                #territory_id = player+":"+order["id"]
-                if order["type"] == "sup_hold":
-                    ## support hold to moving units fails
-                    if self._isMoving(order["to"]):
-                        self.fails.append((player, territory_id))
-                elif order["type"] == "sup_move":
-                    ## support move to unit not moving or moving to another
-                    ## terr fails
-                    if not self._isMoving(order["from"]):
-                        self.fails.append((player, territory_id))
+                if order["type"] == "support_hold":
+                    #: support holding moving units fails
+                    if self._is_moving(order['dst']):
+                        self.log(territory_id, 'other is moving', order['dst'])
+                        failed.append((player, territory_id))
+                elif order["type"] == "support_move":
+                    #: support moving not moving units fails
+                    if not self._is_moving(order['src']):
+                        self.log(territory_id, 'not_moving', order['src'])
+                        failed.append((player, territory_id))
                         continue
-                    if not self._isMovingTo(order["from"], order["to"]):
-                        self.fails.append((player, territory_id))
+                    #: support moving units moving to different territories fails
+                    if not self._is_moving_to(order['src'], order['dst']):
+                        self.log(order['src'], 'not_moving to', order['dst'])
+                        failed.append((player, territory_id))
                 elif order["type"] == "convoy":
-                    ## convoy unit which is not moving or moving to another
-                    ## terr fails
-                    if not self._isMovingTo(order["from"], order["to"]):
-                        self.fails.append((player, territory_id))
+                    #: convoying unit not moving or moving to another territory fails
+                    if not self._is_moving_to(order['src'], order['dst']):
+                        self.log(order['src'], 'convoy not_moving to', order['dst'])
+                        failed.append((player, territory_id))
                         continue
-                    #: is the army moving viaConvoy?
-                    for otherp, otherordersset in self.orders.items():
-                        otherfound = False
-                        for otheroid, otherorder in otherordersset.items():
-                            if otheroid == order["from"]:
-                                if not otherorder.get("viaConvoy"):
-                                    self.fails.append((player, territory_id))
-                                otherfound = True
-                                break
-                        if otherfound:
+                    #: is the army moving trough a convoy?
+                    for other_player, other_orders_set in self.orders.items():
+                        other_order = other_orders_set.get(order['src'], {})
+                        if other_order:
+                            if not other_order.get("through"):
+                                self.log(territory_id, 'other order not moving through convoy')
+                                failed.append((player, territory_id))
                             break
-                ## add check for convoy route (move + viaConvoy)
+                ## add check for convoy route (move + through)
                 elif order["type"] == "move":
-                    if order.get("viaConvoy"):
+                    if order.get("through"):
                         bad_routes = []
-                        succ = False
+                        succeeded = False
                         for route in order["convoy_routes"]:
-                            route_succ = True
+                            route_succeeded = True
                             for fleet in route:
-                                if not self._is_convoyingFT(fleet, territory_id,
-                                                           order["to"]):
-                                    route_succ = False
+                                if not self._is_convoying_between(fleet, territory_id, order['dst']):
+                                    route_succeeded = False
                                     break
-                            if route_succ:
-                                succ = True
-                                ## we need to process every route
+                            if route_succeeded:
+                                #: we need to process every route
+                                succeeded = True
                             else:
-                                ## here we have to remove the route from list
+                                #: we have to remove the route from list
                                 bad_routes.append(route)
-                        if not succ:
-                            self.fails.append((player, territory_id))
+                        if not succeeded:
+                            self.log(territory_id, 'convoy failure')
+                            failed.append((player, territory_id))
                         else:
                             for route in bad_routes:
                                 order["convoy_routes"].remove(route)
+        self.log('ZIOCAN')
+        return failed
 
-    def process(self, phase):
-        if phase == "retreats":
-            ## we have to verify conflicts (retreats to same terrs fails both)
-            self._process_retreats()
-        else:
-            self._process_diplomacy()
+    def process(self, phase_type):
+        return self.pipelines.call(phase_type, self)
