@@ -1,18 +1,21 @@
-web:
-  build: .
-  command: python3 run.py
-  volumes:
-    - .:/home/app
-  ports:
-    - "8000:8000"
-  links:
-    - db
-    - redis
-db:
-  image: mongo:latest
-  ports:
-    - "27017:27017"
-redis:
-  image: redis:latest
-  ports:
-    - "6379:6379"
+version: '2.2'
+
+services:
+  web:
+    build: .
+    command: weppy -a nudiplomacy run -h 0.0.0.0
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "8000:8000"
+  db:
+    image: postgres:9.6
+    ports:
+      - "5432:5432"
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"

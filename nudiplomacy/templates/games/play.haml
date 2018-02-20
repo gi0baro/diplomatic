@@ -1,18 +1,18 @@
 - extend 'ingame.haml'
 
 :javascript
-    var preGame = {{='true' if game.status == 'pregame' else 'false'}};
+    var preGame = {{='true' if game.stage == 0 else 'false'}};
     $(document).ready(function() {
         app.net.route("map", "{{=url('api.map_get', game.map)}}");
         app.net.route("game", "{{=url('api.game_get', game.id)}}");
-        app.net.route("status", "{{=url('api.game_status', game.id)}}");
-        app.net.route("orders", "{{=url('api.orders_get', game.id)}}");
-        app.net.route("saveorders", "{{=url('api.orders_save', game.id)}}");
-        app.net.route("ready", "{{=url('api.orders_ready', game.id, {'set': '1'})}}");
-        app.net.route("unready", "{{=url('api.orders_ready', game.id)}}");
-        app.net.route("messages", "{{=url('api.chat_get')}}");
-        app.net.route("postmessage", "{{=url('api.chat_post')}}");
-        app.net.route("readmessage", "{{=url('api.chat_read')}}");
+        app.net.route("status", "{{#=url('api.game_status', game.id)}}");
+        app.net.route("orders", "{{#=url('api.orders_get', game.id)}}");
+        app.net.route("saveorders", "{{#=url('api.orders_save', game.id)}}");
+        app.net.route("ready", "{{#=url('api.orders_ready', game.id, {'set': '1'})}}");
+        app.net.route("unready", "{{#=url('api.orders_ready', game.id)}}");
+        app.net.route("messages", "{{#=url('api.chat_get')}}");
+        app.net.route("postmessage", "{{#=url('api.chat_post')}}");
+        app.net.route("readmessage", "{{#=url('api.chat_read')}}");
         app.game.scsToWin = {{=scs}};
         app.start();
         if (!preGame) {
@@ -20,7 +20,7 @@
         }
     });
 
-- ocountries = [el['country'] for el in game.countries if el['country'] != game.player_country()]
+- ocountries = [el.country for el in players if el.country != player_country]
 .container.container_ce
     %section#main.main.row
         #left_wrapper.nulled
@@ -108,38 +108,37 @@
                 #stats_button
                     #stats_dot
                     #stats_text
-                        = game.player_country() or 'stats'
+                        = player_country or 'stats'
                     #stats_c
             #stats_content
                 .row{style: "margin: 0;"}
-                    - for el in game.countries
-                        - country = el['country']
+                    - for player in players
                         %div{class: "col-md-{{=statscol}}"}
-                            .stats_member{id: "stats_{{=country}}"}
-                                %h4{id: "stats_{{=country}}_name"}
-                                    = country
+                            .stats_member{id: "stats_{{=player.country}}"}
+                                %h4{id: "stats_{{=player.country}}_name"}
+                                    = player.country
                                 .row
                                     .col-md-4.stats_chart
-                                        %canvas{id: 'stats_{{=country}}_canv', height: '10', width: '10'}
-                                        .stats_over{id: 'stats_{{=country}}_perc'}
+                                        %canvas{id: 'stats_{{=player.country}}_canv', height: '10', width: '10'}
+                                        .stats_over{id: 'stats_{{=player.country}}_perc'}
                                     .col-md-8.stats_pdata
                                         .row
                                             .col-md-12
-                                                %i.fa.fa-check.fa-fw{id: "stats_{{=country}}_ready"}
+                                                %i.fa.fa-check.fa-fw{id: "stats_{{=player.country}}_ready"}
                                                 - if not game.anonymous
                                                     %h5{style: "display: inline-block;"}
-                                                        = unames[country]
+                                                        = player.user.username
                                             .col-md-12
                                                 .row
                                                     .col-md-8
                                                         = T("Troops: ")
-                                                    .col-md-4{id: "stats_{{=country}}_troops"}
+                                                    .col-md-4{id: "stats_{{=player.country}}_troops"}
                                                     .col-md-3
                                                         %img{src: '{{=url("static", "images/tank.png")}}'}
-                                                    .col-md-3{id: "stats_{{=country}}_armies"}
+                                                    .col-md-3{id: "stats_{{=player.country}}_armies"}
                                                     .col-md-3
                                                         %img{src: '{{=url("static", "images/ship.png")}}'}
-                                                    .col-md-3{id: "stats_{{=country}}_fleets"}
+                                                    .col-md-3{id: "stats_{{=player.country}}_fleets"}
 
         #right_wrapper
             #ord_wrapper
@@ -150,11 +149,12 @@
                         %i#icon_save.fa.fa-save.fa-border.off{onclick: 'javascript: app.ui.saveOrders();'}
                         %i#icon_ready.fa.fa-check.fa-border.on{onclick: 'javascript: app.ui.setReady();'}
                 #ord_date
-                - if len(game.phases) > 2
-                    - for i in range(1, len(game.phases)-1)
+                - phase_count = game.phases.count()
+                - if phase_count > 2
+                    - for i in range(1, phase_count - 1)
                         - phase = game.phases[i]
                         .ord_phase_wrapper{id: 'orders_{{=i}}'}
-                            - for country, orders in phase['orders'].items()
+                            - for country, orders in {}.items()
                                 - div = "orders_"+str(i)+"_"+country
                                 .ord_pin{id: '{{=div}}'}
                                     .ord_pin_head{id: '{{=div+"_head"}}'}
@@ -163,7 +163,7 @@
                                         .ord_pin_text.ord_pin_text_off{id: '{{=div+"_text"}}'}
                                             = country+" orders"
                                     .orders{id: '{{=div+"_data"}}'}
-                - if len(game.phases) > 1
+                - if phase_count > 1
                     #orders_next.ord_phase_wrapper
                         #orders_next_me.ord_pin
                             #orders_next_me_head.ord_pin_head

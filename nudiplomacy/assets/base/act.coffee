@@ -94,14 +94,14 @@ class Act
             $("#bet_slider_text").text slideEvt.value
             $("#bet_slider_hide").html slideEvt.value
             return
-        $('#games_nplayers').change ->
+        $('#games_players_number').change ->
             act._gameFormNPChange()
             return
-        $('#games_countries_assign').change ->
+        $('#games_countries_assignment').change ->
             act._gameFormCAChange()
             return
-        $('#games_countries').change ->
-            $('#games_countries_hide').html '{"me": "'+$('#games_countries').val()+'"}'
+        $('#games_countries_enabled').change ->
+            $('#games_countries_enabled_hide').html '{"me": "'+$('#games_countries').val()+'"}'
             return
         $('#games_access').change ->
             val = $(this).val()
@@ -118,16 +118,19 @@ class Act
         #: set map preview
         $('#games_map_img').attr('src', mapdata[map_id].thumb)
         #: set nplayers
-        nplayers = mapdata[map_id].nplayers
-        $('#games_nplayers').html ''
+        nplayers = mapdata[map_id].players_number
+        $('#games_players_number').html ''
         for i in [nplayers[0]..nplayers[1]].reverse()
-            $('#games_nplayers').append '<option value="'+i+'">'+i+'</option>'
+            $('#games_players_number').append '<option value="'+i+'">'+i+'</option>'
         #: set enabled countries
-        $('#games_ce').html('')
+        $('#games_countries_enabled').html('')
         for el in mapdata[map_id].countries
-            $('#games_ce').append '<div class="col-sm-4"><div class="col-sm-8">'+ el + '</div><div class="col-sm-4">' +
+            $('#games_countries_enabled').append '<div class="col-sm-4"><div class="col-sm-8">'+ el + '</div><div class="col-sm-4">' +
                 '<input class="boolean checkbox countrycheck" type="checkbox" value="'+el+'" checked="checked" /></div></div>'
-        $('#games_ce_hide').html JSON.stringify(mapdata[map_id].countries)
+        enabled_countries_map = {}
+        for country in mapdata[map_id].countries
+            enabled_countries_map[country] = true
+        $('#games_countries_enabled_hide').html JSON.stringify(enabled_countries_map)
         $('.countrycheck').change ->
             act._gameFormCEUpdate()
             return
@@ -137,7 +140,7 @@ class Act
         return
 
     _gameFormNPChange: ->
-        val = $('#games_nplayers').val()
+        val = $('#games_players_number').val()
         if val is '2'
             $('#bet_slider').slider "disable"
             $('#bet_slider_text').text '1 (max for 2 players)'
@@ -153,15 +156,15 @@ class Act
         $('.countrycheck').each ->
             if $(this).prop('checked')
                 data.push $(this).val()
-        $('#games_ce_hide').html JSON.stringify(data)
+        $('#games_countries_enabled_hide').html JSON.stringify(data)
         @_gameFormCAChange()
         return
 
     _gameFormSPUpdate: (el) ->
-        data = []
+        data = {}
         $('.daycheck').each ->
             if $(this).prop('checked')
-                data.push $(this).val()
+                data[$(this).val()] = true
         $('#games_sp_hide').html JSON.stringify(data)
         return
 
@@ -219,20 +222,21 @@ class Act
         return
 
     _gameFormCAChange: ->
-        val = $('#games_countries_assign').val()
-        $('#games_countries').html ''
-        $('#games_countries_hide').html ''
-        if val is "random"
-            $('#games_countries_c').addClass 'nulled'
+        val = $('#games_countries_assignment').val()
+        console.log(val)
+        $('#games_countries_choice_selection').html ''
+        $('#games_countries_choice_hide').html ''
+        if val is "0"
+            $('#games_countries_choice').addClass 'nulled'
         else
             chs = []
             $('.countrycheck').each ->
                 if $(this).prop('checked')
                     chs.push $(this).val()
             for c in chs
-                $('#games_countries').append '<option class="cchoice" value="'+c+'">'+c+'</option>'
-            $('#games_countries_hide').html '{"me": "'+$('#games_countries').val()+'"}'
-            $('#games_countries_c').removeClass 'nulled'
+                $('#games_countries_choice_selection').append '<option class="cchoice" value="'+c+'">'+c+'</option>'
+            $('#games_countries_choice_hide').html $('#games_countries_choice_selection').val()
+            $('#games_countries_choice').removeClass 'nulled'
         return
 
     _gameFormToggleAdv: ->

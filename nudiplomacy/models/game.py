@@ -3,11 +3,17 @@
 import random
 from datetime import timedelta
 from decimal import Decimal
-from weppy import now
+from weppy import now, T, sdict
 from weppy.orm import Model, Field, belongs_to, has_one, has_many, scope, rowmethod
+
 from . import TSModel
 from .user import User
+from .. import app
 from ..constants import GAME_FEE, WIN_FEE
+from ..helpers.validators import SkipProcessingValidator
+from ..helpers.widgets import (
+    games_map, games_players_number, games_bet, games_countries_enabled, games_phase_time, games_join_time,
+    games_skip_processing)
 
 
 class Game(TSModel):
@@ -21,9 +27,10 @@ class Game(TSModel):
     ACCESS_MODES = {'free': 0, 'password': 1}
     ASSIGNMENT_MODES = {'random': 0, 'choice': 1}
     POT_TYPES = {'wta': 0, 'ppsc': 1}
-    PRESS_TYPES = {'all': 0, 'globals': 1, 'none': 2}
+    PRESS_TYPES = {'all': 0, 'global': 1, 'none': 2}
     STAGES = {'pregame': 0, 'game': 1, 'processing': 2, 'pause': 3, 'crash': 4}
     START_MODES = {'asap': 0, 'on_time': 1}
+    PROC_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 
     name = Field(notnull=True)
     lang = Field(notnull=True)
@@ -31,7 +38,7 @@ class Game(TSModel):
     bet = Field.decimal(18, 6, notnull=True)
     pot_type = Field.int(notnull=True)
     phase_time = Field.int(notnull=True)
-    join_time = Field.int()
+    join_time = Field.int(notnull=True)
     starts_on = Field.int(notnull=True)
     build_everywhere = Field.bool(notnull=True)
     build_on_start = Field.bool(notnull=True)
@@ -41,28 +48,42 @@ class Game(TSModel):
     password = Field()
     max_turns = Field.int()
     target_sc = Field.int()
-    skip_processing = Field.json()
+    skip_processing = Field.json(notnull=True)
     stage = Field.int()
     # is_active = Field.bool()
     is_open = Field.bool(notnull=True)
-    # is_ready = Field.bool()
+    is_ready = Field.bool(notnull=True)
     countries_assignment = Field.int()
 
     processed_at = Field.datetime()
     next_process_at = Field.datetime()
-    countries = Field.json()
+    countries = Field.json(notnull=True)
+
+    #     repr_lang = {'en': T("English"), 'it': T("Italian")}
+    # repr_starts_on = {
+    #     Game.START_MODES['asap']: T("As soon as enough players joined the game"),
+    #     Game.START_MODES['on_time']: T("When the join period expired")}
 
     validation = {
-        'access': {'in': ACCESS_MODES.values()},
-        'countries_assignment': {'in': ASSIGNMENT_MODES.values()},
-        'pot_type': {'in': POT_TYPES.values()},
-        'press_type': {'in': PRESS_TYPES.values()},
-        'stage': {'in': STAGES.values()},
-        'starts_on': {'in': START_MODES.values()},
+        'lang': {'in': app.config.langs},
+        'access': {'in': [(ACCESS_MODES['free'], T("Free")), (ACCESS_MODES['password'], T("Password protected"))]},
+        'countries_assignment': {'in': [
+            (ASSIGNMENT_MODES['random'], T("Random assignment")), (ASSIGNMENT_MODES['choice'], T("Players choice"))]},
+        'pot_type': {'in': [
+            (POT_TYPES['wta'], T("Winner takes all")), (POT_TYPES['ppsc'], T("Points per supply center"))]},
+        'press_type': {'in': [
+            (PRESS_TYPES['all'], T("Allow all")), (PRESS_TYPES['global'], T("Global chat only")),
+            (PRESS_TYPES['none'], T("Disable in-game messaging"))]},
+        'stage': {'in': list(STAGES.values())},
+        'starts_on': {'in': [
+            (START_MODES['asap'], T("As soon as enough players joined the game")),
+            (START_MODES['on_time'], T("When the join period expired"))]},
         'max_turns': {'gt': 0, 'allow': 'empty'},
         'target_sc': {'gt': 0, 'allow': 'empty'},
         'phase_time': {'in': {'range': (10, 60 * 24 * 10)}},
         'join_time': {'in': {'range': (10, 60 * 24 * 10)}},
+        'skip_processing': {'allow': 'empty', 'custom': SkipProcessingValidator()},
+        'countries': {'allow': 'empty'}
     }
 
     default_values = {
@@ -80,15 +101,75 @@ class Game(TSModel):
         'is_open': True,
         'skip_processing': {},
         'countries': {},
-        'processed_at': now
+        'processed_at': now,
+        'is_ready': False
     }
 
     fields_rw = {
+        'user': False,
         'is_open': False,
+        'is_ready': False,
         'stage': False,
         'processed_at': False,
         'next_process_at': False
     }
+
+    form_labels = {
+        'map': T("Variant"),
+        'lang': T("Language"),
+        'players_number': T("Players number"),
+        'bet': T("Bet amount"),
+        'pot_type': T("Pot type"),
+        'phase_time': T("Turn duration"),
+        'join_time': T("Join period duration"),
+        'starts_on': T("Game start strategy"),
+        'build_everywhere': T("Allow builds on all centers"),
+        'build_on_start': T("Starts game with a build turn"),
+        'anonymous': T("Anonymous players"),
+        'press_type': T("In-game messaging"),
+        'access': T("Access policy"),
+        'max_turns': T("Maximum turns"),
+        'target_sc': T("Target supply centers number for win"),
+        'skip_processing': T("Avoid game processing on dates"),
+        'countries': T("Enabled countries"),
+        'countries_assignment': T("Countries assignment policy")
+    }
+
+    form_info = {
+        'max_turns': T("Limit number of turns can be played."),
+        'countries': T(
+            "Select which countries will be available for assignment or could be picked by players. "
+            "Remind that, in case you picked the maximum number of players for the variant, this option "
+            "won't have effect, and all countries will be available."
+        )
+    }
+
+    form_widgets = {
+        'map': games_map,
+        'players_number': games_players_number,
+        'bet': games_bet,
+        'countries': games_countries_enabled,
+        'phase_time': games_phase_time,
+        'join_time': games_join_time,
+        'skip_processing': games_skip_processing
+    }
+
+    repr_values = {
+        'lang': lambda value: repr_lang[value],
+        'pot_type': lambda value: repr_pot_type[value],
+        'starts_on': lambda value: repr_starts_on[value],
+        'press_type': lambda value: repr_press_type[value],
+        'countries_assignment': lambda value: repr_countries_assignment[value],
+        'access': lambda value: repr_access[value]
+    }
+
+    indexes = {
+        'stage': True
+    }
+
+    @scope('in_stage')
+    def filter_stage(self, stage):
+        return self.stage == self.STAGES[stage]
 
     @rowmethod('available_countries')
     def available_countries(self, row):
@@ -104,12 +185,17 @@ class Game(TSModel):
         player = row.players.create(country=country)
         #: take coins from player
         if player.id:
-            user.vault().add_expense(value=row.bet, description="Bet for game {}".format(row.name))
+            user.vault().transactions.create(value=-row.bet, description="Bet for game {}".format(row.name))
+
+    @rowmethod('player_country')
+    def get_user_country(self, row, user):
+        player = row.players.where(lambda p: p.user == user.id).select().first()
+        return player.country if player else None
 
     @rowmethod('cancel')
     def cancel_game(self, game):
         for row in game.players.join('user').switch(User).join('vault').select():
-            row.vaults.add_credit(value=row.bet, description="Bet cashback for game {}".format(row.name))
+            row.vaults.transactions.create(value=row.bet, description="Bet cashback for game {}".format(row.name))
         row.delete_record()
 
     @rowmethod('start')
@@ -145,14 +231,27 @@ class Game(TSModel):
         winner = None  # TODO fetch real one
         total_pot = (game.bet * game.players_number - GAME_FEE * game.players_number) * (1 - WIN_FEE)
         if game.pot_type == self.POT_TYPES['wta']:
-            winner.vault().add_credit(value=total_pot, description="Win for game {}".format(game.name))
+            winner.vault().transactions.create(value=total_pot, description="Win for game {}".format(game.name))
         else:
             for player in game.players():
                 # TODO fetch scs in some way
                 player_supply_centers = 0
                 all_supply_centers = 1
                 value = total_pot / all_supply_centers * player_supply_centers
-                winner.vault().add_credit(value=value, description="Win for game {}".format(game.name))
+                winner.vault().transactions.create(value=value, description="Win for game {}".format(game.name))
+
+    @rowmethod('timer')
+    def get_timer(self, game):
+        timeleft = 0
+        if game.next_process_at:
+            timeleft = int((game.next_process_at - now()).total_seconds())
+        timerdata = sdict(d=0, h=0, m=0, s=0)
+        if timeleft > 0:
+            timerdata.d = timeleft // (60 * 60 * 24)
+            timerdata.h = (timeleft // (60 * 60)) % 24
+            timerdata.m = (timeleft // 60) % 60
+            timerdata.s = timeleft % 60
+        return timerdata
 
     def _prepare_hold_orders_for_start(self, row, country):
         rv = []
@@ -179,9 +278,14 @@ class GameRole(Model):
     has_many('orders')
 
     country = Field(notnull=True)
+    is_ready = Field.bool(notnull=True)
+
+    default_values = {
+        'is_ready': False
+    }
 
     indexes = {
-        ('game', 'user', 'country'): {'unique': True}
+        'uniq_role': {'fields': ['game', 'user', 'country'], 'unique': True}
     }
 
 
@@ -203,9 +307,9 @@ class GamePhase(Model):
     dislodged = Field.json(notnull=True)
 
     validation = {
-        'season': {'in': SEASONS.values()},
-        'stage': {'in': STAGES.values()},
-        'type': {'in': TYPES.values()}
+        'season': {'in': list(SEASONS.values())},
+        'stage': {'in': list(STAGES.values())},
+        'type': {'in': list(TYPES.values())}
     }
 
     default_values = {
@@ -214,6 +318,11 @@ class GamePhase(Model):
         'troops': {'armies': [], 'fleets': []},
         'coasts': {},
         'dislodged': {}
+    }
+
+    indexes = {
+        'game': True,
+        'unique_phase': {'fields': ['game', 'year', 'season', 'type'], 'unique': True}
     }
 
 
@@ -231,8 +340,8 @@ class Order(Model):
     stage = Field.int(notnull=True)
 
     validation = {
-        'type': {'in': TYPES.values()},
-        'stage': {'in': STAGES.values()}
+        'type': {'in': list(TYPES.values())},
+        'stage': {'in': list(STAGES.values())}
     }
 
     default_values = {
@@ -241,10 +350,28 @@ class Order(Model):
         'stage': STAGES['planned']
     }
 
-    @scope('with_status')
-    def filter_status(self, status):
-        return self.status == self.STAGES[status]
+    indexes = {
+        'uniq_orders': {'fields': ['game_role', 'game_phase'], 'unique': True}
+    }
+
+    @scope('in_stage')
+    def filter_stage(self, stage):
+        return self.stage == self.STAGES[stage]
 
     @scope('failed')
     def filter_failed(self):
-        return self.filter_status('failed')
+        return self.stage == self.STAGES['failed']
+
+
+repr_lang = {'en': T("English"), 'it': T("Italian")}
+repr_pot_type = {Game.POT_TYPES['wta']: T("Winner takes all"), Game.POT_TYPES['ppsc']: T("Points per supply center")}
+repr_starts_on = {
+    Game.START_MODES['asap']: T("As soon as enough players joined the game"),
+    Game.START_MODES['on_time']: T("When the join period expired")}
+repr_press_type = {
+    Game.PRESS_TYPES['all']: T("Allow all"), Game.PRESS_TYPES['global']: T("Global chat only"),
+    Game.PRESS_TYPES['none']: T("Disable in-game messaging")}
+repr_countries_assignment = {
+    Game.ASSIGNMENT_MODES['random']: T("Random assignment"), Game.ASSIGNMENT_MODES['choice']: T("Players choice")}
+repr_access = {
+    Game.ACCESS_MODES['free']: T("Free access"), Game.ACCESS_MODES['password']: T("Password protected")}

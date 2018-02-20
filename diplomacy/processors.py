@@ -10,10 +10,7 @@
     This is the orders and game processor classes file.
 """
 
-
-class adict(dict):
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
+from .helpers import adict
 
 
 class Processor(object):

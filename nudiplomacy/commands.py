@@ -1,100 +1,89 @@
-from rq import Queue, Connection, Worker
-from weppy.validators import Crypt
-from nudiplomacy import app, db, auth, redis
-from nudiplomacy.helpers.scheduler import Scheduler
+# -*- coding: utf-8 -*-
+
+import click
+import json
+import os
+from . import app, db, User, SysProp, Map
 
 
-@app.command('setup')
+@app.command()
 def setup():
-    from yaml import load as ymlload
-    with open(app.config_path + '/setup.yml', 'r') as f:
-        rd = f.read()
-    configdata = ymlload(rd)
-    udata = dict(
-        email=configdata['email'],
-        first_name=configdata['first_name'],
-        last_name=configdata['last_name'],
-        password=Crypt()(configdata['password'])[0],
-        username=configdata['username']
-    )
-    u = auth.get_or_create_user(udata, login=False)
-    gid = auth.add_group("admin", "admin")
-    auth.add_membership(gid, u.id)
-    db.SysProp.insert(name="sys_online", data={'value': False})
+    with db.connection():
+        SysProp.create(name="online", data={'value': False})
+        db.commit()
+
+
+@app.command()
+@click.argument('email')
+@click.argument('password')
+@click.option('--username', default='admin')
+def create_admin(email, password, username):
+    with db.connection():
+        res = User.create(
+            email=email,
+            password=password,
+            username=username,
+            is_admin=True
+        )
+        db.commit()
+    if res.id:
+        print('Created admin user with id {}'.format(res.id))
+    else:
+        print('Cannot create admin user due to errors: {}'.format(res.errors))
+
+
+@app.command()
+@click.argument('name')
+def add_map(name):
+    map_folder = os.path.join(app.root_path, '..', 'variants', name)
+    with open(os.path.join(map_folder, '{}.json'.format(name))) as data_file:
+        map_data = json.loads(data_file.read())
+    with open(os.path.join(map_folder, 'map.png'), 'rb') as map_file:
+        with db.connection():
+            Map.create(image=map_file, **map_data)
+            db.commit()
+
+
+@app.command()
+def create_test_data():
+    with db.connection():
+        for key in ['tester1', 'tester2']:
+            User.create(
+                email="{}@nudiplomacy.com".format(key),
+                password="foobar",
+                username=key)
+        db.commit()
+
+
+# @app.command('setup')
+# def setup():
+#     from yaml import load as ymlload
+#     with open(app.config_path + '/setup.yml', 'r') as f:
+#         rd = f.read()
+#     configdata = ymlload(rd)
+#     udata = dict(
+#         email=configdata['email'],
+#         first_name=configdata['first_name'],
+#         last_name=configdata['last_name'],
+#         password=Crypt()(configdata['password'])[0],
+#         username=configdata['username']
+#     )
+#     u = auth.get_or_create_user(udata, login=False)
+#     gid = auth.add_group("admin", "admin")
+#     auth.add_membership(gid, u.id)
+#     db.SysProp.insert(name="sys_online", data={'value': False})
 
 
 # temp
-@app.command('addtester')
-def addtester():
-    db._adapter.reconnect()
-    c = db(db.User).count()
-    udata = dict(
-        email="tester"+str(c)+"@nudiplomacy.com",
-        first_name="Tester",
-        last_name=str(c),
-        password=Crypt()("imtester"+str(c))[0]
-    )
-    auth.get_or_create_user(udata, login=False)
+# @app.command('addtester')
+# def addtester():
+#     db._adapter.reconnect()
+#     c = db(db.User).count()
+#     udata = dict(
+#         email="tester"+str(c)+"@nudiplomacy.com",
+#         first_name="Tester",
+#         last_name=str(c),
+#         password=Crypt()("imtester"+str(c))[0]
+#     )
+#     auth.get_or_create_user(udata, login=False)
 #
-
-
-@app.command('gameman')
-def schedule():
-    s = Scheduler()
-    s.run()
-
-
-@app.command('queue_def')
-def _q_default():
-    with Connection(connection=redis):
-        qs = [Queue('default')]
-        w = Worker(qs)
-        w.work()
-
-
-@app.command('queue_open')
-def _q_open():
-    with Connection(connection=redis):
-        qs = [Queue('open')]
-        w = Worker(qs)
-        w.work()
-
-
-@app.command('queue_close')
-def _q_close():
-    with Connection(connection=redis):
-        qs = [Queue('close')]
-        w = Worker(qs)
-        w.work()
-
-
-@app.command('queue_proc')
-def _q_process():
-    with Connection(connection=redis):
-        qs = [Queue('process')]
-        w = Worker(qs)
-        w.work()
-
-
-@app.command('queue_misc')
-def _q_misc():
-    with Connection(connection=redis):
-        qs = [Queue('misc')]
-        w = Worker(qs)
-        w.work()
-
-
-@app.command('queue_notify')
-def _q_notify():
-    with Connection(connection=redis):
-        qs = [Queue('notify')]
-        w = Worker(qs)
-        w.work()
-
-
-@app.command('queue_mail')
-def _q_mail():
-    with Connection(connection=redis):
-        qs = [Queue('mail')]
-        w = Worker(qs)
-        w.work()

@@ -1,9 +1,13 @@
-from gravatar import Gravatar
-from weppy import Helper, T, url
-from nudiplomacy import db, auth, cache
+# -*- coding: utf-8 -*-
+
+# from gravatar import Gravatar
+from weppy import T, url
+from weppy.pipeline import Injector
+from . import auth
+from .helpers.utils import cached_user_stats
 
 
-class BaseContext(Helper):
+class BaseContext(Injector):
     T = T
 
     @staticmethod
@@ -12,11 +16,15 @@ class BaseContext(Helper):
 
     @staticmethod
     def userdata():
-        def _get():
-            return db.UserData(user=auth.user.id).as_dict()
         if not auth.user:
-            return {}
-        return cache.redis("userdata_" + str(auth.user.id), _get)
+            return None
+        return cached_user_stats(auth.user)
+
+    @staticmethod
+    def uservault():
+        if not auth.user:
+            return None
+        return auth.user.vault()
 
     @staticmethod
     def userpic():
@@ -41,16 +49,16 @@ class BaseContext(Helper):
         rv = ""
         comma = False
         if d:
-            rv += str(d)+" day"
+            rv += str(d) + " day"
             comma = True
         if h:
-            s = str(h)+" hours"
+            s = str(h) + " hours"
             if comma:
-                s = " ,"+s
+                s = " ," + s
             rv += s
         if m:
-            s = str(m)+" minutes"
+            s = str(m) + " minutes"
             if comma:
-                s = " ,"+s
+                s = " ," + s
             rv += s
         return rv

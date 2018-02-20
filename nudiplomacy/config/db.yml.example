@@ -1,6 +1,6 @@
 # DB settings
 
-adapter: mongodb
+adapter: postgres
 encoding: utf8
 host: localhost
 database: nudiplomacy

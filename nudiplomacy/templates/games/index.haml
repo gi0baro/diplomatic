@@ -1,27 +1,27 @@
 - extend 'layout.haml'
 
 :javascript
-    var ulist = '{{=url("games.query")}}';
+    var ulist = '{{#=url("games.query")}}';
 
 .container
     .row
         .col-sm-12{align: "center"}
             %h1#title
-                = T("Discover open games") if show == "open" else T("Discover games")
+                = T("Discover open games") if show == 'open' else T("Discover games")
             %h4.pull-left
                 - if show == "open"
-                    %a.btn.btn-default.btn-md{href: '{{=url("games.all")}}'}
+                    %a.btn.btn-default.btn-md{href: '{{=url(".index")}}'}
                         Show all games
                 - else
-                    %a.btn.btn-default.btn-md{href: '{{=url("games.index")}}'}
+                    %a.btn.btn-default.btn-md{href: '{{=url(".index")}}'}
                         Show open games
-                %a.btn.btn-success.btn-md{href: '{{=url("games.new")}}'}
+                %a.btn.btn-success.btn-md{href: '{{=url(".create")}}'}
                     = T("Create a new game")
     %br
     .row
         #games.js-masonry
             :javascript
-                ajax('{{=url("games.query", show)}}', [], 'games');
+                // ajax('{{#=url("games.query", show)}}', [], 'games');
 
 #joinframe.container.nulled.overframe
     .backframe
