@@ -4,7 +4,7 @@ import random
 from weppy import request, sdict
 from weppy.pipeline import RequirePipe
 from weppy.tools import ServicePipe, requires
-from .. import app, auth, Map, Game
+from .. import app, db, auth, Map, Game
 # from nudiplomacy import app, auth, db, mdb, Map, Orders, NObject, NSubscription
 # from nudiplomacy.helpers.mongo import longToObjid
 # from nudiplomacy.gameman import process_orders
@@ -47,6 +47,44 @@ def game_get(gid):
 # def game_status(gid):
 #     game = db(db.Game.id == gid).select(db.Game.status, db.Game.phases).first()
 #     return dict(status=game.status, phase=len(game.phases) - 1)
+
+
+@authorized.route('/game/<int:gid>/join', methods=['post'])
+def game_join(gid):
+    rv = sdict(status='error')
+    game = Game.get(gid)
+    if not game:
+        rv.data = 'no game found'
+        return rv
+    if game.player_country(auth.user) is not None:
+        rv.data = 'already in game'
+        return rv
+    if auth.user.vault().balance < game.bet:
+        rv.data = "Not enough credits"
+        return rv
+    if game.players.count() == game.players_number:
+        rv.data = "no slots available"
+        return rv
+    if game.access == Game.ACCESS_MODES['password']:
+        if request.body_params.password != game.password:
+            rv.data = 'wrong password'
+            return rv
+    chosen_country = request.body_params.country
+    try:
+        with db.atomic():
+            role = game.add_player(auth.user, chosen_country)
+    except Exception as e:
+        app.log.exception(e)
+        role = None
+    if not role:
+        rv.data = "Cannot join game"
+        return rv
+    if game.players.count() == game.players_number:
+        game.update_record(is_ready=True, is_open=False)
+    rv.status = 'ok'
+    rv.data = 'joined successfully'
+    return rv
+
 
 
 # @api.route("/join/<int:gid>", methods=['post'])

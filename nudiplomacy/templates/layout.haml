@@ -20,8 +20,8 @@
         - include 'header.haml'
 
         :javascript
-            api.route('join', '{{#=url("api.game_join")}}');
-            api.route('game', '{{#=url("games.play")}}');
+            api.route('join', '{{=url("api.authorized.game_join", ":GAME_ID:")}}');
+            api.route('game', '{{=url("front.games.play")}}');
 
         .content
             - block center

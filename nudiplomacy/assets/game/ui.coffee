@@ -303,18 +303,18 @@ class UI
                 app.ui.setMessagesRead()
             , 5000)
             #: refresh chats every 30s
-            setInterval(->
-                cid = $('#msg_conv_global').data('cid')
-                since = $($('#msg_conv_global').children()[1]).children().length
-                app.net.getMessages($('#msg_conv_global').data('cid'), 'global', since)
-                if app.game.presstype is "all"
-                    for key, val of app.env.countries
-                        if key is app.game.country
-                            continue
-                        cid = $('#msg_conv_'+key).data('cid')
-                        since = $($('#msg_conv_'+key).children()[1]).children().length
-                        app.net.getMessages(cid, key, since)
-            , 30000)
+            # setInterval(->
+            #     cid = $('#msg_conv_global').data('cid')
+            #     since = $($('#msg_conv_global').children()[1]).children().length
+            #     app.net.getMessages($('#msg_conv_global').data('cid'), 'global', since)
+            #     if app.game.presstype is "all"
+            #         for key, val of app.env.countries
+            #             if key is app.game.country
+            #                 continue
+            #             cid = $('#msg_conv_'+key).data('cid')
+            #             since = $($('#msg_conv_'+key).children()[1]).children().length
+            #             app.net.getMessages(cid, key, since)
+            # , 30000)
         return
 
     _initStatsChart: (country, color) ->
@@ -841,7 +841,7 @@ class UI
 
     buildOrders: ->
         ## TODO: implement other steps filling
-        if app.game.phase().id
+        if app.game.phase() isnt undefined
             pphase = app.game.phase().previous()
             for id, data of app.game.orders
                 order_str = @_buildOrderString(id, data)
@@ -1222,22 +1222,22 @@ class UI
             @hideTip()
 
     gotGameStatus: (status, phase) ->
-        if status is "processing"
-            @showTip("The game is being processed, keep your finger crossed..", false)
-            # stop check timeout
-            clearInterval(@_statusTimer)
-            # start processing check
-            setTimeout (->
-                app.net.getGameStatus()
-            ), 5000
-        else
-            if phase isnt app.game.phase('last').id
-                # reload game
-                console.log('changed phase')
-                @showTip("Game has changed, going to next phase in 3 seconds..")
-                setTimeout (->
-                    app.reload()
-                ), 3400
+        # if status is "processing"
+        #     @showTip("The game is being processed, keep your finger crossed..", false)
+        #     # stop check timeout
+        #     clearInterval(@_statusTimer)
+        #     # start processing check
+        #     setTimeout (->
+        #         app.net.getGameStatus()
+        #     ), 5000
+        # else
+        #     if phase isnt app.game.phase('last').id
+        #         # reload game
+        #         console.log('changed phase')
+        #         @showTip("Game has changed, going to next phase in 3 seconds..")
+        #         setTimeout (->
+        #             app.reload()
+        #         ), 3400
         return
 
     reload: ->

@@ -181,11 +181,15 @@ class Game(TSModel):
     def add_player(self, row, user, country=None):
         available_countries = row.available_countries()
         if not country or (country not in available_countries):
-            country = random.shuffle(available_countries)
-        player = row.players.create(country=country)
+            random.shuffle(available_countries)
+            country = next(iter(available_countries), None)
+        app.log.debug('add_player', user, country)
+        player = row.players.create(user=user.id, country=country)
+        app.log.debug(player)
         #: take coins from player
         if player.id:
             user.vault().transactions.create(value=-row.bet, description="Bet for game {}".format(row.name))
+        return player.id
 
     @rowmethod('player_country')
     def get_user_country(self, row, user):

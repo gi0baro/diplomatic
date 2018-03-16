@@ -99,6 +99,15 @@ class Phase
 class PhaseNext extends Phase
     constructor: ->
         prev = app.game.phase(app.game._nphases-1)
+        if prev is undefined
+            prev =
+                type: 'pregame'
+                territories: {}
+                troops: {}
+                mcpos: {}
+                dislodged: {}
+                listArmies: []
+                listFleets: []
         @id = 'next'
         @type = prev.type
         @year = null

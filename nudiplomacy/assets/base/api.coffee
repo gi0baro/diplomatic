@@ -8,7 +8,8 @@ class API
         return
 
     join: (gid, country=null, psw=null) ->
-        url = @urls.join + "/" + gid
+        url = @urls.join.replace(':GAME_ID:', gid)
+        console.log(url)
         d =
             country: country
             password: psw
@@ -17,7 +18,7 @@ class API
             contentType: "application/json"
             data: JSON.stringify(d)
             success: (data) ->
-                if data.status is "Ok"
+                if data.status is "ok"
                     act.joinedGame()
                 else
                     act.cannotJoin(data.data)

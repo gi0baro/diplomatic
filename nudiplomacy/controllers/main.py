@@ -7,7 +7,7 @@ from . import front
 
 @front.route("/")
 def index():
-    return {}
+    return {'participating': []}
 
 
 # @app.route()

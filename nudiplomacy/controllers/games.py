@@ -2,7 +2,7 @@
 
 from weppy import url, abort, request, redirect
 from weppy.tools import requires
-from .. import app, auth, Game, Map, GameRole
+from .. import app, auth, Game, Map
 from . import front
 
 games = front.module(__name__, 'games', url_prefix='games', template_folder='games')
@@ -20,7 +20,7 @@ def index():
     if mode not in ['all', 'open']:
         mode = 'open'
     games = Game.where(lambda g: g.is_open == True) if mode == 'open' else Game.all()
-    return {'games': games.select(orderby=~Game.created_at, paginate=(page, 20)), 'show': mode}
+    return {'games': games.select(orderby=~Game.created_at, paginate=(page, 20), including='user'), 'show': mode}
 
 
 @games.route()
@@ -66,7 +66,7 @@ def create():
     app.log.debug(form.params)
     app.log.debug(form.input_params)
     if form.accepted:
-        GameRole.create(user=auth.user, country=form.input_params.country_choice)
+        form.params.id.add_player(auth.user, form.input_params.country_choice)
         redirect(url('.play', form.params.id))
     app.log.debug(form.errors)
     return dict(form=form)
@@ -115,7 +115,8 @@ def play(gid):
     player_country = game.player_country(auth.user) if auth.is_logged() else None
     return {
         'game': game, 'scs': scs, 'chats': {'global': 1}, 'players': players, 'timer': game.timer(),
-        'player_country': player_country
+        'player_country': player_country,
+        'statscol': 6
         #timer=game.time_to_next(),
         #statscol=statscol, unames=usernames)}
     }

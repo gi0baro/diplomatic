@@ -94,6 +94,14 @@ class Screen
                         if list[x].b is color[2]
                             l.push(x)
             return l
+
+        filter_black = (list) ->
+            l = []
+            for x in [0..list.length-1]
+                if list[x].r <= 20 and list[x].g <= 20 and list[x].b <= 20
+                    l.push(x)
+            return l
+
         #: build an array of objects for pixs
         pixa = []
         j = 0
@@ -107,6 +115,7 @@ class Screen
         #time_start = new Date().getTime()
         for key, color of app.env.colors
             app.env.pix[key] = filter(pixa, color)
+        app.env.pix['__black__'] = filter_black(pixa)
         #time_end = new Date().getTime()
         #time_ex = time_end - time_start
         #console.log("2time "+time_ex)
@@ -139,6 +148,7 @@ class Screen
 
     _initLayers: ->
         #: re-color the map based on the reference object for colors
+        @colorTerritory('__black__', NEUTRAL_COLOR)
         for key, color of app.game.colors
             @colorTerritory(key, color)
         @drawSupply()
@@ -178,7 +188,7 @@ class Screen
 
     _updateColors: (grounds) ->
         ## draw all terrs to ground color
-        color = r: 226, g: 198, b: 158
+        color = GROUND_COLOR
         for i in grounds
             app.game.colors[i] = color
         ## draw countries terrs

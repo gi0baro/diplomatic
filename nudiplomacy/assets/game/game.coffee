@@ -26,13 +26,17 @@ class Game
         @buildew = data.buildew
         @presstype = data.presstype
         #: load phases
-        i = 0
-        for phase in data.phases
-            cstr = i+''
-            @_phases[cstr] = new Phase(i, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.mc, phase.dislodged, phase.orders)
-            i++
-        @_nphases = data.phases.length
-        @_currentPhase = @_nphases-1
+        # i = 0
+        # for phase in data.phases
+        #     cstr = i+''
+        #     @_phases[cstr] = new Phase(i, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.mc, phase.dislodged, phase.orders)
+        #     i++
+        # TEMP
+        @_phases["0"] = new Phase(0, 'pregame', 1920, null, {}, {}, {}, {}, {})
+        # @_nphases = data.phases.length
+        # @_currentPhase = @_nphases-1
+        @_nphases = 1
+        @_currentPhase = 0
         @_nextPhase = new PhaseNext()
         @orders = orders.data
         if orders.ready
@@ -41,7 +45,7 @@ class Game
         @_setStartingColors()
         if @gotOrders()
             @_currentPhase = "next"
-        if @phase('last').type is "win"
+        if @phase('last') isnt undefined and @phase('last').type is "win"
             @win = data.phases[@_nphases-1].winner
         return
 
@@ -117,19 +121,19 @@ class Game
 
     _setStartingColors: ->
         #:set all terrs to ground color
-        color = r: 226, g: 198, b: 158
+        color = GROUND_COLOR
         for i of app.env.colors
             @colors[i] = color
         #:set neutrals
-        color = r: 0, g: 0, b: 0
+        color = NEUTRAL_COLOR
         for i in app.env.neutrals
             @colors[i] = color
         #:set seas
-        color = r: 197, g: 223, b: 234
+        color = SEA_COLOR
         for i in app.env.seas
             @colors[i] = color
         #:set countries terrs
-        cterrs = if @phase().id is 0 then app.env.countries_init else @phase().territories
+        cterrs = if @phase() is undefined then app.env.countries_init else @phase().territories
         for key, color of app.env.countries
             #for i in app.env.countries_terr[key]
             #for i in @phase().territories[key]
