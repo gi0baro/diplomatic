@@ -219,14 +219,14 @@ class Game(TSModel):
                 year=game.map.year, type=GamePhase.TYPES['diplomacy'], season=GamePhase.SEASONS['spring'],
                 troops={country: game.map.init['troops'][country] for country in players.column('country')})
             orders_builder = self._prepare_hold_orders_for_start
-        phase = GamePhase.create(**phase_data).id
+        phase = game.phases.create(**phase_data).id
         #: build orders
         for player in game.players():
             for order in orders_builder(game, player.country):
                 phase.orders.create(game_role=player.id, **order)
         #: TODO chats
         #: next process cycle
-        game.update_record(next_process_at=now() + timedelta(minutes=game.phase_time))
+        game.update_record(next_process_at=now() + timedelta(minutes=game.phase_time), is_ready=False)
 
     @rowmethod('end')
     def end_game(self, game):
@@ -355,7 +355,7 @@ class Order(Model):
     }
 
     indexes = {
-        'uniq_orders': {'fields': ['game_role', 'game_phase'], 'unique': True}
+        'uniq_orders': {'fields': ['game_role', 'game_phase', 'territory'], 'unique': True}
     }
 
     @scope('in_stage')

@@ -83,3 +83,4 @@ from .controllers import main, maps, games, api
 
 from . import assets
 from . import commands
+from . import tasks
