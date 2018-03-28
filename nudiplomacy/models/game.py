@@ -191,10 +191,24 @@ class Game(TSModel):
             user.vault().transactions.create(value=-row.bet, description="Bet for game {}".format(row.name))
         return player.id
 
+    @rowmethod('player')
+    def get_user(self, row, user):
+        return row.players.where(lambda p: p.user == user.id).select().first()
+
     @rowmethod('player_country')
     def get_user_country(self, row, user):
-        player = row.players.where(lambda p: p.user == user.id).select().first()
+        player = row.player(user)
         return player.country if player else None
+
+    @rowmethod('player_orders')
+    def get_user_orders(self, row, user):
+        player = row.player(user)
+        if not player:
+            return []
+        active_phase = row.active_phase()
+        if not active_phase:
+            return []
+        return active_phase.orders.where(lambda m: m.game_role == player.id).select()
 
     @rowmethod('cancel')
     def cancel_game(self, game):
@@ -293,7 +307,7 @@ class GameRole(Model):
     }
 
 
-class GamePhase(Model):
+class GamePhase(TSModel):
     belongs_to('game')
     has_many('orders')
 
@@ -330,7 +344,7 @@ class GamePhase(Model):
     }
 
 
-class Order(Model):
+class Order(TSModel):
     belongs_to('game_role', 'game_phase')
 
     TYPES = {

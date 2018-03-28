@@ -40,17 +40,21 @@ class Phase
         return
 
     _genPastMoves: ->
-        if @id
-            if @id is "next"
-                prior = app.game._nphases-2
-            else
-                prior = @id-1
-            for country, orders of app.game._phases[prior+''].orders
-                for id, odata of orders
-                    if odata.type not in ["hold", "build"]
-                        w = odata
-                        w.from = odata.from or id
-                        @pastMoves[id] = w
+        console.log(@id)
+        if not @id
+            return
+        if @id is "next"
+            prior = app.game._nphases-2
+        else
+            prior = @id-1
+        if prior <= 0
+            return
+        for country, orders of app.game._phases[prior+''].orders
+            for id, odata of orders
+                if odata.type not in ["hold", "build"]
+                    w = odata
+                    w.from = odata.from or id
+                    @pastMoves[id] = w
         return
 
     previous: ->

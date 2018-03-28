@@ -10,6 +10,7 @@
     This is the orders and game processor classes file.
 """
 
+from .checkers import Validator
 from .helpers import adict
 
 
@@ -22,92 +23,63 @@ class Processor(object):
 
 
 class OrdersProcessor(Processor):
-    def __init__(self, country, game_data, map_data, logger=None):
+    def __init__(
+        self, map_data, build_everywhere_policy, phase_type, troops, multi_coasts_positions, player_country,
+        player_troops, player_territories, previous_orders=[], logger=None
+    ):
         self._logger = logger
         self.orders_data = None
         self.status = None
         self.error = None
-        self.map = self._load_map(map_data)
-        self.game = self._load_game(game_data, country)
+        # self.map = self._load_map(map_data)
+        self.map_data = map_data
+        self.build_everywhere = build_everywhere_policy
+        self.phase_type = phase_type
+        self.player_country = player_country
+        self.game_data = self._build_game_data(
+            troops, multi_coasts_positions, player_troops, player_territories, previous_orders)
 
-    @staticmethod
-    def _load_map(self, data):
-        return adict(
-            seas=data["seas"],
-            coasts=data["coasts"],
-            neutrals=data["neutrals"],
-            multi_coasts=list(data["multi_coasts"].keys()),
-            supply_centers=data["supply"],
-            homes=data["homes"],
-            links=data["links"],
-            names=data["names"])
-
-    @staticmethod
-    def _load_game(self, game, pcountry):
-        phase = len(game["phases"]) - 1
+    def _build_game_data(self, troops, multi_coasts_positions, player_troops, player_territories, previous_orders):
         rv = adict(
-            territories=game["phases"][phase]["territories"][pcountry],
-            supply_centers=(
-                list(self.map.supply_centers.keys())
-                if game["build_everywhere"] else self.map.homes[pcountry]),
+            allowed_supply_centers=(
+                list(self.map_data['supply_centers']) if self.build_everywhere else
+                self.map_data['home_centers'][self.player_country]),
+            phase_type=self.phase_type,
             armies=[],
             fleets=[],
-            troops=game["phases"][phase]["troops"][pcountry],
-            multi_coasts_positions=game["phases"][phase].get("mc", {}),
-            phase=game["phases"][phase]["type"],
-            country_supply_centers=[],
-            previous_phase=game["phases"][phase - 1]
+            multi_coasts_positions=multi_coasts_positions,
+            player_troops=player_troops,
+            player_territories=player_territories,
+            previous_orders=previous_orders
         )
-        for country, troops in game["phases"][phase]["troops"].items():
-            for el in troops["armies"]:
+        for country, troops_data in troops.items():
+            for el in troops_data['armies']:
                 rv.armies.append(el)
-            for el in troops["fleets"]:
+            for el in troops_data['fleets']:
                 rv.fleets.append(el)
-        for k in (
-            set(self.map.supply_centers.keys()) & set(self.game.territories)
-        ):
-            self.game.country_supply_centers.append(k)
         return rv
 
-    def _validate(self):
-        if not self.orders_data:
-            self.status = "Error"
-            self.error = "Empty orders"
-            return
-        #: prepare data
-        gdata = dict()
-        for key in ["seas", "coasts", "mcoasts", "moves", "neutrals"]:
-            gdata[key] = self.map[key]
-        for key in ["terrs", "supply", "centers", "troops", "armies", "fleets",
-                    "mc_pos", "phase", "prev"]:
-            gdata[key] = self.game[key]
+    def _validate(self, orders):
+        if not orders:
+            return orders, 'Empty orders'
         #: validate orders
-        from .checker import Validator
-        checker = Validator(gdata, self.orders_data, self.log)
-        checker.process()
-        if checker.invalids:
-            self.status = "Error"
-            self.error = "Validation failed"
-            self.log("[OrderProc] found invalid orders: " +
-                     str(checker.invalids))
-        else:
-            self.status = "OK"
+        error = None
+        checker = Validator(
+            self.map_data, **self.game_data, logger=self.log)
+        invalids = checker.process(orders)
+        if invalids:
+            error = "Validation failed"
+            self.log("[OrderProc] found invalid orders: " + str(invalids))
         #: clean orders from invalid ones
-        for fail_id in checker.invalids:
-            #to_del = None
-            if fail_id in self.orders_data.keys():
-                if self.game["phase"] in ["diplomacy", "builds"]:
-                    self.orders_data[fail_id] = dict(type="hold")
-                elif self.game["phase"] == "retreats":
-                    self.orders_data[fail_id] = dict(type="disband")
-                #else:
-                #    to_del = fail_id
-            #if to_del:
-            #    del self.orders_data[fail_id]
+        for fail_id in set(invalids) & set(orders.keys()):
+            if self.phase_type in ["diplomacy", "builds"]:
+                orders[fail_id] = dict(type="hold")
+            elif self.phase_type == "retreats":
+                orders[fail_id] = dict(type="disband")
+        return orders, error
 
     def process(self, orders={}):
-        self.orders_data = orders
-        self._validate()
+        return self._validate(orders)
 
 
 class GameProcessor(Processor):

@@ -4,10 +4,11 @@ import random
 from weppy import request, sdict
 from weppy.pipeline import RequirePipe
 from weppy.tools import ServicePipe, requires
-from .. import app, db, auth, Map, Game
+from .. import app, db, auth, Map, Game, Order, GameRole
 # from nudiplomacy import app, auth, db, mdb, Map, Orders, NObject, NSubscription
 # from nudiplomacy.helpers.mongo import longToObjid
-# from nudiplomacy.gameman import process_orders
+from ..gameman.validation import process_order
+# from nudiplomacy.gameman import process_order
 
 api = app.module(__name__, 'api', url_prefix='api')
 api.pipeline = [ServicePipe('json')]
@@ -85,6 +86,47 @@ def game_join(gid):
     rv.data = 'joined successfully'
     return rv
 
+
+@authorized.route('/game/<int:gid>/orders', methods=['get'])
+def game_orders(gid):
+    rv = sdict(status='error')
+    game = Game.get(gid)
+    if not game:
+        rv.data = 'no game found'
+        return rv
+    rv.status = 'ok'
+    rv.data = game.player_orders(auth.user)
+    return rv
+
+
+@authorized.route("/orders/<int:order_id>", methods=["put", "patch"])
+def order_save(order_id):
+    rv = sdict(status="error")
+    row = Order.where(
+        lambda m:
+            (m.id == order_id) & (GameRole.id == m.game_role) &
+            (GameRole.user == auth.user.id) & (Game.id == GameRole.game)
+    ).select(Order.table.ALL, GameRole.table.ALL, Game.table.ALL).first()
+    if not row:
+        rv.data = "bad request"
+        return rv
+    if row.games.status != Game.STAGES['game']:
+        rv.data = "Game doesn't allow orders"
+        return rv
+    #: if player is ready can't update orders
+    if row.game_roles.is_ready:
+        rv.data = "Cannot update orders when ready"
+        return rv
+    data, errors = process_order(row.game_roles.country, row.games, row.orders.territory, request.body_params)
+    if errors:
+        rv.data = errors
+        return rv
+    res = Order.where(lambda m: m.id == order_id).validate_and_update(**data)
+    if res.errors:
+        rv.data = res.errors
+        return rv
+    rv.status = 'ok'
+    return rv
 
 
 # @api.route("/join/<int:gid>", methods=['post'])

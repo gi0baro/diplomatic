@@ -8,8 +8,7 @@ class API
         return
 
     join: (gid, country=null, psw=null) ->
-        url = @urls.join.replace(':GAME_ID:', gid)
-        console.log(url)
+        url = @urls['join'].replace(':GAME_ID:', gid)
         d =
             country: country
             password: psw

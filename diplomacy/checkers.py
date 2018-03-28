@@ -23,30 +23,32 @@ class Validator(object):
     pipelines = registry()
 
     def __init__(
-        self, map_data, player_troops, territories, armies, fleets,
-        multi_coasts_positions, phase_type, previous_phase, logger=None
+        self, map_data, allowed_supply_centers, phase_type, armies, fleets, multi_coasts_positions, player_troops,
+        player_territories, previous_orders=[], logger=None
     ):
         self._logger = logger
         self._load_map(map_data)
-        self.player_troops = player_troops
-        self.territories = territories
+        self.allowed_supply_centers = allowed_supply_centers
         self.armies = armies
         self.fleets = fleets
         self.multi_coasts_positions = multi_coasts_positions
         self.phase_type = phase_type
-        self.previous_phase = previous_phase
+        self.troops = player_troops
+        self.territories = player_territories
+        self.overcome_supply_centers = set(self.all_supply_centers) & set(self.territories)
+        self.available_supply_centers = set(self.allowed_supply_centers) & set(self.territories)
+        self.previous_orders = previous_orders
         self.__convoy_maps = {}
         self._convoy_routes = defaultdict(lambda: list())
         self._convoy_routes_stacks = []
 
     def _load_map(self, data):
-        self.seas = data["seas"]
-        self.coasts = data["coasts"]
-        self.neutrals = data["neutrals"]
-        self.multi_coasts = list(data["multi_coasts"].keys())
-        self.supply_centers = data["supply_centers"]
-        self.home_centers = data["home_centers"]
-        self.links = data["links"]
+        self.seas = data['seas']
+        self.coasts = data['coasts']
+        self.neutrals = data['neutrals']
+        self.multi_coasts = list(data['multi_coasts'].keys())
+        self.all_supply_centers = data['supply_centers']
+        self.links = data['links']
 
     def log(self, msg):
         if not self._logger:
@@ -162,7 +164,7 @@ class Validator(object):
 
     def _check_troops(self):
         #: check order is on player's armies
-        for territory_id in set(self.orders.keys()) - set(self.player_troops):
+        for territory_id in set(self.orders.keys()) - set(self.troops):
             self.invalids.append(territory_id)
             self.log("Order " + str(territory_id) + " is not in player troops")
 
@@ -190,14 +192,15 @@ class Validator(object):
                 if territory_id in self.troops:
                     invalids.append(territory_id)
                     continue
-                if territory_id not in self.supply_centers:
+                if territory_id not in self.available_supply_centers:
                     invalids.append(territory_id)
                     self.log("Order " + str(territory_id) + " is not in player supply")
                     continue
-                if territory_id not in self.territories:
-                    invalids.append(territory_id)
-                    self.log("Order " + str(territory_id) + " is not in player terrs")
-                    continue
+                #: verified with above
+                # if territory_id not in self.territories:
+                #     invalids.append(territory_id)
+                #     self.log("Order " + str(territory_id) + " is not in player terrs")
+                #     continue
             elif order["type"] == "disband":
                 if territory_id not in self.troops:
                     invalids.append(territory_id)
@@ -208,18 +211,17 @@ class Validator(object):
                 #: need to check is a coast!
                 if not self._is_coast(territory_id):
                     invalids.append(territory_id)
-                    self.log("Order "+str(territory_id)+" is not on a coast")
+                    self.log("Order " + str(territory_id) + " is not on a coast")
                     continue
                 if self._is_multi_coast(territory_id) and order.get("mc") is None:
                     invalids.append(territory_id)
                     self.log("Order " + str(territory_id) + " has no mc parameter")
         #: process builds considering country details
-        if len(self.centers) > len(self.troops):
-            available_supply_centers = (set(self.supply_centers) & set(self.territories)) - set(self.troops)
+        if len(self.overcome_supply_centers) > len(self.troops):
             for territory_id, order in orders.items():
                 if territory_id in invalids:
                     continue
-                if territory_id not in available_supply_centers:
+                if territory_id not in self.available_supply_centers:
                     invalids.append(territory_id)
                     self.log("Order " + str(territory_id) + " is not in player supply")
                     continue
@@ -227,8 +229,10 @@ class Validator(object):
                     invalids.append(territory_id)
                     self.log("Player must build, not disband: " + str(territory_id))
                     continue
-            allowed_builds_no = len(self.centers) - len(self.troops)
-            build_orders = set([territory_id for territory_id in orders.keys() if orders[territory_id]["type"] == "build"]) - set(invalids)
+            allowed_builds_no = len(self.overcome_supply_centers) - len(self.troops)
+            build_orders = set([
+                territory_id for territory_id in orders.keys() if orders[territory_id]["type"] == "build"
+            ]) - set(invalids)
             if len(build_orders) > allowed_builds_no:
                 #: remove exceeding orders
                 diff = len(build_orders) - allowed_builds_no
@@ -244,8 +248,10 @@ class Validator(object):
                     invalids.append(territory_id)
                     self.log("Player must disband, not build: " + str(territory_id))
                     continue
-            needed_disbands = len(self.troops) - len(self.centers)
-            build_orders = set([territory_id for territory_id in orders.keys() if orders[territory_id]["type"] == "disband"]) - set(invalids)
+            needed_disbands = len(self.troops) - len(self.overcome_supply_centers)
+            build_orders = set([
+                territory_id for territory_id in orders.keys() if orders[territory_id]["type"] == "disband"
+            ]) - set(invalids)
             if len(build_orders) > needed_disbands:
                 #: remove exceeding orders
                 diff = len(build_orders) - needed_disbands
@@ -258,7 +264,7 @@ class Validator(object):
     def _validate_retreats(self, orders):
         invalids = []
         previous_phase_movements = []
-        for country, previous_orders in self.prev["orders"].items():
+        for country, previous_orders in self.previous_orders.items():
             for territory_id, order in previous_orders.items():
                 if order["type"] == "move":
                     previous_phase_movements.append(order['dst'])

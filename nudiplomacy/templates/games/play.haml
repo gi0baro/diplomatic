@@ -1,5 +1,13 @@
 - extend 'ingame.haml'
 
+- player_country = game.player_country(current_user())
+- if player_country
+    :javascript
+        var currentPlayer = "{{=player_country}}";
+- else
+    :javascript
+        var currentPlayer = null;
+
 :javascript
     var preGame = {{='true' if game.stage == 0 else 'false'}};
     // var GROUND_COLOR = {r: 226, g: 198, b: 158};
@@ -13,8 +21,8 @@
         app.net.route("map", "{{=url('api.map_get', game.map)}}");
         app.net.route("game", "{{=url('api.game_get', game.id)}}");
         app.net.route("status", "{{#=url('api.game_status', game.id)}}");
-        app.net.route("orders", "{{#=url('api.orders_get', game.id)}}");
-        app.net.route("saveorders", "{{#=url('api.orders_save', game.id)}}");
+        app.net.route("orders", "{{=url('api.authorized.game_orders', game.id)}}");
+        app.net.route("save_orders", "{{=url('api.authorized.order_save', ':ORDER_ID:')}}");
         app.net.route("ready", "{{#=url('api.orders_ready', game.id, {'set': '1'})}}");
         app.net.route("unready", "{{#=url('api.orders_ready', game.id)}}");
         app.net.route("messages", "{{#=url('api.chat_get')}}");

@@ -56,14 +56,12 @@ class Network
                 return
         return
 
-    postOrders: ->
-        d =
-            orders: app.game.orders
+    postOrder: (order) ->
         app.ui.saving()
-        $.ajax @urls['saveorders'],
-            type: 'POST'
+        $.ajax @urls['save_orders'].replace(':ORDER_ID:', order.id),
+            type: 'PUT'
             contentType: "application/json"
-            data: JSON.stringify(d)
+            data: JSON.stringify(order)
             success: (data) ->
                 console.log(data)
                 app.ui.saved(data)

@@ -20,11 +20,12 @@ class Game
 
     init: (data, orders) ->
         #: load current player
-        @country = data.currentPlayer
+        # @country = data.currentPlayer
+        @country = currentPlayer
         #: set participating countries
         @_setCountries(data.countries)
-        @buildew = data.buildew
-        @presstype = data.presstype
+        @buildew = data.build_everywhere
+        @presstype = data.press_type
         #: load phases
         # i = 0
         # for phase in data.phases
