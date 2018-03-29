@@ -18,7 +18,7 @@ class Game
         @win = null
         return
 
-    init: (data, orders) ->
+    init: (data, phases, orders) ->
         #: load current player
         # @country = data.currentPlayer
         @country = currentPlayer
@@ -27,17 +27,18 @@ class Game
         @buildew = data.build_everywhere
         @presstype = data.press_type
         #: load phases
-        # i = 0
-        # for phase in data.phases
-        #     cstr = i+''
-        #     @_phases[cstr] = new Phase(i, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.mc, phase.dislodged, phase.orders)
-        #     i++
-        # TEMP
         @_phases["0"] = new Phase(0, 'pregame', 1920, null, {}, {}, {}, {}, {})
-        # @_nphases = data.phases.length
-        # @_currentPhase = @_nphases-1
-        @_nphases = 1
-        @_currentPhase = 0
+        i = 1
+        for phase in phases
+            cstr = i+''
+            @_phases[cstr] = new Phase(i, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.coasts, phase.dislodged, {})
+            i++
+        # TEMP
+        console.log(phases)
+        @_nphases = phases.length + 1
+        @_currentPhase = @_nphases-1
+        # @_nphases = 1
+        # @_currentPhase = 0
         @_nextPhase = new PhaseNext()
         @orders = orders.data
         if orders.ready

@@ -33,10 +33,10 @@ class Interactions
         switch act
             when "select"
                 if (app.game.isLastPhase()) or (app.game.phase().id is "next")
-                    if app.game.phase().type is "diplomacy"
+                    if app.game.phase().type is PHASE_TYPES.diplomacy
                         if Id in app.game.phase().getCountryTroops()
                             res = true
-                    if app.game.phase().type is "builds"
+                    if app.game.phase().type is PHASE_TYPES.builds
                         bn = app.game.canBuild()
                         if bn > 0
                             if app.game.phase().getCountryByTerritory(Id) is app.game.country
@@ -51,7 +51,7 @@ class Interactions
                             bd = (key for key of app.game.phase('next').builds)
                             if Id in bd
                                 res = true
-                    if app.game.phase().type is "retreats"
+                    if app.game.phase().type is PHASE_TYPES.retreats
                         #if Id in app.game.phase().previous().getCountryTroops()
                         dlist = app.game.phase().dislodged[app.game.country]
                         if not dlist
@@ -208,11 +208,11 @@ class Interactions
     uiClick: (eve) ->
         @current = eve
         m_id = @active
-        if app.game.phase().type is "diplomacy"
+        if app.game.phase().type is PHASE_TYPES.diplomacy
             act = app.game.hasMove(m_id)
-        if app.game.phase().type is "builds"
+        if app.game.phase().type is PHASE_TYPES.builds
             act = app.game.hasBuild(m_id)
-        if app.game.phase().type is "retreats"
+        if app.game.phase().type is PHASE_TYPES.retreats
             if app.game.hasMove(m_id)
                 act = app.game.hasMove(m_id)
             else
@@ -228,7 +228,7 @@ class Interactions
         ## check if action present
         if act
             if eve isnt "close"
-                if app.game.phase().type is "diplomacy"
+                if app.game.phase().type is PHASE_TYPES.diplomacy
                     #console.log("deleting move")
                     ## need to check moves break on "move"
                     ##
@@ -243,12 +243,12 @@ class Interactions
                     #delete app.play.moves[m_id]
                     app.game.delMove(m_id)
                     app.screen.drawLines()
-                if app.game.phase().type is "builds"
+                if app.game.phase().type is PHASE_TYPES.builds
                     todel = app.game._nphases isnt 2 or (app.game._nphases is 2 and not re_act)
                     if todel
                         app.game.delBuild(@active)
                         app.screen.drawTroops()
-                if app.game.phase().type is "retreats"
+                if app.game.phase().type is PHASE_TYPES.retreats
                     # if was retreat -> disband
                     if act is "retreat"
                         app.game.delMove(m_id)
@@ -256,13 +256,13 @@ class Interactions
                         #app.game.addBuild(m_id, "disband")
                         if re_act
                             app.game.addBuild(m_id, "disband")
-            if app.game.phase().type is "diplomacy"
+            if app.game.phase().type is PHASE_TYPES.diplomacy
                 app.ui.setMenuButtons("reset", @active)
-            if app.game.phase().type is "builds"
+            if app.game.phase().type is PHASE_TYPES.builds
                 todel = app.game._nphases isnt 2 or (app.game._nphases is 2 and not re_act)
                 if todel
                     app.ui.setMenuButtons("reset", @active)
-            if app.game.phase().type is "retreats"
+            if app.game.phase().type is PHASE_TYPES.retreats
                 app.ui.setMenuButtons("reset", @active)
                 if eve isnt "close" and app.game.hasBuild(m_id)
                     app.ui.setMenuButtons("open", @active)
@@ -301,7 +301,7 @@ class Interactions
                     @_onRetreatTo(@active)
                     app.ui.closeMenu()
             when "disband"
-                if app.game.phase('last').type is "builds"
+                if app.game.phase('last').type is PHASE_TYPES.builds
                     if not re_act
                         @intent("disband", null)
                         app.ui.closeMenu()
@@ -532,10 +532,10 @@ class Interactions
                 #app.game.moves_mc[id] = mc_n
                 #app.game.moves[id] = type: "move", from: id, to: t_id
                 #if app.game.phase().type isnt "builds"
-                if app.game.phase().type is "builds"
+                if app.game.phase().type is PHASE_TYPES.builds
                     app.game.addBuild(t_id, "build_fleet", mc_n)
                     app.screen.drawTroops()
-                else if app.game.phase().type is "retreats"
+                else if app.game.phase().type is PHASE_TYPES.retreats
                     app.game.delBuild(id)
                     app.game.addMoveMC(id, "retreat", id, t_id, mc_n)
                     @_offTracked()
@@ -561,10 +561,10 @@ class Interactions
                 console.log(mc_s)
                 #app.game.moves_mc[id] = mc_s
                 #app.game.moves[id] = type: "move", from: id, to: t_id
-                if app.game.phase().type is "builds"
+                if app.game.phase().type is PHASE_TYPES.builds
                     app.game.addBuild(t_id, "build_fleet", mc_s)
                     app.screen.drawTroops()
-                else if app.game.phase().type is "retreats"
+                else if app.game.phase().type is PHASE_TYPES.retreats
                     app.game.delBuild(id)
                     app.game.addMoveMC(id, "retreat", id, t_id, mc_s)
                     @_offTracked()
@@ -619,7 +619,7 @@ class Interactions
                     app.screen.offTerritory(@active)
                     @current = "none"
             when "disband"
-                if app.game.phase('last').type is "builds"
+                if app.game.phase('last').type is PHASE_TYPES.builds
                     app.game.addBuild(@active, "disband")
                     app.screen.offTerritory(@active)
                     @current = "none"

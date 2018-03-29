@@ -19,13 +19,14 @@ class App
         #console.log(mapData)
         @env.init(mapData)
         gameData = @net.getGame()
+        gamePhases = @net.getPhases()
         #console.log(gameData)
         if gameData.currentPlayer and not preGame
             orders = @net.getOrders()
         else
             orders =
                 data: {}
-        @game.init(gameData, orders)
+        @game.init(gameData, gamePhases, orders)
         @ui.init()
         @ui.buildOrders()
         @ui.initStats()

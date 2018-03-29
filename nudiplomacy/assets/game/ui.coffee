@@ -381,7 +381,7 @@ class UI
             #$('#phase_ind').append '<span>'+id+'/'+app.phase.id+'</span>'
             phase = app.game.phase(id)
             console.log(phase)
-            if phase.type is "diplomacy"
+            if phase.type is PHASE_TYPES.diplomacy
                 $('#phase_ind').append '<span>'+phase.season+' '+phase.year+'</span>'
             else
                 if phase.year
@@ -392,7 +392,7 @@ class UI
             $('#phase_ind').append '<span><em>Next</em></span>'
         @setPhaseStats(id)
         if id is app.game.phase('last').id or id in ['next', 'last']
-            if app.game.phase('last').type is 'builds'
+            if app.game.phase('last').type is PHASE_TYPES.builds
                 @showBuildsTip()
         return
 
@@ -460,9 +460,9 @@ class UI
                 pphase = app.game._phases[phase]
                 if pphase.id
                     s = "Resulting from "
-                    if pphase.type is "diplomacy"
+                    if pphase.type is PHASE_TYPES.diplomacy
                         s += pphase.season+' '+pphase.year
-                    else if pphase.type is "retreats"
+                    else if pphase.type is PHASE_TYPES.retreats
                         s += 'retreats in '+pphase.season+' '+pphase.year
                     else
                         s += pphase.type+' '+pphase.year
@@ -531,7 +531,7 @@ class UI
 
     setMenuButtons: (act, id) ->
         if act is "open"
-            if app.game.phase().type is "diplomacy"
+            if app.game.phase().type is PHASE_TYPES.diplomacy
                 if app.game.phase().canConvoy(id)
                     $('#btn_c').removeClass 'ninja'
                 move = app.game.hasMove(id)
@@ -545,7 +545,7 @@ class UI
                             $('#btn_sm').addClass 'btn-primary'
                         when "convoy"
                             $('#btn_c').addClass 'btn-primary'
-            if app.game.phase().type is "builds"
+            if app.game.phase().type is PHASE_TYPES.builds
                 if id in app.game.phase().getCountryTroops()
                     build = app.game.hasBuild(id)
                     if build
@@ -560,22 +560,22 @@ class UI
                                 $('#btn_b_a').addClass 'btn-primary'
                             when "build_fleet"
                                 $('#btn_b_f').addClass 'btn-primary'
-            if app.game.phase().type is "retreats"
+            if app.game.phase().type is PHASE_TYPES.retreats
                 move = app.game.hasMove(id)
                 if move
                     $('#btn_r_r').addClass 'btn-primary'
                 else
                     $('#btn_r_d').addClass 'btn-primary'
         else if act is "close"
-            if app.game.phase().type is "diplomacy"
+            if app.game.phase().type is PHASE_TYPES.diplomacy
                 $('#btn_c').addClass 'ninja'
-            if app.game.phase().type is "builds"
+            if app.game.phase().type is PHASE_TYPES.builds
                 $('#btn_b_f').addClass 'ninja'
         else if act is "reset"
-            if app.game.phase().type is "diplomacy"
+            if app.game.phase().type is PHASE_TYPES.diplomacy
                 for bid in ["btn_m", "btn_sh", "btn_sm", "btn_c"]
                     $('#'+bid).removeClass 'btn-primary'
-            else if app.game.phase().type is "retreats"
+            else if app.game.phase().type is PHASE_TYPES.retreats
                 $('#btn_r_r').removeClass 'btn-primary'
                 $('#btn_r_d').removeClass 'btn-primary'
             else
@@ -603,9 +603,9 @@ class UI
         ## load buttons state
         m_x = mpos.x - 40
         m_y = mpos.y - 60
-        if app.game.phase().type is "diplomacy"
+        if app.game.phase().type is PHASE_TYPES.diplomacy
             menu_id = "#terr_menu"
-        if app.game.phase().type is "builds"
+        if app.game.phase().type is PHASE_TYPES.builds
             pos = @_translatePosition(mpos)
             refcolor = app.screen.getColor(pos)
             tid = app.env.getTerritoryByColor(refcolor)
@@ -613,7 +613,7 @@ class UI
                 menu_id = "#build_menu_d"
             else
                 menu_id = "#build_menu"
-        if app.game.phase().type is "retreats"
+        if app.game.phase().type is PHASE_TYPES.retreats
             menu_id = "#retreat_menu"
         $(menu_id).css
             top: m_y+'px'
@@ -629,11 +629,11 @@ class UI
     closeMenu: ->
         @setMenuButtons("close", false)
         menu = $('.menuopened')[0]
-        #if app.game.phase().type is "diplomacy"
+        #if app.game.phase().type is PHASE_TYPES.diplomacy
         #    menu_id = "#terr_menu"
-        #if app.game.phase().type is "builds"
+        #if app.game.phase().type is PHASE_TYPES.builds
         #    menu_id = "#build_menu"
-        #if app.game.phase().type is "retreats"
+        #if app.game.phase().type is PHASE_TYPES.retreats
         #    menu_id = "#retreat_menu"
         $(menu).animate
             opacity:'0'
@@ -894,14 +894,14 @@ class UI
         order_str = @_buildOrderString(id, data)
         $('#ord_next_'+id).html order_str
         #@autoSave()
-        if app.game.phase('last').type is "builds"
+        if app.game.phase('last').type is PHASE_TYPES.builds
             @showBuildsTip()
         return
 
     delOrder: (id) ->
         $('#ord_'+id).remove()
         #@autoSave()
-        if app.game.phase('last').type is "builds"
+        if app.game.phase('last').type is PHASE_TYPES.builds
             @showBuildsTip()
         return
 

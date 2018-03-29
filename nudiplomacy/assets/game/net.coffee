@@ -27,6 +27,16 @@ class Network
                 return
         return rv
 
+    getPhases: ->
+        rv = {}
+        $.ajax @urls['phases'],
+            type: 'GET'
+            async: false
+            success: (data) ->
+                rv = data.data
+                return
+        return rv
+
     getGameStatus: ->
         $.ajax @urls['status'],
             type: 'GET'

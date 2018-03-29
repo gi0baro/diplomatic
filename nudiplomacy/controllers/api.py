@@ -4,7 +4,7 @@ import random
 from weppy import request, sdict
 from weppy.pipeline import RequirePipe
 from weppy.tools import ServicePipe, requires
-from .. import app, db, auth, Map, Game, Order, GameRole
+from .. import app, db, auth, Map, Game, Order, GameRole, GamePhase
 # from nudiplomacy import app, auth, db, mdb, Map, Orders, NObject, NSubscription
 # from nudiplomacy.helpers.mongo import longToObjid
 from ..gameman.validation import process_order
@@ -42,6 +42,11 @@ def game_get(gid):
     #     rv.presstype = game.press_type
     #     rv.currentPlayer = game.player_country()
     return game
+
+
+@api.route("/game/<int:gid>/phases")
+def game_phases(gid):
+    return {'data': GamePhase.where(lambda m: m.game == gid).select(orderby=GamePhase.created_at)}
 
 
 # @api.route("/game/<int:gid>/status")

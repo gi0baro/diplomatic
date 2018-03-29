@@ -20,6 +20,7 @@ js_game = app.ext.Assets.js([
     'helpers/Intersection.js',
     'base/counter.coffee',
     'game/proto.coffee',
+    'game/constants.coffee',
     'game/objects.coffee',
     'game/net.coffee',
     'game/env.coffee',
