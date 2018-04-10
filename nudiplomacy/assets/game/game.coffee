@@ -27,7 +27,7 @@ class Game
         @buildew = data.build_everywhere
         @presstype = data.press_type
         #: load phases
-        @_phases["0"] = new Phase(0, 'pregame', 1920, null, {}, {}, {}, {}, {})
+        @_phases["0"] = new Phase(0, PHASE_TYPES.pregame, 1920, null, {}, {}, {}, {}, {})
         i = 1
         for phase in phases
             cstr = i+''
@@ -40,14 +40,15 @@ class Game
         # @_nphases = 1
         # @_currentPhase = 0
         @_nextPhase = new PhaseNext()
-        @orders = orders.data
+        # @orders = orders.data
+        @orders = {}
         if orders.ready
             @ready = true
-        @_initOrders()
+        @_initOrders(orders.data)
         @_setStartingColors()
         if @gotOrders()
             @_currentPhase = "next"
-        if @phase('last') isnt undefined and @phase('last').type is "win"
+        if @phase('last') isnt undefined and @phase('last').type is PHASE_TYPES.won
             @win = data.phases[@_nphases-1].winner
         return
 
@@ -60,11 +61,11 @@ class Game
         @_nphases = data.phases.length
         @_currentPhase = @_nphases-1
         @_nextPhase = new PhaseNext()
-        @orders = orders.data
+        @orders = {}
         @moves = {}
         @moves_mc = {}
         @moves_queue = []
-        @_initOrders()
+        @_initOrders(orders.data)
         return
 
     phase: (id='current') ->
@@ -88,36 +89,39 @@ class Game
                 delete app.env.countries[k]
         return
 
-    _initOrders: ->
-        for k, v of @orders
-            if v.type isnt "hold"
-                if v.type in ["build", "disband"]
-                    if v.troop is "fleet"
+    _initOrders: (orders) ->
+        for order of orders
+            territory = order.territory
+            @orders[territory] = order
+            if order.type isnt "hold"
+                if order.type in [ORDER_TYPES.build, ORDER_TYPES.disband]
+                    if order.data.troop is TROOP_TYPES.fleet
                         d = type: "build_fleet"
-                    else if v.troop is "army"
+                    else if order.data.troop is TROOP_TYPES.army
                         d = type: "build_army"
                     else
                         d = type: "disband"
-                    if v.mc isnt undefined
-                        d.mc = v.mc
-                    @_nextPhase.builds[k] = d
+                    if order.data.coast isnt undefined
+                        d.mc = order.data.coast
+                    @_nextPhase.builds[territory] = d
                 else
-                    @moves[k] = v
-                    if not @moves[k].from
-                        @moves[k].from = k
+                    @moves[territory] = order.data
+                    @moves[territory].type = ORDER_TYPES.remote_to_internal(order.type)
+                    if not @moves[territory].src
+                        @moves[territory].src = territory
                     #: add expected movements
-                    if v.type is "sup_move" and v.from not in @_nextPhase.getCountryTroops()
-                        @moves[v.from] =
-                            from: v.from
-                            to: v.to
+                    if order.type is ORDER_TYPES.support_move and order.data.src not in @_nextPhase.getCountryTroops()
+                        @moves[order.data.src] =
+                            from: order.data.src
+                            dst: order.data.dst
                             type: 'move'
-                    if v.type is "move" and v.viaConvoy
-                        for r in v.croutes
-                            for ct in r
-                                if ct not in @_nextPhase.getCountryTroops()
-                                    @moves[ct] =
-                                        from: v.from
-                                        to: v.to
+                    if order.type is ORDER_TYPES.move and order.data.through
+                        for route in order.data.routes
+                            for convoying_territory in route
+                                if convoying_territory not in @_nextPhase.getCountryTroops()
+                                    @moves[convoying_territory] =
+                                        from: order.data.src
+                                        dst: order.data.dst
                                         type: 'convoy'
         return
 
@@ -191,7 +195,7 @@ class Game
         return
 
     canBuild: ->
-        if not @phase('last').type is "builds"
+        if not @phase('last').type is PHASE_TYPES.builds
             return 0
         ntroops = @phase('last').getCountryTroops().length
         nsupply = 0
@@ -219,7 +223,7 @@ class Game
         return
 
     addMoveConvoy: (id, type, from, to, croute) ->
-        data = type: type, from: from, to: to, viaConvoy: true, croute: croute
+        data = type: type, from: from, to: to, through: true, croute: croute
         @_addMove(id, data)
         return
 
@@ -241,22 +245,21 @@ class Game
         to_delete.push(id)
         if @moves[id].type is "move"
             for key, value of @moves
-                if value.from is id
+                if value.src is id
                     to_delete.push(key)
-        else if @moves[id].type is "sup_move"
-            ## remove move order if no other sup_move
-            del_move = true
+        else if @moves[id].type is "support_move"
+            ## remove move order if no otherORDER_TYPES.support_move            del_move = true
             for key, value of @moves
-                if value.from is @moves[id].from and value.type in ["sup_move", "convoy"]
+                if value.src is @moves[id].src and value.type in ["support_move", "convoy"]
                     if key isnt id
                         del_move = false
                         break
             if del_move
-                to_delete.push(@moves[id].from)
+                to_delete.push(@moves[id].src)
         else if @moves[id].type is "convoy"
-            to_delete.push(@moves[id].from)
+            to_delete.push(@moves[id].src)
             for key, value of @moves
-                if value.from is @moves[id].from and value.type is "convoy"
+                if value.src is @moves[id].src and value.type is "convoy"
                     if key not in to_delete
                         to_delete.push(key)
         for i in to_delete
@@ -308,37 +311,42 @@ class Game
         #return !$.isEmptyObject(@moves)
         return !$.isEmptyObject(@moves) or !$.isEmptyObject(@_nextPhase.builds)
 
-    addOrder: (id, data) ->
-        @orders[id]["type"] = data.type
-        if data.type isnt "build"
-            @orders[id]["to"] = data.to
+    addOrder: (territory, data) ->
+        @orders[territory].type = ORDER_TYPES.internal_to_remote(data.type)
+        if data.type isnt 'build'
+            @orders[territory].data.dst = data.dst
         else
-            @orders[id]["troop"] = data.troop
-            if app.env.isMCoast(id) and data.troop is "fleet"
-                @orders[id]["mc"] = data.mc
-        #@orders[id] = type: data.type, to: data.to
+            @orders[territory].data.troop = TROOP_TYPES.internal_to_remote(data.troop)
+            if app.env.isMCoast(id) and data.troop is 'fleet'
+                @orders[territory].data.coast = data.mc
+        #@orders[territory] = type: data.type, to: data.to
         if data.type is "move"
-            if data.viaConvoy
-                @orders[id]["viaConvoy"] = data.viaConvoy
-                @orders[id]["croutes"] = [data.croute]
-            if app.env.isMCoast(data.to)
-                #@orders[id]["mc"] = @moves_mc[id]
-                @orders[id]["mc"] = data.mc
-        else if data.type in ["sup_move", "convoy"]
-            @orders[id]["from"] = data.from
+            if data.through
+                @orders[territory].data.through = data.through
+                @orders[territory].data.routes = [data.croute]
+            if app.env.isMCoast(data.dst)
+                #@orders[territory]["mc"] = @moves_mc[territory]
+                @orders[territory].data.coast = data.mc
+        else if data.type in ['support_move', "convoy"]
+            @orders[territory].data.src = data.src
         #country = app.GetCountryByTerr(id)
         #try
         #   @orders_country[country].push(id)
         #catch
         #   @orders_country[country] = []
         #   @orders_country[country].push(id)
-        app.ui.addOrder(id, @orders[id])
+        app.ui.addOrder(id, @orders[territory])
         app.ui.autoSave()
         return
 
-    delOrder: (id) ->
-        @orders[id] = type: "hold"
-        app.ui.delOrder(id)
+    delOrder: (territory) ->
+        @orders[territory] =
+            id: @orders[territory].id
+            territory: territory
+            type: ORDER_TYPES.internal_to_remote('hold')
+            stage: ORDER_STATES.planned
+            data: {}
+        app.ui.delOrder(territory)
         app.ui.autoSave()
         return
 

@@ -520,7 +520,7 @@ class Interactions
                     @_onConvoyTo(id)
             when "mcoast_n"
                 id = @active
-                t_id = if app.game.phase().type isnt "builds" then @tracked[0] else @active
+                t_id = if app.game.phase().type isnt PHASE_TYPES.builds then @tracked[0] else @active
                 mv_mc_lst = app.env.mcoasts_oxy[t_id]
                 if mv_mc_lst[0].y < mv_mc_lst[1].y
                     mc_n = 0
@@ -550,7 +550,7 @@ class Interactions
                 @current = "none"
             when "mcoast_s"
                 id = @active
-                t_id = if app.game.phase().type isnt "builds" then @tracked[0] else @active
+                t_id = if app.game.phase().type isnt PHASE_TYPES.builds then @tracked[0] else @active
                 mv_mc_lst = app.env.mcoasts_oxy[t_id]
                 if mv_mc_lst[0].y < mv_mc_lst[1].y
                     mc_n = 0
