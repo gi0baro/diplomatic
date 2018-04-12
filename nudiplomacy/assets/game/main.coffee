@@ -21,7 +21,7 @@ class App
         gameData = @net.getGame()
         gamePhases = @net.getPhases()
         #console.log(gameData)
-        if gameData.currentPlayer and not preGame
+        if currentPlayer and not preGame
             orders = @net.getOrders()
         else
             orders =

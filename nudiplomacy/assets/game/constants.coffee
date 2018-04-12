@@ -2,6 +2,8 @@ class Constants
     constructor: ->
         @_reversed = {}
         for key, val of this
+            if typeof(val) isnt "number"
+                continue
             @_reversed[val] = key
 
     internal_to_remote: (val) ->

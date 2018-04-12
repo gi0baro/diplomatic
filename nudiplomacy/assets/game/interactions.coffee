@@ -385,8 +385,8 @@ class Interactions
                 id = @active
                 color = app.screen.getColor(pos)
                 t_id = app.env.getTerritoryByColor(color)
-                #app.game.moves[id] = type: "sup_hold", from: id, to: t_id
-                app.game.addMove(id, "sup_hold", id, t_id)
+                #app.game.moves[id] = type: "support_hold", from: id, to: t_id
+                app.game.addMove(id, "support_hold", id, t_id)
             when "sup_move_from"
                 console.log("supping move from")
                 color = app.screen.getColor(pos)
@@ -395,18 +395,18 @@ class Interactions
                     console.log("move present")
                     ## check move is valid..
                     nears_c = @_availableMoves("sup_move_to", id_f)
-                    if app.game.moves[id_f].to in nears_c
+                    if app.game.moves[id_f].dst in nears_c
                         console.log("valid sup_move movement")
                         id = @active
-                        id_t = app.game.moves[id_f].to
+                        id_t = app.game.moves[id_f].dst
                         @_offTracked()
                         app.screen.offTerritory(@active)
                         @current = "none"
-                        #app.game.moves[id] = type: "sup_move", from: id_f, to: id_t
+                        #app.game.moves[id] = type: "support_move", from: id_f, to: id_t
                         if app.game.moves[id_f].mc isnt undefined
-                            app.game.addMoveMC(id, "sup_move", id_f, id_t, app.game.moves[id_f].mc)
+                            app.game.addMoveMC(id, "support_move", id_f, id_t, app.game.moves[id_f].mc)
                         else
-                            app.game.addMove(id, "sup_move", id_f, id_t)
+                            app.game.addMove(id, "support_move", id_f, id_t)
                         app.screen.drawLines()
                     else
                         #delete app.game.moves[id_f]
@@ -461,14 +461,14 @@ class Interactions
                             #app.screen.offTerritory(@active)
                             #@current = "none"
                 if not need_mc
-                    app.game.addMove(id, "sup_move", f_id, t_id)
+                    app.game.addMove(id, "support_move", f_id, t_id)
                     app.game.addMove(f_id, "move", f_id, t_id)
                 else
                     if not continue_mc
-                        app.game.addMove(id, "sup_move", f_id, t_id, mc)
+                        app.game.addMove(id, "support_move", f_id, t_id, mc)
                         app.game.addMoveMC(f_id, "move", f_id, t_id, mc)
                     else
-                        app.game.enqueueMove(id, "sup_move", f_id, t_id)
+                        app.game.enqueueMove(id, "support_move", f_id, t_id)
                 if not continue_mc
                     @current = "none"
             when "convoy_from"
@@ -542,7 +542,7 @@ class Interactions
                 else
                     if app.game.moves_queue.length
                         qm = app.game.dequeueMove()
-                        app.game.addMoveMC(qm.id, qm.type, qm.from, qm.to, mc_n)
+                        app.game.addMoveMC(qm.id, qm.type, qm.from, qm.dst, mc_n)
                     console.log("adding mcmove with diplomacy phase")
                     app.game.addMoveMC(id, "move", id, t_id, mc_n)
                     @_offTracked()
@@ -571,7 +571,7 @@ class Interactions
                 else
                     if app.game.moves_queue.length
                         qm = app.game.dequeueMove()
-                        app.game.addMoveMC(qm.id, qm.type, qm.from, qm.to, mc_s)
+                        app.game.addMoveMC(qm.id, qm.type, qm.from, qm.dst, mc_s)
                     console.log("adding mcmove with diplomacy phase")
                     app.game.addMoveMC(id, "move", id, t_id, mc_s)
                     @_offTracked()
@@ -904,7 +904,7 @@ class Interactions
                 ## HOW TO?
                 #c_nears = []
                 #for key, j in app.play.orders
-                #   if j.type is "move" and j.viaConvoy isnt null and j.to in nears
+                #   if j.type is "move" and j.viaConvoy isnt null and j.dst in nears
                 #       c_nears.push(key)
                 #console.log(c_nears)
                 #for j in c_nears
@@ -979,10 +979,10 @@ class Interactions
                     skip = false
                     for country, orders of app.game.phase('last').previous().orders
                         for oid, odata of orders
-                            if odata.type is "move" and odata.to is i
+                            if odata.type is "move" and odata.dst is i
                                 skip = true
                                 break
-                            if oid is i and odata.type is "move" and odata.to is @active
+                            if oid is i and odata.type is "move" and odata.dst is @active
                                 skip = true
                                 break
                     if skip
@@ -993,7 +993,7 @@ class Interactions
     _OLDgetConvoysFromMove: (id_f, id_t) ->
         conv_lst = []
         #country = app.FindCountry(id_f)
-        #id_t = app.play.moves[id_f].to
+        #id_t = app.play.moves[id_f].dst
         nears_t = app.env.moves.fleets[id_t]
         console.log(nears_t)
         val = 0

@@ -34,7 +34,7 @@ class Game
             @_phases[cstr] = new Phase(i, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.coasts, phase.dislodged, {})
             i++
         # TEMP
-        console.log(phases)
+        console.log(phases, orders)
         @_nphases = phases.length + 1
         @_currentPhase = @_nphases-1
         # @_nphases = 1
@@ -90,7 +90,8 @@ class Game
         return
 
     _initOrders: (orders) ->
-        for order of orders
+        for order in orders
+            console.log(order)
             territory = order.territory
             @orders[territory] = order
             if order.type isnt "hold"
@@ -217,23 +218,23 @@ class Game
             @addOrder(id, data)
         return
 
-    addMove: (id, type, from, to) ->
-        data = type: type, from: from, to: to
+    addMove: (id, type, src, dst) ->
+        data = type: type, src: src, dst: dst
         @_addMove(id, data)
         return
 
-    addMoveConvoy: (id, type, from, to, croute) ->
-        data = type: type, from: from, to: to, through: true, croute: croute
+    addMoveConvoy: (id, type, src, dst, croute) ->
+        data = type: type, src: src, dst: dst, through: true, croute: croute
         @_addMove(id, data)
         return
 
-    addMoveMC: (id, type, from, to, mc) ->
-        data = data = type: type, from: from, to: to, mc: mc
+    addMoveMC: (id, type, src, dst, coast) ->
+        data = data = type: type, src: src, dst: dst, coast: coast
         @_addMove(id, data)
         return
 
-    enqueueMove: (id, type, from, to) ->
-        data = id: id, type: type, from: from, to: to
+    enqueueMove: (id, type, src, dst) ->
+        data = id: id, type: type, src: src, dst: dst
         @moves_queue.push(data)
         return
 
@@ -312,22 +313,23 @@ class Game
         return !$.isEmptyObject(@moves) or !$.isEmptyObject(@_nextPhase.builds)
 
     addOrder: (territory, data) ->
+        console.log('addOrder', territory, data)
         @orders[territory].type = ORDER_TYPES.internal_to_remote(data.type)
         if data.type isnt 'build'
             @orders[territory].data.dst = data.dst
         else
             @orders[territory].data.troop = TROOP_TYPES.internal_to_remote(data.troop)
             if app.env.isMCoast(id) and data.troop is 'fleet'
-                @orders[territory].data.coast = data.mc
+                @orders[territory].data.coast = data.coast
         #@orders[territory] = type: data.type, to: data.to
-        if data.type is "move"
+        if data.type is 'move'
             if data.through
                 @orders[territory].data.through = data.through
                 @orders[territory].data.routes = [data.croute]
             if app.env.isMCoast(data.dst)
                 #@orders[territory]["mc"] = @moves_mc[territory]
-                @orders[territory].data.coast = data.mc
-        else if data.type in ['support_move', "convoy"]
+                @orders[territory].data.coast = data.coast
+        else if data.type in ['support_move', 'convoy']
             @orders[territory].data.src = data.src
         #country = app.GetCountryByTerr(id)
         #try
@@ -335,7 +337,7 @@ class Game
         #catch
         #   @orders_country[country] = []
         #   @orders_country[country].push(id)
-        app.ui.addOrder(id, @orders[territory])
+        app.ui.addOrder(territory, @orders[territory])
         app.ui.autoSave()
         return
 

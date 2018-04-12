@@ -843,18 +843,18 @@ class UI
         ## TODO: implement other steps filling
         if app.game.phase() isnt undefined
             pphase = app.game.phase().previous()
-            for id, data of app.game.orders
-                order_str = @_buildOrderString(id, data)
-                $('#orders_next_me_data').append '<div class="order" id="ord_next_'+id+'">'+order_str+'</div>'
+            for territory, data of app.game.orders
+                order_str = @_buildOrderString(territory, data)
+                $('#orders_next_me_data').append '<div class="order" id="ord_next_'+territory+'">'+order_str+'</div>'
             @ordersClick("orders_next_me_head")
             #for i in [1..app.phase.orders.length-1]
             for phase, pdata of app.game._phases
-                if phase not in ["0", app.game.phase().id+""]
+                if phase not in ["0", app.game.phase().territory+""]
                     #$('#ord_wrapper').append '<div class="ord_phase_wrapper" id="orders_'+phase+'"></div>'
                     for country, orders of pdata.orders
-                        for id, data of orders
-                            order_str = @_buildOrderString(id, data)
-                            $('#orders_'+phase+'_'+country+'_data').append '<div class="order" id="ord_'+phase+'_'+id+'">'+order_str+'</div>'
+                        for territory, data of orders
+                            order_str = @_buildOrderString(territory, data)
+                            $('#orders_'+phase+'_'+country+'_data').append '<div class="order" id="ord_'+phase+'_'+territory+'">'+order_str+'</div>'
                     @ordersClick("orders_"+phase+"_"+app.game.country+"_head")
             #$('#orders_next').css
             #   visibility: 'visible'
@@ -868,26 +868,29 @@ class UI
             $('#noorders').removeClass 'nulled'
         return
 
-    _buildOrderString: (id, data) ->
-        order_str = app.env.names[id]+' '+data.type
-        if data.type isnt "hold"
-            if data.type is "move"
-                order_str += ' to '+app.env.names[data.to]
-                if data.viaConvoy
-                    order_str += ' via convoy'
-                if data.mc isnt undefined
-                    if data.mc is 0
-                        order_str += ' north coast'
-                    else
-                        order_str += ' south coast'
-            else if data.type is "build"
-                order_str = app.env.names[id]+" builds a new "+data.troop
-                if data.mc is 0
-                    order_str += " at north coast"
-                if data.mc is 1
-                    order_str += " at south coast"
-            else
-                order_str += ' from '+app.env.names[data.from]+' to '+app.env.names[data.to]
+    _buildOrderString: (territory, order) ->
+        console.log('_buildOrderString', territory, order)
+        internal_type = ORDER_TYPES.remote_to_internal(order.type)
+        order_str = app.env.names[territory] + ' ' + internal_type
+        if internal_type is 'hold'
+            return order_str
+        if internal_type is 'move'
+            order_str += ' to '+app.env.names[order.data.dst]
+            if order.data.through
+                order_str += ' via convoy'
+            if order.data.coast isnt undefined
+                if order.data.coast is 0
+                    order_str += ' north coast'
+                else
+                    order_str += ' south coast'
+        else if internal_type is 'build'
+            order_str = app.env.names[territory] + " builds a new " + TROOP_TYPES.remote_to_internal(order.data.troop)
+            if order.data.coast is 0
+                order_str += " at north coast"
+            if order.data.coast is 1
+                order_str += " at south coast"
+        else
+            order_str += ' from '+app.env.names[order.data.src]+' to '+app.env.names[order.data.dst]
         return order_str
 
     addOrder: (id, data) ->

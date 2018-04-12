@@ -166,7 +166,7 @@
                         %i#icon_ready.fa.fa-check.fa-border.on{onclick: 'javascript: app.ui.setReady();'}
                 #ord_date
                 - phase_count = game.phases.count()
-                - if phase_count > 2
+                - if phase_count > 1
                     - for i in range(1, phase_count - 1)
                         - phase = game.phases[i]
                         .ord_phase_wrapper{id: 'orders_{{=i}}'}
@@ -179,7 +179,7 @@
                                         .ord_pin_text.ord_pin_text_off{id: '{{=div+"_text"}}'}
                                             = country+" orders"
                                     .orders{id: '{{=div+"_data"}}'}
-                - if phase_count > 1
+                - if phase_count
                     #orders_next.ord_phase_wrapper
                         #orders_next_me.ord_pin
                             #orders_next_me_head.ord_pin_head

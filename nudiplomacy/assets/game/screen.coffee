@@ -358,10 +358,10 @@ class Screen
     drawLines: ->
         @_clearLines()
         for id, obj of app.game.phase().pastMoves
-            @newLine("past", obj.type, id, obj.from, obj.to, obj.mc, obj.success or false)
+            @newLine("past", obj.type, id, obj.src, obj.dst, obj.coast, obj.success or false)
         if app.game.phase().id is "next"
             for id, obj of app.game.moves
-                @newLine("future", obj.type, id, obj.from, obj.to, obj.mc)
+                @newLine("future", obj.type, id, obj.src, obj.dst, obj.coast)
         return
 
     newLine: (time, act, id, f_id, t_id, mc, success=true) ->
@@ -422,7 +422,7 @@ class Screen
                 @_drawLine(x, y, x_t, y_t, color, success)
                 angle = Math.atan2(y_t-y,x_t-x)
                 @_drawTriangle(angle, 10, x_t, y_t, color)
-            when "sup_hold"
+            when "support_hold"
                 if isFleet(f_id) and app.env.isMCoast(f_id)
                     mc_pos = mc_pos_data[f_id]
                     p1 = new Point2D(app.env.mcoasts_oxy[f_id][mc_pos].x, app.env.mcoasts_oxy[f_id][mc_pos].y)
@@ -452,7 +452,7 @@ class Screen
                 x_t = p2.x
                 y_t = p2.y
                 @_drawCircle(x_t, y_t, 18, color)
-            when "sup_move"
+            when "support_move"
                 if isFleet(id) and app.env.isMCoast(id)
                     mc_pos = mc_pos_data[id]
                     p0 = new Point2D(app.env.mcoasts_oxy[id][mc_pos].x, app.env.mcoasts_oxy[id][mc_pos].y)

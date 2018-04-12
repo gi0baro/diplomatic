@@ -53,7 +53,7 @@ class Phase
             for id, odata of orders
                 if odata.type not in ["hold", "build"]
                     w = odata
-                    w.from = odata.from or id
+                    w.src = odata.src or id
                     @pastMoves[id] = w
         return
 
