@@ -41,7 +41,9 @@ def game_get(gid):
     #     rv.scs = game.target_sc
     #     rv.presstype = game.press_type
     #     rv.currentPlayer = game.player_country()
-    return game
+    rv = game.as_dict()
+    rv['players'] = game.players.select(GameRole.country).column('country')
+    return rv
 
 
 @api.route("/game/<int:gid>/phases")

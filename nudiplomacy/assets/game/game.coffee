@@ -23,7 +23,7 @@ class Game
         # @country = data.currentPlayer
         @country = currentPlayer
         #: set participating countries
-        @_setCountries(data.countries)
+        @_setCountries(data.players)
         @buildew = data.build_everywhere
         @presstype = data.press_type
         #: load phases
@@ -127,6 +127,7 @@ class Game
         return
 
     _setStartingColors: ->
+        console.log('COLORS', GROUND_COLOR, NEUTRAL_COLOR, SEA_COLOR)
         #:set all terrs to ground color
         color = GROUND_COLOR
         for i of app.env.colors
@@ -141,6 +142,7 @@ class Game
             @colors[i] = color
         #:set countries terrs
         cterrs = if @phase() is undefined then app.env.countries_init else @phase().territories
+        console.log(app.env.countries)
         for key, color of app.env.countries
             #for i in app.env.countries_terr[key]
             #for i in @phase().territories[key]
