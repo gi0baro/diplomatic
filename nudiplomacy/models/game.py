@@ -240,7 +240,8 @@ class Game(TSModel):
                 phase.orders.create(game_role=player.id, **order)
         #: TODO chats
         #: next process cycle
-        game.update_record(next_process_at=now() + timedelta(minutes=game.phase_time), is_ready=False)
+        game.update_record(
+            stage=self.STAGES['game'], next_process_at=now() + timedelta(minutes=game.phase_time), is_ready=False)
 
     @rowmethod('end')
     def end_game(self, game):

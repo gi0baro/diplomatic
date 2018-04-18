@@ -27,7 +27,7 @@ class Game
         @buildew = data.build_everywhere
         @presstype = data.press_type
         #: load phases
-        @_phases["0"] = new Phase(0, PHASE_TYPES.pregame, 1920, null, {}, {}, {}, {}, {})
+        @_phases["0"] = new Phase(0, PHASE_TYPES.pregame, 1920, null, app.env.countries_init, {}, {}, {}, {})
         i = 1
         for phase in phases
             cstr = i+''
@@ -141,8 +141,7 @@ class Game
         for i in app.env.seas
             @colors[i] = color
         #:set countries terrs
-        cterrs = if @phase() is undefined then app.env.countries_init else @phase().territories
-        console.log(app.env.countries)
+        cterrs = @phase().territories
         for key, color of app.env.countries
             #for i in app.env.countries_terr[key]
             #for i in @phase().territories[key]
@@ -339,6 +338,7 @@ class Game
         #catch
         #   @orders_country[country] = []
         #   @orders_country[country].push(id)
+        @orders[territory]._changed = true
         app.ui.addOrder(territory, @orders[territory])
         app.ui.autoSave()
         return
@@ -350,8 +350,15 @@ class Game
             type: ORDER_TYPES.internal_to_remote('hold')
             stage: ORDER_STATES.planned
             data: {}
+            _changed: true
         app.ui.delOrder(territory)
         app.ui.autoSave()
         return
+
+    saveOrders: ->
+        console.log(@orders)
+        for territory, order of @orders
+            if order._changed
+                app.net.postOrder(order)
 
 window.Game = Game

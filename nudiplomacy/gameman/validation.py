@@ -16,8 +16,9 @@ def process_order(country, game, territory, data):
         key: game.map[key] for key in [
             'seas', 'coasts', 'neutrals', 'multi_coasts', 'supply_centers', 'home_centers', 'links', 'names']}
     previous_orders = previous_phase.orders() if previous_phase else []
+    player_troops = current_phase.troops[country]['armies'] + current_phase.troops[country]['fleets']
     proc = OrdersProcessor(
         map_data, game.build_everywhere, current_phase.type, current_phase.troops, current_phase.coasts, country,
-        current_phase.troops[country], current_phase.territories[country], previous_orders, logger=app.log.warning)
+        player_troops, current_phase.territories[country], previous_orders, logger=app.log.warning)
     orders, error = proc.process({territory: data})
     return orders[territory], error

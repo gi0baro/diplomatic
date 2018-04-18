@@ -982,7 +982,7 @@ class UI
         clearTimeout(@saveTimer)
         self = this
         @saveTimer = setTimeout (->
-            app.net.postOrders()
+            app.game.saveOrders()
             return
         ), 3000
         return
@@ -994,7 +994,8 @@ class UI
             return
         console.log('manually saving orders')
         clearTimeout(@saveTimer)
-        app.net.postOrders()
+        # app.net.postOrders()
+        app.game.saveOrders()
         return
 
     saving: ->

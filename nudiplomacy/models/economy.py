@@ -30,7 +30,7 @@ class Vault(TSModel):
             welcome_amount = 250
         else:
             welcome_amount = 100
-        self.transactions.create(value=welcome_amount, description="Welcome funds")
+        rid.transactions.create(value=welcome_amount, description="Welcome funds")
 
     # @rowmethod
     # def add_expense(self, row, **kwargs):

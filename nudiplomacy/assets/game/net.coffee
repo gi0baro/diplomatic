@@ -74,6 +74,7 @@ class Network
             data: JSON.stringify(order)
             success: (data) ->
                 console.log(data)
+                order._changed = false
                 app.ui.saved(data)
                 return
             error: ->

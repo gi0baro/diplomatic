@@ -117,18 +117,21 @@ def order_save(order_id):
     if not row:
         rv.data = "bad request"
         return rv
-    if row.games.status != Game.STAGES['game']:
+    if row.games.stage != Game.STAGES['game']:
         rv.data = "Game doesn't allow orders"
         return rv
     #: if player is ready can't update orders
     if row.game_roles.is_ready:
         rv.data = "Cannot update orders when ready"
         return rv
-    data, errors = process_order(row.game_roles.country, row.games, row.orders.territory, request.body_params)
+    data = request.body_params.get('data', {})
+    data['type'] = request.body_params.type
+    data, errors = process_order(row.game_roles.country, row.games, row.orders.territory, data)
+    order_type = data.pop('type')
     if errors:
         rv.data = errors
         return rv
-    res = Order.where(lambda m: m.id == order_id).validate_and_update(**data)
+    res = Order.where(lambda m: m.id == order_id).validate_and_update(type=order_type, data=data)
     if res.errors:
         rv.data = res.errors
         return rv
