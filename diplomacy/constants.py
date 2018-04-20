@@ -9,6 +9,11 @@ PHASES = adict(
     BUILDS=2
 )
 
+SEASONS = adict(
+    SPRING=0,
+    AUTUMN=1
+)
+
 ORDERS = adict(
     HOLD=0,
     MOVE=1,
