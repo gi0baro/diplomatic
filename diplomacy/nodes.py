@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from .constants import ORDERS
 from .helpers import cachedprop
 
 
@@ -8,6 +9,13 @@ class World(object):
         self.judge = judge
         self.nodes = {}
         #: map types
+        self._orders_mapper = {
+            ORDERS.HOLD: 'hold',
+            ORDERS.MOVE: 'move',
+            ORDERS.SUPPORT_MOVE: 'support_move',
+            ORDERS.SUPPORT_HOLD: 'support_hold',
+            ORDERS.CONVOY: 'convoy'
+        }
         self._nodes_cls = {
             'hold': Hold,
             'move': Move,
@@ -18,9 +26,9 @@ class World(object):
         }
         self._nodes_by_type = {v: [] for v in self._nodes_cls.values()}
         self._nodes_mapper = {}
-        for key in self._nodes_cls.keys():
-            self._nodes_mapper[key] = lambda data, key=key: self._nodes_cls[key]
-        self._nodes_mapper['move'] = lambda data: (
+        for order_key, cls_key in self._orders_mapper.items():
+            self._nodes_mapper[order_key] = lambda data, key=cls_key: self._nodes_cls[key]
+        self._nodes_mapper[ORDERS.MOVE] = lambda data: (
             self._nodes_cls['move_through'] if data.get('through')
             else self._nodes_cls['move'])
         #: map dependencies

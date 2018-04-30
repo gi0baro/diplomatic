@@ -98,7 +98,7 @@ class GameProcessor(Logger):
             self.allowed_supply_centers = list(data['supply_centers'])
         else:
             self.allowed_supply_centers = []
-            for country, centers in data['home_centers']:
+            for country, centers in data['home_centers'].items():
                 self.allowed_supply_centers.extend(centers)
         self.centers_to_win = data['scs_to_win']
         # debug
@@ -111,7 +111,13 @@ class GameProcessor(Logger):
             ctx.orders[country][territory]['failed'] = True
 
     def _adjudicate(self, ctx):
-        judge = Judge(ctx.orders)
+        orders = {}
+        for country, orders in ctx.orders.items():
+            for territory, order in orders.items():
+                orders[territory] = order
+                orders[territory]['country'] = country
+                orders[territory]['name'] = self.territory_names[territory]
+        judge = Judge(orders)
         judge.process()
         succeeded, dislodged = [], defaultdict(list)
         for order in judge.orders.list:
@@ -191,6 +197,7 @@ class GameProcessor(Logger):
 
     def _update_positions(self, ctx):
         for country, src, dst, coast in ctx.movements:
+            troop_type = 'armies'
             if src in self.troops[country]['fleets']:
                 troop_type = 'fleets'
                 if coast is not None:
@@ -232,7 +239,7 @@ class GameProcessor(Logger):
         seas = set(self.seas)
         supply_centers = set(self.all_supply_centers)
         for country, troop_data in ctx.positions.items():
-            all_troops = troop_data['armies'] + troop_data['fleet']
+            all_troops = troop_data['armies'] + troop_data['fleets']
             troops_set = set(all_troops) - seas
             if self.season == SEASONS.SPRING:
                 troops_set = troops_set - supply_centers
