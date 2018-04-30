@@ -34,3 +34,12 @@ class registry(object):
 
     def call(self, name, *args, **kwargs):
         return self.registry[name](*args, **kwargs)
+
+
+class Logger(object):
+    def __init__(self, logger=None):
+        self._logger = logger
+
+    @cachedprop
+    def log(self):
+        return self._logger if self._logger else lambda *args, **kwargs: None

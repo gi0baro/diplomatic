@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from .constants import PHASES, ORDERS
-from .helpers import registry
+from .helpers import Logger, registry
 
 
 class ValidationPipeline(object):
@@ -20,14 +20,14 @@ class ValidationPipeline(object):
         return rv
 
 
-class Validator(object):
+class Validator(Logger):
     pipelines = registry()
 
     def __init__(
         self, map_data, allowed_supply_centers, phase_type, armies, fleets, multi_coasts_positions, player_troops,
         player_territories, previous_orders=[], logger=None
     ):
-        self._logger = logger
+        super().__init__(logger)
         self._load_map(map_data)
         self.allowed_supply_centers = allowed_supply_centers
         self.armies = armies
@@ -35,7 +35,7 @@ class Validator(object):
         self.multi_coasts_positions = multi_coasts_positions
         self.phase_type = phase_type
         self.troops = player_troops
-        self._logger(self.troops)
+        self.log(self.troops)
         self.territories = player_territories
         self.overcome_supply_centers = set(self.all_supply_centers) & set(self.territories)
         self.available_supply_centers = set(self.allowed_supply_centers) & set(self.territories)
@@ -51,11 +51,6 @@ class Validator(object):
         self.multi_coasts = list(data['multi_coasts'].keys())
         self.all_supply_centers = data['supply_centers']
         self.links = data['links']
-
-    def log(self, msg):
-        if not self._logger:
-            return
-        self._logger(msg)
 
     def _can_move(self, src, dst, mc=None):
         if self._is_fleet(src):
@@ -305,7 +300,7 @@ class Validator(object):
         #   - (mc): coast to move in case of multiple coasts
         invalids = []
         for territory_id, order in orders.items():
-            self._logger(order)
+            self.log(order)
             if order["type"] != ORDERS.HOLD and not order.get('dst'):
                 invalids.append(territory_id)
                 continue
@@ -413,16 +408,12 @@ class Validator(object):
         return self.pipelines.call(self.phase_type, self, orders)
 
 
-class PreProcessor(object):
+class PreProcessor(Logger):
     pipelines = registry()
 
-    def __init__(self, phase_orders, logger=lambda *args: None):
+    def __init__(self, phase_orders, logger=None):
+        super().__init__(logger)
         self.orders = phase_orders
-        self._logger = logger
-
-    def log(self, *msg):
-        # self._logger(msg)
-        print(msg)
 
     def _is_moving(self, territory_id):
         for orders_set in self.orders.values():
@@ -519,7 +510,6 @@ class PreProcessor(object):
                         else:
                             for route in bad_routes:
                                 order["convoy_routes"].remove(route)
-        self.log('ZIOCAN')
         return failed
 
     def process(self, phase_type):

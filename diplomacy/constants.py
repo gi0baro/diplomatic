@@ -24,3 +24,7 @@ ORDERS = adict(
     BUILD=6,
     DISBAND=7
 )
+
+TROOPS = adict(
+    ARMY=0,
+    FLEET=1)

@@ -1,37 +1,18 @@
 # -*- coding: utf-8 -*-
 
-"""
-    nuDiplomacy app
-
-    coded by Giovanni Barillari <gi0baro@d4net.org>
-    copyright (C) 2013
-    distributed under GNU General Public License
-
-    This is the orders and game processor classes file.
-"""
-
-from .checkers import Validator
-from .helpers import adict
+from collections import defaultdict
+from .checkers import PreProcessor, Validator
+from .constants import ORDERS, PHASES, SEASONS, TROOPS
+from .helpers import Logger, adict, registry
+from .judge import Judge
 
 
-class Processor(object):
-    def log(self, msg):
-        if self._logger is not None:
-            self._logger(msg)
-        else:
-            print(msg)
-
-
-class OrdersProcessor(Processor):
+class OrdersProcessor(Logger):
     def __init__(
         self, map_data, build_everywhere_policy, phase_type, troops, multi_coasts_positions, player_country,
         player_troops, player_territories, previous_orders=[], logger=None
     ):
-        self._logger = logger
-        self.orders_data = None
-        self.status = None
-        self.error = None
-        # self.map = self._load_map(map_data)
+        super().__init__(logger)
         self.map_data = map_data
         self.build_everywhere = build_everywhere_policy
         self.phase_type = phase_type
@@ -53,10 +34,8 @@ class OrdersProcessor(Processor):
             previous_orders=previous_orders
         )
         for country, troops_data in troops.items():
-            for el in troops_data['armies']:
-                rv.armies.append(el)
-            for el in troops_data['fleets']:
-                rv.fleets.append(el)
+            rv.armies.extend(troops_data['armies'])
+            rv.fleets.extend(troops_data['fleets'])
         return rv
 
     def _validate(self, orders):
@@ -82,400 +61,336 @@ class OrdersProcessor(Processor):
         return self._validate(orders)
 
 
-class GameProcessor(Processor):
-    def __init__(self, game, gamemap, logger=None):
-        self._logger = logger
-        self._loadMap(gamemap)
-        self._loadGame(game)
-        #self.orders = dict(self.orders)
-        self.end = False
+class ProcessingPipeline(object):
+    def __init__(self, *methods):
+        self.methods = methods
 
-    def _loadMap(self, gamemap):
-        self.map = dict()
-        self.map["seas"] = gamemap["seas"]
-        self.map["names"] = gamemap["names"]
-        self.map["supply"] = gamemap["supply"]
-        self.map["home"] = gamemap["homes"]
-        self.map["scstowin"] = gamemap["scs_towin"]
+    def process(self, orders):
+        ctx = adict(orders=orders)
+        for method in self.methods:
+            method(ctx)
+        return ctx
 
-    def _loadGame(self, game):
-        self.game = dict()
-        phase = len(game["phases"])-1
-        self.game["countries"] = game["countries"]
-        self.game["terrs"] = game["phases"][phase]["territories"]
-        #self.game["supply"] = [i for i in self.map["supply"].iterkeys()] \
-        #    if game["build_ew"] else self.map["home"]
-        self.game["troops"] = game["phases"][phase]["troops"]
-        self.game["armies"] = []
-        self.game["fleets"] = []
-        for country, troops in self.game["troops"].items():
-            for el in troops["armies"]:
-                self.game["armies"].append(el)
-            for el in troops["fleets"]:
-                self.game["fleets"].append(el)
-        self.game["mc_pos"] = game["phases"][phase].get("mc", {})
-        self.game["phase"] = game["phases"][phase]["type"]
-        self.game["season"] = game["phases"][phase].get("season")
-        self.game["year"] = game["phases"][phase]["year"]
-        self.game["dislodged"] = game["phases"][phase].get("dislodged", {})
-        self.game["buildew"] = game["build_ew"]
-        self.game["scstowin"] = game["target_sc"] or self.map["scstowin"]
-        self.orders = game["phases"][phase]["orders"]
 
-    def _preproc(self):
-        if self.game["phase"] == "builds":
-            return
-        from .checker import PreProcessor
-        checker = PreProcessor(self.orders, self.log)
-        checker.process(self.game["phase"])
-        self.log("[GameProc:Pre] failed: "+str(checker.fails))
-        for fail_tup in checker.fails:
-            self.orders[fail_tup[0]][fail_tup[1]]['failed'] = True
+class GameProcessor(Logger):
+    pipelines = registry()
+    active_builders = registry()
+    order_builders = registry()
 
-    def _adjudicate(self):
-        from .adjudicator import Adjudicator
-        adjOrders = dict()
-        for country, order in self.orders.items():
-            for tid, data in order.items():
-                adjOrders[tid] = data
-                adjOrders[tid]['country'] = country
-                ## remove next line in production?
-                adjOrders[tid]['name'] = self.map["names"][tid]
-        adj = Adjudicator(adjOrders)
-        adj.adjudicate()
-        self.dislodged = []
-        self.log("[GameProc:Adj] --- Analysis summary:")
-        for order in adj.orders.list:
+    def __init__(
+        self, map_data, build_everywhere_policy, phase_type, year, season, troops, territories, multi_coasts_positions,
+        logger=None
+    ):
+        super().__init__(logger)
+        self.build_everywhere = build_everywhere_policy
+        self._load_map(map_data)
+        self.phase_type = phase_type
+        self.year = year
+        self.season = season
+        self.troops = troops
+        self.territories = territories
+        self.multi_coasts_positions = multi_coasts_positions
+
+    def _load_map(self, data):
+        self.seas = data['seas']
+        self.all_supply_centers = data['supply_centers']
+        if self.build_everywhere:
+            self.allowed_supply_centers = list(data['supply_centers'])
+        else:
+            self.allowed_supply_centers = []
+            for country, centers in data['home_centers']:
+                self.allowed_supply_centers.extend(centers)
+        self.centers_to_win = data['scs_to_win']
+        # debug
+        self.territory_names = data['names']
+
+    def _preprocess(self, ctx):
+        proc = PreProcessor(ctx.orders)
+        failed_orders = proc.process(self.phase_type)
+        for country, territory in failed_orders:
+            ctx.orders[country][territory]['failed'] = True
+
+    def _adjudicate(self, ctx):
+        judge = Judge(ctx.orders)
+        judge.process()
+        succeeded, dislodged = [], defaultdict(list)
+        for order in judge.orders.list:
             if order.succeeded:
-                self.orders[order.country][order.id]["success"] = True
-                self.log(order.name+" order succeeded.")
-            else:
-                if order.dislodged_unit:
-                    self.dislodged.append((order.id, order.country))
-                self.log(order.name+" order failed.")
-        self.log("[GameProc:Adj] Dislodged units: "+str(self.dislodged))
+                succeeded.append((order.country, order.id))
+            elif order.dislodged_unit:
+                dislodged[order.country].append(order.id)
+        ctx.succeeded = succeeded
+        ctx.dislodged = dislodged
 
-    def _proc_builds(self):
-        # if country has to disband and not enough orders are set to disband,
-        # randomly add disbands
-        for country, orders in self.orders.items():
-            supplyc = [i for i in self.map["supply"]
-                       if i in self.game["terrs"][country]]
-            troops = self.game["troops"][country]["armies"] + \
-                self.game["troops"][country]["fleets"]
-            if len(troops) > len(supplyc):
-                disbandn = len(troops) - len(supplyc)
-                disbanding = []
-                others = []
-                for oid, odata in orders.items():
-                    if odata["type"] == "disband":
-                        disbanding.append(oid)
-                    else:
-                        others.append(oid)
-                if len(disbanding) < disbandn:
-                    diff = disbandn - len(disbanding)
-                    todisband = others[:diff]
-                    for i in todisband:
-                        self.orders[country][i] = {'type': 'disband'}
+    def _retreats_default_orders(self, ctx):
+        for country, orders in ctx.orders.items():
+            for territory, order in orders.items():
+                if order['type'] == ORDERS.HOLD:
+                    order['type'] = ORDERS.DISBAND
 
-    def _proc_retreats(self):
-        for country, orders in self.orders.items():
-            for oid, odata in orders.items():
-                if odata["type"] == "hold":
-                    odata["type"] = "disband"
-
-    def _proc_diplomacy(self):
-        self._adjudicate()
-
-    def process(self):
-        self._preproc()
-        self.__getattribute__("_proc_"+self.game["phase"])()
-        self._buildNewPhase()
-
-    def _updateTroops(self, action, troops):
-        self.phase_new["dislodged"] = dict()
-        if action == "delete":
-            for troop, country in troops:
-                if troop in self._troops[country]["fleets"]:
-                    self._troops[country]["fleets"].remove(troop)
-                    ## remove multi-coast position if no-longer necessary
-                    #if troop in self.phase_new["mc_pos"].iterkeys():
-                    #   del self.phase_new["mc_pos"][troop]
+    def _builds_default_orders(self, ctx):
+        for country, orders in ctx.orders.items():
+            centers = set(self.all_supply_centers) & set(self.territories[country])
+            troops = self.troops[country]['armies'] + self.troops[country]['fleets']
+            if len(troops) <= len(centers):
+                continue
+            required_disbands = len(troops) - len(centers)
+            disband_orders = []
+            other_orders = []
+            for territory, order in orders.items():
+                if order['type'] == ORDERS.DISBAND:
+                    disband_orders.append(territory)
                 else:
-                    self._troops[country]["armies"].remove(troop)
-        elif action == "build":
-            #for country, orders in troops.iteritems():
-            #    for troop_id, troop_data in orders.iteritems():
-            #        if troop_data["troop"] == "fleet":
-            #            self._troops[country]["fleets"].append(troop_id)
-            #        else:
-            #            self._troops[country]["armies"].append(troop_id)
-            for tid, country, ttype in troops:
-                if ttype == "fleet":
-                    self._troops[country]["fleets"].append(tid)
-                    mc = self.orders[country][tid].get("mc")
-                    if mc is not None:
-                        self.phase_new["mc"][tid] = mc
+                    other_orders.append(territory)
+            if len(disband_orders) >= required_disbands:
+                continue
+            diff = required_disbands - len(disband_orders)
+            to_disband = other_orders[:diff]
+            for territory in to_disband:
+                orders[territory] = {'type': ORDERS.DISBAND}
+
+    def _make_movements(self, ctx):
+        ctx.movements = []
+        for country, orders in ctx.orders.items():
+            for territory, order in orders.items():
+                if order['type'] == ORDERS.MOVE:
+                    ctx.movements.append((country, territory, order['dst'], order.get('coast')))
+
+    def _make_movements_or_disbands(self, ctx):
+        succeeded = []
+        ctx.disbands = defaultdict(list)
+        ctx.movements = []
+        for country, orders in ctx.orders.items():
+            for territory, order in orders.items():
+                disband = True
+                if order['type'] == ORDERS.RETREAT:
+                    if not order.get('failed', False):
+                        succeeded.append((country, territory))
+                        disband = False
+                        ctx.movements.append((country, territory, order['dst'], order.get('coast')))
                 else:
-                    self._troops[country]["armies"].append(tid)
-        else:
-            ## dislodge
-            #self.phase_new["dislodged"] = dict()
-            for tid, country in self.dislodged:
-                if not self.phase_new["dislodged"].get(country):
-                    self.phase_new["dislodged"][country] = []
-                self.phase_new["dislodged"][country].append(tid)
+                    succeeded.append((country, territory))
+                if disband:
+                    ctx.disbands[country].append(territory)
+        ctx.succeeded = succeeded
 
-    def _updatePositions(self, troops):
-        #: copy current troops data
-        newp = {}
-        for country, tdict in self._troops.items():
-            newp[country] = {}
-            for tk, tlist in tdict.items():
-                newp[country][tk] = list(tlist)
-        #: process movements
-        for troop, nowat, country, mc in troops:
-            if troop in self._troops[country]["fleets"]:
-                newp[country]["fleets"].remove(troop)
-                newp[country]["fleets"].append(nowat)
-                if mc is not None:
-                    self.phase_new["mc"][nowat] = mc
-            else:
-                newp[country]["armies"].remove(troop)
-                newp[country]["armies"].append(nowat)
-        #: update troops
-        self._troops = newp
+    def _make_disbands(self, ctx):
+        ctx.disbands = defaultdict(list)
+        for country, orders in ctx.orders.items():
+            for territory, order in orders.items():
+                if order['type'] == ORDERS.DISBAND:
+                    ctx.disbands[country].append(territory)
 
-    def _updateTerrs(self):
-        for country, troops in self._troops.items():
-            alltroops = troops["armies"]+troops["fleets"]
-            #for tid in troops["armies"]:
-            for tid in alltroops:
-                if tid in self.map["seas"]:
-                    continue
-                if self.game["season"] == "spring" and \
-                        tid in self.map["supply"]:
-                    continue
-                if tid not in self._terrs[country]:
-                    self._terrs[country].append(tid)
-                    ## delete in others countries' terrs
-                    for country_other, terrs in self._terrs.items():
-                        if country_other != country:
-                            if tid in terrs:
-                                self._terrs[country_other].remove(tid)
+    def _prepare_positions(self, ctx):
+        ctx.positions = {}
+        for country, troops in self.troops.items():
+            ctx.positions[country] = {}
+            for troop_type, troop_list in troops.items():
+                ctx.positions[country][troop_type] = list(troop_list)
+        ctx.coasts_positions = {territory: position for territory, position in self.multi_coasts_positions.items()}
 
-    def _setActivePlayers(self):
-        country_list = []
-        if self.phase_new["type"] == "diplomacy":
-            country_list = list(self._troops.keys())
-        elif self.phase_new["type"] == "builds":
-            for country, troops in self._troops.items():
-                supplyc = [i for i in self.map["supply"]
-                           if i in self._terrs[country]]
-                troop_n = len(troops["armies"])+len(troops["fleets"])
-                if troop_n != len(supplyc):
-                    country_list.append(country)
-        else:
-            #: retreats
-            for country in self.phase_new["dislodged"].keys():
-                country_list.append(country)
-        #if country_list:
-        self.phase_new["countries"] = country_list
-
-    def _removeOldMc(self):
+    def _update_positions(self, ctx):
+        for country, src, dst, coast in ctx.movements:
+            if src in self.troops[country]['fleets']:
+                troop_type = 'fleets'
+                if coast is not None:
+                    ctx.coasts_positions[dst] = coast
+            ctx.positions[country][troop_type].remove(src)
+            ctx.positions[country][troop_type].append(dst)
         fleets = []
-        for country, troops in self._troops.items():
-            fleets += troops["fleets"]
-        todel = []
-        for tid in self.phase_new["mc"].keys():
-            if tid not in fleets and tid not in todel:
-                todel.append(tid)
-        for tid in todel:
-            del self.phase_new["mc"][tid]
+        for country, troops in ctx.positions.items():
+            fleets += troops['fleets']
+        for fleet in set(ctx.coasts_positions.keys()) - set(fleets):
+            del ctx.coasts_positions[fleet]
 
-    def _setEmptyOrders(self):
-        self.phase_new["orders"] = dict()
-        for country in self.phase_new["countries"]:
-            self.phase_new["orders"][country] = dict()
-            if self.phase_new["type"] == "diplomacy":
-                for troops in self.phase_new["troops"][country].values():
-                    for troop in troops:
-                        self.phase_new["orders"][country][troop] = \
-                            dict(type="hold")
-            elif self.phase_new["type"] == "retreats":
-                for troop in self.phase_new["dislodged"][country]:
-                    self.phase_new["orders"][country][troop] = \
-                        dict(type="disband")
-            else:
-                supplyc = [i for i in self.map["supply"]
-                           if i in self._terrs[country]]
-                troops = self._troops[country]["armies"] + \
-                    self._troops[country]["fleets"]
-                if len(supplyc) > len(troops):
-                    realsupply = supplyc if self.game["buildew"] else \
-                        [i for i in self.map["home"][country] if
-                         i in self._terrs[country]]
-                    supplyorders = [i for i in realsupply if i not in troops]
-                    for i in supplyorders:
-                        self.phase_new["orders"][country][i] = {'type': 'hold'}
-                else:
-                    for i in troops:
-                        self.phase_new["orders"][country][i] = {'type': 'hold'}
+    def _update_builds(self, ctx):
+        builds = []
+        for country, orders in ctx.orders.items():
+            for territory, order in orders.items():
+                if order['type'] == ORDERS.BUILD:
+                    builds.append((country, territory, order))
+        for country, territory, order in builds:
+            if order.get('troop') == TROOPS.ARMY:
+                ctx.positions[country]['armies'].append(territory)
+                continue
+            ctx.positions[country]['fleets'].append(territory)
+            coast = order.get('coast')
+            if coast is not None:
+                ctx.coasts_positions[territory] = coast
 
-    def _buildPhaseData(self):
-        def afterRetreats():
-            if self.game["season"] == "spring":
-                self.phase_new["type"] = "diplomacy"
-                self.phase_new["season"] = "autumn"
-            else:
-                self.phase_new["type"] = "builds"
-                #self.phase_new["season"] = self.game["season"]
-            ## set countries' territories
-            self._updateTerrs()
+    def _update_disbands(self, ctx):
+        for country, territories in ctx.disbands:
+            for troop_type in ['armies', 'fleets']:
+                ctx.positions[country][troop_type] = list(set(ctx.positions[troop_type]) - set(territories))
 
-        ## update troops dict for defeated players
-        for country in self.game["countries"]:
-            if self._troops.get(country):
-                if len(self._troops[country]["armies"]) == 0 and \
-                   len(self._troops[country]["fleets"]) == 0:
-                    ## player defeated
-                    del self._troops[country]
-        ## set next phase type, season and year
-        if self.game["phase"] == "builds":
-            self.phase_new["type"] = "diplomacy"
-            self.phase_new["season"] = "spring"
-            self.phase_new["year"] = self.game["year"]+1
-        elif self.game["phase"] == "retreats":
-            self.phase_new["year"] = self.game["year"]
-            afterRetreats()
-        else:
-            self.phase_new["year"] = self.game["year"]
-            if self.phase_new.get("dislodged"):
-                self.phase_new["type"] = "retreats"
-                self.phase_new["season"] = self.game["season"]
-            else:
-                afterRetreats()
-        ## set active players in next phase
-        self._setActivePlayers()
-        ## set countries' troops
-        self.phase_new["troops"] = self._troops
-        #: update mc data
-        self._removeOldMc()
-        ## set empty orders
-        self._setEmptyOrders()
+    def _prepare_territories(self, ctx):
+        ctx.territories = {}
+        for country, territories in self.territories.items():
+            ctx.territories[country] = list(territories)
 
-    def _checkWin(self):
-        if self.phase_new["type"] != "builds":
+    def _update_territories(self, ctx):
+        seas = set(self.seas)
+        supply_centers = set(self.all_supply_centers)
+        for country, troop_data in ctx.positions.items():
+            all_troops = troop_data['armies'] + troop_data['fleet']
+            troops_set = set(all_troops) - seas
+            if self.season == SEASONS.SPRING:
+                troops_set = troops_set - supply_centers
+            to_add = troops_set - set(ctx.territories[country])
+            for territory in to_add:
+                ctx.territories[country].append(territory)
+            other_countries = set(ctx.territories.keys()) - {country}
+            for other_country in other_countries:
+                for territory in set(ctx.territories[other_country]) & to_add:
+                    ctx.territories[other_country].remove(territory)
+
+    def _next_phase_from_diplomacy(self, ctx):
+        ctx.year = self.year
+        ctx.season = self.season
+        if ctx.dislodged:
+            ctx.phase_type = PHASES.RETREATS
             return
-        gotSCs = []
-        for country, troops in self._troops.items():
-            supplyc = [i for i in self.map["supply"]
-                       if i in self._terrs[country]]
-            if len(supplyc) >= self.game["scstowin"]:
-                gotSCs.append((country, len(supplyc)))
-        if gotSCs:
-            higher = max(gotSCs, key=lambda el: el[1])
-            maxCount = 0
-            for country, scs in gotSCs:
-                if scs == higher[1]:
-                    maxCount += 1
-            #: if we have a draw, we must continue
-            if maxCount == 1:
-                self.end = True
-                self.winner = higher[0]
-                self.phase_new['countries'] = []
-                self.phase_new['winner'] = higher[0]
-                self.phase_new['type'] = 'end'
-
-    def _cleanOrders(self):
-        self.finalOrders = {}
-        for country, orders in self.orders.items():
-            self.finalOrders[country] = {}
-            for tid, data in orders.items():
-                self.finalOrders[country][tid] = {
-                    'type': data['type'],
-                    'success': data.get('success', False)}
-                if data.get('mc') in [0, 1]:
-                    self.finalOrders[country][tid]['mc'] = data['mc']
-                if self.game['phase'] == "diplomacy":
-                    if data['type'] != 'hold':
-                        self.finalOrders[country][tid]['to'] = data['to']
-                    if data.get('viaConvoy'):
-                        self.finalOrders[country][tid]['viaConvoy'] = \
-                            data['viaConvoy']
-                        # TODO: remove next line when UI will be ready
-                        self.finalOrders[country][tid]['convoy_route'] = \
-                            data['convoy_route']
-                        #
-                        self.finalOrders[country][tid]['convoy_routes'] = \
-                            data['convoy_routes']
-                    if data['type'] in ["sup_move", "convoy"]:
-                        self.finalOrders[country][tid]['from'] = data['from']
-                elif self.game['phase'] == "builds":
-                    if data['type'] == 'build':
-                        self.finalOrders[country][tid]['troop'] = data['troop']
-                        if data.get('mc') in [0, 1]:
-                            self.finalOrders[country][tid]['mc'] = data['mc']
-                else:
-                    # retreats
-                    if data.get('to'):
-                        self.finalOrders[country][tid]['to'] = data['to']
-                        if data.get('mc') in [0, 1]:
-                            self.finalOrders[country][tid]['mc'] = data['mc']
-
-    def _buildNewPhase(self):
-        ## TODO: set next phase enabled countries
-        self.phase_new = dict()
-        self._troops = self.game["troops"]
-        self._terrs = self.game["terrs"]
-        self.phase_new["mc"] = self.game["mc_pos"]
-        if self.game["phase"] == "builds":
-            disbands = []
-            builds = []
-            for country, orders in self.orders.items():
-                for order_id, order in orders.items():
-                    if order["type"] == "build":
-                        builds.append((order_id, country, order["troop"]))
-                    if order["type"] == "disband":
-                        disbands.append((order_id, country))
-            #self._updateTroops("build", self.orders)
-            self._updateTroops("build", builds)
-            self._updateTroops("delete", disbands)
-        elif self.game["phase"] == "retreats":
-            ## disband units
-            disbands = []
-            moves = []
-            for country, tlist in self.game["dislodged"].items():
-                for troop in tlist:
-                    disband = True
-                    orders = self.orders[country]
-                    order = orders[troop]
-                    if order["type"] == "retreat":
-                        if not order.get('failed', False):
-                            order["success"] = True
-                            disband = False
-                            moves.append(
-                                [troop, order["to"], country, order.get("mc")]
-                            )
-                    if disband:
-                        disbands.append((troop, country))
-            self._updateTroops("delete", disbands)
-            ## update troops' positions
-            self._updatePositions(moves)
+        if self.season == SEASONS.SPRING:
+            ctx.phase_type = PHASES.DIPLOMACY
+            ctx.season = SEASONS.AUTUMN
         else:
-            ## update troops
-            self._updateTroops("dislodge", self.dislodged)
-            ## make moves
-            moves = []
-            for country, orders in self.orders.items():
-                for order_id, order in orders.items():
-                    if order["type"] == "move" and order.get("success", False):
-                        moves.append(
-                            [order_id, order["to"], country, order.get("mc")]
-                        )
-            ## update troops' positions
-            self._updatePositions(moves)
-        self._buildPhaseData()
-        self.phase_new["territories"] = self._terrs
-        self._checkWin()
-        self._cleanOrders()
+            ctx.phase_type = PHASES.BUILDS
+
+    def _next_phase_from_retreats(self, ctx):
+        ctx.year = self.year
+        ctx.season = self.season
+        if self.season == SEASONS.SPRING:
+            ctx.phase_type = PHASES.DIPLOMACY
+            ctx.season = SEASONS.AUTUMN
+        else:
+            ctx.phase_type = PHASES.BUILDS
+
+    def _next_phase_from_builds(self, ctx):
+        ctx.phase_type = PHASES.DIPLOMACY
+        ctx.year = self.year + 1
+        ctx.season = SEASONS.SPRING
+
+    def _build_active_countries(self, ctx):
+        self.active_builders.call(ctx.phase_type, self, ctx)
+
+    @active_builders.register(PHASES.DIPLOMACY)
+    def _active_countries_diplomacy(self, ctx):
+        ctx.countries = list(ctx.positions.keys())
+
+    @active_builders.register(PHASES.RETREATS)
+    def _active_countries_retreats(self, ctx):
+        ctx.countries = list(ctx.dislodged.keys())
+
+    @active_builders.register(PHASES.BUILDS)
+    def _active_countries_builds(self, ctx):
+        ctx.countries = []
+        for country, troops in ctx.positions.items():
+            centers = set(self.all_supply_centers) & set(ctx.territories[country])
+            if len(troops['armies']) + len(troops['fleets']) != len(centers):
+                ctx.countries.append(country)
+
+    def _build_new_orders(self, ctx):
+        self.order_builders.call(ctx.phase_type, self, ctx)
+
+    @order_builders.register(PHASES.DIPLOMACY)
+    def _build_diplomacy_orders(self, ctx):
+        ctx.new_orders = {}
+        for country in ctx.countries:
+            ctx.new_orders[country] = []
+            for troops in ctx.positions[country].values():
+                for troop in troops:
+                    ctx.new_orders[country].append({'territory': troop, 'type': ORDERS.HOLD})
+
+    @order_builders.register(PHASES.RETREATS)
+    def _build_retreats_orders(self, ctx):
+        ctx.new_orders = {}
+        for country in ctx.countries:
+            ctx.new_orders[country] = []
+            for troop in ctx.dislodged[country]:
+                ctx.new_orders[country].append({'territory': troop, 'type': ORDERS.DISBAND})
+
+    @order_builders.register(PHASES.BUILDS)
+    def _build_builds_orders(self, ctx):
+        ctx.new_orders = {}
+        for country in ctx.countries:
+            ctx.new_orders[country] = []
+            centers = set(self.all_supply_centers) & set(ctx.territories[country])
+            troops = ctx.positions[country]['armies'] + ctx.positions[country]['fleets']
+            if len(centers) > len(troops):
+                allowed_supply_centers = set(self.allowed_supply_centers) & set(ctx.territories[country])
+                troops = allowed_supply_centers - set(troops)
+            for troop in troops:
+                ctx.new_orders[country].append({'territory': troop, 'type': ORDERS.HOLD})
+
+    def _check_win(self, ctx):
+        if ctx.phase_type != PHASES.BUILDS:
+            return
+        self._win_compute(ctx)
+
+    def _win_compute(self, ctx):
+        winners = []
+        for country, territories in ctx.territories.items():
+            centers = set(self.all_supply_centers) & set(territories)
+            if len(centers) >= self.centers_to_win:
+                winners.append((country, len(centers)))
+        if not winners:
+            return
+        winners_count = 0
+        high = max(winners, key=lambda el: el[1])
+        for country, centers in winners:
+            if centers == high[1]:
+                winners_count += 1
+        if winners_count != 1:
+            return
+        ctx.end = True
+        ctx.winner = high[0]
+
+    @pipelines.register(PHASES.DIPLOMACY)
+    def process_diplomacy(self, orders):
+        return ProcessingPipeline(
+            self._preprocess,
+            self._adjudicate,
+            self._make_movements,
+            self._prepare_positions,
+            self._update_positions,
+            self._next_phase_from_diplomacy,
+            self._prepare_territories,
+            self._update_territories,
+            self._build_active_countries,
+            self._build_new_orders,
+            self._check_win
+        ).process(orders)
+
+    @pipelines.register(PHASES.RETREATS)
+    def process_retreats(self, orders):
+        return ProcessingPipeline(
+            self._preprocess,
+            self._retreats_default_orders,
+            self._prepare_positions,
+            self._make_movements_or_disbands,
+            self._update_disbands,
+            self._update_positions,
+            self._next_phase_from_retreats,
+            self._prepare_territories,
+            self._build_active_countries,
+            self._build_new_orders,
+            self._check_win
+        ).process(orders)
+
+    @pipelines.register(PHASES.BUILDS)
+    def process_builds(self, orders):
+        return ProcessingPipeline(
+            self._preprocess,
+            self._builds_default_orders,
+            self._prepare_positions,
+            self._prepare_territories,
+            self._update_builds,
+            self._make_disbands,
+            self._update_disbands,
+            self._next_phase_from_builds,
+            self._build_active_countries,
+            self._build_new_orders
+        ).process(orders)
+
+    def process(self, orders):
+        return self.pipelines.call(self.phase_type, self, orders)

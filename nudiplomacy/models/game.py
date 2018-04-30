@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import random
+from collections import defaultdict
 from datetime import timedelta
 from decimal import Decimal
 from weppy import now, T, sdict
@@ -343,6 +344,16 @@ class GamePhase(TSModel):
         'game': True,
         'unique_phase': {'fields': ['game', 'year', 'season', 'type'], 'unique': True}
     }
+
+    @rowmethod('orders_for_processor')
+    def _orders_for_processor(self, phase):
+        rv = defaultdict(dict)
+        orders = phase.orders.join('game_role').select()
+        for order in orders:
+            order_data = {'type': order.type}
+            order_data.update(**order.data)
+            rv[order.game_role.country][order.territory] = order_data
+        return rv
 
 
 class Order(TSModel):
