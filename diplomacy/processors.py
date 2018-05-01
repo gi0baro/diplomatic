@@ -129,12 +129,21 @@ class GameProcessor(Logger):
         ctx.dislodged = dislodged
 
     def _retreats_default_orders(self, ctx):
+        to_update = []
         for country, orders in ctx.orders.items():
             for territory, order in orders.items():
                 if order['type'] == ORDERS.HOLD:
-                    order['type'] = ORDERS.DISBAND
+                    to_update.append((country, territory))
+        for country, territory in to_update:
+            ctx.orders[country][territory] = {'type': ORDERS.DISBAND}
 
     def _builds_default_orders(self, ctx):
+        #: set all orders as succeeded
+        ctx.succeeded = []
+        for country, orders in ctx.orders.items():
+            for territory, order in orders.items():
+                ctx.succeeded.append((country, territory))
+        #: update needed disbands
         for country, orders in ctx.orders.items():
             centers = set(self.all_supply_centers) & set(self.territories[country])
             troops = self.troops[country]['armies'] + self.troops[country]['fleets']
@@ -303,31 +312,31 @@ class GameProcessor(Logger):
     def _build_diplomacy_orders(self, ctx):
         ctx.new_orders = {}
         for country in ctx.countries:
-            ctx.new_orders[country] = []
+            ctx.new_orders[country] = {}
             for troops in ctx.positions[country].values():
                 for troop in troops:
-                    ctx.new_orders[country].append({'territory': troop, 'type': ORDERS.HOLD})
+                    ctx.new_orders[country][troop] = {'type': ORDERS.HOLD}
 
     @order_builders.register(PHASES.RETREATS)
     def _build_retreats_orders(self, ctx):
         ctx.new_orders = {}
         for country in ctx.countries:
-            ctx.new_orders[country] = []
+            ctx.new_orders[country] = {}
             for troop in ctx.dislodged[country]:
-                ctx.new_orders[country].append({'territory': troop, 'type': ORDERS.DISBAND})
+                ctx.new_orders[country][troop] = {'type': ORDERS.DISBAND}
 
     @order_builders.register(PHASES.BUILDS)
     def _build_builds_orders(self, ctx):
         ctx.new_orders = {}
         for country in ctx.countries:
-            ctx.new_orders[country] = []
+            ctx.new_orders[country] = {}
             centers = set(self.all_supply_centers) & set(ctx.territories[country])
             troops = ctx.positions[country]['armies'] + ctx.positions[country]['fleets']
             if len(centers) > len(troops):
                 allowed_supply_centers = set(self.allowed_supply_centers) & set(ctx.territories[country])
                 troops = allowed_supply_centers - set(troops)
             for troop in troops:
-                ctx.new_orders[country].append({'territory': troop, 'type': ORDERS.HOLD})
+                ctx.new_orders[country][troop] = {'type': ORDERS.HOLD}
 
     def _check_win(self, ctx):
         if ctx.phase_type != PHASES.BUILDS:
@@ -387,7 +396,6 @@ class GameProcessor(Logger):
     @pipelines.register(PHASES.BUILDS)
     def process_builds(self, orders):
         return ProcessingPipeline(
-            self._preprocess,
             self._builds_default_orders,
             self._prepare_positions,
             self._prepare_territories,

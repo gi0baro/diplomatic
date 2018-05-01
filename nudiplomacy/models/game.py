@@ -4,6 +4,7 @@ import random
 from collections import defaultdict
 from datetime import timedelta
 from decimal import Decimal
+from diplomacy import constants as dip_const
 from weppy import now, T, sdict
 from weppy.orm import Model, Field, belongs_to, has_one, has_many, scope, rowmethod
 
@@ -15,6 +16,7 @@ from ..helpers.validators import SkipProcessingValidator
 from ..helpers.widgets import (
     games_map, games_players_number, games_bet, games_countries_enabled, games_phase_time, games_join_time,
     games_skip_processing)
+from ..gameman.process import process_game
 
 
 class Game(TSModel):
@@ -244,6 +246,47 @@ class Game(TSModel):
         game.update_record(
             stage=self.STAGES['game'], next_process_at=now() + timedelta(minutes=game.phase_time), is_ready=False)
 
+    @rowmethod('process')
+    def process_game(self, game):
+        #: lock game
+        game.update_record(stage=self.STAGES['processing'])
+        self.db.commit()
+        try:
+            with self.db.atomic():
+                #: launch adjudicator
+                proc_ctx, updated_orders, new_orders, successful_orders = process_game(game)
+                #: update current phase
+                current_phase = game.active_phase()
+                current_phase.update_orders_stage_from_processor(updated_orders, successful_orders)
+                current_phase.update_record(stage=GamePhase.STAGES['closed'])
+                #: create new phase
+                res = game.phases.create(
+                    year=proc_ctx.year,
+                    season=proc_ctx.season,
+                    type=proc_ctx.phase_type,
+                    territories=proc_ctx.territories,
+                    troops=proc_ctx.positions,
+                    coasts=proc_ctx.coasts_positions,
+                    dislodged=dict(proc_ctx.dislodged))
+                #: create new orders
+                players = game.players()
+                players_map = {}
+                for player in players:
+                    players_map[player.country] = player.id
+                for country, orders in new_orders.items():
+                    for order in orders:
+                        order.update(game_role=players_map[country])
+                        res.id.orders.create(**order)
+        except Exception:
+            game.update_record(stage=self.STAGES['crash'])
+            self.db.commit()
+            app.log.exception('OUCH')
+            return
+        #: update game
+        game.update_record(
+            stage=self.STAGES['game'], next_process_at=now() + timedelta(minutes=game.phase_time), is_ready=False)
+        self.db.commit()
+
     @rowmethod('end')
     def end_game(self, game):
         # TODO everything game related
@@ -313,9 +356,11 @@ class GamePhase(TSModel):
     belongs_to('game')
     has_many('orders')
 
-    SEASONS = {'spring': 0, 'autumn': 1}
+    SEASONS = {'spring': dip_const.SEASONS.SPRING, 'autumn': dip_const.SEASONS.AUTUMN}
     STAGES = {'open': 0, 'ready': 1, 'closed': 2}
-    TYPES = {'diplomacy': 0, 'retreats': 1, 'builds': 2}
+    TYPES = {
+        'diplomacy': dip_const.PHASES.DIPLOMACY, 'retreats': dip_const.PHASES.RETREATS,
+        'builds': dip_const.PHASES.BUILDS}
 
     year = Field.int(notnull=True)
     season = Field.int(notnull=True)
@@ -355,13 +400,21 @@ class GamePhase(TSModel):
             rv[order.game_role.country][order.territory] = order_data
         return rv
 
+    @rowmethod('update_orders_stage_from_processor')
+    def _update_orders_from_processor(self, phase, orders, succeeded):
+        for territory, data in orders.items():
+            phase.orders.where(lambda o: (o.territory == territory) & (o.type != data['type'])).update(**data)
+        phase.orders.where(lambda o: o.territory.belongs(succeeded)).update(stage=Order.STAGES['successful'])
+        phase.orders.where(lambda o: o.stage == Order.STAGES['planned']).update(stage=Order.STAGES['failed'])
+
 
 class Order(TSModel):
     belongs_to('game_role', 'game_phase')
 
     TYPES = {
-        'hold': 0, 'move': 1, 'support_hold': 2, 'support_move': 3, 'convoy': 4,
-        'retreat': 5, 'build': 6, 'disband': 7}
+        'hold': dip_const.ORDERS.HOLD, 'move': dip_const.ORDERS.MOVE, 'support_hold': dip_const.ORDERS.SUPPORT_HOLD,
+        'support_move': dip_const.ORDERS.SUPPORT_MOVE, 'convoy': dip_const.ORDERS.CONVOY,
+        'retreat': dip_const.ORDERS.RETREAT, 'build': dip_const.ORDERS.BUILD, 'disband': dip_const.ORDERS.DISBAND}
     STAGES = {'planned': 0, 'successful': 1, 'failed': 2}
 
     territory = Field(notnull=True)
