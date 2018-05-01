@@ -32,7 +32,7 @@ class Interactions
         #: check depending on action
         switch act
             when "select"
-                if (app.game.isLastPhase()) or (app.game.phase().id is "next")
+                if (app.game.isLastPhase()) or (app.game.phase().position is "next")
                     if app.game.phase().type is PHASE_TYPES.diplomacy
                         if Id in app.game.phase().getCountryTroops()
                             res = true

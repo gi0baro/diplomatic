@@ -23,6 +23,7 @@
         app.net.route("phases", "{{=url('api.game_phases', game.id)}}");
         app.net.route("status", "{{#=url('api.game_status', game.id)}}");
         app.net.route("orders", "{{=url('api.authorized.game_orders', game.id)}}");
+        app.net.route("phase_orders", "{{=url('api.phase_orders', ':PHASE_ID:')}}");
         app.net.route("save_orders", "{{=url('api.authorized.order_save', ':ORDER_ID:')}}");
         app.net.route("ready", "{{#=url('api.orders_ready', game.id, {'set': '1'})}}");
         app.net.route("unready", "{{#=url('api.orders_ready', game.id)}}");

@@ -5,6 +5,7 @@ class Game
         @colors = {}
         @_currentPhase = 0
         @_nphases = 0
+        @_phases_loaded = 0
         @moves = {}
         @moves_mc = {}
         @moves_queue = []
@@ -18,7 +19,7 @@ class Game
         @win = null
         return
 
-    init: (data, phases, orders) ->
+    init: (data, phases, orders, callback) ->
         #: load current player
         # @country = data.currentPlayer
         @country = currentPlayer
@@ -27,36 +28,50 @@ class Game
         @buildew = data.build_everywhere
         @presstype = data.press_type
         #: load phases
-        @_phases["0"] = new Phase(0, PHASE_TYPES.pregame, 1920, null, app.env.countries_init, {}, {}, {}, {})
+        @_phases["0"] = new Phase(0, null, 2, PHASE_TYPES.pregame, 1920, null, app.env.countries_init, {}, {}, {}, {})
         i = 1
         for phase in phases
-            cstr = i+''
-            @_phases[cstr] = new Phase(i, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.coasts, phase.dislodged, {})
+            @_phases[i+''] = new Phase(i, phase.id, phase.stage, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.coasts, phase.dislodged, {})
             i++
         # TEMP
         console.log(phases, orders)
         @_nphases = phases.length + 1
         @_currentPhase = @_nphases-1
-        # @_nphases = 1
-        # @_currentPhase = 0
-        @_nextPhase = new PhaseNext()
-        # @orders = orders.data
         @orders = {}
         if orders.ready
             @ready = true
         @_initOrders(orders.data)
         @_setStartingColors()
-        if @gotOrders()
-            @_currentPhase = "next"
         if @phase('last') isnt undefined and @phase('last').type is PHASE_TYPES.won
             @win = data.phases[@_nphases-1].winner
+        @_loadPhasesOrders(callback)
+        return
+
+    _loadPhasesOrders: (callback) ->
+        console.log('expected orders to load', @_nphases)
+        for pos, phase of @_phases
+            phase._fetchOrders((phase_id, loaded) =>
+                @_phases_loaded += 1
+                if @_phases_loaded is @_nphases
+                    @_completeInit(callback)
+                return
+            )
+        return
+
+    _completeInit: (after) ->
+        @_nextPhase = new PhaseNext()
+        @_nextPhase._fetchOrders(->
+            return
+        )
+        if @gotOrders()
+            @_currentPhase = "next"
+        after()
         return
 
     reload: (data, orders) ->
         @_phases = {}
         for phase in data.phases
-            cstr = i+''
-            @_phases[cstr] = new Phase(i, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.mc, phase.dislodged, phase.orders)
+            @_phases[i+''] = new Phase(i, phase.id, phase.stage, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.mc, phase.dislodged, phase.orders)
             i++
         @_nphases = data.phases.length
         @_currentPhase = @_nphases-1
@@ -94,7 +109,7 @@ class Game
             console.log(order)
             territory = order.territory
             @orders[territory] = order
-            if order.type isnt "hold"
+            if order.type isnt ORDER_TYPES.hold
                 if order.type in [ORDER_TYPES.build, ORDER_TYPES.disband]
                     if order.data.troop is TROOP_TYPES.fleet
                         d = type: "build_fleet"

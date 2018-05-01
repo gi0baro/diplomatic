@@ -45,7 +45,17 @@ class Network
                 return
         return
 
-    getOrders: ->
+    getOrders: (phase, callback) ->
+        console.log('called getOrders for phase', phase)
+        rv = {}
+        $.ajax @urls['phase_orders'].replace(':PHASE_ID:', phase.id),
+            type: 'GET'
+            success: (response) ->
+                callback(response.data)
+                return
+        return
+
+    getCurrentOrders: ->
         rv = {}
         $.ajax @urls['orders'],
             type: 'GET'

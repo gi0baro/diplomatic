@@ -203,10 +203,10 @@ class UI
             console.log("phase_r click")
             buttoff = $('#phase_r').hasClass 'disabled'
             if not buttoff
-                if app.game.phase().id is "next"
+                if app.game.phase().position is "next"
                     newphase = app.game._nphases-1
                 else
-                    newphase = app.game.phase().id - 1
+                    newphase = app.game.phase().position - 1
                 app.game.loadPhase(newphase)
             return
         $('#phase_f').click ->
@@ -215,7 +215,7 @@ class UI
                 if app.game.isLastPhase()
                     newphase = "next"
                 else
-                    newphase = app.game.phase().id + 1
+                    newphase = app.game.phase().position + 1
                 app.game.loadPhase(newphase)
             return
         $('#phase_ff').click ->
@@ -391,7 +391,7 @@ class UI
         else
             $('#phase_ind').append '<span><em>Next</em></span>'
         @setPhaseStats(id)
-        if id is app.game.phase('last').id or id in ['next', 'last']
+        if id is app.game.phase('last').position or id in ['next', 'last']
             if app.game.phase('last').type is PHASE_TYPES.builds
                 @showBuildsTip()
         return
@@ -458,7 +458,7 @@ class UI
                 visibility: 'visible'
             if phase isnt "next"
                 pphase = app.game._phases[phase]
-                if pphase.id
+                if pphase.position
                     s = "Resulting from "
                     if pphase.type is PHASE_TYPES.diplomacy
                         s += pphase.season+' '+pphase.year
@@ -860,7 +860,7 @@ class UI
             #   visibility: 'visible'
             $('#readyorders').css
                 'line-height': ($('#orders_next').height()-12)+"px"
-            p = if app.game.phase().id isnt "next" then app.game.phase().id-1 else "next"
+            p = if app.game.phase().position isnt "next" then app.game.phase().position-1 else "next"
             $('#orders_'+p).addClass 'on'
             $('#orders_'+p).css
                 visibility: 'visible'
@@ -1245,7 +1245,7 @@ class UI
         return
 
     reload: ->
-        npid = app.game.phase().id
+        npid = app.game.phase().position
         #: create wrapper for new phase orders
         wrapper = '<div class="ord_phase_wrapper" id="orders_'+npid+'">'
         for country, orders of app.game.phase().orders

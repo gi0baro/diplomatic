@@ -94,6 +94,19 @@ def game_join(gid):
     return rv
 
 
+@api.route('/phases/<int:pid>/orders')
+def phase_orders(pid):
+    rv = []
+    rows = Order.where(
+        lambda o: (o.game_phase == pid) & (o.stage != Order.STAGES['planned'])
+    ).join('game_role').select()
+    for row in rows:
+        element = row.as_dict()
+        element['country'] = row.game_role.country
+        rv.append(element)
+    return {'data': rv}
+
+
 @authorized.route('/game/<int:gid>/orders', methods=['get'])
 def game_orders(gid):
     rv = sdict(status='error')
