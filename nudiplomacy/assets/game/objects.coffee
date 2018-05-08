@@ -64,6 +64,7 @@ class Phase
                     w.src = order.data.src or territory
                     @pastMoves[territory] = w
                     @pastMoves[territory].type = ORDER_TYPES.remote_to_internal(order.type)
+                    @pastMoves[territory].success = order.stage is ORDER_STATES.successful
         return
 
     previous: ->
