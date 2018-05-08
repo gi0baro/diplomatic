@@ -382,12 +382,12 @@ class UI
             phase = app.game.phase(id)
             console.log(phase)
             if phase.type is PHASE_TYPES.diplomacy
-                $('#phase_ind').append '<span>'+phase.season+' '+phase.year+'</span>'
+                $('#phase_ind').append '<span>'+SEASONS.translate(phase.season)+' '+phase.year+'</span>'
             else
                 if phase.year
-                    $('#phase_ind').append '<span>'+phase.type+' '+phase.year+'</span>'
+                    $('#phase_ind').append '<span>'+PHASE_TYPES.translate(phase.type)+' '+phase.year+'</span>'
                 else
-                    $('#phase_ind').append '<span>'+phase.type+'</span'
+                    $('#phase_ind').append '<span>'+PHASE_TYPES.translate(phase.type)+'</span'
         else
             $('#phase_ind').append '<span><em>Next</em></span>'
         @setPhaseStats(id)
@@ -871,26 +871,82 @@ class UI
     _buildOrderString: (territory, order) ->
         console.log('_buildOrderString', territory, order)
         internal_type = ORDER_TYPES.remote_to_internal(order.type)
-        order_str = app.env.names[territory] + ' ' + internal_type
+        territory_name = app.env.names[territory]
         if internal_type is 'hold'
-            return order_str
-        if internal_type is 'move'
-            order_str += ' to '+app.env.names[order.data.dst]
-            if order.data.through
-                order_str += ' via convoy'
+            order_str = T.get('order_phrase.hold').replace(':TERRITORY:', territory_name)
+            # return order_str
+        else if internal_type is 'move'
+            order_str = T.get('order_phrase.move').replace(
+                ':SRC:', territory_name
+            ).replace(
+                ':DST:', app.env.names[order.data.dst]
+            )
+            through_phrase = if order.data.through then T.get('order_phrase.through') else ''
+            order_str = order_str.replace(':THROUGH:', through_phrase)
             if order.data.coast isnt undefined
                 if order.data.coast is 0
-                    order_str += ' north coast'
+                    coast_phrase = T.get('order_phrase.north_coast')
                 else
-                    order_str += ' south coast'
+                    coast_phrase = T.get('order_phrase.south_coast')
+            else
+                coast_phrase = ''
+            order_str = order_str.replace(':COAST:', coast_phrase)
+        else if internal_type is 'support_hold'
+            order_str = T.get('order_phrase.support_hold').replace(':DST:', app.env.names[order.data.dst])
+        else if internal_type is 'support_move'
+            order_str = T.get('order_phrase.support_move').replace(
+                ':TERRITORY:', territory_name
+            ).replace(
+                ':SRC:', app.env.names[order.data.src]
+            ).replace(
+                ':DST:', app.env.names[order.data.dst]
+            )
+            if order.data.coast isnt undefined
+                if order.data.coast is 0
+                    coast_phrase = T.get('order_phrase.north_coast')
+                else
+                    coast_phrase = T.get('order_phrase.south_coast')
+            else
+                coast_phrase = ''
+            order_str = order_str.replace(':COAST:', coast_phrase)
         else if internal_type is 'build'
-            order_str = app.env.names[territory] + " builds a new " + TROOP_TYPES.remote_to_internal(order.data.troop)
-            if order.data.coast is 0
-                order_str += " at north coast"
-            if order.data.coast is 1
-                order_str += " at south coast"
-        else
-            order_str += ' from '+app.env.names[order.data.src]+' to '+app.env.names[order.data.dst]
+            order_str = T.get('order_phrase.build').replace(
+                ':TERRITORY:', territory_name
+            ).replace(
+                ':TROOP_TYPE:', TROOP_TYPES.remote_to_internal(order.data.troop)
+            )
+            if order.data.coast isnt undefined
+                if order.data.coast is 0
+                    coast_phrase = T.get('order_phrase.at_north_coast')
+                else
+                    coast_phrase = T.get('order_phrase.at_south_coast')
+            else
+                coast_phrase = ''
+            order_str = order_str.replace(':COAST:', coast_phrase)
+        else if internal_type is 'retreat'
+            order_str = T.get('order_phrase.retreat').replace(
+                ':TERRITORY:', territory_name
+            ).replace(
+                ':DST:', app.env.names[order.data.dst]
+            )
+            if order.data.coast isnt undefined
+                if order.data.coast is 0
+                    coast_phrase = T.get('order_phrase.north_coast')
+                else
+                    coast_phrase = T.get('order_phrase.south_coast')
+            else
+                coast_phrase = ''
+            order_str = order_str.replace(':COAST:', coast_phrase)
+        else if internal_type is 'disband'
+            order_str = T.get('order_phrase.disband').replace(':TERRITORY:', territory_name)
+        else if internal_type is 'convoy'
+            order_str = T.get('order_phrase.convoy').replace(
+                ':TERRITORY:', territory_name
+            ).replace(
+                ':SRC:', app.env.names[order.data.src]
+            ).replace(
+                ':DST:', app.env.names[order.data.dst]
+            )
         return order_str
 
     addOrder: (id, data) ->

@@ -19,6 +19,7 @@ js_game = app.ext.Assets.js([
     'helpers/Point.js',
     'helpers/Intersection.js',
     'base/counter.coffee',
+    'base/translator.coffee',
     'game/proto.coffee',
     'game/constants.coffee',
     'game/objects.coffee',

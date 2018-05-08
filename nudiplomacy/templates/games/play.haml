@@ -17,6 +17,34 @@
     var SEA_COLOR = {r: 81, g: 111, b: 124};
     // var NEUTRAL_COLOR = {r: 0, g: 0, b: 0};
     var NEUTRAL_COLOR = {r: 20, g: 20, b: 20};
+
+    T.register({
+        spring: '{{=T("spring").title()}}',
+        autumn: '{{=T("autumn").title()}}'
+    }, 'season');
+    T.register({
+        retreats: '{{=T("retreats").title()}}',
+        builds: '{{=T("builds").title()}}',
+        pregame: '{{=T("pre-game").title()}}'
+    }, 'phase_type');
+    T.register({
+        hold: '{{=T(":TERRITORY: holds")}}',
+        move: '{{=T(":SRC: moves to :DST::THROUGH::COAST:")}}',
+        support_move: '{{=T(":TERRITORY: supports :SRC: in movement to :DST:")}}',
+        sopport_hold: '{{=T(":TERRITORY: supports :DST: on hold")}}',
+        convoy: '{{=T(":TERRITORY: convoys :SRC: to :DST:")}}',
+        retreat: '{{=T(":TERRITORY: retreats to :DST::COAST:")}}',
+        build: '{{=T(":TERRITORY: builds a new :TROOP_TYPE::AT_COAST:")}}',
+        disband: '{{=T(":TERRITORY: disbands")}}',
+        through: '{{=T("via convoy")}}',
+        north_coast: '{{=T("north coast")}}',
+        south_coast: '{{=T("south coast")}}',
+        at_north_coast: '{{=T("at north coast")}}',
+        at_south_coast: '{{=T("at south coast")}}',
+        army: '{{=T("army")}}',
+        fleet: '{{=T("fleet")}}'
+    }, 'order_phrase')
+
     $(document).ready(function() {
         app.net.route("map", "{{=url('api.map_get', game.map)}}");
         app.net.route("game", "{{=url('api.game_get', game.id)}}");
