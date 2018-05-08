@@ -1,6 +1,6 @@
-# DB settings
-
 adapter: postgres
 encoding: utf8
-host: localhost
-database: nudiplomacy
+host: db
+database: postgres
+user: postgres
+password: postgres
