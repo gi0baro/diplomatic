@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "nudiplomacy"
+version = "0.1.0"
+description = ""
+authors = ["gi0baro <gi0baro@d4net.org>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+weppy = "1.3.1"
+weppy-haml = "0.4"
+weppy-bs3 = "0.6"
+weppy-assets = "0.5"
+coffeescript = "1.1.2"
+redis = "~3.3.11"
+psycopg2-binary = "~2.8.4"
+celery = "~4.3.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "~5.2.2"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

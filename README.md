@@ -6,6 +6,11 @@ weppy based web version of Diplomacy game.
 Development
 -----------
 
+Lock requirements:
+
+    poetry export -f requirements.txt -o requirements.txt --without-hashes
+    poetry export -f requirements.txt -o requirements.dev.txt --without-hashes --dev
+
 First step is to make configuration files, should be enough to copy all the *yml.example* files in *config* folder to *.yml* ones.
 
 Then you should build the docker image using docker-compose:
