@@ -1,0 +1,56 @@
+stages:
+  - test
+  # - build
+  # - deploy
+
+test:
+  stage: test
+  image: python:3.7-alpine
+  # services:
+  #   - name: postgres:10-alpine
+  #     alias: postgres-ci
+  #   - name: redis:latest
+  #     alias: redis-ci
+  # variables:
+  #   POSTGRES_HOST: postgres-ci
+  #   POSTGRES_DB: postgres
+  #   POSTGRES_USER: postgres
+  #   POSTGRES_PASSWORD: postgres
+  #   REDIS_HOST: redis-ci
+  #   REDIS_PORT: 6379
+  before_script:
+    - pip install pytest==5.2.2
+    # - pip install -r requirements.dev.txt
+  script:
+    - py.test tests -v -x
+
+# build_and_publish:
+#   stage: build
+#   image: quay.io/buildah/stable:latest
+#   variables:
+#     BUILDAH_FORMAT: docker
+#     CONTAINER_IMAGE: $CI_REGISTRY_IMAGE
+#   before_script:
+#     - buildah login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+#   script:
+#     - buildah --storage-driver=vfs bud --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
+#     - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
+#     - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA $CONTAINER_IMAGE:latest
+#   only:
+#     refs:
+#       - master
+
+# deploy:
+#   stage: deploy
+#   image: ${CI_REGISTRY}/devops/k8s-deploy/csr1:latest
+#   variables:
+#     GIT_STRATEGY: none
+#     CI_APPLICATION_TAG: $CI_COMMIT_SHORT_SHA
+#   script:
+#     - auto_deploy deploy_web
+#   environment:
+#     name: production
+#     url: https://diplomacy.c1.svc.amira.io
+#   only:
+#     refs:
+#       - master
