@@ -104,7 +104,7 @@ class Node(object):
         self.name = data.get("name")
         ##
         # self.type = self.__class__.__name__
-        self.src = data.get('src')
+        self.src = data.get('src', self.id)
         self.dst = data.get('dst')
         self.log('FAILED {}'.format(data.get("failed")))
         self.failed = data.get("failed") or False
