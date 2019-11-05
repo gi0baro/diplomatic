@@ -1,13 +1,18 @@
-FROM python:3.6.4
+FROM python:3.7-alpine
 
-RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
-RUN apt-get install -y nodejs
-RUN apt-get install -y libjpeg-dev libfreetype6-dev zlib1g-dev
+MAINTAINER gi0baro
 
-# install python requirements
-RUN mkdir /usr/src/app
-ADD requirements.txt /usr/src/app
-RUN pip install -r /usr/src/app/requirements.txt --src /usr/src/app
+RUN apk add --no-cache nodejs
 
-RUN mkdir /app
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+COPY requirements.txt /usr/src/app
+RUN apk add --no-cache --virtual build-deps \
+    g++ musl-dev && \
+    pip install -r /usr/src/app/requirements.txt && \
+    apk del build-deps
+
 WORKDIR /app
+COPY diplomacy diplomacy
+COPY nudiplomacy nudiplomacy
+COPY variants variants
