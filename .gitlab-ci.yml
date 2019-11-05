@@ -22,7 +22,7 @@ test:
     - pip install pytest==5.2.2
     # - pip install -r requirements.dev.txt
   script:
-    - py.test tests -v -x
+    - python -m pytest tests -v -x
 
 # build_and_publish:
 #   stage: build
