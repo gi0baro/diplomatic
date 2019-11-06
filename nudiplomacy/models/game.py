@@ -186,9 +186,9 @@ class Game(TSModel):
         if not country or (country not in available_countries):
             random.shuffle(available_countries)
             country = next(iter(available_countries), None)
-        app.log.debug('add_player', user, country)
+        # app.log.debug('add_player', user, country)
         player = row.players.create(user=user.id, country=country)
-        app.log.debug(player)
+        # app.log.debug(player)
         #: take coins from player
         if player.id:
             user.vault().transactions.create(value=-row.bet, description="Bet for game {}".format(row.name))
@@ -259,6 +259,10 @@ class Game(TSModel):
                 current_phase = game.active_phase()
                 current_phase.update_orders_stage_from_processor(updated_orders, successful_orders)
                 current_phase.update_record(stage=GamePhase.STAGES['closed'])
+                #: check end
+                if proc_ctx.end:
+                    game.end()
+                    return
                 #: create new phase
                 res = game.phases.create(
                     year=proc_ctx.year,
@@ -273,10 +277,21 @@ class Game(TSModel):
                 players_map = {}
                 for player in players:
                     players_map[player.country] = player.id
+                active_players = []
                 for country, orders in new_orders.items():
                     for order in orders:
                         order.update(game_role=players_map[country])
                         res.id.orders.create(**order)
+                    active_players.append(players_map[country])
+                active_players = set(active_players)
+                inactive_players = set(players_map.values()) - active_players
+                #: clear roles
+                # TODO: maybe add editable status?
+                if active_players:
+                    game.players.where(lambda p: p.user_id.belongs(active_players)).update(is_ready=False)
+                if inactive_players:
+                    game.players.where(lambda p: p.user_id.belongs(inactive_players)).update(is_ready=True)
+
         except Exception:
             game.update_record(stage=self.STAGES['crash'])
             self.db.commit()
@@ -290,6 +305,7 @@ class Game(TSModel):
     @rowmethod('end')
     def end_game(self, game):
         # TODO everything game related
+        # game.update_record(stage=self.STAGES['end'])
         #: give coins to player(s)
         winner = None  # TODO fetch real one
         total_pot = (game.bet * game.players_number - GAME_FEE * game.players_number) * (1 - WIN_FEE)
@@ -307,7 +323,7 @@ class Game(TSModel):
     def get_timer(self, game):
         timeleft = 0
         if game.next_process_at:
-            timeleft = int((game.next_process_at - now()).total_seconds())
+            timeleft = int((game.next_process_at - now().naive()).total_seconds())
         timerdata = sdict(d=0, h=0, m=0, s=0)
         if timeleft > 0:
             timerdata.d = timeleft // (60 * 60 * 24)

@@ -53,9 +53,8 @@
         app.net.route("orders", "{{=url('api.authorized.game_orders', game.id)}}");
         app.net.route("phase_orders", "{{=url('api.phase_orders', ':PHASE_ID:')}}");
         app.net.route("save_orders", "{{=url('api.authorized.order_save', ':ORDER_ID:')}}");
-        app.net.route("ready", "{{#=url('api.orders_ready', game.id, {'set': '1'})}}");
-        app.net.route("unready", "{{#=url('api.orders_ready', game.id)}}");
-        app.net.route("messages", "{{#=url('api.chat_get')}}");
+        app.net.route("ready", "{{=url('api.authorized.player_ready', game.id)}}");
+        app.net.route("messages", "{{=url('api.authorized.chat_get')}}");
         app.net.route("postmessage", "{{#=url('api.chat_post')}}");
         app.net.route("readmessage", "{{#=url('api.chat_read')}}");
         app.game.scsToWin = {{=scs}};
@@ -194,10 +193,12 @@
                         %i#icon_save.fa.fa-save.fa-border.off{onclick: 'javascript: app.ui.saveOrders();'}
                         %i#icon_ready.fa.fa-check.fa-border.on{onclick: 'javascript: app.ui.setReady();'}
                 #ord_date
-                - phase_count = game.phases.count()
+                - all_phases = game.phases()
+                - #phase_count = game.phases.count()
+                - phase_count = len(all_phases)
                 - if phase_count > 1
                     - for i in range(1, phase_count - 1)
-                        - phase = game.phases[i]
+                        - phase = all_phases[i]
                         .ord_phase_wrapper{id: 'orders_{{=i}}'}
                             - for country, orders in {}.items()
                                 - div = "orders_"+str(i)+"_"+country

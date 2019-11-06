@@ -65,4 +65,6 @@ def cancel_game(game_id):
 
 @celery.task
 def process_game(game_id):
-    pass
+    with db.connection():
+        game = Game.get(game_id)
+        game.process()

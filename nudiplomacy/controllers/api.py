@@ -9,6 +9,7 @@ from .. import app, db, auth, Map, Game, Order, GameRole, GamePhase
 # from nudiplomacy.helpers.mongo import longToObjid
 from ..gameman.validation import process_order
 # from nudiplomacy.gameman import process_order
+from ..tasks import start_game, process_game
 
 api = app.module(__name__, 'api', url_prefix='api')
 api.pipeline = [ServicePipe('json')]
@@ -89,6 +90,7 @@ def game_join(gid):
         return rv
     if game.players.count() == game.players_number:
         game.update_record(is_ready=True, is_open=False)
+        start_game.delay(game.id)
     rv.status = 'ok'
     rv.data = 'joined successfully'
     return rv
@@ -130,7 +132,7 @@ def order_save(order_id):
     if not row:
         rv.data = "bad request"
         return rv
-    if row.games.stage != Game.STAGES['game']:
+    if row.games.stage != Game.STAGES['game'] or row.games.is_ready:
         rv.data = "Game doesn't allow orders"
         return rv
     #: if player is ready can't update orders
@@ -148,6 +150,22 @@ def order_save(order_id):
     if res.errors:
         rv.data = res.errors
         return rv
+    rv.status = 'ok'
+    return rv
+
+
+@authorized.route('/game/<int:gid>/ready', methods=['post'])
+def player_ready(gid):
+    rv = sdict(status='error')
+    game = Game.get(id=gid, is_ready=False, stage=Game.STAGES['game'])
+    if not game:
+        return rv
+    status = request.body_params.get('ready', False)
+    game.players.where(lambda p: p.user == auth.user.id).update(is_ready=status)
+    if game.players.where(lambda p: p.is_ready == True).count() == game.players_number:
+        game.update_record(is_ready=True)
+        process_game.delay(game.id)
+    rv.data = status
     rv.status = 'ok'
     return rv
 
@@ -333,23 +351,22 @@ def order_save(order_id):
 #     return dict(status="Ok", data=enabled)
 
 
-# @api.route("/chat/<int:cid>", methods=["get"])
-# @requires(auth.is_logged_in, access_error)
-# def chat_get(cid):
-#     rv = sdict(status="Ok", data=[])
-#     chat = db.Chat(id=cid)
-#     if chat:
-#         try:
-#             since = int(request.params.since)
-#         except:
-#             since = 0
-#         if chat.users == ["all"]:
-#             rv.data = chat.messages[since:]
-#         else:
-#             ingame = longToObjid(auth.user.id) in chat.users
-#             if ingame:
-#                 rv.data = chat.messages[since:]
-#     return rv
+@authorized.route("/chat/<int:cid>", methods="get")
+def chat_get(cid):
+    return sdict(status="Ok", data=[])
+    # chat = db.Chat(id=cid)
+    # if chat:
+    #     try:
+    #         since = int(request.params.since)
+    #     except:
+    #         since = 0
+    #     if chat.users == ["all"]:
+    #         rv.data = chat.messages[since:]
+    #     else:
+    #         ingame = longToObjid(auth.user.id) in chat.users
+    #         if ingame:
+    #             rv.data = chat.messages[since:]
+    # return rv
 
 
 # @api.route("/chat/<int:cid>", methods=["post"])
