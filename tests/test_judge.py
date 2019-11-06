@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import json
+
+from diplomacy.constants import PHASES, ORDERS
 from diplomacy.checkers import Validator, PreProcessor
 from diplomacy.judge import Judge
 
@@ -71,7 +73,7 @@ def get_test_data(raw, mapref):
                         troops[i][country]['armies'].append(troop_id)
                     order_data = sline.split(cmd)[1]
                     if cmd == " holds":
-                        data = {'type': 'hold'}
+                        data = {'type': ORDERS.HOLD}
                     elif cmd == " moves ":
                         sub = order_data.split("to ")[1]
                         via_convoy = False
@@ -85,7 +87,7 @@ def get_test_data(raw, mapref):
                         if sub.endswith(" (sc)"):
                             mc = 1
                             sub = sub[:-5]
-                        data = {'type': 'move', 'dst': nameref[sub]}
+                        data = {'type': ORDERS.MOVE, 'dst': nameref[sub]}
                         if via_convoy:
                             data['through'] = True
                         if mc in [0, 1]:
@@ -93,13 +95,13 @@ def get_test_data(raw, mapref):
                     elif cmd == " supports movement ":
                         sub = order_data.split("of ")[1]
                         sub = sub.split(" to ")
-                        data = {'type': 'support_move', 'src': nameref[sub[0]], 'dst': nameref[sub[1]]}
+                        data = {'type': ORDERS.SUPPORT_MOVE, 'src': nameref[sub[0]], 'dst': nameref[sub[1]]}
                     elif cmd == " supports hold ":
                         sub = order_data.split("of ")[1]
-                        data = {'type': 'support_hold', 'dst': nameref[sub]}
+                        data = {'type': ORDERS.SUPPORT_HOLD, 'dst': nameref[sub]}
                     elif cmd == " convoys ":
                         sub = order_data.split(" to ")
-                        data = {'type': 'convoy', 'src': nameref[sub[0]], 'dst': nameref[sub[1]]}
+                        data = {'type': ORDERS.CONVOY, 'src': nameref[sub[0]], 'dst': nameref[sub[1]]}
                     tests[i]['data'][country][troop_id] = data
                 else:
                     troop_pos = sline.split(" fails")[0]
@@ -125,14 +127,14 @@ def apply_convoys_fixture(mapref, tests, troops):
                 mapref, troops[_][country]['armies'] + troops[_][country]['fleets'], {}, game_data['armies'],
                 game_data['fleets'], {}, 'diplomacy', {}, _prnt)
             for territory_id, order in orders.items():
-                if order['type'] == "move":
+                if order['type'] == ORDERS.MOVE:
                     if territory_id in troops[_][country]['armies']:
                         make_convoy = False
                         if order.get('through'):
                             make_convoy = True
                         if not make_convoy:
                             for other_order in orders.values():
-                                if other_order['type'] == "convoy" and other_order.get('src', 0) == territory_id:
+                                if other_order['type'] == ORDERS.CONVOY and other_order.get('src', 0) == territory_id:
                                     make_convoy = True
                         if make_convoy or order['dst'] not in mapref['links']['armies'].get(territory_id, []):
                             if order['dst'] in validator._convoy_maps(territory_id):
@@ -141,8 +143,8 @@ def apply_convoys_fixture(mapref, tests, troops):
                                 order['convoy_routes'] = routes
 
 
-def _prnt(m):
-    print(m)
+def _prnt(*args):
+    print(*args)
 
 
 def _test_game(obj, testn):
@@ -184,7 +186,7 @@ class TestClass(object):
 
     def _run_tests(self, orders, expected):
         preproc = PreProcessor(orders, _prnt)
-        failed_orders = preproc.process("diplomacy")
+        failed_orders = preproc.process(PHASES.DIPLOMACY)
         print("[GameProc:Pre] failed: {}".format(failed_orders))
         for fail_tup in failed_orders:
             orders[fail_tup[0]][fail_tup[1]]['failed'] = True
@@ -198,7 +200,10 @@ class TestClass(object):
         # print("Feature: " + test['feature'])
         adj.process()
         for node in adj.orders.list:
-            assert node.succeeded == expected.get(node.id, True)
+            try:
+                assert node.succeeded == expected.get(node.id, True)
+            except AssertionError as exc:
+                raise Exception(f'Check failed over node {node.id}: succeeded {node.succeeded} expected {expected.get(node.id, True)}')
 
     def test_basic(self, orders, expected):
         self._run_tests(orders, expected)

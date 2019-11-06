@@ -417,21 +417,21 @@ class PreProcessor(Logger):
 
     def _is_moving(self, territory_id):
         for orders_set in self.orders.values():
-            if orders_set.get(territory_id, {}).get('type') == 'move':
+            if orders_set.get(territory_id, {}).get('type') == ORDERS.MOVE:
                 return True
         return False
 
     def _is_moving_to(self, territory_id, dst):
         for orders_set in self.orders.values():
             order = orders_set.get(territory_id, {})
-            if order.get('type') == 'move' and order.get('dst') == dst:
+            if order.get('type') == ORDERS.MOVE and order.get('dst') == dst:
                 return True
         return False
 
     def _is_convoying_between(self, territory_id, src, dst):
         for orders_set in self.orders.values():
             order = orders_set.get(territory_id, {})
-            if order.get('type') == 'convoy' and order.get('src') == src and order.get('dst') == dst:
+            if order.get('type') == ORDERS.CONVOY and order.get('src') == src and order.get('dst') == dst:
                 return True
         return False
 
