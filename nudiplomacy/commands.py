@@ -47,7 +47,8 @@ def add_map(name):
 @app.command()
 def create_test_data():
     with db.connection():
-        for key in ['tester1', 'tester2']:
+        for idx in range(1, 11):
+            key = f'tester{idx}'
             User.create(
                 email="{}@nudiplomacy.com".format(key),
                 password="foobar",
