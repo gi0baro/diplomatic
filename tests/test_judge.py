@@ -124,8 +124,8 @@ def apply_convoys_fixture(mapref, tests, troops):
                 game_data["fleets"].append(troop)
         for country, orders in test['data'].items():
             validator = Validator(
-                mapref, troops[_][country]['armies'] + troops[_][country]['fleets'], {}, game_data['armies'],
-                game_data['fleets'], {}, 'diplomacy', {}, _prnt)
+                mapref, mapref['home_centers'], PHASES.DIPLOMACY, game_data['armies'], game_data['fleets'],
+                {}, troops[_][country]['armies'] + troops[_][country]['fleets'], [])
             for territory_id, order in orders.items():
                 if order['type'] == ORDERS.MOVE:
                     if territory_id in troops[_][country]['armies']:
