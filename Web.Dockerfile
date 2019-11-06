@@ -2,14 +2,14 @@ FROM python:3.7-alpine
 
 MAINTAINER gi0baro
 
-RUN apk add --no-cache nodejs
+RUN apk add --no-cache libpq nodejs
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 COPY requirements.txt /usr/src/app
 COPY requirements.web.txt /usr/src/app
 RUN apk add --no-cache --virtual build-deps \
-    g++ musl-dev && \
+    g++ musl-dev postgresql-dev && \
     pip install -r /usr/src/app/requirements.txt && \
     pip install -r /usr/src/app/requirements.web.txt && \
     apk del build-deps
