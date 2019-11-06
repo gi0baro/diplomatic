@@ -300,7 +300,7 @@ class Game
         else
             odata = type: "build", troop: data.type.split("_")[1]
         if data.mc isnt undefined
-            odata["mc"] = data.mc
+            odata['coast'] = data.mc
         console.log(id)
         console.log(odata)
         @addOrder(id, odata)
