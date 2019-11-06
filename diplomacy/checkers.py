@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from collections import defaultdict
-from .constants import PHASES, ORDERS
+from .constants import PHASES, ORDERS, TROOPS
 from .helpers import Logger, registry
 
 
@@ -52,10 +52,10 @@ class Validator(Logger):
         self.all_supply_centers = data['supply_centers']
         self.links = data['links']
 
-    def _can_move(self, src, dst, mc=None):
+    def _can_move(self, src, dst, coast=None):
         if self._is_fleet(src):
-            if mc is not None:
-                return dst in self.links["mc"][src][mc]
+            if coast is not None:
+                return dst in self.links["multi_coasts"][src][coast]
             return dst in self.links["fleets"][src]
         return dst in self.links["armies"][src]
 
@@ -179,13 +179,14 @@ class Validator(Logger):
 
     def _validate_builds(self, orders):
         invalids = []
+        troop_values = set(TROOPS.values())
         #: process builds
         for territory_id, order in orders.items():
             #: check order integrity
             if order.get("type") not in {ORDERS.HOLD, ORDERS.BUILD, ORDERS.DISBAND}:
                 invalids.append(territory_id)
                 continue
-            if order["type"] == ORDERS.BUILD and not order.get("troop"):
+            if order["type"] == ORDERS.BUILD and order.get("troop") not in troop_values:
                 invalids.append(territory_id)
                 continue
             #: check build order has not a troop and disband viceversa
@@ -208,13 +209,13 @@ class Validator(Logger):
                     self.log("Order " + str(territory_id) + " is not in player troops")
                     continue
             #: check build of fleets is only on coasts supply centers
-            if order["type"] == ORDERS.BUILD and order["troop"] == "fleet":
+            if order["type"] == ORDERS.BUILD and order["troop"] == TROOPS.FLEET:
                 #: need to check is a coast!
                 if not self._is_coast(territory_id):
                     invalids.append(territory_id)
                     self.log("Order " + str(territory_id) + " is not on a coast")
                     continue
-                if self._is_multi_coast(territory_id) and order.get("mc") is None:
+                if self._is_multi_coast(territory_id) and order.get('coast') is None:
                     invalids.append(territory_id)
                     self.log("Order " + str(territory_id) + " has no mc parameter")
         #: process builds considering country details
@@ -277,10 +278,10 @@ class Validator(Logger):
                     invalids.append(territory_id)
                 continue
             if self._is_fleet(territory_id) and self._is_multi_coast(order['dst']):
-                if order.get("mc") not in [0, 1]:
+                if order.get('coast') not in [0, 1]:
                     invalids.append(territory_id)
                     continue
-            if not self._can_move(territory_id, order['dst'], order.get("mc")):
+            if not self._can_move(territory_id, order['dst'], order.get('coast')):
                 self.log("Order " + str(territory_id) + " is a retreat to a terr cannot move")
                 invalids.append(territory_id)
                 continue
@@ -313,13 +314,13 @@ class Validator(Logger):
                 if not order.get("through"):
                     #: mc parameter check
                     if self._is_fleet(territory_id) and self._is_multi_coast(order['dst']):
-                        if order.get("mc") not in [0, 1]:
+                        if order.get('coast') not in [0, 1]:
                             self.log("Order " + str(territory_id) + " has a bad mc")
                             invalids.append(territory_id)
                             continue
                     else:
-                        if order.get("mc"):
-                            del order["mc"]
+                        if order.get('coast'):
+                            del order['coast']
                     #: check move ability
                     mc = None
                     if self._is_fleet(territory_id) and self._is_multi_coast(territory_id):
@@ -346,13 +347,13 @@ class Validator(Logger):
                     else:
                         #: verify routes (find out orders built without ui)
                         convoy_routes = self._get_convoy_routes(territory_id, order['dst'])
-                        for selected_route in order["convoy_routes"]:
+                        for selected_route in order.get('routes', []):
                             if selected_route not in convoy_routes:
                                 self.log("Order " + str(territory_id) + " is a move through with invalid route")
                                 invalids.append(territory_id)
                                 continue
                         #: store convoy routes (needed for processor)
-                        order["convoy_routes"] = convoy_routes
+                        order['routes'] = convoy_routes
             elif order["type"] == ORDERS.SUPPORT_MOVE:
                 if not self._can_move(territory_id, order['dst']):
                     self.log("Order " + str(territory_id) + " is a support_move against a terr cannot move")
@@ -492,7 +493,7 @@ class PreProcessor(Logger):
                     if order.get("through"):
                         bad_routes = []
                         succeeded = False
-                        for route in order["convoy_routes"]:
+                        for route in order['routes']:
                             route_succeeded = True
                             for fleet in route:
                                 if not self._is_convoying_between(fleet, territory_id, order['dst']):
@@ -509,7 +510,7 @@ class PreProcessor(Logger):
                             failed.append((player, territory_id))
                         else:
                             for route in bad_routes:
-                                order["convoy_routes"].remove(route)
+                                order['routes'].remove(route)
         return failed
 
     def process(self, phase_type):

@@ -59,8 +59,9 @@ class World(object):
 
     def create_node(self, node_id, data):
         node_cls = self._nodes_mapper[data['type']](data)
-        self.nodes[node_id] = node_cls(self, node_id, data)
-        self._nodes_by_type[node_cls].append(self.nodes[node_id])
+        rv = self.nodes[node_id] = node_cls(self, node_id, data)
+        self._nodes_by_type[node_cls].append(rv)
+        return rv
 
     def get_dependencies(self, node_id, dependency_type):
         rv = []
@@ -108,9 +109,9 @@ class Node(object):
         self.dst = data.get('dst')
         self.log('FAILED {}: {}'.format(self.id, data.get("failed")))
         self.failed = data.get("failed") or False
-        self.init()
+        self.init(data)
 
-    def init(self):
+    def init(self, data):
         pass
 
     @property
@@ -161,7 +162,7 @@ class Node(object):
 
 
 class Hold(Node):
-    def init(self):
+    def init(self, data):
         self.dislodged_status = None
 
     def _get_dependencies(self):
@@ -238,8 +239,8 @@ class Hold(Node):
 
 
 class Move(Hold):
-    def init(self):
-        super().init()
+    def init(self, data):
+        super().init(data)
         self.success_status = None
 
     def _get_dependencies(self):
@@ -515,12 +516,13 @@ class Move(Hold):
 
 
 class MoveThrough(Move):
-    def init(self):
-        super().init()
+    def init(self, data):
+        super().init(data)
         self.convoy_status = None
+        self._convoy_routes = data.get('routes') or []
 
-    def set_routes(self, routes):
-        self._convoy_routes = routes
+    # def set_routes(self, routes):
+    #     self._convoy_routes = routes
 
     @cachedprop
     def convoyers(self):
@@ -668,8 +670,8 @@ class Convoy(Hold):
 
 
 class Support(Hold):
-    def init(self):
-        super().init()
+    def init(self, data):
+        super().init(data)
         self.attacked_status = None
 
     def resolve(self):

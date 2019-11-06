@@ -91,7 +91,7 @@ def get_test_data(raw, mapref):
                         if via_convoy:
                             data['through'] = True
                         if mc in [0, 1]:
-                            data['mc'] = mc
+                            data['coast'] = mc
                     elif cmd == " supports movement ":
                         sub = order_data.split("of ")[1]
                         sub = sub.split(" to ")
@@ -140,7 +140,7 @@ def apply_convoys_fixture(mapref, tests, troops):
                             if order['dst'] in validator._convoy_maps(territory_id):
                                 routes = validator._get_convoy_routes(territory_id, order['dst'])
                                 order['through'] = True
-                                order['convoy_routes'] = routes
+                                order['routes'] = routes
 
 
 def _prnt(*args):
@@ -202,8 +202,10 @@ class TestClass(object):
         for node in adj.orders.list:
             try:
                 assert node.succeeded == expected.get(node.id, True)
-            except AssertionError as exc:
-                raise Exception(f'Check failed over node {node.id}: succeeded {node.succeeded} expected {expected.get(node.id, True)}')
+            except AssertionError:
+                raise Exception(
+                    f'Check failed over node {node.id}: '
+                    f'succeeded {node.succeeded} expected {expected.get(node.id, True)}')
 
     def test_basic(self, orders, expected):
         self._run_tests(orders, expected)

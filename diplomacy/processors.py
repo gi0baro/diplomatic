@@ -66,7 +66,13 @@ class ProcessingPipeline(object):
         self.methods = methods
 
     def process(self, orders):
-        ctx = adict(orders=orders)
+        ctx = adict(
+            orders=orders,
+            succeeded=[],
+            dislodged={},
+            end=False,
+            winner=None
+        )
         for method in self.methods:
             method(ctx)
         return ctx
@@ -105,25 +111,25 @@ class GameProcessor(Logger):
         self.territory_names = data['names']
 
     def _preprocess(self, ctx):
-        proc = PreProcessor(ctx.orders)
+        proc = PreProcessor(ctx.orders, logger=self._logger)
         failed_orders = proc.process(self.phase_type)
         for country, territory in failed_orders:
             ctx.orders[country][territory]['failed'] = True
 
     def _adjudicate(self, ctx):
         orders = {}
-        for country, orders in ctx.orders.items():
-            for territory, order in orders.items():
+        for country, country_orders in ctx.orders.items():
+            for territory, order in country_orders.items():
                 orders[territory] = order
                 orders[territory]['country'] = country
                 orders[territory]['name'] = self.territory_names[territory]
-        judge = Judge(orders)
+        judge = Judge(orders, logger=self._logger)
         judge.process()
         succeeded, dislodged = [], defaultdict(list)
         for order in judge.orders.list:
             if order.succeeded:
                 succeeded.append((order.country, order.id))
-            elif order.dislodged_unit:
+            elif order.is_unit_dislodged:
                 dislodged[order.country].append(order.id)
         ctx.succeeded = succeeded
         ctx.dislodged = dislodged
@@ -166,10 +172,14 @@ class GameProcessor(Logger):
 
     def _make_movements(self, ctx):
         ctx.movements = []
-        for country, orders in ctx.orders.items():
-            for territory, order in orders.items():
-                if order['type'] == ORDERS.MOVE:
-                    ctx.movements.append((country, territory, order['dst'], order.get('coast')))
+        for country, order_id in ctx.succeeded:
+            order = ctx.orders[country][order_id]
+            if order['type'] == ORDERS.MOVE:
+                ctx.movements.append((country, order_id, order['dst'], order.get('coast')))
+        # for country, orders in ctx.orders.items():
+        #     for territory, order in orders.items():
+        #         if order['type'] == ORDERS.MOVE:
+        #             ctx.movements.append((country, territory, order['dst'], order.get('coast')))
 
     def _make_movements_or_disbands(self, ctx):
         succeeded = []
@@ -235,9 +245,9 @@ class GameProcessor(Logger):
                 ctx.coasts_positions[territory] = coast
 
     def _update_disbands(self, ctx):
-        for country, territories in ctx.disbands:
+        for country, territories in ctx.disbands.items():
             for troop_type in ['armies', 'fleets']:
-                ctx.positions[country][troop_type] = list(set(ctx.positions[troop_type]) - set(territories))
+                ctx.positions[country][troop_type] = list(set(ctx.positions[country][troop_type]) - set(territories))
 
     def _prepare_territories(self, ctx):
         ctx.territories = {}

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# TODO: enum
+
 from .helpers import adict
 
 
@@ -27,4 +29,5 @@ ORDERS = adict(
 
 TROOPS = adict(
     ARMY=0,
-    FLEET=1)
+    FLEET=1
+)

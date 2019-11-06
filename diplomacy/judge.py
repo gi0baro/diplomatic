@@ -21,8 +21,6 @@ class Judge(object):
         self.orders = World(self)
         for order_id, order in self.orders_db.items():
             self.orders.create_node(order_id, order)
-            if 'convoy_routes' in order:
-                self.orders.get(order_id).set_routes(order["convoy_routes"])
 
     def resolve(self, node):
         self.log("Solving {}...".format(node))
