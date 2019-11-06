@@ -120,7 +120,7 @@ class Validator(Logger):
                 index += 1
                 _routes.append(_routes[-1][0:nstep - 1])
                 step = nstep
-            if ntype is "fleet":
+            if ntype == "fleet":
                 #: add node to processing list
                 _routes[index].append(node)
                 node_links = self.links["fleets"].get(node, [])
