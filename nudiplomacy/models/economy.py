@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from decimal import Decimal
-from weppy.orm import Field, belongs_to, has_many, after_insert
+from weppy.orm import Field, belongs_to, has_many, before_insert, after_insert
 from . import TSModel
 
 
@@ -45,19 +45,27 @@ class Transaction(TSModel):
     belongs_to('vault')
 
     value = Field.decimal(18, 6, notnull=True)
-    # direction = Field.int(notnull=True)
+    direction = Field.int(notnull=True)
     description = Field(notnull=True)
 
-    # DIRECTIONS = {'in': 0, 'out': 1}
+    DIRECTIONS = {'in': 0, 'out': 1}
 
     validation = {
-        # 'direction': {'in': DIRECTIONS.values()},
-        'value': {'gte': 0}
+        'direction': {'in': list(DIRECTIONS.values()), 'allow': 'empty'}
+    }
+
+    fields_rw = {
+        'direction': False
     }
 
     indexes = {
-        'vault': True
+        'vault': True,
+        'direction': True
     }
+
+    @before_insert
+    def set_direction(self, fields):
+        fields.direction = self.DIRECTIONS['in'] if fields.value >= 0 else self.DIRECTIONS['out']
 
     @after_insert
     def update_vault_balance(self, fields, rid):

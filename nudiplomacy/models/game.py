@@ -31,7 +31,7 @@ class Game(TSModel):
     ASSIGNMENT_MODES = {'random': 0, 'choice': 1}
     POT_TYPES = {'wta': 0, 'ppsc': 1}
     PRESS_TYPES = {'all': 0, 'global': 1, 'none': 2}
-    STAGES = {'pregame': 0, 'game': 1, 'processing': 2, 'pause': 3, 'crash': 4}
+    STAGES = {'pregame': 0, 'game': 1, 'processing': 2, 'pause': 3, 'crash': 4, 'over': 5}
     START_MODES = {'asap': 0, 'on_time': 1}
     PROC_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 
@@ -241,6 +241,8 @@ class Game(TSModel):
         for player in game.players():
             for order in orders_builder(game, player.country):
                 phase.orders.create(game_role=player.id, **order)
+            player.update_record(
+                is_active=True, supply_centers_owned=len(game.map.home_centers[player.country]))
         #: TODO chats
         #: next process cycle
         game.update_record(
@@ -277,6 +279,7 @@ class Game(TSModel):
                 players_map = {}
                 for player in players:
                     players_map[player.country] = player.id
+                    # TODO: update owned supply centers
                 active_players = []
                 for country, orders in new_orders.items():
                     for order in orders:
@@ -288,9 +291,11 @@ class Game(TSModel):
                 #: clear roles
                 # TODO: maybe add editable status?
                 if active_players:
-                    game.players.where(lambda p: p.user_id.belongs(active_players)).update(is_ready=False)
+                    game.players.where(
+                        lambda p: p.user_id.belongs(active_players)).update(is_active=True, is_ready=False)
                 if inactive_players:
-                    game.players.where(lambda p: p.user_id.belongs(inactive_players)).update(is_ready=True)
+                    game.players.where(
+                        lambda p: p.user_id.belongs(inactive_players)).update(is_active=False, is_ready=True)
 
         except Exception:
             game.update_record(stage=self.STAGES['crash'])
@@ -356,15 +361,28 @@ class GameRole(Model):
     belongs_to('game', 'user')
     has_many('orders')
 
+    # TODO: add stage with relevant values, eg: participating, defeated, won..
     country = Field(notnull=True)
+    is_active = Field(notnull=True)
     is_ready = Field.bool(notnull=True)
+    # stage = Field.int(notnull=True)
+    supply_centers_owned = Field.int(notnull=True)
 
     default_values = {
-        'is_ready': False
+        'is_active': False,
+        'is_ready': False,
+        'supply_centers_owned': 0
+    }
+
+    fields_rw = {
+        'is_active': (True, False),
+        'supply_centers_owned': False
     }
 
     indexes = {
-        'uniq_role': {'fields': ['game', 'user', 'country'], 'unique': True}
+        'uniq_role': {'fields': ['game', 'user', 'country'], 'unique': True},
+        'is_active': True,
+        'is_ready': True
     }
 
 

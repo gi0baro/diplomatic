@@ -1,8 +1,8 @@
-"""Generated migration
+"""Initial
 
-Migration ID: b13ccf5a89e5
-Revises:
-Creation Date: 2018-02-16 01:02:30.685308
+Migration ID: b6aa08cd1913
+Revises: 
+Creation Date: 2019-11-06 23:51:43.648522
 
 """
 
@@ -10,7 +10,7 @@ from weppy.orm import migrations
 
 
 class Migration(migrations.Migration):
-    revision = 'b13ccf5a89e5'
+    revision = 'b6aa08cd1913'
     revises = None
 
     def up(self):
@@ -24,8 +24,6 @@ class Migration(migrations.Migration):
             migrations.Column('registration_key', 'string', default='', length=512),
             migrations.Column('reset_password_key', 'string', default='', length=512),
             migrations.Column('registration_id', 'string', default='', length=512),
-            migrations.Column('first_name', 'string', notnull=True, length=128),
-            migrations.Column('last_name', 'string', notnull=True, length=128),
             migrations.Column('username', 'string', notnull=True, length=512),
             migrations.Column('is_admin', 'boolean', default=False, notnull=True),
             migrations.Column('avatar_src', 'string', length=512),
@@ -136,13 +134,19 @@ class Migration(migrations.Migration):
             'game_roles',
             migrations.Column('id', 'id'),
             migrations.Column('country', 'string', notnull=True, length=512),
+            migrations.Column('is_active', 'string', default=False, notnull=True, length=512),
             migrations.Column('is_ready', 'boolean', default=False, notnull=True),
+            migrations.Column('supply_centers_owned', 'integer', default=0, notnull=True),
             migrations.Column('game', 'reference games', ondelete='CASCADE'),
             migrations.Column('user', 'reference users', ondelete='CASCADE'))
         self.create_index('game_roles_widx__uniq_role', 'game_roles', ['game', 'user', 'country'], expressions=[], unique=True)
+        self.create_index('game_roles_widx__isactive', 'game_roles', ['is_active'], expressions=[], unique=False)
+        self.create_index('game_roles_widx__isready', 'game_roles', ['is_ready'], expressions=[], unique=False)
         self.create_table(
             'game_phases',
             migrations.Column('id', 'id'),
+            migrations.Column('created_at', 'datetime', notnull=True),
+            migrations.Column('updated_at', 'datetime', notnull=True),
             migrations.Column('year', 'integer', notnull=True),
             migrations.Column('season', 'integer', notnull=True),
             migrations.Column('type', 'integer', notnull=True),
@@ -157,13 +161,15 @@ class Migration(migrations.Migration):
         self.create_table(
             'orders',
             migrations.Column('id', 'id'),
+            migrations.Column('created_at', 'datetime', notnull=True),
+            migrations.Column('updated_at', 'datetime', notnull=True),
             migrations.Column('territory', 'string', notnull=True, length=512),
             migrations.Column('type', 'integer', default=0, notnull=True),
             migrations.Column('data', 'json', notnull=True),
             migrations.Column('stage', 'integer', default=0, notnull=True),
             migrations.Column('game_role', 'reference game_roles', ondelete='CASCADE'),
             migrations.Column('game_phase', 'reference game_phases', ondelete='CASCADE'))
-        self.create_index('orders_widx__uniq_orders', 'orders', ['game_role', 'game_phase'], expressions=[], unique=True)
+        self.create_index('orders_widx__uniq_orders', 'orders', ['game_role', 'game_phase', 'territory'], expressions=[], unique=True)
         self.create_table(
             'vaults',
             migrations.Column('id', 'id'),
@@ -178,9 +184,11 @@ class Migration(migrations.Migration):
             migrations.Column('created_at', 'datetime', notnull=True),
             migrations.Column('updated_at', 'datetime', notnull=True),
             migrations.Column('value', 'decimal(18,6)', notnull=True),
+            migrations.Column('direction', 'integer', notnull=True),
             migrations.Column('description', 'string', notnull=True, length=512),
             migrations.Column('vault', 'reference vaults', ondelete='CASCADE'))
         self.create_index('transactions_widx__vault', 'transactions', ['vault'], expressions=[], unique=False)
+        self.create_index('transactions_widx__direction', 'transactions', ['direction'], expressions=[], unique=False)
         self.create_table(
             'sys_props',
             migrations.Column('id', 'id'),
@@ -191,6 +199,7 @@ class Migration(migrations.Migration):
     def down(self):
         self.drop_index('sys_props_widx__uniq_name', 'sys_props')
         self.drop_table('sys_props')
+        self.drop_index('transactions_widx__direction', 'transactions')
         self.drop_index('transactions_widx__vault', 'transactions')
         self.drop_table('transactions')
         self.drop_index('vaults_widx__uniq_user', 'vaults')
@@ -200,6 +209,8 @@ class Migration(migrations.Migration):
         self.drop_index('game_phases_widx__unique_phase', 'game_phases')
         self.drop_index('game_phases_widx__game', 'game_phases')
         self.drop_table('game_phases')
+        self.drop_index('game_roles_widx__isready', 'game_roles')
+        self.drop_index('game_roles_widx__isactive', 'game_roles')
         self.drop_index('game_roles_widx__uniq_role', 'game_roles')
         self.drop_table('game_roles')
         self.drop_index('games_widx__stage', 'games')
