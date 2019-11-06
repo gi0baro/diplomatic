@@ -38,6 +38,7 @@ class Game
         @_nphases = phases.length + 1
         @_currentPhase = @_nphases-1
         @orders = {}
+        # TODO: change ready to endpoint
         if orders.ready
             @ready = true
         @_initOrders(orders.data)
@@ -119,26 +120,26 @@ class Game
                         d = type: "disband"
                     if order.data.coast isnt undefined
                         d.mc = order.data.coast
-                    @_nextPhase.builds[territory] = d
+                    # @_nextPhase.builds[territory] = d
                 else
                     @moves[territory] = order.data
                     @moves[territory].type = ORDER_TYPES.remote_to_internal(order.type)
                     if not @moves[territory].src
                         @moves[territory].src = territory
                     #: add expected movements
-                    if order.type is ORDER_TYPES.support_move and order.data.src not in @_nextPhase.getCountryTroops()
-                        @moves[order.data.src] =
-                            from: order.data.src
-                            dst: order.data.dst
-                            type: 'move'
-                    if order.type is ORDER_TYPES.move and order.data.through
-                        for route in order.data.routes
-                            for convoying_territory in route
-                                if convoying_territory not in @_nextPhase.getCountryTroops()
-                                    @moves[convoying_territory] =
-                                        from: order.data.src
-                                        dst: order.data.dst
-                                        type: 'convoy'
+                    # if order.type is ORDER_TYPES.support_move and order.data.src not in @_nextPhase.getCountryTroops()
+                    #     @moves[order.data.src] =
+                    #         from: order.data.src
+                    #         dst: order.data.dst
+                    #         type: 'move'
+                    # if order.type is ORDER_TYPES.move and order.data.through
+                    #     for route in order.data.routes
+                    #         for convoying_territory in route
+                    #             if convoying_territory not in @_nextPhase.getCountryTroops()
+                    #                 @moves[convoying_territory] =
+                    #                     from: order.data.src
+                    #                     dst: order.data.dst
+                    #                     type: 'convoy'
         return
 
     _setStartingColors: ->
@@ -335,7 +336,7 @@ class Game
             @orders[territory].data.dst = data.dst
         else
             @orders[territory].data.troop = TROOP_TYPES.internal_to_remote(data.troop)
-            if app.env.isMCoast(id) and data.troop is 'fleet'
+            if app.env.isMCoast(territory) and data.troop is 'fleet'
                 @orders[territory].data.coast = data.coast
         #@orders[territory] = type: data.type, to: data.to
         if data.type is 'move'

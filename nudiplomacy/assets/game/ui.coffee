@@ -42,13 +42,14 @@ class UI
 
     _setOverflow: ->
         #: we need to evaluate screen size because of the zoom eval (seems that the scroll bars make width wrong when overflow is auto)
-        i_ch_h = app.screen.img.height
-        console.log(i_ch_h)
-        console.log($(window).height())
-        if i_ch_h > $(window).height()
-            $('#cont_wrapper').css 'overflow-y': 'scroll'
-        else
-            $('#cont_wrapper').css 'overflow-y': 'hidden'
+        # i_ch_h = app.screen.img.height
+        # console.log('img H', i_ch_h)
+        # console.log('win H', $(window).height())
+        # if i_ch_h > $(window).height()
+        #     $('#cont_wrapper').css 'overflow-y': 'scroll'
+        # else
+        #     $('#cont_wrapper').css 'overflow-y': 'hidden'
+        $('#cont_wrapper').css 'overflow-y': 'scroll'
         return
 
     _setTopMenu: ->

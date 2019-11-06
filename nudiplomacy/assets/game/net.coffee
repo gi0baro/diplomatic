@@ -107,16 +107,24 @@ class Network
         return
 
     setReady: ->
+        d =
+            ready: true
         $.ajax @urls['ready'],
-            type: 'GET'
+            type: 'POST'
+            contentType: "application/json"
+            data: JSON.stringify(d)
             success: (data) ->
                 app.ui.didReady(data.data)
                 return
         return
 
     setUnready: ->
-        $.ajax @urls['unready'],
-            type: 'GET'
+        d =
+            ready: false
+        $.ajax @urls['ready'],
+            type: 'POST'
+            contentType: "application/json"
+            data: JSON.stringify(d)
             success: (data) ->
                 app.ui.didReady(data.data)
                 return
