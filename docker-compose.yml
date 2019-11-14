@@ -13,7 +13,8 @@ services:
 
   web:
     build: .
-    command: weppy -a nudiplomacy run -h 0.0.0.0
+    entrypoint: weppy -a nudiplomacy
+    command: develop --host=0.0.0.0
     environment:
       POSTGRES_HOST: db
       POSTGRES_DB: diplomacy

@@ -25,7 +25,7 @@ def index():
 
 @games.route()
 @requires(auth.is_logged, url("auth.login"))
-def create():
+async def create():
     def validate(form):
         app.log.debug(form.params.countries)
         # #: variant check
@@ -62,7 +62,7 @@ def create():
                 return
         form.params.user = auth.user
 
-    form = Game.form(onvalidation=validate)
+    form = await Game.form(onvalidation=validate)
     app.log.debug(form.params)
     app.log.debug(form.input_params)
     if form.accepted:

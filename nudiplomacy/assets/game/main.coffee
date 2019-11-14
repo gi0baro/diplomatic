@@ -26,6 +26,7 @@ class App
         else
             orders =
                 data: {}
+        @net.setSockets()
         @game.init(gameData, gamePhases, orders, =>
             @ui.init()
             @ui.buildOrders()
@@ -59,14 +60,14 @@ class App
         return
 
     reload: ->
-        if preGame
-            location.reload()
-            return
-        gameData = @net.getGame()
-        orders = @net.getCurrentOrders()
-        @game.reload(gameData, orders)
-        @ui.reload()
-        @game.loadPhase(@game.phase('last').position)
+        # if preGame
+        location.reload()
         return
+        # gameData = @net.getGame()
+        # orders = @net.getCurrentOrders()
+        # @game.reload(gameData, orders)
+        # @ui.reload()
+        # @game.loadPhase(@game.phase('last').position)
+        # return
 
 window.app = new App()

@@ -59,12 +59,13 @@ def game_phases(gid):
 
 
 @authorized.route('/game/<int:gid>/join', methods=['post'])
-def game_join(gid):
+async def game_join(gid):
     rv = sdict(status='error')
     game = Game.get(gid)
     if not game:
         rv.data = 'no game found'
         return rv
+    params = await request.body_params
     if game.player_country(auth.user) is not None:
         rv.data = 'already in game'
         return rv
@@ -75,10 +76,10 @@ def game_join(gid):
         rv.data = "no slots available"
         return rv
     if game.access == Game.ACCESS_MODES['password']:
-        if request.body_params.password != game.password:
+        if params.password != game.password:
             rv.data = 'wrong password'
             return rv
-    chosen_country = request.body_params.country
+    chosen_country = params.country
     try:
         with db.atomic():
             role = game.add_player(auth.user, chosen_country)
@@ -122,7 +123,7 @@ def game_orders(gid):
 
 
 @authorized.route("/orders/<int:order_id>", methods=["put", "patch"])
-def order_save(order_id):
+async def order_save(order_id):
     rv = sdict(status="error")
     row = Order.where(
         lambda m:
@@ -139,8 +140,9 @@ def order_save(order_id):
     if row.game_roles.is_ready:
         rv.data = "Cannot update orders when ready"
         return rv
-    data = request.body_params.get('data', {})
-    data['type'] = request.body_params.type
+    params = await request.body_params
+    data = params.get('data', {})
+    data['type'] = params.type
     data, errors = process_order(row.game_roles.country, row.games, row.orders.territory, data)
     order_type = data.pop('type')
     if errors:
@@ -155,12 +157,12 @@ def order_save(order_id):
 
 
 @authorized.route('/game/<int:gid>/ready', methods=['post'])
-def player_ready(gid):
+async def player_ready(gid):
     rv = sdict(status='error')
     game = Game.get(id=gid, is_ready=False, stage=Game.STAGES['game'])
     if not game:
         return rv
-    status = request.body_params.get('ready', False)
+    status = (await request.body_params).get('ready', False)
     game.players.where(lambda p: p.user == auth.user.id).update(is_ready=status)
     if game.players.where(lambda p: p.is_ready == True).count() == game.players_number:
         game.update_record(is_ready=True)

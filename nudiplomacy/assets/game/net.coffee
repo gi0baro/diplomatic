@@ -1,11 +1,18 @@
 class Network
     constructor: ->
         @urls = {}
+        @sockets = {}
         return
 
     route: (name, url) ->
         @urls[name] = url
         return
+
+    setSockets: ->
+        @sockets.state = new WebSocket(@urls.status)
+        @sockets.state.binaryType = 'arraybuffer'
+        @sockets.state.addEventListener 'message', (event) ->
+            app.ui.gotGameStatus(String.fromCharCode.apply(null, new Uint8Array(event.data)))
 
     getMap: ->
         rv = {}
@@ -37,13 +44,13 @@ class Network
                 return
         return rv
 
-    getGameStatus: ->
-        $.ajax @urls['status'],
-            type: 'GET'
-            success: (data) ->
-                app.ui.gotGameStatus(data.status, data.phase)
-                return
-        return
+    # getGameStatus: ->
+    #     $.ajax @urls['status'],
+    #         type: 'GET'
+    #         success: (data) ->
+    #             app.ui.gotGameStatus(data.status, data.phase)
+    #             return
+    #     return
 
     getOrders: (phase, callback) ->
         console.log('called getOrders for phase', phase)

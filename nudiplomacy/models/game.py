@@ -288,14 +288,15 @@ class Game(TSModel):
                     active_players.append(players_map[country])
                 active_players = set(active_players)
                 inactive_players = set(players_map.values()) - active_players
+                print(active_players, inactive_players)
                 #: clear roles
                 # TODO: maybe add editable status?
                 if active_players:
                     game.players.where(
-                        lambda p: p.user_id.belongs(active_players)).update(is_active=True, is_ready=False)
+                        lambda p: p.user.belongs(active_players)).update(is_active=True, is_ready=False)
                 if inactive_players:
                     game.players.where(
-                        lambda p: p.user_id.belongs(inactive_players)).update(is_active=False, is_ready=True)
+                        lambda p: p.user.belongs(inactive_players)).update(is_active=False, is_ready=True)
 
         except Exception:
             game.update_record(stage=self.STAGES['crash'])
@@ -421,6 +422,7 @@ class GamePhase(TSModel):
 
     indexes = {
         'game': True,
+        'stage': True,
         'unique_phase': {'fields': ['game', 'year', 'season', 'type'], 'unique': True}
     }
 

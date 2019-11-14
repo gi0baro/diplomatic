@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from weppy import now
-from . import celery, db, Game
+from . import Game, celery, db, redis
 
 
 @celery.task
@@ -54,6 +54,7 @@ def start_game(game_id):
     with db.connection():
         game = Game.get(game_id)
         game.start()
+    redis.publish(f'game:{game_id}:state', 'started')
 
 
 @celery.task
@@ -68,3 +69,4 @@ def process_game(game_id):
     with db.connection():
         game = Game.get(game_id)
         game.process()
+    redis.publish(f'game:{game_id}:state', 'processed')

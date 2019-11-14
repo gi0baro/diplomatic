@@ -21,12 +21,12 @@ class UI
         @_msgFirstCall = {}
         @_msgChatUnread = {}
         @_tipTimer = null
-        @_statusTimer = null
+        # @_statusTimer = null
         @_nextTimer = null
-        @_statusTimer = setInterval (->
-            app.net.getGameStatus()
-            return
-        ), 60000
+        # @_statusTimer = setInterval (->
+        #     app.net.getGameStatus()
+        #     return
+        # ), 60000
         return
 
     init: ->
@@ -1282,7 +1282,7 @@ class UI
         else
             @hideTip()
 
-    gotGameStatus: (status, phase) ->
+    gotGameStatus: (data) ->
         # if status is "processing"
         #     @showTip("The game is being processed, keep your finger crossed..", false)
         #     # stop check timeout
@@ -1299,6 +1299,11 @@ class UI
         #         setTimeout (->
         #             app.reload()
         #         ), 3400
+        console.log('gotGameStatus', data)
+        @showTip("Game has changed, reloading in 5 seconds..")
+        setTimeout (->
+            app.reload()
+        ), 5000
         return
 
     reload: ->

@@ -15,6 +15,7 @@ from weppy_haml import Haml
 
 from .helpers import postgres
 from .helpers.config import parse_celery_cron
+from .helpers.redis_ext import Redis as RedisExtension
 
 app = App(__name__)
 app.languages = ['en', 'it']
@@ -87,12 +88,13 @@ app.pipeline = [
 app.use_extension(Haml)
 app.use_extension(Assets)
 app.use_extension(BS3)
+app.use_extension(RedisExtension)
 
 from . import assets, tasks
 
 # routes
 # from .controllers import main, admin, games, maps, api
-from .controllers import main, maps, games, api
+from .controllers import main, maps, games, api, ws
 
 # auth.settings.login_next = url('games.index')
 
