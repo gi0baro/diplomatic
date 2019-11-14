@@ -263,7 +263,8 @@ class Game(TSModel):
                 current_phase.update_record(stage=GamePhase.STAGES['closed'])
                 #: check end
                 if proc_ctx.end:
-                    game.end()
+                    winner = game.players.where(lambda p: p.country == proc_ctx.winner).select().first()
+                    game.end(winner, proc_ctx.territories)
                     return
                 #: create new phase
                 res = game.phases.create(
@@ -309,21 +310,19 @@ class Game(TSModel):
         self.db.commit()
 
     @rowmethod('end')
-    def end_game(self, game):
-        # TODO everything game related
-        # game.update_record(stage=self.STAGES['end'])
+    def end_game(self, game, winner, territories):
+        game.update_record(stage=self.STAGES['over'])
         #: give coins to player(s)
-        winner = None  # TODO fetch real one
         total_pot = (game.bet * game.players_number - GAME_FEE * game.players_number) * (1 - WIN_FEE)
         if game.pot_type == self.POT_TYPES['wta']:
             winner.vault().transactions.create(value=total_pot, description="Win for game {}".format(game.name))
-        else:
-            for player in game.players():
-                # TODO fetch scs in some way
-                player_supply_centers = 0
-                all_supply_centers = 1
-                value = total_pot / all_supply_centers * player_supply_centers
-                winner.vault().transactions.create(value=value, description="Win for game {}".format(game.name))
+            return
+        supply_centers = set(game.map.supply_centers)
+        all_supply_centers = len(supply_centers)
+        for player in game.players():
+            player_supply_centers = len(territories.get(player.country, []))
+            value = total_pot / all_supply_centers * player_supply_centers
+            player.user.vault().transactions.create(value=value, description="Win for game {}".format(game.name))
 
     @rowmethod('timer')
     def get_timer(self, game):
