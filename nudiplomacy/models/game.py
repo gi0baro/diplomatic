@@ -293,10 +293,10 @@ class Game(TSModel):
                 # TODO: maybe add editable status?
                 if active_players:
                     game.players.where(
-                        lambda p: p.user.belongs(active_players)).update(is_active=True, is_ready=False)
+                        lambda p: p.id.belongs(active_players)).update(is_active=True, is_ready=False)
                 if inactive_players:
                     game.players.where(
-                        lambda p: p.user.belongs(inactive_players)).update(is_active=False, is_ready=True)
+                        lambda p: p.id.belongs(inactive_players)).update(is_active=False, is_ready=True)
 
         except Exception:
             game.update_record(stage=self.STAGES['crash'])

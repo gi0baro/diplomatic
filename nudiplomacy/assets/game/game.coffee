@@ -39,8 +39,9 @@ class Game
         @_currentPhase = @_nphases-1
         @orders = {}
         # TODO: change ready to endpoint
-        if orders.ready
-            @ready = true
+        # if orders.ready
+        #     @ready = true
+        @ready = currentReady
         @_initOrders(orders.data)
         @_setStartingColors()
         if @phase('last') isnt undefined and @phase('last').type is PHASE_TYPES.won

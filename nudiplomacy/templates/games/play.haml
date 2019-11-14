@@ -1,12 +1,13 @@
 - extend 'ingame.haml'
 
-- player_country = game.player_country(current_user())
 - if player_country
     :javascript
         var currentPlayer = "{{=player_country}}";
+        var currentReady = {{='true' if player_ready else 'false'}};
 - else
     :javascript
         var currentPlayer = null;
+        var currentReady = false;
 
 :javascript
     var preGame = {{='true' if game.stage == 0 else 'false'}};

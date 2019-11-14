@@ -243,7 +243,7 @@ class Validator(Logger):
                     invalids.append(element)
                     self.log("Order " + str(element) + " is exceeding quota")
         else:
-            for territory_id, order in self.orders.items():
+            for territory_id, order in orders.items():
                 if territory_id in invalids:
                     continue
                 if order["type"] == ORDERS.BUILD:
