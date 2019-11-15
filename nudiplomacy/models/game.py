@@ -315,7 +315,7 @@ class Game(TSModel):
         #: give coins to player(s)
         total_pot = (game.bet * game.players_number - GAME_FEE * game.players_number) * (1 - WIN_FEE)
         if game.pot_type == self.POT_TYPES['wta']:
-            winner.vault().transactions.create(value=total_pot, description="Win for game {}".format(game.name))
+            winner.user.vault().transactions.create(value=total_pot, description="Win for game {}".format(game.name))
             return
         supply_centers = set(game.map.supply_centers)
         all_supply_centers = len(supply_centers)
