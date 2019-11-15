@@ -46,7 +46,10 @@ async def create():
         if form.params.bet > 1 and form.params.players_number == 2:
             form.errors.bet = "Maximum bet for 2 players is 1 coin"
         #: countries enabled check
-        if not form.params.countries or len(form.params.countries) < form.params.players_number:
+        if (
+            not form.params.countries or
+            len([key for key, val in form.params.countries.items() if val]) < form.params.players_number
+        ):
             form.params.countries = {key: True for key in variant.countries.keys()}
         #: assign check
         if form.params.countries_assignment == "choice":

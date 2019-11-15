@@ -47,7 +47,7 @@ def games_players_number(field, value):
 def games_countries_enabled(field, value):
     return tag.div(
         tag.div(_id="games_countries_enabled", _class="col-sm-12"),
-        tag.textarea(_id="games_countries_enabled_hide", _name="countries_enabled", _style="display: none;")
+        tag.textarea(_id="games_countries_enabled_hide", _name="countries", _style="display: none;")
     )
 
 

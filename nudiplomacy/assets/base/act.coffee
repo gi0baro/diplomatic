@@ -100,8 +100,8 @@ class Act
         $('#games_countries_assignment').change ->
             act._gameFormCAChange()
             return
-        $('#games_countries_enabled').change ->
-            $('#games_countries_enabled_hide').html '{"me": "'+$('#games_countries').val()+'"}'
+        $('#games_countries_choice_selection').change ->
+            $('#games_countries_choice_hide').html $('#games_countries_choice_selection').val()
             return
         $('#games_access').change ->
             val = $(this).val()
@@ -151,11 +151,11 @@ class Act
             $("#bet_slider_hide").html $('#bet_slider').slider 'getValue'
         return
 
-    _gameFormCEUpdate: (el) ->
-        data = []
+    _gameFormCEUpdate: ->
+        data = {}
         $('.countrycheck').each ->
-            if $(this).prop('checked')
-                data.push $(this).val()
+            data[$(this).val()] = !!$(this).prop('checked')
+            return true
         $('#games_countries_enabled_hide').html JSON.stringify(data)
         @_gameFormCAChange()
         return
@@ -223,7 +223,6 @@ class Act
 
     _gameFormCAChange: ->
         val = $('#games_countries_assignment').val()
-        console.log(val)
         $('#games_countries_choice_selection').html ''
         $('#games_countries_choice_hide').html ''
         if val is "0"
@@ -233,6 +232,7 @@ class Act
             $('.countrycheck').each ->
                 if $(this).prop('checked')
                     chs.push $(this).val()
+                return true
             for c in chs
                 $('#games_countries_choice_selection').append '<option class="cchoice" value="'+c+'">'+c+'</option>'
             $('#games_countries_choice_hide').html $('#games_countries_choice_selection').val()
