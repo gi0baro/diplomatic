@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 # from gravatar import Gravatar
-from weppy import T, url
-from weppy.pipeline import Injector
+from emmett import T, url
+from emmett.pipeline import Injector
 from . import auth
 from .helpers.utils import cached_user_stats
 

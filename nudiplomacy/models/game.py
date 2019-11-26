@@ -5,8 +5,8 @@ from collections import defaultdict
 from datetime import timedelta
 from decimal import Decimal
 from diplomacy import constants as dip_const
-from weppy import now, T, sdict
-from weppy.orm import Model, Field, belongs_to, has_one, has_many, scope, rowmethod
+from emmett import now, T, sdict
+from emmett.orm import Model, Field, belongs_to, has_one, has_many, scope, rowmethod
 
 from . import TSModel
 from .user import User

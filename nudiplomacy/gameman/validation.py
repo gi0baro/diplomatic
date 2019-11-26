@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from diplomacy import OrdersProcessor
-from weppy import sdict
+from emmett import sdict
 from .. import app, GamePhase
 
 

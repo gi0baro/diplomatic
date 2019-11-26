@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from weppy import now
-from weppy.orm import Model, Field
+from emmett import now
+from emmett.orm import Model, Field
 
 
 class TSModel(Model):

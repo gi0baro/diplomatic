@@ -1,12 +1,12 @@
 """Initial
 
 Migration ID: b6aa08cd1913
-Revises: 
+Revises:
 Creation Date: 2019-11-06 23:51:43.648522
 
 """
 
-from weppy.orm import migrations
+from emmett.orm import migrations
 
 
 class Migration(migrations.Migration):

@@ -4,15 +4,16 @@ import os
 
 from celery import Celery
 from redis import Redis
-from weppy import App
-from weppy.cache import Cache, RamCache, RedisCache
-from weppy.orm import Database
-from weppy.sessions import SessionManager
-from weppy.tools import Auth
-from weppy_assets import Assets
-from weppy_bs3 import BS3
-from weppy_haml import Haml
+from emmett import App
+from emmett.cache import Cache, RamCache, RedisCache
+from emmett.orm import Database
+from emmett.sessions import SessionManager
+from emmett.tools import Auth
+from emmett_assets import Assets
+# from emmett_bs3 import BS3
+from emmett_haml import Haml
 
+from .exts.bs3 import BS3
 from .helpers import postgres
 from .helpers.config import parse_celery_cron
 from .helpers.redis_ext import Redis as RedisExtension

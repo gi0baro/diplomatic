@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from weppy import url, redirect
-from weppy.pipeline import RequirePipe
+from emmett import url, redirect
+from emmett.pipeline import RequirePipe
 from .. import app, auth
 from ..contexts import BaseContext
 from ..pipes import AppStatusPipe

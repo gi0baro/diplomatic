@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import json
-from weppy import url
-from weppy.html import asis, cat, tag
+from emmett import url
+from emmett.html import asis, cat, tag
 from .. import db
 
 

@@ -7,6 +7,9 @@ celery==4.3.0
 click==7.0
 coffeescript==1.1.2
 cssmin==0.2.0
+-e git+https://github.com/emmett-framework/emmett.git@605763290fa9f8ed3b5224610968b5ed781efb53#egg=emmett
+-e git+https://github.com/gi0baro/emmett-assets.git@abb504888afeb2e03e97f53cf767d7a255bea4d0#egg=emmett-assets
+-e git+https://github.com/gi0baro/emmett-haml.git@e9e508d1a3def4abb0e2cec811cffc89cac296e2#egg=emmett-haml
 h11==0.8.1
 hiredis==1.0.1
 httptools==0.0.13
@@ -26,13 +29,11 @@ pytz==2019.3
 pytzdata==2019.3
 pyyaml==5.1.2
 redis==3.3.11
+renoir==1.0.0b3
+-e git+https://github.com/gi0baro/renoir-haml.git@7fd8c7b25e0d48311b1e693e5761acf9f6cc6d2c#egg=renoir-haml
 six==1.13.0
 uvicorn==0.9.1
 uvloop==0.13.0
 vine==1.3.0
 websockets==8.1
--e git+https://github.com/gi0baro/weppy.git@cc0d90524b25d171ec99471a8915ef93f175196b#egg=weppy
--e git+https://github.com/gi0baro/weppy-assets.git@050c696d4edb87a17f937ccd68f3609de64e307c#egg=weppy-assets
--e git+https://github.com/gi0baro/weppy-bs3.git@3978a5f09a68a346523b3389f497338facf4fdbe#egg=weppy-bs3
--e git+https://github.com/gi0baro/weppy-haml.git@c732a9e7f939a25e2f99d18b59a18c44b12ce690#egg=weppy-haml
 zipp==0.6.0

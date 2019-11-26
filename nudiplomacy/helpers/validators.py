@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from weppy import session
-from weppy.validators import Validator, inSet
+from emmett import session
+from emmett.validators import Validator, inSet
 from .. import db
 
 

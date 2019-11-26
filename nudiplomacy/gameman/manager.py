@@ -1,6 +1,6 @@
 from time import time
 from datetime import datetime, timedelta
-from weppy import sdict
+from emmett import sdict
 from nudiplomacy import app, db, mdb, queue, Map
 from nudiplomacy.helpers.mongo import objidToLong, longToObjid
 from nudiplomacy.helpers.system import isAppOnline

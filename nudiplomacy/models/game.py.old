@@ -3,9 +3,9 @@
 import json
 import random
 from datetime import timedelta
-from weppy import request, session, T, sdict
-from weppy.dal import Field, Model, belongs_to, before_insert, after_insert, fieldmethod
-from weppy.validators import inSet, isList
+from emmett import request, session, T, sdict
+from emmett.dal import Field, Model, belongs_to, before_insert, after_insert, fieldmethod
+from emmett.validators import inSet, isList
 from nudiplomacy import app
 from nudiplomacy.helpers.widgets import games_map, games_nplayers, games_ce, \
     games_phasetime, games_jointime, games_bet, games_skipproc

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from weppy.helpers import stream_dbfile
+from emmett.helpers import stream_dbfile
 from .. import app, db, cache, UserStats
 from . import front
 

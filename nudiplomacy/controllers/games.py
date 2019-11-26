@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from weppy import url, abort, request, redirect
-from weppy.tools import requires
+from emmett import url, abort, request, redirect
+from emmett.tools import requires
 from .. import app, auth, Game, Map
 from . import front
 

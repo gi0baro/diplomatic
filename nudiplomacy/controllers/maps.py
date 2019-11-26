@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from weppy import url, abort, Form, Field
-from weppy.tools import requires
+from emmett import url, abort, Form, Field
+from emmett.tools import requires
 # from nudiplomacy import app, auth, db, Map
 # from nudiplomacy.handlers import AppStatus
 # from nudiplomacy.contexts import BaseContext

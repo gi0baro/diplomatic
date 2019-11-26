@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from weppy import AppModule, url
-from weppy.pipeline import RequirePipe
+from emmett import AppModule, url
+from emmett.pipeline import RequirePipe
 from nudiplomacy import app, db, mdb, auth, cache, SysJoincode
 from nudiplomacy.contexts import BaseContext
 from nudiplomacy.helpers.system import isAppOnline
@@ -25,7 +25,7 @@ def change_appstatus():
     newstatus = not status
     mdb.sys_prop.upd(
         {'name': 'sys_online'}, {'$set': {'data.value': newstatus}})
-    # temp fix for weppy
+    # temp fix for emmett
     #cache.redis.clear('sys_online')
     cache.redis._cache.delete(cache.redis._prefix+"sys_online")
     if newstatus:

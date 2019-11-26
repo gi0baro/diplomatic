@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from weppy import websocket
+from emmett import websocket
 
 from .. import app
 

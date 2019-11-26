@@ -3,7 +3,7 @@
 from pydal.adapters import adapters
 from pydal.dialects.postgre import PostgreDialectBooleanJSON
 from pydal.parsers.postgre import PostgreBooleanAutoJSONParser
-from weppy.orm.adapters import PostgrePsycoBoolean
+from emmett.orm.adapters import PostgrePsycoBoolean
 
 
 class PostgresAdapter(PostgrePsycoBoolean):

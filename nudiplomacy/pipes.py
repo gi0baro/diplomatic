@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from weppy.pipeline import Pipe
+from emmett.pipeline import Pipe
 from . import app
 from .helpers.system import system_property
 

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import random
-from weppy import request, sdict
-from weppy.pipeline import RequirePipe
-from weppy.tools import ServicePipe, requires
+from emmett import request, sdict
+from emmett.pipeline import RequirePipe
+from emmett.tools import ServicePipe, requires
 from .. import app, db, auth, Map, Game, Order, GameRole, GamePhase
 # from nudiplomacy import app, auth, db, mdb, Map, Orders, NObject, NSubscription
 # from nudiplomacy.helpers.mongo import longToObjid

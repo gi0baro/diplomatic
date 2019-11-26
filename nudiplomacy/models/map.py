@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from weppy.orm import Field, Model, has_many, after_insert, after_update
+from emmett.orm import Field, Model, has_many, after_insert, after_update
 from . import TSModel
 # from nudiplomacy import queue
 # from nudiplomacy.helpers.images import create_map_image

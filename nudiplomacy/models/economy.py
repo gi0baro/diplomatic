@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from decimal import Decimal
-from weppy.orm import Field, belongs_to, has_many, before_insert, after_insert
+from emmett.orm import Field, belongs_to, has_many, before_insert, after_insert
 from . import TSModel
 
 

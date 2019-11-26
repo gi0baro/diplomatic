@@ -3,7 +3,7 @@
 from aioredis import Redis as _Redis
 from aioredis.pool import ConnectionsPool
 from contextlib import asynccontextmanager
-from weppy.extensions import Extension, listen_signal
+from emmett.extensions import Extension, listen_signal
 
 
 class Redis(Extension):

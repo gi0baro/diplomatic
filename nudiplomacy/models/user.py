@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from weppy.orm import Field, belongs_to, has_many, has_one, after_insert
-from weppy.tools.auth.models import AuthUserBasic
+from emmett.orm import Field, belongs_to, has_many, has_one, after_insert
+from emmett.tools.auth.models import AuthUserBasic
 
 # from .. import app
 from . import TSModel

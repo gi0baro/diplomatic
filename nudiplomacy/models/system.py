@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from weppy.orm import Model, Field
+from emmett.orm import Model, Field
 
 
 class SysProp(Model):

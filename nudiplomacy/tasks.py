@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from weppy import now
+from emmett import now
 from . import Game, celery, db, redis
 
 
