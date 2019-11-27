@@ -1,7 +1,7 @@
 nuDiplomacy
 ===========
 
-weppy based web version of Diplomacy game.
+Emmett based web version of Diplomacy game.
 
 Development
 -----------
@@ -19,21 +19,21 @@ Then you should build the docker image using docker-compose:
 
 And migrate the database:
 
-    docker-compose run --rm web weppy -a nudiplomacy migrations up
+    docker-compose run --rm web migrations up
 
 and run the setup:
 
-    docker-compose run --rm web weppy -a nudiplomacy setup
+    docker-compose run --rm web setup
 
 ### Game data
 
 Some testing data is available for development, so you might run:
 
-    docker-compose run --rm web weppy -a nudiplomacy add_map classic
+    docker-compose run --rm web add_map classic
 
 to add the classic map and you might need a couple of test users for playing:
 
-    docker-compose run --rm web weppy -a nudiplomacy create_test_data
+    docker-compose run --rm web create_test_data
 
 Then you can login to the platform using *tester1@nudiplomacy.com* and *tester2@nudiplomacy.com*, both passwords are set to `foobar`.
 
