@@ -137,7 +137,7 @@ class PhaseNext extends Phase
         return null
 
     _fetchOrders: (callback) ->
-        if preGame
+        if not isGameActive
             callback(@id, false)
             return
         @orders = @previous.orders

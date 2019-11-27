@@ -370,10 +370,22 @@ class UI
                 return
         if preGame
             @_preGame()
+        if gameOver
+            @_gameOver()
+        if isGameActive and currentPlayer isnt null and not currentActive
+            @_playerInactive()
         return
 
     _preGame: ->
         $('#pregame').removeClass 'nulled'
+        return
+
+    _gameOver: ->
+        $('#win').removeClass 'nulled'
+        return
+
+    _playerInactive: ->
+        $('#player_inactive').removeClass 'nulled'
         return
 
     setPhase: (id) ->

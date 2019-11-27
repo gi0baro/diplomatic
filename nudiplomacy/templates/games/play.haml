@@ -4,12 +4,15 @@
     :javascript
         var currentPlayer = "{{=player_country}}";
         var currentReady = {{='true' if player_ready else 'false'}};
+        var currentActive = {{='true' if player_active else 'false'}};
 - else
     :javascript
         var currentPlayer = null;
         var currentReady = false;
+        var currentActive = false;
 
 :javascript
+    var isGameActive = {{='true' if game.stage == 1 else 'false'}};
     var preGame = {{='true' if game.stage == 0 else 'false'}};
     var gameOver = {{='true' if game.stage == 5 else 'false'}};
     // var GROUND_COLOR = {r: 226, g: 198, b: 158};
@@ -61,7 +64,7 @@
         app.net.route("readmessage", "{{#=url('api.chat_read')}}");
         app.game.scsToWin = {{=scs}};
         app.start();
-        if (!preGame) {
+        if (isGameActive) {
             counters.add('top_menu_timer', {{=timer.s}}, {{=timer.m}}, {{=timer.h}}, {{=timer.d}});
         }
     });
@@ -237,7 +240,11 @@
         #pregame.announce.nulled
             = T("This is a pre-game phase. The game will start when all the players have been joined.")
 
+        #player_inactive.announce.nulled
+            = T("You don't need to fulfill any orders in this phase.")
+
         #win.announce.nulled
+            = T("Game is over.")
 
 .ninja
     %img#army_img{src: '{{=url("static", "images/tank.png")}}'}

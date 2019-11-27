@@ -136,6 +136,10 @@ async def order_save(order_id):
     if row.games.stage != Game.STAGES['game'] or row.games.is_ready:
         rv.data = "Game doesn't allow orders"
         return rv
+    #: if player is not active can't update orders
+    if not row.game_roles.is_active:
+        rv.data = "Cannot update orders in this turn"
+        return rv
     #: if player is ready can't update orders
     if row.game_roles.is_ready:
         rv.data = "Cannot update orders when ready"
@@ -163,7 +167,11 @@ async def player_ready(gid):
     if not game:
         return rv
     status = (await request.body_params).get('ready', False)
-    game.players.where(lambda p: p.user == auth.user.id).update(is_ready=status)
+    game.players.where(
+        lambda p:
+            (p.user == auth.user.id) &
+            (p.is_active == True)
+    ).update(is_ready=status)
     if game.players.where(lambda p: p.is_ready == True).count() == game.players_number:
         game.update_record(is_ready=True)
         process_game.delay(game.id)
