@@ -4,7 +4,7 @@ from emmett import now
 from . import Game, celery, db, redis
 
 
-@celery.task
+@celery.task(queue='games')
 def manage_games():
     with db.connection():
         start_games()
@@ -49,7 +49,7 @@ def process_games():
         process_game.delay(game.id)
 
 
-@celery.task
+@celery.task(queue='games')
 def start_game(game_id):
     with db.connection():
         game = Game.get(game_id)
@@ -57,14 +57,14 @@ def start_game(game_id):
     redis.publish(f'game:{game_id}:state', 'started')
 
 
-@celery.task
+@celery.task(queue='games')
 def cancel_game(game_id):
     with db.connection():
         game = Game.get(game_id)
         game.cancel()
 
 
-@celery.task
+@celery.task(queue='games')
 def process_game(game_id):
     with db.connection():
         game = Game.get(game_id)
