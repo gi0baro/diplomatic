@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "nudiplomacy"
+version = "0.1.0"
+description = ""
+authors = ["gi0baro <gi0baro@d4net.org>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+emmett = { git = "https://github.com/emmett-framework/emmett.git", rev = "c7af4da" }
+renoir-haml = { git = "https://github.com/gi0baro/renoir-haml.git", rev = "7fd8c7b" }
+emmett-haml = { git = "https://github.com/gi0baro/emmett-haml.git", rev = "e9e508d" }
+# weppy-bs3 = { git = "https://github.com/gi0baro/weppy-bs3.git", rev = "3978a5f" }
+emmett-assets = { git = "https://github.com/gi0baro/emmett-assets.git", rev = "abb5048" }
+coffeescript = "1.1.2"
+redis = "~3.3.11"
+aioredis = "~1.3.0"
+psycopg2-binary = "~2.8.4"
+celery = "~4.3.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "~5.2.2"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

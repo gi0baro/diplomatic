@@ -19,25 +19,28 @@ class App
         #console.log(mapData)
         @env.init(mapData)
         gameData = @net.getGame()
+        gamePhases = @net.getPhases()
         #console.log(gameData)
-        if gameData.currentPlayer and not preGame
-            orders = @net.getOrders()
+        if currentPlayer and isGameActive
+            orders = @net.getCurrentOrders()
         else
             orders =
                 data: {}
-        @game.init(gameData, orders)
-        @ui.init()
-        @ui.buildOrders()
-        @ui.initStats()
-        @ui.initMessages()
-        if @game.gotOrders()
-            @ui.iconOn('ord')
-        if @game.ready
-            @ui.iconLight('ready')
-            @ui.iconLight('ord')
-        @screen.createElements()
-        @screen.img.onload = ->
-            app._launch()
+        @net.setSockets()
+        @game.init(gameData, gamePhases, orders, =>
+            @ui.init()
+            @ui.buildOrders()
+            @ui.initStats()
+            @ui.initMessages()
+            if @game.gotOrders()
+                @ui.iconOn('ord')
+            if @game.ready
+                @ui.iconLight('ready')
+                @ui.iconLight('ord')
+            @screen.createElements()
+            @screen.img.onload = ->
+                app._launch()
+        )
         return
 
     _launch: ->
@@ -57,14 +60,14 @@ class App
         return
 
     reload: ->
-        if preGame
-            location.reload()
-            return
-        gameData = @net.getGame()
-        orders = @net.getOrders()
-        @game.reload(gameData, orders)
-        @ui.reload()
-        @game.loadPhase(@game.phase('last').id)
+        # if preGame
+        location.reload()
         return
+        # gameData = @net.getGame()
+        # orders = @net.getCurrentOrders()
+        # @game.reload(gameData, orders)
+        # @ui.reload()
+        # @game.loadPhase(@game.phase('last').position)
+        # return
 
 window.app = new App()

@@ -1,18 +1,48 @@
-web:
-  build: .
-  command: python3 run.py
-  volumes:
-    - .:/home/app
-  ports:
-    - "8000:8000"
-  links:
-    - db
-    - redis
-db:
-  image: mongo:latest
-  ports:
-    - "27017:27017"
-redis:
-  image: redis:latest
-  ports:
-    - "6379:6379"
+version: '3.7'
+
+services:
+  db:
+    image: postgres:10-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: diplomacy
+
+  redis:
+    image: redis:latest
+
+  web:
+    build: .
+    entrypoint: emmett -a nudiplomacy
+    command: develop --host=0.0.0.0
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: diplomacy
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      REDIS_HOST: redis
+      WRK_BROKER_URL: redis://redis:6379/1
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "8000:8000"
+
+  wrk:
+    build: .
+    command: celery worker -l debug -A nudiplomacy:celery
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: diplomacy
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      REDIS_HOST: redis
+      WRK_BROKER_URL: redis://redis:6379/1
+      C_FORCE_ROOT: 'true'
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis

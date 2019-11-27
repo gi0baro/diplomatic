@@ -7,7 +7,7 @@
         .row.m-15
         %form.form-horizontal{enctype: "multipart/form-data", method: 'POST'}
             %fieldset
-                - for field in ['map', 'name', 'lang', 'nplayers', 'bet', 'pot_type', 'phase_time', 'build_ew', 'build_onstart', 'anonymous', 'press_type']
+                - for field in ['map', 'name', 'lang', 'players_number', 'bet', 'pot_type', 'phase_time', 'build_everywhere', 'build_on_start', 'anonymous', 'press_type']
                     .form-group
                         %label.col-sm-2.control-label
                             = form.custom.label[field]
@@ -21,26 +21,26 @@
                                     = form.custom.comment[field]
                 .form-group
                     %label.col-sm-2.control-label
-                        = form.custom.label.countries_assign
+                        = form.custom.label.countries_assignment
                     .col-sm-10
-                        = form.custom.widget.countries_assign
-                        #games_countries_c.row.m-15.nulled
+                        = form.custom.widget.countries_assignment
+                        #games_countries_choice.row.m-15.nulled
                             .form-group
                                 %label.col-sm-4.control-label
                                     = T("Pick your country:")
                                 .col-sm-8
-                                    %select#games_countries.form-control
-                                    - if form.errors["countries_assign"]
+                                    %select#games_countries_choice_selection.form-control
+                                    - if form.errors["countries_assignment"]
                                         %p.text-danger
-                                            = form.errors["countries_assign"]
-                %textarea#games_countries_hide{name: "countries", style: "display: none;"}
+                                            = form.errors["countries_assignment"]
+                %textarea#games_countries_choice_hide{name: "country_choice", style: "display: none;"}
                 .form-group
                     %label.col-sm-2.control-label
-                        = form.custom.label.countries_enabled
+                        = form.custom.label.countries
                     .col-sm-10
-                        = form.custom.widget.countries_enabled
+                        = form.custom.widget.countries
                         %p.help-block
-                            = form.custom.comment.countries_enabled
+                            = form.custom.comment.countries
                 .form-group
                     %label.col-sm-2.control-label
                         = form.custom.label.access
@@ -66,7 +66,7 @@
                 #advancedblock.col-md-12.nulled
                     .box.border
                         .row.m-15
-                            - for field in ['join_time', 'starts_on', 'target_sc', 'max_turns', 'skip_proc']
+                            - for field in ['join_time', 'starts_on', 'target_sc', 'max_turns', 'skip_processing']
                                 .form-group
                                     %label.col-sm-2.control-label
                                         = form.custom.label[field]

@@ -1,15 +1,32 @@
-from weppy.dal import Field, Model, belongs_to, after_insert, before_update
-from weppy.tools.auth import AuthUser
-from nudiplomacy import app
-from nudiplomacy.helpers.validators import UserAvatarSet
-from nudiplomacy.helpers.images import thumb_on_send
+# -*- coding: utf-8 -*-
+
+from emmett.orm import Field, belongs_to, has_many, has_one, after_insert
+from emmett.tools.auth.models import AuthUserBasic
+
+# from .. import app
+from . import TSModel
+from .economy import Vault
+# from nudiplomacy.helpers.validators import UserAvatarSet
+# from nudiplomacy.helpers.images import thumb_on_send
 
 
-class User(AuthUser):
-    username = Field()
+class User(AuthUserBasic):
+    has_one('vault', {'stats': 'UserStats'})
+    has_many(
+        {'owned_games': 'Game'},
+        {'participated_games': 'GameRole'},
+        {'transactions': {'via': 'vault'}},
+        {'orders': {'via': 'participated_games'}})
+
+    username = Field(notnull=True)
+    is_admin = Field.bool(notnull=True)
     avatar_src = Field()
-    avatar_img = Field('upload')
-    facebook = Field()
+    avatar_img = Field.upload()
+    # facebook = Field()
+
+    default_values = {
+        'is_admin': False
+    }
 
     form_registration_rw = {
         'username': True
@@ -20,42 +37,58 @@ class User(AuthUser):
     }
 
     validation = {
-        'username': {'presence': True},
-        'avatar_src': UserAvatarSet(app.config.auth.photo_source, zero=None)
+        # 'avatar_src': UserAvatarSet(app.config.auth.photo_source, zero=None)
+    }
+
+    indexes = {
+        'email': True,
+        'is_admin': True
     }
 
     @after_insert
-    def insert_udata(self, fields, rid):
-        self.db.UserData.insert(user=rid)
-        self.db.UserSettings.insert(user=rid)
+    def create_account_data(self, fields, rid):
+        if fields.is_admin:
+            return
+        UserStats.create(user=rid)
+        Vault.create(user=rid)
 
-    @before_update
-    def update_avatar_thumb(self, dbset, fields):
-        if fields.get('avatar_img'):
-            thumb_on_send(fields, "avatar_img")
+    # @before_update
+    # def update_avatar_thumb(self, dbset, fields):
+    #     if fields.get('avatar_img'):
+    #         thumb_on_send(fields, "avatar_img")
 
 
-class UserData(Model):
+class UserStats(TSModel):
+    tablename = "user_stats"
+
     belongs_to('user')
 
-    credits = Field('int', default=100)
-    points = Field('int', default=0)
-    played = Field('int', default=0)
-    won = Field('int', default=0)
-    survived = Field('int', default=0)
-    defeated = Field('int', default=0)
-    drawn = Field('int', default=0)
+    points = Field.int(notnull=True)
+    played = Field.int(notnull=True)
+    won = Field.int(notnull=True)
+    survived = Field.int(notnull=True)
+    defeated = Field.int(notnull=True)
+    drawn = Field.int(notnull=True)
 
-
-_default_notif_settings = {
-    'email': {
-        'processing': True,
-        'messages': False
+    default_values = {
+        'points': 0,
+        'played': 0,
+        'won': 0,
+        'survived': 0,
+        'defeated': 0,
+        'drawn': 0
     }
-}
 
 
-class UserSettings(Model):
-    belongs_to('user')
+# _default_notif_settings = {
+#     'email': {
+#         'processing': True,
+#         'messages': False
+#     }
+# }
 
-    notification = Field('json', default=_default_notif_settings)
+
+# class UserSettings(Model):
+#     belongs_to('user')
+
+#     notification = Field('json', default=_default_notif_settings)

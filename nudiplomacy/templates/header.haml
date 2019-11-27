@@ -1,3 +1,5 @@
+- current_user = locals().get('current_user', lambda: None)
+
 %nav.navbar.navbar-default.navbar-fixed-top{role: "navigation", style: "color:white;"}
     .container-fluid
         .navbar-header
@@ -13,13 +15,13 @@
         #bs-example-navbar-collapse-1.collapse.navbar-collapse
             %ul.nav.navbar-nav.nav-pills.pull-right
                 %li
-                    %a{href: '{{=url("games.index")}}'}
+                    %a{href: '{{=url("front.games.index")}}'}
                         = T("Games")
                 %li
-                    %a{href: '{{=url("main.ranking")}}'}
+                    %a{href: '{{#=url("main.ranking")}}'}
                         = T("Ranking")
                 %li
-                    %a{href: '{{=url("main.stats")}}'}
+                    %a{href: '{{#=url("main.stats")}}'}
                         = T("Stats")
                 - if current_user()
                     %li.dropdown.pull-right
@@ -32,23 +34,24 @@
                                     %br
                                     %img.img-circle.img-responsive{src:"{{=userpic()}}"}
                                     %br
-                            %li
-                                %a{href:"#"}
-                                    = T("Points")+": "
-                                    = userdata()['points']
-                            %li
-                                %a{href:"#"}
-                                    = T("Credits")+": "
-                                    = userdata()['credits']
-                            %li
-                                %a{href:"#"} Profile
-                            %li
-                                %a{href:"{{=url('games.owned')}}"} My games
+                            - if not current_user().is_admin
+                                %li
+                                    %a{href:"#"}
+                                        = T("Points")+": "
+                                        = userdata()['points']
+                                %li
+                                    %a{href:"#"}
+                                        = T("Credits")+": "
+                                        = uservault()['balance']
+                                %li
+                                    %a{href:"#"} Profile
+                                %li
+                                    %a{href:"{{=url('front.games.owned')}}"} My games
                             %li.divider
                             %li
-                                %a{href:"{{=url('main.account', 'logout')}}"} Sign out
+                                %a{href:"{{=url('auth.logout')}}"} Sign out
                 - else
                     %li
-                        %a{href:"{{=url('main.account', 'register')}}"} Sign up
+                        %a{href:"{{=url('auth.registration')}}"} Sign up
                     %li
-                        %a{href:"{{=url('main.account', 'login')}}"} Sign in
+                        %a{href:"{{=url('auth.login')}}"} Sign in

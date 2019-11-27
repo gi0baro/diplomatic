@@ -21,12 +21,12 @@ class UI
         @_msgFirstCall = {}
         @_msgChatUnread = {}
         @_tipTimer = null
-        @_statusTimer = null
+        # @_statusTimer = null
         @_nextTimer = null
-        @_statusTimer = setInterval (->
-            app.net.getGameStatus()
-            return
-        ), 60000
+        # @_statusTimer = setInterval (->
+        #     app.net.getGameStatus()
+        #     return
+        # ), 60000
         return
 
     init: ->
@@ -42,13 +42,14 @@ class UI
 
     _setOverflow: ->
         #: we need to evaluate screen size because of the zoom eval (seems that the scroll bars make width wrong when overflow is auto)
-        i_ch_h = app.screen.img.height
-        console.log(i_ch_h)
-        console.log($(window).height())
-        if i_ch_h > $(window).height()
-            $('#cont_wrapper').css 'overflow-y': 'scroll'
-        else
-            $('#cont_wrapper').css 'overflow-y': 'hidden'
+        # i_ch_h = app.screen.img.height
+        # console.log('img H', i_ch_h)
+        # console.log('win H', $(window).height())
+        # if i_ch_h > $(window).height()
+        #     $('#cont_wrapper').css 'overflow-y': 'scroll'
+        # else
+        #     $('#cont_wrapper').css 'overflow-y': 'hidden'
+        $('#cont_wrapper').css 'overflow-y': 'scroll'
         return
 
     _setTopMenu: ->
@@ -203,10 +204,10 @@ class UI
             console.log("phase_r click")
             buttoff = $('#phase_r').hasClass 'disabled'
             if not buttoff
-                if app.game.phase().id is "next"
+                if app.game.phase().position is "next"
                     newphase = app.game._nphases-1
                 else
-                    newphase = app.game.phase().id - 1
+                    newphase = app.game.phase().position - 1
                 app.game.loadPhase(newphase)
             return
         $('#phase_f').click ->
@@ -215,7 +216,7 @@ class UI
                 if app.game.isLastPhase()
                     newphase = "next"
                 else
-                    newphase = app.game.phase().id + 1
+                    newphase = app.game.phase().position + 1
                 app.game.loadPhase(newphase)
             return
         $('#phase_ff').click ->
@@ -303,18 +304,18 @@ class UI
                 app.ui.setMessagesRead()
             , 5000)
             #: refresh chats every 30s
-            setInterval(->
-                cid = $('#msg_conv_global').data('cid')
-                since = $($('#msg_conv_global').children()[1]).children().length
-                app.net.getMessages($('#msg_conv_global').data('cid'), 'global', since)
-                if app.game.presstype is "all"
-                    for key, val of app.env.countries
-                        if key is app.game.country
-                            continue
-                        cid = $('#msg_conv_'+key).data('cid')
-                        since = $($('#msg_conv_'+key).children()[1]).children().length
-                        app.net.getMessages(cid, key, since)
-            , 30000)
+            # setInterval(->
+            #     cid = $('#msg_conv_global').data('cid')
+            #     since = $($('#msg_conv_global').children()[1]).children().length
+            #     app.net.getMessages($('#msg_conv_global').data('cid'), 'global', since)
+            #     if app.game.presstype is "all"
+            #         for key, val of app.env.countries
+            #             if key is app.game.country
+            #                 continue
+            #             cid = $('#msg_conv_'+key).data('cid')
+            #             since = $($('#msg_conv_'+key).children()[1]).children().length
+            #             app.net.getMessages(cid, key, since)
+            # , 30000)
         return
 
     _initStatsChart: (country, color) ->
@@ -369,10 +370,22 @@ class UI
                 return
         if preGame
             @_preGame()
+        if gameOver
+            @_gameOver()
+        if isGameActive and currentPlayer isnt null and not currentActive
+            @_playerInactive()
         return
 
     _preGame: ->
         $('#pregame').removeClass 'nulled'
+        return
+
+    _gameOver: ->
+        $('#win').removeClass 'nulled'
+        return
+
+    _playerInactive: ->
+        $('#player_inactive').removeClass 'nulled'
         return
 
     setPhase: (id) ->
@@ -381,18 +394,18 @@ class UI
             #$('#phase_ind').append '<span>'+id+'/'+app.phase.id+'</span>'
             phase = app.game.phase(id)
             console.log(phase)
-            if phase.type is "diplomacy"
-                $('#phase_ind').append '<span>'+phase.season+' '+phase.year+'</span>'
+            if phase.type is PHASE_TYPES.diplomacy
+                $('#phase_ind').append '<span>'+SEASONS.translate(phase.season)+' '+phase.year+'</span>'
             else
                 if phase.year
-                    $('#phase_ind').append '<span>'+phase.type+' '+phase.year+'</span>'
+                    $('#phase_ind').append '<span>'+PHASE_TYPES.translate(phase.type)+' '+phase.year+'</span>'
                 else
-                    $('#phase_ind').append '<span>'+phase.type+'</span'
+                    $('#phase_ind').append '<span>'+PHASE_TYPES.translate(phase.type)+'</span'
         else
             $('#phase_ind').append '<span><em>Next</em></span>'
         @setPhaseStats(id)
-        if id is app.game.phase('last').id or id in ['next', 'last']
-            if app.game.phase('last').type is 'builds'
+        if id is app.game.phase('last').position or id in ['next', 'last']
+            if app.game.phase('last').type is PHASE_TYPES.builds
                 @showBuildsTip()
         return
 
@@ -458,11 +471,11 @@ class UI
                 visibility: 'visible'
             if phase isnt "next"
                 pphase = app.game._phases[phase]
-                if pphase.id
+                if pphase.position
                     s = "Resulting from "
-                    if pphase.type is "diplomacy"
+                    if pphase.type is PHASE_TYPES.diplomacy
                         s += pphase.season+' '+pphase.year
-                    else if pphase.type is "retreats"
+                    else if pphase.type is PHASE_TYPES.retreats
                         s += 'retreats in '+pphase.season+' '+pphase.year
                     else
                         s += pphase.type+' '+pphase.year
@@ -531,7 +544,7 @@ class UI
 
     setMenuButtons: (act, id) ->
         if act is "open"
-            if app.game.phase().type is "diplomacy"
+            if app.game.phase().type is PHASE_TYPES.diplomacy
                 if app.game.phase().canConvoy(id)
                     $('#btn_c').removeClass 'ninja'
                 move = app.game.hasMove(id)
@@ -545,7 +558,7 @@ class UI
                             $('#btn_sm').addClass 'btn-primary'
                         when "convoy"
                             $('#btn_c').addClass 'btn-primary'
-            if app.game.phase().type is "builds"
+            if app.game.phase().type is PHASE_TYPES.builds
                 if id in app.game.phase().getCountryTroops()
                     build = app.game.hasBuild(id)
                     if build
@@ -560,22 +573,22 @@ class UI
                                 $('#btn_b_a').addClass 'btn-primary'
                             when "build_fleet"
                                 $('#btn_b_f').addClass 'btn-primary'
-            if app.game.phase().type is "retreats"
+            if app.game.phase().type is PHASE_TYPES.retreats
                 move = app.game.hasMove(id)
                 if move
                     $('#btn_r_r').addClass 'btn-primary'
                 else
                     $('#btn_r_d').addClass 'btn-primary'
         else if act is "close"
-            if app.game.phase().type is "diplomacy"
+            if app.game.phase().type is PHASE_TYPES.diplomacy
                 $('#btn_c').addClass 'ninja'
-            if app.game.phase().type is "builds"
+            if app.game.phase().type is PHASE_TYPES.builds
                 $('#btn_b_f').addClass 'ninja'
         else if act is "reset"
-            if app.game.phase().type is "diplomacy"
+            if app.game.phase().type is PHASE_TYPES.diplomacy
                 for bid in ["btn_m", "btn_sh", "btn_sm", "btn_c"]
                     $('#'+bid).removeClass 'btn-primary'
-            else if app.game.phase().type is "retreats"
+            else if app.game.phase().type is PHASE_TYPES.retreats
                 $('#btn_r_r').removeClass 'btn-primary'
                 $('#btn_r_d').removeClass 'btn-primary'
             else
@@ -603,9 +616,9 @@ class UI
         ## load buttons state
         m_x = mpos.x - 40
         m_y = mpos.y - 60
-        if app.game.phase().type is "diplomacy"
+        if app.game.phase().type is PHASE_TYPES.diplomacy
             menu_id = "#terr_menu"
-        if app.game.phase().type is "builds"
+        if app.game.phase().type is PHASE_TYPES.builds
             pos = @_translatePosition(mpos)
             refcolor = app.screen.getColor(pos)
             tid = app.env.getTerritoryByColor(refcolor)
@@ -613,7 +626,7 @@ class UI
                 menu_id = "#build_menu_d"
             else
                 menu_id = "#build_menu"
-        if app.game.phase().type is "retreats"
+        if app.game.phase().type is PHASE_TYPES.retreats
             menu_id = "#retreat_menu"
         $(menu_id).css
             top: m_y+'px'
@@ -629,11 +642,11 @@ class UI
     closeMenu: ->
         @setMenuButtons("close", false)
         menu = $('.menuopened')[0]
-        #if app.game.phase().type is "diplomacy"
+        #if app.game.phase().type is PHASE_TYPES.diplomacy
         #    menu_id = "#terr_menu"
-        #if app.game.phase().type is "builds"
+        #if app.game.phase().type is PHASE_TYPES.builds
         #    menu_id = "#build_menu"
-        #if app.game.phase().type is "retreats"
+        #if app.game.phase().type is PHASE_TYPES.retreats
         #    menu_id = "#retreat_menu"
         $(menu).animate
             opacity:'0'
@@ -841,26 +854,26 @@ class UI
 
     buildOrders: ->
         ## TODO: implement other steps filling
-        if app.game.phase().id
+        if app.game.phase() isnt undefined
             pphase = app.game.phase().previous()
-            for id, data of app.game.orders
-                order_str = @_buildOrderString(id, data)
-                $('#orders_next_me_data').append '<div class="order" id="ord_next_'+id+'">'+order_str+'</div>'
+            for territory, data of app.game.orders
+                order_str = @_buildOrderString(territory, data)
+                $('#orders_next_me_data').append '<div class="order" id="ord_next_'+territory+'">'+order_str+'</div>'
             @ordersClick("orders_next_me_head")
             #for i in [1..app.phase.orders.length-1]
             for phase, pdata of app.game._phases
-                if phase not in ["0", app.game.phase().id+""]
+                if phase not in ["0", app.game.phase().territory+""]
                     #$('#ord_wrapper').append '<div class="ord_phase_wrapper" id="orders_'+phase+'"></div>'
                     for country, orders of pdata.orders
-                        for id, data of orders
-                            order_str = @_buildOrderString(id, data)
-                            $('#orders_'+phase+'_'+country+'_data').append '<div class="order" id="ord_'+phase+'_'+id+'">'+order_str+'</div>'
+                        for territory, data of orders
+                            order_str = @_buildOrderString(territory, data)
+                            $('#orders_'+phase+'_'+country+'_data').append '<div class="order" id="ord_'+phase+'_'+territory+'">'+order_str+'</div>'
                     @ordersClick("orders_"+phase+"_"+app.game.country+"_head")
             #$('#orders_next').css
             #   visibility: 'visible'
             $('#readyorders').css
                 'line-height': ($('#orders_next').height()-12)+"px"
-            p = if app.game.phase().id isnt "next" then app.game.phase().id-1 else "next"
+            p = if app.game.phase().position isnt "next" then app.game.phase().position-1 else "next"
             $('#orders_'+p).addClass 'on'
             $('#orders_'+p).css
                 visibility: 'visible'
@@ -868,40 +881,99 @@ class UI
             $('#noorders').removeClass 'nulled'
         return
 
-    _buildOrderString: (id, data) ->
-        order_str = app.env.names[id]+' '+data.type
-        if data.type isnt "hold"
-            if data.type is "move"
-                order_str += ' to '+app.env.names[data.to]
-                if data.viaConvoy
-                    order_str += ' via convoy'
-                if data.mc isnt undefined
-                    if data.mc is 0
-                        order_str += ' north coast'
-                    else
-                        order_str += ' south coast'
-            else if data.type is "build"
-                order_str = app.env.names[id]+" builds a new "+data.troop
-                if data.mc is 0
-                    order_str += " at north coast"
-                if data.mc is 1
-                    order_str += " at south coast"
+    _buildOrderString: (territory, order) ->
+        console.log('_buildOrderString', territory, order)
+        internal_type = ORDER_TYPES.remote_to_internal(order.type)
+        territory_name = app.env.names[territory]
+        if internal_type is 'hold'
+            order_str = T.get('order_phrase.hold').replace(':TERRITORY:', territory_name)
+            # return order_str
+        else if internal_type is 'move'
+            order_str = T.get('order_phrase.move').replace(
+                ':SRC:', territory_name
+            ).replace(
+                ':DST:', app.env.names[order.data.dst]
+            )
+            through_phrase = if order.data.through then T.get('order_phrase.through') else ''
+            order_str = order_str.replace(':THROUGH:', through_phrase)
+            if order.data.coast isnt undefined
+                if order.data.coast is 0
+                    coast_phrase = T.get('order_phrase.north_coast')
+                else
+                    coast_phrase = T.get('order_phrase.south_coast')
             else
-                order_str += ' from '+app.env.names[data.from]+' to '+app.env.names[data.to]
+                coast_phrase = ''
+            order_str = order_str.replace(':COAST:', coast_phrase)
+        else if internal_type is 'support_hold'
+            order_str = T.get('order_phrase.support_hold').replace(':DST:', app.env.names[order.data.dst])
+        else if internal_type is 'support_move'
+            order_str = T.get('order_phrase.support_move').replace(
+                ':TERRITORY:', territory_name
+            ).replace(
+                ':SRC:', app.env.names[order.data.src]
+            ).replace(
+                ':DST:', app.env.names[order.data.dst]
+            )
+            if order.data.coast isnt undefined
+                if order.data.coast is 0
+                    coast_phrase = T.get('order_phrase.north_coast')
+                else
+                    coast_phrase = T.get('order_phrase.south_coast')
+            else
+                coast_phrase = ''
+            order_str = order_str.replace(':COAST:', coast_phrase)
+        else if internal_type is 'build'
+            order_str = T.get('order_phrase.build').replace(
+                ':TERRITORY:', territory_name
+            ).replace(
+                ':TROOP_TYPE:', TROOP_TYPES.remote_to_internal(order.data.troop)
+            )
+            if order.data.coast isnt undefined
+                if order.data.coast is 0
+                    coast_phrase = T.get('order_phrase.at_north_coast')
+                else
+                    coast_phrase = T.get('order_phrase.at_south_coast')
+            else
+                coast_phrase = ''
+            order_str = order_str.replace(':COAST:', coast_phrase)
+        else if internal_type is 'retreat'
+            order_str = T.get('order_phrase.retreat').replace(
+                ':TERRITORY:', territory_name
+            ).replace(
+                ':DST:', app.env.names[order.data.dst]
+            )
+            if order.data.coast isnt undefined
+                if order.data.coast is 0
+                    coast_phrase = T.get('order_phrase.north_coast')
+                else
+                    coast_phrase = T.get('order_phrase.south_coast')
+            else
+                coast_phrase = ''
+            order_str = order_str.replace(':COAST:', coast_phrase)
+        else if internal_type is 'disband'
+            order_str = T.get('order_phrase.disband').replace(':TERRITORY:', territory_name)
+        else if internal_type is 'convoy'
+            order_str = T.get('order_phrase.convoy').replace(
+                ':TERRITORY:', territory_name
+            ).replace(
+                ':SRC:', app.env.names[order.data.src]
+            ).replace(
+                ':DST:', app.env.names[order.data.dst]
+            )
         return order_str
 
     addOrder: (id, data) ->
         order_str = @_buildOrderString(id, data)
         $('#ord_next_'+id).html order_str
         #@autoSave()
-        if app.game.phase('last').type is "builds"
+        if app.game.phase('last').type is PHASE_TYPES.builds
             @showBuildsTip()
         return
 
     delOrder: (id) ->
         $('#ord_'+id).remove()
         #@autoSave()
-        if app.game.phase('last').type is "builds"
+        if app.game.phase('last').type is PHASE_TYPES.builds
             @showBuildsTip()
         return
 
@@ -979,7 +1051,7 @@ class UI
         clearTimeout(@saveTimer)
         self = this
         @saveTimer = setTimeout (->
-            app.net.postOrders()
+            app.game.saveOrders()
             return
         ), 3000
         return
@@ -991,7 +1063,8 @@ class UI
             return
         console.log('manually saving orders')
         clearTimeout(@saveTimer)
-        app.net.postOrders()
+        # app.net.postOrders()
+        app.game.saveOrders()
         return
 
     saving: ->
@@ -1221,27 +1294,32 @@ class UI
         else
             @hideTip()
 
-    gotGameStatus: (status, phase) ->
-        if status is "processing"
-            @showTip("The game is being processed, keep your finger crossed..", false)
-            # stop check timeout
-            clearInterval(@_statusTimer)
-            # start processing check
-            setTimeout (->
-                app.net.getGameStatus()
-            ), 5000
-        else
-            if phase isnt app.game.phase('last').id
-                # reload game
-                console.log('changed phase')
-                @showTip("Game has changed, going to next phase in 3 seconds..")
-                setTimeout (->
-                    app.reload()
-                ), 3400
+    gotGameStatus: (data) ->
+        # if status is "processing"
+        #     @showTip("The game is being processed, keep your finger crossed..", false)
+        #     # stop check timeout
+        #     clearInterval(@_statusTimer)
+        #     # start processing check
+        #     setTimeout (->
+        #         app.net.getGameStatus()
+        #     ), 5000
+        # else
+        #     if phase isnt app.game.phase('last').id
+        #         # reload game
+        #         console.log('changed phase')
+        #         @showTip("Game has changed, going to next phase in 3 seconds..")
+        #         setTimeout (->
+        #             app.reload()
+        #         ), 3400
+        console.log('gotGameStatus', data)
+        @showTip("Game has changed, reloading in 5 seconds..")
+        setTimeout (->
+            app.reload()
+        ), 5000
         return
 
     reload: ->
-        npid = app.game.phase().id
+        npid = app.game.phase().position
         #: create wrapper for new phase orders
         wrapper = '<div class="ord_phase_wrapper" id="orders_'+npid+'">'
         for country, orders of app.game.phase().orders

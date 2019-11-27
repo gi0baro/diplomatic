@@ -94,6 +94,14 @@ class Screen
                         if list[x].b is color[2]
                             l.push(x)
             return l
+
+        filter_black = (list) ->
+            l = []
+            for x in [0..list.length-1]
+                if list[x].r <= 20 and list[x].g <= 20 and list[x].b <= 20
+                    l.push(x)
+            return l
+
         #: build an array of objects for pixs
         pixa = []
         j = 0
@@ -107,6 +115,7 @@ class Screen
         #time_start = new Date().getTime()
         for key, color of app.env.colors
             app.env.pix[key] = filter(pixa, color)
+        app.env.pix['__black__'] = filter_black(pixa)
         #time_end = new Date().getTime()
         #time_ex = time_end - time_start
         #console.log("2time "+time_ex)
@@ -139,6 +148,7 @@ class Screen
 
     _initLayers: ->
         #: re-color the map based on the reference object for colors
+        @colorTerritory('__black__', NEUTRAL_COLOR)
         for key, color of app.game.colors
             @colorTerritory(key, color)
         @drawSupply()
@@ -166,7 +176,7 @@ class Screen
         return !(color1.r is color2.r and color1.g is color2.g and color1.b is color2.b)
 
     _getTerritories: ->
-        if app.game.phase().id is 0
+        if app.game.phase().position is 0
             rv = {}
             for key of app.env.countries
                 rv[key] = []
@@ -178,7 +188,7 @@ class Screen
 
     _updateColors: (grounds) ->
         ## draw all terrs to ground color
-        color = r: 226, g: 198, b: 158
+        color = GROUND_COLOR
         for i in grounds
             app.game.colors[i] = color
         ## draw countries terrs
@@ -348,10 +358,10 @@ class Screen
     drawLines: ->
         @_clearLines()
         for id, obj of app.game.phase().pastMoves
-            @newLine("past", obj.type, id, obj.from, obj.to, obj.mc, obj.success or false)
-        if app.game.phase().id is "next"
+            @newLine("past", obj.type, id, obj.src, obj.dst, obj.coast, obj.success or false)
+        if app.game.phase().position is "next"
             for id, obj of app.game.moves
-                @newLine("future", obj.type, id, obj.from, obj.to, obj.mc)
+                @newLine("future", obj.type, id, obj.src, obj.dst, obj.coast)
         return
 
     newLine: (time, act, id, f_id, t_id, mc, success=true) ->
@@ -405,14 +415,14 @@ class Screen
                 y = p1.y
                 x_t = intersect.points[0].x
                 y_t = intersect.points[0].y
-                if time is "past" and app.game.phase().id is "next"
+                if time is "past" and app.game.phase().position is "next"
                     color = "#7F7F7F"
                 else
                     color = "#FF0000"
                 @_drawLine(x, y, x_t, y_t, color, success)
                 angle = Math.atan2(y_t-y,x_t-x)
                 @_drawTriangle(angle, 10, x_t, y_t, color)
-            when "sup_hold"
+            when "support_hold"
                 if isFleet(f_id) and app.env.isMCoast(f_id)
                     mc_pos = mc_pos_data[f_id]
                     p1 = new Point2D(app.env.mcoasts_oxy[f_id][mc_pos].x, app.env.mcoasts_oxy[f_id][mc_pos].y)
@@ -431,7 +441,7 @@ class Screen
                 x_t = intersect.points[0].x
                 y_t = intersect.points[0].y
                 angle = Math.atan2(y_t-y,x_t-x)
-                if time is "past" and app.game.phase().id is "next"
+                if time is "past" and app.game.phase().position is "next"
                     color = "#7F7F7F"
                 else
                     color = "#00FF00"
@@ -442,7 +452,7 @@ class Screen
                 x_t = p2.x
                 y_t = p2.y
                 @_drawCircle(x_t, y_t, 18, color)
-            when "sup_move"
+            when "support_move"
                 if isFleet(id) and app.env.isMCoast(id)
                     mc_pos = mc_pos_data[id]
                     p0 = new Point2D(app.env.mcoasts_oxy[id][mc_pos].x, app.env.mcoasts_oxy[id][mc_pos].y)
@@ -472,7 +482,7 @@ class Screen
                 p3 = res.p0
                 p4 = res.p1
                 angle = res.angle
-                if time is "past" and app.game.phase().id is "next"
+                if time is "past" and app.game.phase().position is "next"
                     color = "#7F7F7F"
                 else
                     color = "#FFFF00"
@@ -487,7 +497,7 @@ class Screen
                 p3 = res.p0
                 p4 = res.p1
                 angle = res.angle
-                if time is "past" and app.game.phase().id is "next"
+                if time is "past" and app.game.phase().position is "next"
                     color = "#7F7F7F"
                 else
                     color = "#0000FF"
@@ -512,7 +522,7 @@ class Screen
                 y = p1.y
                 x_t = intersect.points[0].x
                 y_t = intersect.points[0].y
-                if time is "past" and app.game.phase().id is "next"
+                if time is "past" and app.game.phase().position is "next"
                     color = "#7F7F7F"
                 else
                     color = "#FF7F00"

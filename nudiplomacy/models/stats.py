@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from weppy import request
-from weppy.dal import Field, Model, belongs_to
+from emmett import request
+from emmett.dal import Field, Model, belongs_to
 
 
 class TimeStats(Model):

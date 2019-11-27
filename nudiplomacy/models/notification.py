@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from weppy import session
-from weppy.dal import Field, Model, belongs_to
+from emmett import session
+from emmett.dal import Field, Model, belongs_to
 from nudiplomacy.helpers.mongo import longToObjid, objidToLong
 
 

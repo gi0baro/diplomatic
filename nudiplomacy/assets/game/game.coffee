@@ -5,6 +5,7 @@ class Game
         @colors = {}
         @_currentPhase = 0
         @_nphases = 0
+        @_phases_loaded = 0
         @moves = {}
         @moves_mc = {}
         @moves_queue = []
@@ -18,47 +19,70 @@ class Game
         @win = null
         return
 
-    init: (data, orders) ->
+    init: (data, phases, orders, callback) ->
         #: load current player
-        @country = data.currentPlayer
+        # @country = data.currentPlayer
+        @country = currentPlayer
         #: set participating countries
-        @_setCountries(data.countries)
-        @buildew = data.buildew
-        @presstype = data.presstype
+        @_setCountries(data.players)
+        @buildew = data.build_everywhere
+        @presstype = data.press_type
         #: load phases
-        i = 0
-        for phase in data.phases
-            cstr = i+''
-            @_phases[cstr] = new Phase(i, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.mc, phase.dislodged, phase.orders)
+        @_phases["0"] = new Phase(0, null, 2, PHASE_TYPES.pregame, 1920, null, app.env.countries_init, {}, {}, {}, {})
+        i = 1
+        for phase in phases
+            @_phases[i+''] = new Phase(i, phase.id, phase.stage, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.coasts, phase.dislodged, {})
             i++
-        @_nphases = data.phases.length
+        # TEMP
+        console.log(phases, orders)
+        @_nphases = phases.length + 1
         @_currentPhase = @_nphases-1
-        @_nextPhase = new PhaseNext()
-        @orders = orders.data
-        if orders.ready
-            @ready = true
-        @_initOrders()
+        @orders = {}
+        # TODO: change ready to endpoint
+        # if orders.ready
+        #     @ready = true
+        @ready = currentReady
+        @_initOrders(orders.data)
         @_setStartingColors()
+        if @phase('last') isnt undefined and @phase('last').type is PHASE_TYPES.won
+            @win = data.phases[@_nphases-1].winner
+        @_loadPhasesOrders(callback)
+        return
+
+    _loadPhasesOrders: (callback) ->
+        console.log('expected orders to load', @_nphases)
+        for pos, phase of @_phases
+            phase._fetchOrders((phase_id, loaded) =>
+                @_phases_loaded += 1
+                if @_phases_loaded is @_nphases
+                    @_completeInit(callback)
+                return
+            )
+        return
+
+    _completeInit: (after) ->
+        @_nextPhase = new PhaseNext()
+        @_nextPhase._fetchOrders(->
+            return
+        )
         if @gotOrders()
             @_currentPhase = "next"
-        if @phase('last').type is "win"
-            @win = data.phases[@_nphases-1].winner
+        after()
         return
 
     reload: (data, orders) ->
         @_phases = {}
         for phase in data.phases
-            cstr = i+''
-            @_phases[cstr] = new Phase(i, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.mc, phase.dislodged, phase.orders)
+            @_phases[i+''] = new Phase(i, phase.id, phase.stage, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.mc, phase.dislodged, phase.orders)
             i++
         @_nphases = data.phases.length
         @_currentPhase = @_nphases-1
         @_nextPhase = new PhaseNext()
-        @orders = orders.data
+        @orders = {}
         @moves = {}
         @moves_mc = {}
         @moves_queue = []
-        @_initOrders()
+        @_initOrders(orders.data)
         return
 
     phase: (id='current') ->
@@ -82,54 +106,59 @@ class Game
                 delete app.env.countries[k]
         return
 
-    _initOrders: ->
-        for k, v of @orders
-            if v.type isnt "hold"
-                if v.type in ["build", "disband"]
-                    if v.troop is "fleet"
+    _initOrders: (orders) ->
+        for order in orders
+            console.log(order)
+            territory = order.territory
+            @orders[territory] = order
+            if order.type isnt ORDER_TYPES.hold
+                if order.type in [ORDER_TYPES.build, ORDER_TYPES.disband]
+                    if order.data.troop is TROOP_TYPES.fleet
                         d = type: "build_fleet"
-                    else if v.troop is "army"
+                    else if order.data.troop is TROOP_TYPES.army
                         d = type: "build_army"
                     else
                         d = type: "disband"
-                    if v.mc isnt undefined
-                        d.mc = v.mc
-                    @_nextPhase.builds[k] = d
+                    if order.data.coast isnt undefined
+                        d.mc = order.data.coast
+                    # @_nextPhase.builds[territory] = d
                 else
-                    @moves[k] = v
-                    if not @moves[k].from
-                        @moves[k].from = k
+                    @moves[territory] = order.data
+                    @moves[territory].type = ORDER_TYPES.remote_to_internal(order.type)
+                    if not @moves[territory].src
+                        @moves[territory].src = territory
                     #: add expected movements
-                    if v.type is "sup_move" and v.from not in @_nextPhase.getCountryTroops()
-                        @moves[v.from] =
-                            from: v.from
-                            to: v.to
-                            type: 'move'
-                    if v.type is "move" and v.viaConvoy
-                        for r in v.croutes
-                            for ct in r
-                                if ct not in @_nextPhase.getCountryTroops()
-                                    @moves[ct] =
-                                        from: v.from
-                                        to: v.to
-                                        type: 'convoy'
+                    # if order.type is ORDER_TYPES.support_move and order.data.src not in @_nextPhase.getCountryTroops()
+                    #     @moves[order.data.src] =
+                    #         from: order.data.src
+                    #         dst: order.data.dst
+                    #         type: 'move'
+                    # if order.type is ORDER_TYPES.move and order.data.through
+                    #     for route in order.data.routes
+                    #         for convoying_territory in route
+                    #             if convoying_territory not in @_nextPhase.getCountryTroops()
+                    #                 @moves[convoying_territory] =
+                    #                     from: order.data.src
+                    #                     dst: order.data.dst
+                    #                     type: 'convoy'
         return
 
     _setStartingColors: ->
+        console.log('COLORS', GROUND_COLOR, NEUTRAL_COLOR, SEA_COLOR)
         #:set all terrs to ground color
-        color = r: 226, g: 198, b: 158
+        color = GROUND_COLOR
         for i of app.env.colors
             @colors[i] = color
         #:set neutrals
-        color = r: 0, g: 0, b: 0
+        color = NEUTRAL_COLOR
         for i in app.env.neutrals
             @colors[i] = color
         #:set seas
-        color = r: 197, g: 223, b: 234
+        color = SEA_COLOR
         for i in app.env.seas
             @colors[i] = color
         #:set countries terrs
-        cterrs = if @phase().id is 0 then app.env.countries_init else @phase().territories
+        cterrs = @phase().territories
         for key, color of app.env.countries
             #for i in app.env.countries_terr[key]
             #for i in @phase().territories[key]
@@ -185,7 +214,7 @@ class Game
         return
 
     canBuild: ->
-        if not @phase('last').type is "builds"
+        if not @phase('last').type is PHASE_TYPES.builds
             return 0
         ntroops = @phase('last').getCountryTroops().length
         nsupply = 0
@@ -207,23 +236,23 @@ class Game
             @addOrder(id, data)
         return
 
-    addMove: (id, type, from, to) ->
-        data = type: type, from: from, to: to
+    addMove: (id, type, src, dst) ->
+        data = type: type, src: src, dst: dst
         @_addMove(id, data)
         return
 
-    addMoveConvoy: (id, type, from, to, croute) ->
-        data = type: type, from: from, to: to, viaConvoy: true, croute: croute
+    addMoveConvoy: (id, type, src, dst, croute) ->
+        data = type: type, src: src, dst: dst, through: true, croute: croute
         @_addMove(id, data)
         return
 
-    addMoveMC: (id, type, from, to, mc) ->
-        data = data = type: type, from: from, to: to, mc: mc
+    addMoveMC: (id, type, src, dst, coast) ->
+        data = data = type: type, src: src, dst: dst, coast: coast
         @_addMove(id, data)
         return
 
-    enqueueMove: (id, type, from, to) ->
-        data = id: id, type: type, from: from, to: to
+    enqueueMove: (id, type, src, dst) ->
+        data = id: id, type: type, src: src, dst: dst
         @moves_queue.push(data)
         return
 
@@ -235,22 +264,21 @@ class Game
         to_delete.push(id)
         if @moves[id].type is "move"
             for key, value of @moves
-                if value.from is id
+                if value.src is id
                     to_delete.push(key)
-        else if @moves[id].type is "sup_move"
-            ## remove move order if no other sup_move
-            del_move = true
+        else if @moves[id].type is "support_move"
+            ## remove move order if no otherORDER_TYPES.support_move            del_move = true
             for key, value of @moves
-                if value.from is @moves[id].from and value.type in ["sup_move", "convoy"]
+                if value.src is @moves[id].src and value.type in ["support_move", "convoy"]
                     if key isnt id
                         del_move = false
                         break
             if del_move
-                to_delete.push(@moves[id].from)
+                to_delete.push(@moves[id].src)
         else if @moves[id].type is "convoy"
-            to_delete.push(@moves[id].from)
+            to_delete.push(@moves[id].src)
             for key, value of @moves
-                if value.from is @moves[id].from and value.type is "convoy"
+                if value.src is @moves[id].src and value.type is "convoy"
                     if key not in to_delete
                         to_delete.push(key)
         for i in to_delete
@@ -273,7 +301,7 @@ class Game
         else
             odata = type: "build", troop: data.type.split("_")[1]
         if data.mc isnt undefined
-            odata["mc"] = data.mc
+            odata['coast'] = data.mc
         console.log(id)
         console.log(odata)
         @addOrder(id, odata)
@@ -302,38 +330,52 @@ class Game
         #return !$.isEmptyObject(@moves)
         return !$.isEmptyObject(@moves) or !$.isEmptyObject(@_nextPhase.builds)
 
-    addOrder: (id, data) ->
-        @orders[id]["type"] = data.type
-        if data.type isnt "build"
-            @orders[id]["to"] = data.to
+    addOrder: (territory, data) ->
+        console.log('addOrder', territory, data)
+        @orders[territory].type = ORDER_TYPES.internal_to_remote(data.type)
+        if data.type isnt 'build'
+            @orders[territory].data.dst = data.dst
         else
-            @orders[id]["troop"] = data.troop
-            if app.env.isMCoast(id) and data.troop is "fleet"
-                @orders[id]["mc"] = data.mc
-        #@orders[id] = type: data.type, to: data.to
-        if data.type is "move"
-            if data.viaConvoy
-                @orders[id]["viaConvoy"] = data.viaConvoy
-                @orders[id]["croutes"] = [data.croute]
-            if app.env.isMCoast(data.to)
-                #@orders[id]["mc"] = @moves_mc[id]
-                @orders[id]["mc"] = data.mc
-        else if data.type in ["sup_move", "convoy"]
-            @orders[id]["from"] = data.from
+            @orders[territory].data.troop = TROOP_TYPES.internal_to_remote(data.troop)
+            if app.env.isMCoast(territory) and data.troop is 'fleet'
+                @orders[territory].data.coast = data.coast
+        #@orders[territory] = type: data.type, to: data.to
+        if data.type is 'move'
+            if data.through
+                @orders[territory].data.through = data.through
+                @orders[territory].data.routes = [data.croute]
+            if app.env.isMCoast(data.dst)
+                #@orders[territory]["mc"] = @moves_mc[territory]
+                @orders[territory].data.coast = data.coast
+        else if data.type in ['support_move', 'convoy']
+            @orders[territory].data.src = data.src
         #country = app.GetCountryByTerr(id)
         #try
         #   @orders_country[country].push(id)
         #catch
         #   @orders_country[country] = []
         #   @orders_country[country].push(id)
-        app.ui.addOrder(id, @orders[id])
+        @orders[territory]._changed = true
+        app.ui.addOrder(territory, @orders[territory])
         app.ui.autoSave()
         return
 
-    delOrder: (id) ->
-        @orders[id] = type: "hold"
-        app.ui.delOrder(id)
+    delOrder: (territory) ->
+        @orders[territory] =
+            id: @orders[territory].id
+            territory: territory
+            type: ORDER_TYPES.internal_to_remote('hold')
+            stage: ORDER_STATES.planned
+            data: {}
+            _changed: true
+        app.ui.delOrder(territory)
         app.ui.autoSave()
         return
+
+    saveOrders: ->
+        console.log(@orders)
+        for territory, order of @orders
+            if order._changed
+                app.net.postOrder(order)
 
 window.Game = Game

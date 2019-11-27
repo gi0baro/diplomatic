@@ -32,11 +32,11 @@ class Interactions
         #: check depending on action
         switch act
             when "select"
-                if (app.game.isLastPhase()) or (app.game.phase().id is "next")
-                    if app.game.phase().type is "diplomacy"
+                if (app.game.isLastPhase()) or (app.game.phase().position is "next")
+                    if app.game.phase().type is PHASE_TYPES.diplomacy
                         if Id in app.game.phase().getCountryTroops()
                             res = true
-                    if app.game.phase().type is "builds"
+                    if app.game.phase().type is PHASE_TYPES.builds
                         bn = app.game.canBuild()
                         if bn > 0
                             if app.game.phase().getCountryByTerritory(Id) is app.game.country
@@ -51,7 +51,7 @@ class Interactions
                             bd = (key for key of app.game.phase('next').builds)
                             if Id in bd
                                 res = true
-                    if app.game.phase().type is "retreats"
+                    if app.game.phase().type is PHASE_TYPES.retreats
                         #if Id in app.game.phase().previous().getCountryTroops()
                         dlist = app.game.phase().dislodged[app.game.country]
                         if not dlist
@@ -208,11 +208,11 @@ class Interactions
     uiClick: (eve) ->
         @current = eve
         m_id = @active
-        if app.game.phase().type is "diplomacy"
+        if app.game.phase().type is PHASE_TYPES.diplomacy
             act = app.game.hasMove(m_id)
-        if app.game.phase().type is "builds"
+        if app.game.phase().type is PHASE_TYPES.builds
             act = app.game.hasBuild(m_id)
-        if app.game.phase().type is "retreats"
+        if app.game.phase().type is PHASE_TYPES.retreats
             if app.game.hasMove(m_id)
                 act = app.game.hasMove(m_id)
             else
@@ -228,7 +228,7 @@ class Interactions
         ## check if action present
         if act
             if eve isnt "close"
-                if app.game.phase().type is "diplomacy"
+                if app.game.phase().type is PHASE_TYPES.diplomacy
                     #console.log("deleting move")
                     ## need to check moves break on "move"
                     ##
@@ -243,12 +243,12 @@ class Interactions
                     #delete app.play.moves[m_id]
                     app.game.delMove(m_id)
                     app.screen.drawLines()
-                if app.game.phase().type is "builds"
+                if app.game.phase().type is PHASE_TYPES.builds
                     todel = app.game._nphases isnt 2 or (app.game._nphases is 2 and not re_act)
                     if todel
                         app.game.delBuild(@active)
                         app.screen.drawTroops()
-                if app.game.phase().type is "retreats"
+                if app.game.phase().type is PHASE_TYPES.retreats
                     # if was retreat -> disband
                     if act is "retreat"
                         app.game.delMove(m_id)
@@ -256,13 +256,13 @@ class Interactions
                         #app.game.addBuild(m_id, "disband")
                         if re_act
                             app.game.addBuild(m_id, "disband")
-            if app.game.phase().type is "diplomacy"
+            if app.game.phase().type is PHASE_TYPES.diplomacy
                 app.ui.setMenuButtons("reset", @active)
-            if app.game.phase().type is "builds"
+            if app.game.phase().type is PHASE_TYPES.builds
                 todel = app.game._nphases isnt 2 or (app.game._nphases is 2 and not re_act)
                 if todel
                     app.ui.setMenuButtons("reset", @active)
-            if app.game.phase().type is "retreats"
+            if app.game.phase().type is PHASE_TYPES.retreats
                 app.ui.setMenuButtons("reset", @active)
                 if eve isnt "close" and app.game.hasBuild(m_id)
                     app.ui.setMenuButtons("open", @active)
@@ -301,7 +301,7 @@ class Interactions
                     @_onRetreatTo(@active)
                     app.ui.closeMenu()
             when "disband"
-                if app.game.phase('last').type is "builds"
+                if app.game.phase('last').type is PHASE_TYPES.builds
                     if not re_act
                         @intent("disband", null)
                         app.ui.closeMenu()
@@ -385,8 +385,8 @@ class Interactions
                 id = @active
                 color = app.screen.getColor(pos)
                 t_id = app.env.getTerritoryByColor(color)
-                #app.game.moves[id] = type: "sup_hold", from: id, to: t_id
-                app.game.addMove(id, "sup_hold", id, t_id)
+                #app.game.moves[id] = type: "support_hold", from: id, to: t_id
+                app.game.addMove(id, "support_hold", id, t_id)
             when "sup_move_from"
                 console.log("supping move from")
                 color = app.screen.getColor(pos)
@@ -395,18 +395,18 @@ class Interactions
                     console.log("move present")
                     ## check move is valid..
                     nears_c = @_availableMoves("sup_move_to", id_f)
-                    if app.game.moves[id_f].to in nears_c
+                    if app.game.moves[id_f].dst in nears_c
                         console.log("valid sup_move movement")
                         id = @active
-                        id_t = app.game.moves[id_f].to
+                        id_t = app.game.moves[id_f].dst
                         @_offTracked()
                         app.screen.offTerritory(@active)
                         @current = "none"
-                        #app.game.moves[id] = type: "sup_move", from: id_f, to: id_t
+                        #app.game.moves[id] = type: "support_move", from: id_f, to: id_t
                         if app.game.moves[id_f].mc isnt undefined
-                            app.game.addMoveMC(id, "sup_move", id_f, id_t, app.game.moves[id_f].mc)
+                            app.game.addMoveMC(id, "support_move", id_f, id_t, app.game.moves[id_f].mc)
                         else
-                            app.game.addMove(id, "sup_move", id_f, id_t)
+                            app.game.addMove(id, "support_move", id_f, id_t)
                         app.screen.drawLines()
                     else
                         #delete app.game.moves[id_f]
@@ -461,14 +461,14 @@ class Interactions
                             #app.screen.offTerritory(@active)
                             #@current = "none"
                 if not need_mc
-                    app.game.addMove(id, "sup_move", f_id, t_id)
+                    app.game.addMove(id, "support_move", f_id, t_id)
                     app.game.addMove(f_id, "move", f_id, t_id)
                 else
                     if not continue_mc
-                        app.game.addMove(id, "sup_move", f_id, t_id, mc)
+                        app.game.addMove(id, "support_move", f_id, t_id, mc)
                         app.game.addMoveMC(f_id, "move", f_id, t_id, mc)
                     else
-                        app.game.enqueueMove(id, "sup_move", f_id, t_id)
+                        app.game.enqueueMove(id, "support_move", f_id, t_id)
                 if not continue_mc
                     @current = "none"
             when "convoy_from"
@@ -520,7 +520,7 @@ class Interactions
                     @_onConvoyTo(id)
             when "mcoast_n"
                 id = @active
-                t_id = if app.game.phase().type isnt "builds" then @tracked[0] else @active
+                t_id = if app.game.phase().type isnt PHASE_TYPES.builds then @tracked[0] else @active
                 mv_mc_lst = app.env.mcoasts_oxy[t_id]
                 if mv_mc_lst[0].y < mv_mc_lst[1].y
                     mc_n = 0
@@ -532,17 +532,17 @@ class Interactions
                 #app.game.moves_mc[id] = mc_n
                 #app.game.moves[id] = type: "move", from: id, to: t_id
                 #if app.game.phase().type isnt "builds"
-                if app.game.phase().type is "builds"
+                if app.game.phase().type is PHASE_TYPES.builds
                     app.game.addBuild(t_id, "build_fleet", mc_n)
                     app.screen.drawTroops()
-                else if app.game.phase().type is "retreats"
+                else if app.game.phase().type is PHASE_TYPES.retreats
                     app.game.delBuild(id)
                     app.game.addMoveMC(id, "retreat", id, t_id, mc_n)
                     @_offTracked()
                 else
                     if app.game.moves_queue.length
                         qm = app.game.dequeueMove()
-                        app.game.addMoveMC(qm.id, qm.type, qm.from, qm.to, mc_n)
+                        app.game.addMoveMC(qm.id, qm.type, qm.from, qm.dst, mc_n)
                     console.log("adding mcmove with diplomacy phase")
                     app.game.addMoveMC(id, "move", id, t_id, mc_n)
                     @_offTracked()
@@ -550,7 +550,7 @@ class Interactions
                 @current = "none"
             when "mcoast_s"
                 id = @active
-                t_id = if app.game.phase().type isnt "builds" then @tracked[0] else @active
+                t_id = if app.game.phase().type isnt PHASE_TYPES.builds then @tracked[0] else @active
                 mv_mc_lst = app.env.mcoasts_oxy[t_id]
                 if mv_mc_lst[0].y < mv_mc_lst[1].y
                     mc_n = 0
@@ -561,17 +561,17 @@ class Interactions
                 console.log(mc_s)
                 #app.game.moves_mc[id] = mc_s
                 #app.game.moves[id] = type: "move", from: id, to: t_id
-                if app.game.phase().type is "builds"
+                if app.game.phase().type is PHASE_TYPES.builds
                     app.game.addBuild(t_id, "build_fleet", mc_s)
                     app.screen.drawTroops()
-                else if app.game.phase().type is "retreats"
+                else if app.game.phase().type is PHASE_TYPES.retreats
                     app.game.delBuild(id)
                     app.game.addMoveMC(id, "retreat", id, t_id, mc_s)
                     @_offTracked()
                 else
                     if app.game.moves_queue.length
                         qm = app.game.dequeueMove()
-                        app.game.addMoveMC(qm.id, qm.type, qm.from, qm.to, mc_s)
+                        app.game.addMoveMC(qm.id, qm.type, qm.from, qm.dst, mc_s)
                     console.log("adding mcmove with diplomacy phase")
                     app.game.addMoveMC(id, "move", id, t_id, mc_s)
                     @_offTracked()
@@ -619,7 +619,7 @@ class Interactions
                     app.screen.offTerritory(@active)
                     @current = "none"
             when "disband"
-                if app.game.phase('last').type is "builds"
+                if app.game.phase('last').type is PHASE_TYPES.builds
                     app.game.addBuild(@active, "disband")
                     app.screen.offTerritory(@active)
                     @current = "none"
@@ -904,7 +904,7 @@ class Interactions
                 ## HOW TO?
                 #c_nears = []
                 #for key, j in app.play.orders
-                #   if j.type is "move" and j.viaConvoy isnt null and j.to in nears
+                #   if j.type is "move" and j.viaConvoy isnt null and j.dst in nears
                 #       c_nears.push(key)
                 #console.log(c_nears)
                 #for j in c_nears
@@ -979,10 +979,10 @@ class Interactions
                     skip = false
                     for country, orders of app.game.phase('last').previous().orders
                         for oid, odata of orders
-                            if odata.type is "move" and odata.to is i
+                            if odata.type is "move" and odata.dst is i
                                 skip = true
                                 break
-                            if oid is i and odata.type is "move" and odata.to is @active
+                            if oid is i and odata.type is "move" and odata.dst is @active
                                 skip = true
                                 break
                     if skip
@@ -993,7 +993,7 @@ class Interactions
     _OLDgetConvoysFromMove: (id_f, id_t) ->
         conv_lst = []
         #country = app.FindCountry(id_f)
-        #id_t = app.play.moves[id_f].to
+        #id_t = app.play.moves[id_f].dst
         nears_t = app.env.moves.fleets[id_t]
         console.log(nears_t)
         val = 0

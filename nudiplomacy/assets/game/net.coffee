@@ -1,11 +1,18 @@
 class Network
     constructor: ->
         @urls = {}
+        @sockets = {}
         return
 
     route: (name, url) ->
         @urls[name] = url
         return
+
+    setSockets: ->
+        @sockets.state = new WebSocket(@urls.status)
+        @sockets.state.binaryType = 'arraybuffer'
+        @sockets.state.addEventListener 'message', (event) ->
+            app.ui.gotGameStatus(String.fromCharCode.apply(null, new Uint8Array(event.data)))
 
     getMap: ->
         rv = {}
@@ -27,15 +34,35 @@ class Network
                 return
         return rv
 
-    getGameStatus: ->
-        $.ajax @urls['status'],
+    getPhases: ->
+        rv = {}
+        $.ajax @urls['phases'],
             type: 'GET'
+            async: false
             success: (data) ->
-                app.ui.gotGameStatus(data.status, data.phase)
+                rv = data.data
+                return
+        return rv
+
+    # getGameStatus: ->
+    #     $.ajax @urls['status'],
+    #         type: 'GET'
+    #         success: (data) ->
+    #             app.ui.gotGameStatus(data.status, data.phase)
+    #             return
+    #     return
+
+    getOrders: (phase, callback) ->
+        console.log('called getOrders for phase', phase)
+        rv = {}
+        $.ajax @urls['phase_orders'].replace(':PHASE_ID:', phase.id),
+            type: 'GET'
+            success: (response) ->
+                callback(response.data)
                 return
         return
 
-    getOrders: ->
+    getCurrentOrders: ->
         rv = {}
         $.ajax @urls['orders'],
             type: 'GET'
@@ -56,16 +83,15 @@ class Network
                 return
         return
 
-    postOrders: ->
-        d =
-            orders: app.game.orders
+    postOrder: (order) ->
         app.ui.saving()
-        $.ajax @urls['saveorders'],
-            type: 'POST'
+        $.ajax @urls['save_orders'].replace(':ORDER_ID:', order.id),
+            type: 'PUT'
             contentType: "application/json"
-            data: JSON.stringify(d)
+            data: JSON.stringify(order)
             success: (data) ->
                 console.log(data)
+                order._changed = false
                 app.ui.saved(data)
                 return
             error: ->
@@ -88,16 +114,24 @@ class Network
         return
 
     setReady: ->
+        d =
+            ready: true
         $.ajax @urls['ready'],
-            type: 'GET'
+            type: 'POST'
+            contentType: "application/json"
+            data: JSON.stringify(d)
             success: (data) ->
                 app.ui.didReady(data.data)
                 return
         return
 
     setUnready: ->
-        $.ajax @urls['unready'],
-            type: 'GET'
+        d =
+            ready: false
+        $.ajax @urls['ready'],
+            type: 'POST'
+            contentType: "application/json"
+            data: JSON.stringify(d)
             success: (data) ->
                 app.ui.didReady(data.data)
                 return
