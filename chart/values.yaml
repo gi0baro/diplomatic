@@ -19,6 +19,7 @@ podAnnotations: {}
 application:
   track: stable
   tier: web
+  migrateCommand: emmett -a nudiplomacy migrations up
   secretName:
   secretChecksum:
 hpa:
