@@ -3,7 +3,6 @@ __pycache__
 
 *.sublime-*
 
-nudiplomacy/config/*.yml
 nudiplomacy/databases/*
 nudiplomacy/logs/*.log
 nudiplomacy/static/dist/*

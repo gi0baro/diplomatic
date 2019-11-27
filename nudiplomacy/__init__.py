@@ -75,7 +75,7 @@ celery.conf.task_serializer = 'pickle'
 celery.conf.accept_content = ['pickle']
 celery.conf.timezone = 'UTC'
 celery.conf.broker_transport_options = {'visibility_timeout': 60 * 60 * 24}
-celery.conf.beat_schedule = parse_celery_cron(app.config.worker.get('cron_tasks', {}))
+celery.conf.beat_schedule = parse_celery_cron(app.config.worker.get('cron', {}))
 
 
 app.pipeline = [

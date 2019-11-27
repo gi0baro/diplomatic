@@ -1,6 +1,0 @@
-adapter: postgres
-encoding: utf8
-host: db
-database: postgres
-user: postgres
-password: postgres
