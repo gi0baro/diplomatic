@@ -19,5 +19,5 @@ COPY variants variants
 
 EXPOSE 8000
 
-ENTRYPOINT [ "weppy", "-a", "nudiplomacy" ]
+ENTRYPOINT [ "emmett", "-a", "nudiplomacy" ]
 CMD [ "serve", "--access-log", "false", "--max-queue", "512" ]
