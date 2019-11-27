@@ -167,7 +167,8 @@ class Game(TSModel):
     }
 
     indexes = {
-        'stage': True
+        'stage': True,
+        'is_open': True
     }
 
     @scope('in_stage')
