@@ -7,7 +7,7 @@ celery==4.3.0
 click==7.0
 coffeescript==1.1.2
 cssmin==0.2.0
--e git+https://github.com/emmett-framework/emmett.git@c7af4da62ebd0f0a61b8ef58de544640ed9957f7#egg=emmett
+-e git+https://github.com/emmett-framework/emmett.git@85290f72a690813df4254a5143bab97e8a4f556b#egg=emmett
 -e git+https://github.com/gi0baro/emmett-assets.git@abb504888afeb2e03e97f53cf767d7a255bea4d0#egg=emmett-assets
 -e git+https://github.com/gi0baro/emmett-haml.git@e9e508d1a3def4abb0e2cec811cffc89cac296e2#egg=emmett-haml
 h11==0.8.1

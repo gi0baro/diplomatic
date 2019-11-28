@@ -175,7 +175,7 @@ uvloop = ">=0.13.0,<0.14.0"
 websockets = ">=8.0"
 
 [package.source]
-reference = "c7af4da62ebd0f0a61b8ef58de544640ed9957f7"
+reference = "85290f72a690813df4254a5143bab97e8a4f556b"
 type = "git"
 url = "https://github.com/emmett-framework/emmett.git"
 [[package]]
@@ -572,7 +572,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "contextlib2", "unittest2"]
 
 [metadata]
-content-hash = "455c8fe39834ad751e12edc4b2a82afa0b780abe755fe67e79ebbe784aa4650b"
+content-hash = "e069ec870339ce04e76e6232ad53b6477161d1bc7e56cbadf44045090a5e54f2"
 python-versions = "^3.7"
 
 [metadata.files]
