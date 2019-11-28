@@ -20,8 +20,7 @@ spec:
         release: {{ .Release.Name }}
     spec:
       restartPolicy: Never
-      imagePullSecrets:
-{{ toYaml .Values.image.secrets | indent 10 }}
+      imagePullSecrets: {{ toYaml .Values.image.secrets | nindent 6 }}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.images.web.repository }}:{{ .Values.image.tag }}"

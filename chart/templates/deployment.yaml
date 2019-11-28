@@ -24,8 +24,7 @@ spec:
         tier: "{{ .Values.application.tier }}"
         release: {{ .Release.Name }}
     spec:
-      imagePullSecrets:
-{{ toYaml .Values.image.secrets | indent 10 }}
+      imagePullSecrets: {{ toYaml .Values.image.secrets | nindent 6 }}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.images.web.repository }}:{{ .Values.image.tag }}"
@@ -54,5 +53,4 @@ spec:
           initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
           timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
         {{- end }}
-        resources:
-{{ toYaml .Values.resources | indent 12 }}
+        resources: {{ toYaml .Values.resources | nindent 10 }}

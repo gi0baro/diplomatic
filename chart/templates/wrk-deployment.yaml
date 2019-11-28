@@ -20,15 +20,14 @@ items:
         annotations:
           checksum/application-secrets: "{{ $.Values.application.secretChecksum }}"
   {{- if $.Values.podAnnotations }}
-  {{ toYaml $.Values.podAnnotations | indent 10 }}
+  {{ toYaml $.Values.podAnnotations | indent 8 }}
   {{- end }}
         labels:
           track: "{{ $.Values.application.track }}"
           tier: worker
           release: {{ $.Release.Name }}
       spec:
-        imagePullSecrets:
-  {{ toYaml $.Values.image.secrets | indent 12 }}
+        imagePullSecrets: {{ toYaml $.Values.image.secrets | nindent 8 }}
         terminationGracePeriodSeconds: {{ $workerConfig.terminationGracePeriodSeconds }}
         containers:
         - name: {{ $.Chart.Name }}-{{ $workerName }}
@@ -39,7 +38,6 @@ items:
           - secretRef:
               name: {{ $.Values.application.secretName }}
           {{- end }}
-          resources:
-  {{ toYaml $.Values.resources | indent 14 }}
+          resources: {{ toYaml $.Values.resources | nindent 12 }}
 {{- end }}
 {{- end }}

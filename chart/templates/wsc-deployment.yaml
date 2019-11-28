@@ -22,8 +22,7 @@ spec:
         tier: scheduler
         release: {{ .Release.Name }}
     spec:
-      imagePullSecrets:
-{{ toYaml .Values.image.secrets | indent 10 }}
+      imagePullSecrets: {{ toYaml .Values.image.secrets | nindent 6 }}
       containers:
       - name: {{ .Chart.Name }}-scheduler
         image: "{{ .Values.images.scheduler.repository }}:{{ .Values.image.tag }}"
@@ -33,5 +32,4 @@ spec:
         - secretRef:
             name: {{ .Values.application.secretName }}
         {{- end }}
-        resources:
-{{ toYaml .Values.resources | indent 12 }}
+        resources: {{ toYaml .Values.resources | nindent 10 }}
