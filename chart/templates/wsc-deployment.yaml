@@ -3,35 +3,35 @@ kind: Deployment
 metadata:
   name: {{ template "trackableappname" $ }}-scheduler
   labels:
-    track: "{{ $.Values.application.track }}"
+    track: "{{ .Values.application.track }}"
     tier: scheduler
-    chart: "{{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}"
-    release: {{ $.Release.Name }}
-    heritage: {{ $.Release.Service }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
 spec:
   replicas: 1
   template:
     metadata:
       annotations:
-        checksum/application-secrets: "{{ $.Values.application.secretChecksum }}"
-{{- if $.Values.podAnnotations }}
-{{ toYaml $.Values.podAnnotations | indent 8 }}
+        checksum/application-secrets: "{{ .Values.application.secretChecksum }}"
+{{- if .Values.podAnnotations }}
+{{ toYaml .Values.podAnnotations | indent 8 }}
 {{- end }}
       labels:
-        track: "{{ $.Values.application.track }}"
+        track: "{{ .Values.application.track }}"
         tier: scheduler
-        release: {{ $.Release.Name }}
+        release: {{ .Release.Name }}
     spec:
       imagePullSecrets:
-{{ toYaml $.Values.image.secrets | indent 10 }}
+{{ toYaml .Values.image.secrets | indent 10 }}
       containers:
-      - name: {{ $.Chart.Name }}-scheduler
-        image: "{{ $.Values.images.scheduler.repository }}:{{ $.Values.image.tag }}"
-        imagePullPolicy: {{ $.Values.image.pullPolicy }}
-        {{- if $.Values.application.secretName }}
+      - name: {{ .Chart.Name }}-scheduler
+        image: "{{ .Values.images.scheduler.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- if .Values.application.secretName }}
         envFrom:
         - secretRef:
-            name: {{ $.Values.application.secretName }}
+            name: {{ .Values.application.secretName }}
         {{- end }}
         resources:
-{{ toYaml $.Values.resources | indent 12 }}
+{{ toYaml .Values.resources | indent 12 }}

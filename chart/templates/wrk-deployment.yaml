@@ -1,4 +1,4 @@
-{{- if .Values.workers -}}
+{{- if .Values.workers }}
 apiVersion: v1
 kind: List
 items:
@@ -41,5 +41,5 @@ items:
           {{- end }}
           resources:
   {{ toYaml $.Values.resources | indent 14 }}
-{{- end -}}
-{{- end -}}
+{{- end }}
+{{- end }}
