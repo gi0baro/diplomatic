@@ -1,6 +1,8 @@
 stages:
   - test
+  - build_deps
   - build
+  - build_containers
   # - deploy
 
 test:
@@ -24,8 +26,42 @@ test:
   script:
     - python -m pytest tests -v -x
 
-build_web:
+build_py:
+  stage: build_deps
+  image: quay.io/buildah/stable:latest
+  variables:
+    BUILDAH_FORMAT: docker
+    CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/py
+  before_script:
+    - buildah login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - buildah --storage-driver=vfs bud --file docker/Py.Dockerfile --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
+    - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
+    - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA $CONTAINER_IMAGE:latest
+  only:
+    refs:
+      - master
+    changes:
+      - requirements.txt
+
+build_base:
   stage: build
+  image: quay.io/buildah/stable:latest
+  variables:
+    BUILDAH_FORMAT: docker
+    CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/base
+  before_script:
+    - buildah login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - buildah --storage-driver=vfs bud --file docker/Base.latest.Dockerfile --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
+    - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
+    - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA $CONTAINER_IMAGE:latest
+  only:
+    refs:
+      - master
+
+build_web:
+  stage: build_containers
   image: quay.io/buildah/stable:latest
   variables:
     BUILDAH_FORMAT: docker
@@ -33,7 +69,7 @@ build_web:
   before_script:
     - buildah login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - buildah --storage-driver=vfs bud --file Web.Dockerfile --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
+    - buildah --storage-driver=vfs bud --file docker/Web.latest.Dockerfile --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
     - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
     - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA $CONTAINER_IMAGE:latest
   only:
@@ -41,7 +77,7 @@ build_web:
       - master
 
 build_worker:
-  stage: build
+  stage: build_containers
   image: quay.io/buildah/stable:latest
   variables:
     BUILDAH_FORMAT: docker
@@ -49,7 +85,7 @@ build_worker:
   before_script:
     - buildah login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - buildah --storage-driver=vfs bud --file Wrk.Dockerfile --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
+    - buildah --storage-driver=vfs bud --file docker/Wrk.latest.Dockerfile --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
     - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
     - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA $CONTAINER_IMAGE:latest
   only:
@@ -57,7 +93,7 @@ build_worker:
       - master
 
 build_scheduler:
-  stage: build
+  stage: build_containers
   image: quay.io/buildah/stable:latest
   variables:
     BUILDAH_FORMAT: docker
@@ -65,7 +101,7 @@ build_scheduler:
   before_script:
     - buildah login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - buildah --storage-driver=vfs bud --file Wsc.Dockerfile --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
+    - buildah --storage-driver=vfs bud --file docker/Wsc.latest.Dockerfile --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
     - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
     - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA $CONTAINER_IMAGE:latest
   only:

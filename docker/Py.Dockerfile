@@ -11,13 +11,3 @@ RUN apk add --no-cache --virtual build-deps \
     g++ musl-dev make git libffi-dev libuv-dev postgresql-dev && \
     pip install -r /usr/src/app/requirements.txt && \
     apk del build-deps
-
-WORKDIR /app
-COPY diplomacy diplomacy
-COPY nudiplomacy nudiplomacy
-COPY variants variants
-
-EXPOSE 8000
-
-ENTRYPOINT [ "emmett", "-a", "nudiplomacy" ]
-CMD [ "serve", "--access-log", "false", "--max-queue", "512" ]
