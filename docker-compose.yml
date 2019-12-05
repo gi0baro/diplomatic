@@ -12,7 +12,9 @@ services:
     image: redis:latest
 
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: docker/Base.latest.Dockerfile
     entrypoint: emmett -a nudiplomacy
     command: develop --host=0.0.0.0
     environment:
@@ -31,8 +33,10 @@ services:
       - "8000:8000"
 
   wrk:
-    build: .
-    command: celery worker -l debug -A nudiplomacy:celery
+    build:
+      context: .
+      dockerfile: docker/Base.latest.Dockerfile
+    command: celery worker -l debug -A nudiplomacy:celery -Q games
     environment:
       POSTGRES_HOST: db
       POSTGRES_DB: diplomacy

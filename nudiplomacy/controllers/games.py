@@ -75,7 +75,7 @@ async def create():
     return dict(form=form)
 
 
-@games.route("/play/<int:gid>")
+@games.route("/play/<int:gid>", template="board.html")
 def play(gid):
     game = Game.get(gid)
     if not game:
@@ -120,6 +120,7 @@ def play(gid):
         'game': game, 'scs': scs, 'chats': {'global': 1}, 'players': players, 'timer': game.timer(),
         'player_country': player.country if player else None,
         'player_ready': player.is_ready if player else False,
+        'player_active': player.is_active if player else False,
         'statscol': 6
         #timer=game.time_to_next(),
         #statscol=statscol, unames=usernames)}

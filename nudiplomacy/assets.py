@@ -29,6 +29,8 @@ js_game = app.ext.Assets.js([
     'game/screen.coffee',
     'game/interactions.coffee',
     'game/ui.coffee',
+    'game/ux.coffee',
+    'game/utils.coffee',
     'game/main.coffee'], output='game.js')
 
 css_game = app.ext.Assets.css(['css/game.css'], output='game.css').minify()

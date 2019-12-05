@@ -1,6 +1,13 @@
 
 class Screen
-    constructor: ->
+    constructor: (@app) ->
+        @_imgLoads = 0
+        @_initialised = false
+        @callbacks =
+            update: ->
+                return
+            after_init: ->
+                return
         @img = ''
         @imgArmy = ''
         @imgFleet = ''
@@ -28,7 +35,7 @@ class Screen
             ctx: ''
         return
 
-    createElements: ->
+    buildElements: (map_src, army_src, fleet_src) ->
         #: create canvas
         @ref.layer = document.createElement("canvas")
         @base.layer = document.createElement("canvas")
@@ -38,16 +45,31 @@ class Screen
         @res.layer = document.createElement("canvas")
         #: create a ref img
         @img = document.createElement("img")
-        ## TODO: update next line
-        #@img.src = "map.png"
-        @img.src = document.getElementById("map_img").src
-        ##
-        @img_army = document.getElementById("army_img")
-        @img_fleet = document.getElementById("ship_img")
+        @img_army = document.createElement("img")
+        @img_fleet = document.createElement("img")
+        @img.onload = =>
+            @_loadedImg()
+        @img_army.onload = =>
+            @_loadedImg()
+        @img_fleet.onload = =>
+            @_loadedImg()
+        @img.src = map_src
+        @img_army.src = army_src
+        @img_fleet.src = fleet_src
         return
 
-    init: ->
+    register_callbacks: (update, after_init) ->
+        @callbacks.update = update
+        @callbacks.after_init = after_init
+
+    _loadedImg: ->
+        @_imgLoads += 1
+        if @_imgLoads >= 3
+            @buildContext()
+
+    buildContext: ->
         #: set width and height on canvas
+        console.log(@img.width, @img.height)
         @ref.layer.width = @img.width
         @ref.layer.height = @img.height
         @base.layer.width = @img.width
@@ -72,8 +94,56 @@ class Screen
         @ref.ctx.drawImage(@img, 0, 0)
         #: load and rebuild img data
         @_loadData()
+        # @_buildPixArray()
+        @callbacks.after_init()
+
+    createElements: ->
+        #: create canvas
+        @ref.layer = document.createElement("canvas")
+        @base.layer = document.createElement("canvas")
+        @ov.layer = document.createElement("canvas")
+        @arms.layer = document.createElement("canvas")
+        @arws.layer = document.createElement("canvas")
+        @res.layer = document.createElement("canvas")
+        #: create a ref img
+        @img = document.createElement("img")
+        ## TODO: update next line
+        #@img.src = "map.png"
+        @img.src = document.getElementById("map_img").src
+        ##
+        @img_army = document.getElementById("army_img")
+        @img_fleet = document.getElementById("ship_img")
+        return
+
+    init: ->
+        # #: set width and height on canvas
+        # @ref.layer.width = @img.width
+        # @ref.layer.height = @img.height
+        # @base.layer.width = @img.width
+        # @base.layer.height = @img.height
+        # @ov.layer.width = @img.width
+        # @ov.layer.height = @img.height
+        # @arms.layer.width = @img.width
+        # @arms.layer.height = @img.height
+        # @arws.layer.width = @img.width
+        # @arws.layer.height = @img.height
+        # @res.layer.width = @img.width
+        # @res.layer.height = @img.height
+        # #: set contexts
+        # @ref.ctx = @ref.layer.getContext('2d')
+        # @base.ctx = @base.layer.getContext('2d')
+        # @ov.ctx = @ov.layer.getContext('2d')
+        # @arms.ctx = @arms.layer.getContext('2d')
+        # @arws.ctx = @arws.layer.getContext('2d')
+        # @res.ctx = @res.layer.getContext('2d')
+        # #: draw ref image in base and ref canvas
+        # @base.ctx.drawImage(@img, 0, 0)
+        # @ref.ctx.drawImage(@img, 0, 0)
+        # #: load and rebuild img data
+        # @_loadData()
         @_buildPixArray()
         @_initLayers()
+        # @callbacks.after_init()
         return
 
     _loadData: ->
@@ -113,9 +183,9 @@ class Screen
         #time_ex = time_end - time_start
         #console.log("1time "+time_ex)
         #time_start = new Date().getTime()
-        for key, color of app.env.colors
-            app.env.pix[key] = filter(pixa, color)
-        app.env.pix['__black__'] = filter_black(pixa)
+        for key, color of @app.env.colors
+            @app.env.pix[key] = filter(pixa, color)
+        @app.env.pix['__black__'] = filter_black(pixa)
         #time_end = new Date().getTime()
         #time_ex = time_end - time_start
         #console.log("2time "+time_ex)
@@ -134,22 +204,22 @@ class Screen
         for i in [0..@ref.pixdata.length-1] by 4
             pixa[j] = r: @ref.pixdata[i], g: @ref.pixdata[i+1], b: @ref.pixdata[i+2]
             j += 1
-        for key of app.env.colors
+        for key of @app.env.colors
             #console.log(key)
-            app.env.pix[key] = []
+            @app.env.pix[key] = []
         j = 0
         for pix in pixa
-            #color = key for key, val of app.env.colors when (val[0] is pix.r and val[1] is pix.g and val[2] is pix.b)
-            color = filter(app.env.colors, pix)
+            #color = key for key, val of @app.env.colors when (val[0] is pix.r and val[1] is pix.g and val[2] is pix.b)
+            color = filter(@app.env.colors, pix)
             if color isnt null
-                app.env.pix[color].push(j)
+                @app.env.pix[color].push(j)
             j += 1
         return
 
     _initLayers: ->
         #: re-color the map based on the reference object for colors
         @colorTerritory('__black__', NEUTRAL_COLOR)
-        for key, color of app.game.colors
+        for key, color of @app.game.colors
             @colorTerritory(key, color)
         @drawSupply()
         @drawTroops()
@@ -170,42 +240,44 @@ class Screen
         @res.ctx.drawImage(@ov.layer,0,0)
         @res.ctx.drawImage(@arws.layer,0,0)
         @res.ctx.drawImage(@arms.layer,0,0)
-        app.ui.img.src = @res.layer.toDataURL()
+        @callbacks.update(@res.layer.toDataURL())
+        # @app.ui.img.src = @res.layer.toDataURL()
+        return
 
     _diffColor: (color1, color2) ->
         return !(color1.r is color2.r and color1.g is color2.g and color1.b is color2.b)
 
     _getTerritories: ->
-        if app.game.phase().position is 0
+        if @app.game.phase().position is 0
             rv = {}
-            for key of app.env.countries
+            for key of @app.env.countries
                 rv[key] = []
-                for terr in app.env.countries_init[key]
+                for terr in @app.env.countries_init[key]
                     rv[key].push(terr)
             return rv
-            #return app.env.countries_init
-        return app.game.phase().territories
+            #return @app.env.countries_init
+        return @app.game.phase().territories
 
     _updateColors: (grounds) ->
         ## draw all terrs to ground color
         color = GROUND_COLOR
         for i in grounds
-            app.game.colors[i] = color
+            @app.game.colors[i] = color
         ## draw countries terrs
         territories = @_getTerritories()
-        for key, color of app.env.countries
-            #for i in app.game.phase().territories[key]
+        for key, color of @app.env.countries
+            #for i in @app.game.phase().territories[key]
             for i in territories[key]
-                app.game.colors[i] = color
+                @app.game.colors[i] = color
         return
 
     change: (old_c_terrs, old_tcolors) ->
         #: re-color the map based on the reference object for colors
         #time_start = new Date().getTime()
         c_terrs = []
-        #for key, terr_list of app.map.countries_terr
+        #for key, terr_list of @app.map.countries_terr
         territories = @_getTerritories()
-        #for key, terr_list of app.game.phase().territories
+        #for key, terr_list of @app.game.phase().territories
         console.log(old_c_terrs)
         console.log(territories)
         for key, terr_list of territories
@@ -220,11 +292,11 @@ class Screen
         #time_start = new Date().getTime()
         #: color diff country terrs only
         c_diff_list = []
-        for key, color of app.game.colors
+        for key, color of @app.game.colors
             if @_diffColor(old_tcolors[key], color)
                 c_diff_list.push(key)
         for terr in c_diff_list
-            @colorTerritory(terr, app.game.colors[terr])
+            @colorTerritory(terr, @app.game.colors[terr])
         #time_end = new Date().getTime()
         #time_ex = time_end - time_start
         #console.log("ColorTerr for time "+time_ex)
@@ -236,7 +308,7 @@ class Screen
 
     colorTerritory: (id, color) ->
         #: color the terr in the base canvas
-        get_pix = app.env.pix[id]
+        get_pix = @app.env.pix[id]
         for p in [0..get_pix.length]
             @base.pixdata[get_pix[p]*4] = color.r
             @base.pixdata[get_pix[p]*4+1] = color.g
@@ -257,7 +329,7 @@ class Screen
 
     drawSupply: ->
         #: draw the supply centers dots
-        for key, value of app.env.supply
+        for key, value of @app.env.supply
             x = value.x
             y = value.y
             radius = 5
@@ -284,28 +356,28 @@ class Screen
 
     drawTroops: ->
         @_clearTroops()
-        for country, troops of app.game.phase().troops
-            dislodged = app.game.phase().dislodged[country]
+        for country, troops of @app.game.phase().troops
+            dislodged = @app.game.phase().dislodged[country]
             if not dislodged
                 dislodged = []
             for type, tlist of troops
                 for id in tlist
-                    if type is "fleets" and app.env.isMCoast(id)
+                    if type is "fleets" and @app.env.isMCoast(id)
                         if id in dislodged
                             #? sure about that?
-                            mc_pos = app.game.phase('last').previous().mcpos[id]
+                            mc_pos = @app.game.phase('last').previous().mcpos[id]
                         else
-                            mc_pos = app.game.phase().mcpos[id]
-                        x = app.env.mcoasts_oxy[id][mc_pos].x
-                        y = app.env.mcoasts_oxy[id][mc_pos].y
+                            mc_pos = @app.game.phase().mcpos[id]
+                        x = @app.env.mcoasts_oxy[id][mc_pos].x
+                        y = @app.env.mcoasts_oxy[id][mc_pos].y
                     else
-                        x = app.env.oxy[id].x
-                        y = app.env.oxy[id].y
+                        x = @app.env.oxy[id].x
+                        y = @app.env.oxy[id].y
                     ## check if country color is different from the army country
                     console.log(country)
-                    if country isnt app.game.phase().getCountryByTerritory(id)
+                    if country isnt @app.game.phase().getCountryByTerritory(id)
                         ## draw color square under the army
-                        ccolor = app.env.countries[country]
+                        ccolor = @app.env.countries[country]
                         @arms.ctx.beginPath()
                         @arms.ctx.rect(x-8, y-16, 16, 16)
                         @arms.ctx.lineWidth = 1
@@ -318,9 +390,9 @@ class Screen
                     else
                         @arms.ctx.drawImage(@img_fleet, x-13, y-11, 25, 22)
                     ## dislodgement circle
-                    if app.game.phase().dislodged[country]
-                        #console.log(app.env.dislodged[country])
-                        if id in app.game.phase().dislodged[country]
+                    if @app.game.phase().dislodged[country]
+                        #console.log(@app.env.dislodged[country])
+                        if id in @app.game.phase().dislodged[country]
                             console.log("dislodge circle draw..")
                             @arms.ctx.beginPath()
                             @arms.ctx.arc(x, y, 22, 0, Math.PI*2, true)
@@ -328,15 +400,15 @@ class Screen
                             @arms.ctx.lineWidth = 2
                             @arms.ctx.strokeStyle = 'rgb(255,127,0)'
                             @arms.ctx.stroke()
-        console.log(app.game.phase().builds)
-        for tid, tdata of app.game.phase().builds
-            if tdata.type in ["build_fleet", "disband"] and app.env.isMCoast(tid)
+        console.log(@app.game.phase().builds)
+        for tid, tdata of @app.game.phase().builds
+            if tdata.type in ["build_fleet", "disband"] and @app.env.isMCoast(tid)
                 mc_pos = tdata.mc
-                x = app.env.mcoasts_oxy[tid][mc_pos].x
-                y = app.env.mcoasts_oxy[tid][mc_pos].y
+                x = @app.env.mcoasts_oxy[tid][mc_pos].x
+                y = @app.env.mcoasts_oxy[tid][mc_pos].y
             else
-                x = app.env.oxy[tid].x
-                y = app.env.oxy[tid].y
+                x = @app.env.oxy[tid].x
+                y = @app.env.oxy[tid].y
             if tdata.type is "disband"
                 ccolor = r: 255, g: 0, b: 0
                 @arms.ctx.beginPath()
@@ -357,65 +429,65 @@ class Screen
 
     drawLines: ->
         @_clearLines()
-        for id, obj of app.game.phase().pastMoves
+        for id, obj of @app.game.phase().pastMoves
             @newLine("past", obj.type, id, obj.src, obj.dst, obj.coast, obj.success or false)
-        if app.game.phase().position is "next"
-            for id, obj of app.game.moves
+        if @app.game.phase().position is "next"
+            for id, obj of @app.game.moves
                 @newLine("future", obj.type, id, obj.src, obj.dst, obj.coast)
         return
 
     newLine: (time, act, id, f_id, t_id, mc, success=true) ->
-        country_troops = app.game.phase().getCountryTroops()
+        country_troops = @app.game.phase().getCountryTroops()
         console.log(country_troops)
         console.log(time)
         if time is "past"
-            mc_pos_data = app.game.phase().previous().mcpos
+            mc_pos_data = @app.game.phase().previous().mcpos
             console.log(mc_pos_data)
-            #mc_move_data = app.game.phase().previous().mcmoves
+            #mc_move_data = @app.game.phase().previous().mcmoves
             #console.log(mc_move_data)
-            #mc_pos_data = app.phase.mc_pos[app.phase.id-1]
+            #mc_pos_data = @app.phase.mc_pos[@app.phase.id-1]
             #console.log(mc_pos_data)
-            #mc_move_data = app.env.moves_last_mc
+            #mc_move_data = @app.env.moves_last_mc
             isFleet = (id) ->
-                #app.WasFleet(id)
-                app.game.phase().previous().isFleet(id)
+                #@app.WasFleet(id)
+                @app.game.phase().previous().isFleet(id)
         else
-            #mc_pos_data = app.env.mc_pos
-            #mc_move_data = app.play.moves_mc
-            mc_pos_data = app.game.phase().mcpos
-            #mc_move_data = app.game.phase().mcmoves
+            #mc_pos_data = @app.env.mc_pos
+            #mc_move_data = @app.play.moves_mc
+            mc_pos_data = @app.game.phase().mcpos
+            #mc_move_data = @app.game.phase().mcmoves
             console.log(mc_pos_data)
             #console.log(mc_move_data)
             isFleet = (id) ->
-                app.game.phase().isFleet(id)
-            #if id not in (key for key of app.env.troops[app.play.country])
+                @app.game.phase().isFleet(id)
+            #if id not in (key for key of @app.env.troops[@app.play.country])
             if id not in country_troops
                 success = false
 
         switch act
             when "move"
-                if isFleet(f_id) and app.env.isMCoast(f_id)
+                if isFleet(f_id) and @app.env.isMCoast(f_id)
                     mc_pos = mc_pos_data[f_id]
-                    p1 = new Point2D(app.env.mcoasts_oxy[f_id][mc_pos].x, app.env.mcoasts_oxy[f_id][mc_pos].y)
+                    p1 = new Point2D(@app.env.mcoasts_oxy[f_id][mc_pos].x, @app.env.mcoasts_oxy[f_id][mc_pos].y)
                 else
-                    p1 = new Point2D(app.env.oxy[f_id].x, app.env.oxy[f_id].y)
-                if isFleet(f_id) and app.env.isMCoast(t_id)
-                    #if f_id in (key for key of app.env.troops[app.play.country])
+                    p1 = new Point2D(@app.env.oxy[f_id].x, @app.env.oxy[f_id].y)
+                if isFleet(f_id) and @app.env.isMCoast(t_id)
+                    #if f_id in (key for key of @app.env.troops[@app.play.country])
                     ##if f_id in country_troops
                     #mc_pos = mc_move_data[f_id]
-                    p2 = new Point2D(app.env.mcoasts_oxy[t_id][mc].x, app.env.mcoasts_oxy[t_id][mc].y)
+                    p2 = new Point2D(@app.env.mcoasts_oxy[t_id][mc].x, @app.env.mcoasts_oxy[t_id][mc].y)
                     ##else
-                    ##  p2 = new Point2D(app.env.oxy[t_id].x, app.env.oxy[t_id].y)
+                    ##  p2 = new Point2D(@app.env.oxy[t_id].x, @app.env.oxy[t_id].y)
                 else
-                    p2 = new Point2D(app.env.oxy[t_id].x, app.env.oxy[t_id].y)
-                #p2 = new Point2D(app.env.oxy[t_id].x, app.env.oxy[t_id].y)
+                    p2 = new Point2D(@app.env.oxy[t_id].x, @app.env.oxy[t_id].y)
+                #p2 = new Point2D(@app.env.oxy[t_id].x, @app.env.oxy[t_id].y)
                 intersect = Intersection.intersectCircleLine(p2, 18, p1, p2)
-                #intersect1 = Intersection.intersectCircleLine(app.env.oxy[f_id], 10, p1, p2)
+                #intersect1 = Intersection.intersectCircleLine(@app.env.oxy[f_id], 10, p1, p2)
                 x = p1.x
                 y = p1.y
                 x_t = intersect.points[0].x
                 y_t = intersect.points[0].y
-                if time is "past" and app.game.phase().position is "next"
+                if time is "past" and @app.game.phase().position is "next"
                     color = "#7F7F7F"
                 else
                     color = "#FF0000"
@@ -423,66 +495,66 @@ class Screen
                 angle = Math.atan2(y_t-y,x_t-x)
                 @_drawTriangle(angle, 10, x_t, y_t, color)
             when "support_hold"
-                if isFleet(f_id) and app.env.isMCoast(f_id)
+                if isFleet(f_id) and @app.env.isMCoast(f_id)
                     mc_pos = mc_pos_data[f_id]
-                    p1 = new Point2D(app.env.mcoasts_oxy[f_id][mc_pos].x, app.env.mcoasts_oxy[f_id][mc_pos].y)
+                    p1 = new Point2D(@app.env.mcoasts_oxy[f_id][mc_pos].x, @app.env.mcoasts_oxy[f_id][mc_pos].y)
                 else
-                    p1 = new Point2D(app.env.oxy[f_id].x, app.env.oxy[f_id].y)
-                p1 = new Point2D(app.env.oxy[f_id].x, app.env.oxy[f_id].y)
-                if isFleet(t_id) and app.env.isMCoast(t_id)
+                    p1 = new Point2D(@app.env.oxy[f_id].x, @app.env.oxy[f_id].y)
+                p1 = new Point2D(@app.env.oxy[f_id].x, @app.env.oxy[f_id].y)
+                if isFleet(t_id) and @app.env.isMCoast(t_id)
                     mc_pos = mc_pos_data[t_id]
-                    p2 = new Point2D(app.env.mcoasts_oxy[t_id][mc_pos].x, app.env.mcoasts_oxy[t_id][mc_pos].y)
+                    p2 = new Point2D(@app.env.mcoasts_oxy[t_id][mc_pos].x, @app.env.mcoasts_oxy[t_id][mc_pos].y)
                 else
-                    p2 = new Point2D(app.env.oxy[t_id].x, app.env.oxy[t_id].y)
-                #p2 = new Point2D(app.env.oxy[t_id].x, app.env.oxy[t_id].y)
+                    p2 = new Point2D(@app.env.oxy[t_id].x, @app.env.oxy[t_id].y)
+                #p2 = new Point2D(@app.env.oxy[t_id].x, @app.env.oxy[t_id].y)
                 intersect = Intersection.intersectCircleLine(p2, 18, p1, p2)
                 x = p1.x
                 y = p1.y
                 x_t = intersect.points[0].x
                 y_t = intersect.points[0].y
                 angle = Math.atan2(y_t-y,x_t-x)
-                if time is "past" and app.game.phase().position is "next"
+                if time is "past" and @app.game.phase().position is "next"
                     color = "#7F7F7F"
                 else
                     color = "#00FF00"
                 @_drawLine(x, y, x_t, y_t, color, success)
                 @_drawTriangle(angle, 10, x_t, y_t, color)
-                #x_t = app.env.oxy[t_id].x
-                #y_t = app.env.oxy[t_id].y
+                #x_t = @app.env.oxy[t_id].x
+                #y_t = @app.env.oxy[t_id].y
                 x_t = p2.x
                 y_t = p2.y
                 @_drawCircle(x_t, y_t, 18, color)
             when "support_move"
-                if isFleet(id) and app.env.isMCoast(id)
+                if isFleet(id) and @app.env.isMCoast(id)
                     mc_pos = mc_pos_data[id]
-                    p0 = new Point2D(app.env.mcoasts_oxy[id][mc_pos].x, app.env.mcoasts_oxy[id][mc_pos].y)
+                    p0 = new Point2D(@app.env.mcoasts_oxy[id][mc_pos].x, @app.env.mcoasts_oxy[id][mc_pos].y)
                 else
-                    p0 = new Point2D(app.env.oxy[id].x, app.env.oxy[id].y)
-                if isFleet(f_id) and app.env.isMCoast(f_id)
+                    p0 = new Point2D(@app.env.oxy[id].x, @app.env.oxy[id].y)
+                if isFleet(f_id) and @app.env.isMCoast(f_id)
                     mc_pos = mc_pos_data[f_id]
-                    p1 = new Point2D(app.env.mcoasts_oxy[f_id][mc_pos].x, app.env.mcoasts_oxy[f_id][mc_pos].y)
+                    p1 = new Point2D(@app.env.mcoasts_oxy[f_id][mc_pos].x, @app.env.mcoasts_oxy[f_id][mc_pos].y)
                 else
-                    p1 = new Point2D(app.env.oxy[f_id].x, app.env.oxy[f_id].y)
-                if isFleet(f_id) and app.env.isMCoast(t_id)
-                    #if f_id in (key for key of app.env.troops[app.play.country])
+                    p1 = new Point2D(@app.env.oxy[f_id].x, @app.env.oxy[f_id].y)
+                if isFleet(f_id) and @app.env.isMCoast(t_id)
+                    #if f_id in (key for key of @app.env.troops[@app.play.country])
                     if time is "past"
-                        if app.game.phase().pastMoves[f_id]
-                            movemc = app.game.phase().pastMoves[f_id].mc
+                        if @app.game.phase().pastMoves[f_id]
+                            movemc = @app.game.phase().pastMoves[f_id].mc
                         else
                             movemc = null
                     else
-                        movemc = app.game.moves[f_id].mc
+                        movemc = @app.game.moves[f_id].mc
                     if movemc in [0, 1]
-                        p2 = new Point2D(app.env.mcoasts_oxy[t_id][movemc].x, app.env.mcoasts_oxy[t_id][movemc].y)
+                        p2 = new Point2D(@app.env.mcoasts_oxy[t_id][movemc].x, @app.env.mcoasts_oxy[t_id][movemc].y)
                     else
-                        p2 = new Point2D(app.env.oxy[t_id].x, app.env.oxy[t_id].y)
+                        p2 = new Point2D(@app.env.oxy[t_id].x, @app.env.oxy[t_id].y)
                 else
-                    p2 = new Point2D(app.env.oxy[t_id].x, app.env.oxy[t_id].y)
+                    p2 = new Point2D(@app.env.oxy[t_id].x, @app.env.oxy[t_id].y)
                 res = @_evalSupMoveEPoint(p0, p1, p2)
                 p3 = res.p0
                 p4 = res.p1
                 angle = res.angle
-                if time is "past" and app.game.phase().position is "next"
+                if time is "past" and @app.game.phase().position is "next"
                     color = "#7F7F7F"
                 else
                     color = "#FFFF00"
@@ -490,14 +562,14 @@ class Screen
                 @_drawLine(p3.x, p3.y, p4.x, p4.y, color, success)
                 @_drawTriangle(angle, 10, p4.x, p4.y, color)
             when "convoy"
-                p0 = new Point2D(app.env.oxy[id].x, app.env.oxy[id].y)
-                p1 = new Point2D(app.env.oxy[f_id].x, app.env.oxy[f_id].y)
-                p2 = new Point2D(app.env.oxy[t_id].x, app.env.oxy[t_id].y)
+                p0 = new Point2D(@app.env.oxy[id].x, @app.env.oxy[id].y)
+                p1 = new Point2D(@app.env.oxy[f_id].x, @app.env.oxy[f_id].y)
+                p2 = new Point2D(@app.env.oxy[t_id].x, @app.env.oxy[t_id].y)
                 res = @_evalSupMoveEPoint(p0, p1, p2)
                 p3 = res.p0
                 p4 = res.p1
                 angle = res.angle
-                if time is "past" and app.game.phase().position is "next"
+                if time is "past" and @app.game.phase().position is "next"
                     color = "#7F7F7F"
                 else
                     color = "#0000FF"
@@ -505,24 +577,24 @@ class Screen
                 @_drawLine(p3.x, p3.y, p4.x, p4.y, color, success)
                 @_drawTriangle(angle, 10, p4.x, p4.y, color)
             when "retreat"
-                if isFleet(f_id) and app.env.isMCoast(f_id)
+                if isFleet(f_id) and @app.env.isMCoast(f_id)
                     mc_pos = mc_pos_data[f_id]
-                    p1 = new Point2D(app.env.mcoasts_oxy[f_id][mc_pos].x, app.env.mcoasts_oxy[f_id][mc_pos].y)
+                    p1 = new Point2D(@app.env.mcoasts_oxy[f_id][mc_pos].x, @app.env.mcoasts_oxy[f_id][mc_pos].y)
                 else
-                    p1 = new Point2D(app.env.oxy[f_id].x, app.env.oxy[f_id].y)
-                if isFleet(f_id) and app.env.isMCoast(t_id)
+                    p1 = new Point2D(@app.env.oxy[f_id].x, @app.env.oxy[f_id].y)
+                if isFleet(f_id) and @app.env.isMCoast(t_id)
                     #mc_pos = mc_move_data[f_id]
-                    p2 = new Point2D(app.env.mcoasts_oxy[t_id][mc].x, app.env.mcoasts_oxy[t_id][mc].y)
+                    p2 = new Point2D(@app.env.mcoasts_oxy[t_id][mc].x, @app.env.mcoasts_oxy[t_id][mc].y)
                 else
-                    p2 = new Point2D(app.env.oxy[t_id].x, app.env.oxy[t_id].y)
-                #p2 = new Point2D(app.env.oxy[t_id].x, app.env.oxy[t_id].y)
+                    p2 = new Point2D(@app.env.oxy[t_id].x, @app.env.oxy[t_id].y)
+                #p2 = new Point2D(@app.env.oxy[t_id].x, @app.env.oxy[t_id].y)
                 intersect = Intersection.intersectCircleLine(p2, 22, p1, p2)
-                #intersect1 = Intersection.intersectCircleLine(app.env.oxy[f_id], 10, p1, p2)
+                #intersect1 = Intersection.intersectCircleLine(@app.env.oxy[f_id], 10, p1, p2)
                 x = p1.x
                 y = p1.y
                 x_t = intersect.points[0].x
                 y_t = intersect.points[0].y
-                if time is "past" and app.game.phase().position is "next"
+                if time is "past" and @app.game.phase().position is "next"
                     color = "#7F7F7F"
                 else
                     color = "#FF7F00"
@@ -622,13 +694,13 @@ class Screen
     onTerritory: (id) ->
         #var r,g,b,rr,gg,bb;
         #ccolor = r: 250, g: 0, b: 0
-        ocolor = app.game.colors[id]
+        ocolor = @app.game.colors[id]
         ncolor = r: ocolor.r-50, g: ocolor.g-50, b: ocolor.b-50
         @colorTerritory(id, ncolor)
         return
 
     offTerritory: (id) ->
-        ccolor = r: app.game.colors[id].r, g: app.game.colors[id].g, b: app.game.colors[id].b
+        ccolor = r: @app.game.colors[id].r, g: @app.game.colors[id].g, b: @app.game.colors[id].b
         @colorTerritory(id, ccolor)
         return
 

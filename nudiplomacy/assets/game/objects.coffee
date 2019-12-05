@@ -1,6 +1,6 @@
 
 class Phase
-    constructor: (@position, @id, @stage, @type, @year, @season, @territories, @troops, @mcpos, @dislodged) ->
+    constructor: (@app, @position, @id, @stage, @type, @year, @season, @territories, @troops, @mcpos, @dislodged) ->
         @orders = {}
         @builds = {}
         @pastMoves = {}
@@ -21,11 +21,11 @@ class Phase
         if @id is null
             callback(@id, false)
             return
-        previous = app.game.phase(@position - 1)
+        previous = @app.game.phase(@position - 1)
         if previous.id is null
             callback(@id, false)
             return
-        app.net.getOrders(previous, (orders) =>
+        @app.net.getOrders(previous, (orders) =>
             @_ordersCallback(orders, callback)
             return
         )
@@ -70,14 +70,14 @@ class Phase
     previous: ->
         if @position is 0
             return null
-        return app.game.phase(@position - 1)
+        return @app.game.phase(@position - 1)
 
     next: ->
-        if @position is app.game._nphases - 1
+        if @position is @app.game._nphases - 1
             next = "next"
         else
             next = @position + 1
-        return app.game.phase(next)
+        return @app.game.phase(next)
 
     isArmy: (id) ->
         return id in @listArmies
@@ -87,8 +87,8 @@ class Phase
 
     canConvoy: (id) ->
         res = false
-        if @isFleet(id) and app.env.isSea(id)
-            links = app.env.moves.fleets[id]
+        if @isFleet(id) and @app.env.isSea(id)
+            links = @app.env.moves.fleets[id]
             for i in links
                 if @isArmy(i)
                     res = true
@@ -102,7 +102,8 @@ class Phase
                 return country
         return false
 
-    getCountryTroops: (country=app.game.country) ->
+    getCountryTroops: (country=null) ->
+        country = country or @app.game.country
         troops = []
         for ttype, tlist of @troops[country]
             for troop in tlist
@@ -111,8 +112,8 @@ class Phase
 
 
 class PhaseNext extends Phase
-    constructor: ->
-        prev = app.game.phase(app.game._nphases-1)
+    constructor: (@app) ->
+        prev = @app.game.phase(@app.game._nphases-1)
         @position = 'next'
         @id = null
         @stage = 0
@@ -131,7 +132,7 @@ class PhaseNext extends Phase
         return
 
     previous: ->
-        return app.game.phase(app.game._nphases-2)
+        return @app.game.phase(@app.game._nphases-2)
 
     next: ->
         return null

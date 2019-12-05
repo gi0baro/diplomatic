@@ -1,0 +1,90 @@
+{{ extend 'game_board.haml' }}
+
+
+{{ js_player = player_country or 'null' }}
+{{ js_game_active = 'true' if game.stage == 1 else 'false' }}
+{{ js_game_pre = 'true' if game.stage == 0 else 'false' }}
+{{ js_game_over = 'true' if game.stage == 5 else 'false' }}
+{{ js_player_ready = 'true' if player_ready else 'false' }}
+{{ js_player_active = 'true' if player_active else 'false' }}
+
+{{ if player_country: }}
+<script type="text/javascript">
+  var currentPlayer = "{{ =player_country }}";
+  var currentActive = "{{ =player_active }}";
+  var currentReady = "{{ =player_ready }}";
+</script>
+{{ else: }}
+<script type="text/javascript">
+  var currentPlayer = null;
+  var currentActive = false;
+  var currentReady = false;
+</script>
+{{ pass }}
+
+<script type="text/javascript">
+  var imgSrcArmy = "{{ =url('static', 'images/tank.png') }}"
+  var imgSrcFleet = "{{ =url('static', 'images/ship.png') }}"
+  var isGameActive = {{='true' if game.stage == 1 else 'false'}};
+  var preGame = {{='true' if game.stage == 0 else 'false'}};
+  var gameOver = {{='true' if game.stage == 5 else 'false'}};
+  // var GROUND_COLOR = {r: 226, g: 198, b: 158};
+  var GROUND_COLOR = {r: 64, g: 64, b: 64};
+  // var SEA_COLOR: {r: 197, g: 223, b: 234};
+  // var SEA_COLOR = {r: 26, g: 52, b: 87};
+  var SEA_COLOR = {r: 81, g: 111, b: 124};
+  // var NEUTRAL_COLOR = {r: 0, g: 0, b: 0};
+  var NEUTRAL_COLOR = {r: 20, g: 20, b: 20};
+
+  T.register({
+      spring: '{{=T("spring").title()}}',
+      autumn: '{{=T("autumn").title()}}'
+  }, 'season');
+  T.register({
+      retreats: '{{=T("retreats").title()}}',
+      builds: '{{=T("builds").title()}}',
+      pregame: '{{=T("pre-game").title()}}'
+  }, 'phase_type');
+  T.register({
+      hold: '{{=T(":TERRITORY: holds")}}',
+      move: '{{=T(":SRC: moves to :DST::THROUGH::COAST:")}}',
+      support_move: '{{=T(":TERRITORY: supports :SRC: in movement to :DST:")}}',
+      sopport_hold: '{{=T(":TERRITORY: supports :DST: on hold")}}',
+      convoy: '{{=T(":TERRITORY: convoys :SRC: to :DST:")}}',
+      retreat: '{{=T(":TERRITORY: retreats to :DST::COAST:")}}',
+      build: '{{=T(":TERRITORY: builds a new :TROOP_TYPE::AT_COAST:")}}',
+      disband: '{{=T(":TERRITORY: disbands")}}',
+      through: '{{=T("via convoy")}}',
+      north_coast: '{{=T("north coast")}}',
+      south_coast: '{{=T("south coast")}}',
+      at_north_coast: '{{=T("at north coast")}}',
+      at_south_coast: '{{=T("at south coast")}}',
+      army: '{{=T("army")}}',
+      fleet: '{{=T("fleet")}}'
+  }, 'order_phrase')
+
+  gapp.net.route("map", "{{=url('api.map_get', game.map)}}");
+  gapp.net.route("game", "{{=url('api.game_get', game.id)}}");
+  gapp.net.route("phases", "{{=url('api.game_phases', game.id)}}");
+  gapp.net.route("status", "{{=url.ws('ws.game_state', game.id, scheme=True)}}");
+  gapp.net.route("orders", "{{=url('api.authorized.game_orders', game.id)}}");
+  gapp.net.route("phase_orders", "{{=url('api.phase_orders', ':PHASE_ID:')}}");
+  gapp.net.route("save_orders", "{{=url('api.authorized.order_save', ':ORDER_ID:')}}");
+  gapp.net.route("ready", "{{=url('api.authorized.player_ready', game.id)}}");
+  gapp.net.route("messages", "{{=url('api.authorized.chat_get')}}");
+  gapp.net.route("postmessage", "{{#=url('api.chat_post')}}");
+  gapp.net.route("readmessage", "{{#=url('api.chat_read')}}");
+  gapp.game.scsToWin = {{=scs}};
+</script>
+
+<game-board
+  image_src_map="{{ =url('main.download', game.map.image) }}"
+  image_src_army="{{ =url('static', 'images/tank.png') }}"
+  image_src_fleet="{{ =url('static', 'images/ship.png') }}"
+  player="{{ =js_player }}"
+  v-bind:game_active="{{ =js_game_active }}"
+  v-bind:game_pre="{{ =js_game_pre }}"
+  v-bind:game_over="{{ =js_game_over }}"
+  v-bind:player_ready="{{ =js_player_ready }}"
+  v-bind:player_active="{{ =js_player_active }}"
+></game-board>

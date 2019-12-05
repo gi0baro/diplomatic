@@ -1,13 +1,36 @@
 
 class App
     constructor: ->
-        @net = new Network()
+        @net = new Network(@)
         @ui = new UI()
-        @screen = new Screen()
-        @act = new Interactions()
-        @env = new Environment()
-        @game = new Game()
+        @screen = new Screen(@)
+        @act = new Interactions(@)
+        @env = new Environment(@)
+        @game = new Game(@)
+        @ux = new UX(@)
+        @utils = new Utils(@)
+        console.log(@game.app)
         return
+
+    init: (map_src, army_src, fleet_src, map_update_callback, screen_init_callback, alert_method) ->
+        @screen.buildElements(map_src, army_src, fleet_src)
+        @screen.register_callbacks(map_update_callback, screen_init_callback)
+        @ux.configure(alert_method)
+
+    launch: (mapData, gameData, player, isGameActive, isPreGame, isGameOver, callback) ->
+        console.log(isPreGame)
+        console.log(typeof isGameActive, typeof isPreGame, typeof isGameOver)
+        @env.init(mapData)
+        # temp
+        phases = []
+        orders =
+            data: {}
+        #
+        @game.init(gameData, phases, orders, -> return)
+        @screen.init()
+        @ux.launched(isPreGame, isGameOver)
+        @net.setSockets()
+        callback()
 
     start: ->
         setTimeout(->
@@ -70,4 +93,4 @@ class App
         # @game.loadPhase(@game.phase('last').position)
         # return
 
-window.app = new App()
+window.gapp = new App()

@@ -25,8 +25,8 @@ class PhaseTypes extends TConstants
     diplomacy: 0
     retreats: 1
     builds: 2
-    # pregame: 10
-    # won: 20
+    pregame: 10
+    won: 20
 
 
 class Seasons extends TConstants

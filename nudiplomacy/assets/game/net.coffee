@@ -1,22 +1,22 @@
 class Network
-    constructor: ->
-        @urls = {}
+    constructor: (@app) ->
+        @routes = {}
         @sockets = {}
         return
 
     route: (name, url) ->
-        @urls[name] = url
+        @routes[name] = url
         return
 
     setSockets: ->
-        @sockets.state = new WebSocket(@urls.status)
+        @sockets.state = new WebSocket(@routes.status)
         @sockets.state.binaryType = 'arraybuffer'
-        @sockets.state.addEventListener 'message', (event) ->
-            app.ui.gotGameStatus(String.fromCharCode.apply(null, new Uint8Array(event.data)))
+        @sockets.state.addEventListener 'message', (event) =>
+            @app.ux.gameStateChanged(String.fromCharCode.apply(null, new Uint8Array(event.data)))
 
     getMap: ->
         rv = {}
-        $.ajax @urls['map'],
+        $.ajax @routes['map'],
             type: 'GET'
             async: false
             success: (data) ->
@@ -26,7 +26,7 @@ class Network
 
     getGame: ->
         rv = {}
-        $.ajax @urls['game'],
+        $.ajax @routes['game'],
             type: 'GET'
             async: false
             success: (data) ->
@@ -36,7 +36,7 @@ class Network
 
     getPhases: ->
         rv = {}
-        $.ajax @urls['phases'],
+        $.ajax @routes['phases'],
             type: 'GET'
             async: false
             success: (data) ->
@@ -45,17 +45,17 @@ class Network
         return rv
 
     # getGameStatus: ->
-    #     $.ajax @urls['status'],
+    #     $.ajax @routes['status'],
     #         type: 'GET'
     #         success: (data) ->
-    #             app.ui.gotGameStatus(data.status, data.phase)
+    #             @app.ui.gotGameStatus(data.status, data.phase)
     #             return
     #     return
 
     getOrders: (phase, callback) ->
         console.log('called getOrders for phase', phase)
         rv = {}
-        $.ajax @urls['phase_orders'].replace(':PHASE_ID:', phase.id),
+        $.ajax @routes['phase_orders'].replace(':PHASE_ID:', phase.id),
             type: 'GET'
             success: (response) ->
                 callback(response.data)
@@ -64,7 +64,7 @@ class Network
 
     getCurrentOrders: ->
         rv = {}
-        $.ajax @urls['orders'],
+        $.ajax @routes['orders'],
             type: 'GET'
             async: false
             success: (data) ->
@@ -73,26 +73,26 @@ class Network
         return rv
 
     getMessages: (cid, country, since=null) ->
-        u = @urls['messages']+"/"+cid
+        u = @routes['messages']+"/"+cid
         if since
             u += "?since="+since
         $.ajax u,
             type: 'GET'
             success: (data) ->
-                app.ui.gotMessages(country, data.data)
+                @app.ui.gotMessages(country, data.data)
                 return
         return
 
     postOrder: (order) ->
-        app.ui.saving()
-        $.ajax @urls['save_orders'].replace(':ORDER_ID:', order.id),
+        @app.ui.saving()
+        $.ajax @routes['save_orders'].replace(':ORDER_ID:', order.id),
             type: 'PUT'
             contentType: "application/json"
             data: JSON.stringify(order)
             success: (data) ->
                 console.log(data)
                 order._changed = false
-                app.ui.saved(data)
+                @app.ui.saved(data)
                 return
             error: ->
                 #console.log(error)
@@ -102,7 +102,7 @@ class Network
     postMessage: (cid, text) ->
         d =
             msg: text
-        $.ajax @urls['postmessage']+"/"+cid,
+        $.ajax @routes['postmessage']+"/"+cid,
             type: 'POST'
             contentType: "application/json"
             data: JSON.stringify(d)
@@ -116,30 +116,30 @@ class Network
     setReady: ->
         d =
             ready: true
-        $.ajax @urls['ready'],
+        $.ajax @routes['ready'],
             type: 'POST'
             contentType: "application/json"
             data: JSON.stringify(d)
             success: (data) ->
-                app.ui.didReady(data.data)
+                @app.ui.didReady(data.data)
                 return
         return
 
     setUnready: ->
         d =
             ready: false
-        $.ajax @urls['ready'],
+        $.ajax @routes['ready'],
             type: 'POST'
             contentType: "application/json"
             data: JSON.stringify(d)
             success: (data) ->
-                app.ui.didReady(data.data)
+                @app.ui.didReady(data.data)
                 return
         return
 
     setRead: (cid, mid, global=false) ->
         rv = {}
-        u = @urls['readmessage']+"/"+cid+"/"+mid
+        u = @routes['readmessage']+"/"+cid+"/"+mid
         if global
             u += "?all=y"
         $.ajax u,
