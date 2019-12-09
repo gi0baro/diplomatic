@@ -4,21 +4,12 @@
       <span class="w-full text-lg text-white">Stats</span>
     </div>
     <div class="flex flex-row flex-wrap overflow-y-auto stats-list">
-      <div
+      <stats-item
         v-for="country in countries"
-        :key="country.name"
-        class="w-full mx-auto flex bg-gray-700 stats-element border-t first:border-t-0 border-gray-600"
-        @click="selected(country.name)"
-      >
-        <div :class="`flex items-center px-4 py-4 ml-1 ${country.unread ? 'country-unread' : ''}`">
-          <div class="block h-12 w-12 rounded-full bg-gray-200">
-          </div>
-          <div class="ml-3 text-left">
-            <p class="text-lg leading-tight text-gray-100">{{ country.name }}</p>
-            <p class="text-sm text-gray-400">3 days ago</p>
-          </div>
-        </div>
-      </div>
+        :key="country.label"
+        :country="country"
+        :targetCenters="targetCenters"
+      ></stats-item>
     </div>
   </div>
   <div v-else class="h-full flex items-center justify-center">
@@ -28,16 +19,57 @@
 
 <script>
 import DotSpinner from './DotSpinner'
+import StatsItem from './StatsItem'
 
 export default {
   name: 'Stats',
   components: {
-    DotSpinner
+    DotSpinner,
+    StatsItem
   },
-  data() {
-    return {
-      loading: true,
-      countries: []
+  props: {
+    player: {
+      type: String,
+      default: null
+    },
+    mapData: {
+      type: Object,
+      default: null
+    },
+    gameData: {
+      type: Object,
+      default: null
+    },
+    targetCenters: {
+      type: Number,
+      default: 0
+    },
+    step: {
+      type: Object,
+      default: null
+    },
+    loading: {
+      type: Boolean,
+      default: true
+    }
+  },
+  computed: {
+    countries() {
+      if (this.step === null) {
+        return []
+      }
+      let rv = this.gameData.players.map((country) => {
+        return {
+          label: country,
+          color: this.mapData.countries[country],
+          supply_centers: this.step.supply_centers[country] || 0,
+          troops: this.step.troops[country] || {armies: 0, fleets: 0},
+          self: (country === this.player)
+        }
+      })
+      return rv.sort((a, b) => {
+        return (a.supply_centers > b.supply_centers) ? -1 : 1
+      })
     }
   },
   methods: {
@@ -47,4 +79,7 @@ export default {
 </script>
 
 <style scoped>
+.country-self {
+  @apply ml-0 border-l-1r;
+}
 </style>

@@ -1,33 +1,20 @@
 {{ extend 'game_board.haml' }}
 
-
-{{ js_player = player_country or 'null' }}
-{{ js_game_active = 'true' if game.stage == 1 else 'false' }}
-{{ js_game_pre = 'true' if game.stage == 0 else 'false' }}
-{{ js_game_over = 'true' if game.stage == 5 else 'false' }}
-{{ js_player_ready = 'true' if player_ready else 'false' }}
-{{ js_player_active = 'true' if player_active else 'false' }}
-
 {{ if player_country: }}
 <script type="text/javascript">
-  var currentPlayer = "{{ =player_country }}";
-  var currentActive = "{{ =player_active }}";
-  var currentReady = "{{ =player_ready }}";
+  // var currentPlayer = "{{ =player_country }}";
+  // var currentActive = "{{ =player_active }}";
+  // var currentReady = "{{ =player_ready }}";
 </script>
 {{ else: }}
 <script type="text/javascript">
-  var currentPlayer = null;
-  var currentActive = false;
-  var currentReady = false;
+  // var currentPlayer = null;
+  // var currentActive = false;
+  // var currentReady = false;
 </script>
 {{ pass }}
 
 <script type="text/javascript">
-  var imgSrcArmy = "{{ =url('static', 'images/tank.png') }}"
-  var imgSrcFleet = "{{ =url('static', 'images/ship.png') }}"
-  var isGameActive = {{='true' if game.stage == 1 else 'false'}};
-  var preGame = {{='true' if game.stage == 0 else 'false'}};
-  var gameOver = {{='true' if game.stage == 5 else 'false'}};
   // var GROUND_COLOR = {r: 226, g: 198, b: 158};
   var GROUND_COLOR = {r: 64, g: 64, b: 64};
   // var SEA_COLOR: {r: 197, g: 223, b: 234};
@@ -81,10 +68,22 @@
   image_src_map="{{ =url('main.download', game.map.image) }}"
   image_src_army="{{ =url('static', 'images/tank.png') }}"
   image_src_fleet="{{ =url('static', 'images/ship.png') }}"
-  player="{{ =js_player }}"
-  v-bind:game_active="{{ =js_game_active }}"
-  v-bind:game_pre="{{ =js_game_pre }}"
-  v-bind:game_over="{{ =js_game_over }}"
-  v-bind:player_ready="{{ =js_player_ready }}"
-  v-bind:player_active="{{ =js_player_active }}"
+  {{ if player_country: }}
+  player="{{ =player_country }}"
+  {{ pass }}
+  {{ if game.stage == 0: }}
+  game_pre
+  {{ pass }}
+  {{ if game.stage == 1: }}
+  game_active
+  {{ pass }}
+  {{ if game.stage == 5: }}
+  game_over
+  {{ pass }}
+  {{ if player_active: }}
+  player_active
+  {{ pass }}
+  {{ if player_ready: }}
+  player_ready
+  {{ pass }}
 ></game-board>

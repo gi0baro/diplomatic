@@ -20,7 +20,7 @@ export default {
       type: Boolean,
       default: true
     },
-    dismiss_after: Number
+    dismissAfter: Number
   },
   data() {
     return {
@@ -30,7 +30,7 @@ export default {
   },
   mounted() {
     this.content = this.message === undefined ? this.content : this.message
-    if (this.dismiss_after) {
+    if (this.dismissAfter) {
       this.scheduleDismiss()
     }
   },
@@ -47,7 +47,7 @@ export default {
       }
       this.dismiss()
     },
-    dismiss_after(value) {
+    dismissAfter(value) {
       if (value === null) {
         clearTimeout(this.timeout)
         return
@@ -59,7 +59,7 @@ export default {
     scheduleDismiss() {
       this.timeout = setTimeout(() => {
         this.dismiss()
-      }, this.dismiss_after * 1000)
+      }, this.dismissAfter * 1000)
     },
     dismiss() {
       this.content = null

@@ -52,6 +52,51 @@ def game_phases(gid):
     return {'data': GamePhase.where(lambda m: m.game == gid).select(orderby=GamePhase.created_at)}
 
 
+@api.route('/phases/<int:pid>')
+def game_phase(pid):
+    row, orders = GamePhase.get(id=pid), {}
+    if not row:
+        response.status = 404
+        return {'error': 'not found'}
+    if row.stage == GamePhase.STAGES['closed']:
+        orders = row.orders_grouped()
+    rv = row.as_dict()
+    rv['orders'] = orders
+    return rv
+
+
+@api.route('/game/<int:gid>/phases/prev')
+def game_phase_prev(gid):
+    dbset, orders = GamePhase.where(lambda m: m.game == gid), {}
+    if request.query_params.last_id:
+        dbset.where(lambda m: m.id < request.query_params.last_id)
+    row = dbset.select(orderby=GamePhase.id, limitby=(0, 1)).first()
+    if not row:
+        response.status = 404
+        return {'error': 'not found'}
+    if row.stage == GamePhase.STAGES['closed']:
+        orders = row.orders_grouped()
+    rv = row.as_dict()
+    rv['orders'] = orders
+    return row
+
+
+@api.route('/game/<int:gid>/phases/next')
+def game_phase_next(gid):
+    dbset, orders = GamePhase.where(lambda m: m.game == gid), {}
+    if request.query_params.last_id:
+        dbset.where(lambda m: m.id > request.query_params.last_id)
+    row = dbset.select(orderby=~GamePhase.id, limitby=(0, 1)).first()
+    if not row:
+        response.status = 404
+        return {'error': 'not found'}
+    if row.stage == GamePhase.STAGES['closed']:
+        orders = row.orders_grouped()
+    rv = row.as_dict()
+    rv['orders'] = orders
+    return row
+
+
 # @api.route("/game/<int:gid>/status")
 # def game_status(gid):
 #     game = db(db.Game.id == gid).select(db.Game.status, db.Game.phases).first()

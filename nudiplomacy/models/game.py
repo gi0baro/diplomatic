@@ -6,7 +6,7 @@ from datetime import timedelta
 from decimal import Decimal
 from diplomacy import constants as dip_const
 from emmett import now, T, sdict
-from emmett.orm import Model, Field, belongs_to, has_one, has_many, scope, rowmethod
+from emmett.orm import Model, Field, belongs_to, has_one, has_many, scope, refers_to, rowmethod
 
 from . import TSModel
 from .user import User
@@ -269,6 +269,7 @@ class Game(TSModel):
                     return
                 #: create new phase
                 res = game.phases.create(
+                    parent=current_phase.id,
                     year=proc_ctx.year,
                     season=proc_ctx.season,
                     type=proc_ctx.phase_type,
@@ -389,6 +390,7 @@ class GameRole(Model):
 
 class GamePhase(TSModel):
     belongs_to('game')
+    refers_to({'parent': 'self'})
     has_many('orders')
 
     SEASONS = {'spring': dip_const.SEASONS.SPRING, 'autumn': dip_const.SEASONS.AUTUMN}
@@ -425,6 +427,14 @@ class GamePhase(TSModel):
         'stage': True,
         'unique_phase': {'fields': ['game', 'year', 'season', 'type'], 'unique': True}
     }
+
+    @rowmethod('orders_grouped')
+    def _orders_grouped(self, phase):
+        rv = defaultdict(list)
+        orders = phase.orders.join('game_role').select()
+        for order in orders:
+            rv[order.game_role.country].append(order)
+        return rv
 
     @rowmethod('orders_for_processor')
     def _orders_for_processor(self, phase):
