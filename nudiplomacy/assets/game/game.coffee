@@ -2,6 +2,12 @@ class Game
     constructor: (@app) ->
         @country = null
         @_phases = {}
+        @steps = {}
+        @step =
+            territories: {}
+            troops: {}
+            mcpos: {}
+            dislodged: {}
         @colors = {}
         @_currentPhase = 0
         @_nphases = 0
@@ -10,6 +16,7 @@ class Game
         @moves_mc = {}
         @moves_queue = []
         @orders = {}
+        # useless?
         @ready = false
         @_nextPhase = null
         @buildew = null
@@ -19,35 +26,44 @@ class Game
         @win = null
         return
 
-    init: (data, phases, orders, callback) ->
+    init: (data, player, orders, isPlayerReady) ->
         #: load current player
         # @country = data.currentPlayer
-        @country = currentPlayer
+        @country = player
         #: set participating countries
         @_setCountries(data.players)
         @buildew = data.build_everywhere
         @presstype = data.press_type
         #: load phases
-        @_phases["0"] = new Phase(@app, 0, null, 2, PHASE_TYPES.pregame, 1920, null, @app.env.countries_init, {}, {}, {}, {})
-        i = 1
-        for phase in phases
-            @_phases[i+''] = new Phase(@app, i, phase.id, phase.stage, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.coasts, phase.dislodged, {})
-            i++
+        # @step = new Step(@app, step)
+        # console.log('game init set step', step)
+        # @_phases["0"] = new Phase(@app, 0, null, 2, PHASE_TYPES.pregame, 1920, null, @app.env.countries_init, {}, {}, {}, {})
+        # i = 1
+        # for phase in phases
+        #     @_phases[i+''] = new Phase(@app, i, phase.id, phase.stage, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.coasts, phase.dislodged, {})
+        #     i++
         # TEMP
-        console.log(phases, orders)
-        @_nphases = phases.length + 1
-        @_currentPhase = @_nphases-1
+        # console.log(phases, orders)
+        # @_nphases = phases.length + 1
+        # @_currentPhase = @_nphases-1
         @orders = {}
         # TODO: change ready to endpoint
         # if orders.ready
         #     @ready = true
-        @ready = currentReady
+        # @ready = currentReady
+        @ready = isPlayerReady
         @_initOrders(orders.data)
         @_setStartingColors()
-        if @phase('last') isnt undefined and @phase('last').type is PHASE_TYPES.won
-            @win = data.phases[@_nphases-1].winner
-        @_loadPhasesOrders(callback)
+        # if @phase('last') isnt undefined and @phase('last').type is PHASE_TYPES.won
+        #     @win = data.phases[@_nphases-1].winner
+        # @_loadPhasesOrders(callback)
         return
+
+    setStep: (step) ->
+        console.log('setStep', step)
+        @step = step
+        if @app.launched
+            @loadStep(@step)
 
     _loadPhasesOrders: (callback) ->
         console.log('expected orders to load', @_nphases)
@@ -86,16 +102,18 @@ class Game
         return
 
     phase: (id='current') ->
-        if id is 'next' or (id is 'current' and @_currentPhase is 'next')
-            return @_nextPhase
-        if id is 'last'
-            return @_phases[@_nphases-1]
-        if id isnt 'current'
-            return @_phases[id+'']
-        return @_phases[@_currentPhase+'']
+        # if id is 'next' or (id is 'current' and @_currentPhase is 'next')
+        #     return @_nextPhase
+        # if id is 'last'
+        #     return @_phases[@_nphases-1]
+        # if id isnt 'current'
+        #     return @_phases[id+'']
+        # return @_phases[@_currentPhase+'']
+        return @step
 
     isLastPhase: ->
-        return @_currentPhase is @_nphases-1
+        # return @_currentPhase is @_nphases-1
+        return @step.isLast
 
     _setCountries: (ingame) ->
         all = []
@@ -107,8 +125,8 @@ class Game
         return
 
     _initOrders: (orders) ->
+        console.log('init orders', orders)
         for order in orders
-            console.log(order)
             territory = order.territory
             @orders[territory] = order
             if order.type isnt ORDER_TYPES.hold
@@ -162,7 +180,7 @@ class Game
         for key, color of @app.env.countries
             #for i in @app.env.countries_terr[key]
             #for i in @phase().territories[key]
-            for i in cterrs[key]
+            for i in (cterrs[key] or [])
                 @colors[i] = color
         return
 
@@ -207,6 +225,42 @@ class Game
                 time_end = new Date().getTime()
                 time_ex = time_end - time_start
                 console.log("DrawLines time "+time_ex)
+            if drawt
+                @app.screen.drawTroops()
+            if drawt or drawl
+                @app.screen.update()
+        return
+
+    loadStep: (step, drawl=true, drawt=true) ->
+        console.log("loadStep", step, drawl, drawt)
+        reset_map = true
+        old_tcolors = {}
+        old_c_terrs = []
+        # @app.ui.setOrdersPhase(id)
+        if step.type is "next" and @isLastPhase()
+            reset_map = false
+        else
+            for key, value of @colors
+                old_tcolors[key] = value
+            console.log(@phase())
+            for key, terr_list of @phase().territories
+                for terr in terr_list
+                    old_c_terrs.push(terr)
+        console.log('reset_map', reset_map)
+        if reset_map
+            # time_start = new Date().getTime()
+            @app.screen.change(old_c_terrs, old_tcolors)
+            # time_end = new Date().getTime()
+            # time_ex = time_end - time_start
+            # console.log("ChangeMap time "+time_ex)
+        else
+            if drawl
+                # time_start = new Date().getTime()
+                @app.screen.drawLines()
+                @app.screen.drawTroops()
+                # time_end = new Date().getTime()
+                # time_ex = time_end - time_start
+                # console.log("DrawLines time "+time_ex)
             if drawt
                 @app.screen.drawTroops()
             if drawt or drawl

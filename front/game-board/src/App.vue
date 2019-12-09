@@ -4,7 +4,10 @@
       image_src_map="http://localhost:8000/download/maps.image.b1eb206f03a87d22.6d61702e706e67.png"
       image_src_army="http://localhost:8000/static/images/tank.png"
       image_src_fleet="http://localhost:8000/static/images/ship.png"
-      player="Russia"
+      player="Austria"
+      :game_active="true"
+      :game_pre="false"
+      player_active
     ></Board>
   </div>
 </template>
@@ -24,24 +27,28 @@ export default {
       init(map_src, army_src, fleet_src, map_update_callback, screen_init_callback, alert_method) {
         screen_init_callback()
       },
-      launch(mapData, gameData, player, isGameActive, isPregame, isGameOver, callback) {
+      launch(mapData, gameData, player, isGameActive, isPregame, isGameOver, isPlayerReady, callback) {
         callback()
       },
       net: {
         routes: {
           map: 'http://localhost:8000/api/map/1',
-          game: 'http://localhost:8000/api/game/1'
+          game: 'http://localhost:8000/api/game/3',
+          phase: 'http://localhost:8000/api/phases/:ID:',
+          phase_next: 'http://localhost:8000/api/game/3/phases/next',
+          phase_prev: 'http://localhost:8000/api/game/3/phases/prev'
         }
       },
       act: {
-        click(mousePosition, mapPosition) {
-
-        }
+        click(mousePosition, mapPosition) {}
       },
       utils: {
         getTerritoryNameByPosition(mapPosition) {
           return 'Debug East'
         }
+      },
+      ux: {
+        stepChange(val) {}
       }
     }
   }

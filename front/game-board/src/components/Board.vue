@@ -198,6 +198,11 @@ export default {
       return (!!this.mapData && !!this.gameData) ? (this.gameData.target_sc || this.mapData.scs_to_win) : 0
     }
   },
+  watch: {
+    gameStep(value) {
+      this.game.ux.stepChange(value)
+    }
+  },
   mounted() {
     this.game = window.gapp
     this.isPlayerReady = !!this.player_ready
@@ -217,12 +222,12 @@ export default {
           if (stepResponse.status == 200) {
             if (stepResponse.data.parent === null) {
               this.gameSteps.append(
-                buildGameStep(this.mapData, this.gameData, stepResponse.data, {})
+                buildGameStep(this.mapData, this.gameData, stepResponse.data, {}, true)
               )
               this.afterGameData()
             } else {
               this.gameSteps.append(
-                buildGameStep(this.mapData, this.gameData, stepResponse.data)
+                buildGameStep(this.mapData, this.gameData, stepResponse.data, null, true)
               )
               this.storeStepOrders(this.gameSteps.last()).then(() => {
                 this.afterGameData()
@@ -338,7 +343,9 @@ export default {
         this.game_active,
         this.game_pre,
         this.game_over,
+        this.playerReady,
         () => {
+          console.log('launch callback')
           this.mapDisplay()
           this.isLoadingStep = false
         }

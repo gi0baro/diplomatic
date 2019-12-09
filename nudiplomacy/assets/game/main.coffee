@@ -9,6 +9,7 @@ class App
         @game = new Game(@)
         @ux = new UX(@)
         @utils = new Utils(@)
+        @launched = false
         console.log(@game.app)
         return
 
@@ -17,19 +18,19 @@ class App
         @screen.register_callbacks(map_update_callback, screen_init_callback)
         @ux.configure(alert_method)
 
-    launch: (mapData, gameData, player, isGameActive, isPreGame, isGameOver, callback) ->
-        console.log(isPreGame)
-        console.log(typeof isGameActive, typeof isPreGame, typeof isGameOver)
+    launch: (mapData, gameData, player, isGameActive, isPreGame, isGameOver, isPlayerReady, callback) ->
+        console.log('launch')
         @env.init(mapData)
         # temp
         phases = []
         orders =
             data: {}
         #
-        @game.init(gameData, phases, orders, -> return)
+        @game.init(gameData, player, orders, isPlayerReady)
         @screen.init()
         @ux.launched(isPreGame, isGameOver)
         @net.setSockets()
+        @launched = true
         callback()
 
     start: ->

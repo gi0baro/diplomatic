@@ -248,7 +248,7 @@ class Screen
         return !(color1.r is color2.r and color1.g is color2.g and color1.b is color2.b)
 
     _getTerritories: ->
-        if @app.game.phase().position is 0
+        if @app.game.phase().type is "pre"
             rv = {}
             for key of @app.env.countries
                 rv[key] = []
@@ -431,7 +431,7 @@ class Screen
         @_clearLines()
         for id, obj of @app.game.phase().pastMoves
             @newLine("past", obj.type, id, obj.src, obj.dst, obj.coast, obj.success or false)
-        if @app.game.phase().position is "next"
+        if @app.game.phase().type is "next"
             for id, obj of @app.game.moves
                 @newLine("future", obj.type, id, obj.src, obj.dst, obj.coast)
         return
@@ -487,7 +487,7 @@ class Screen
                 y = p1.y
                 x_t = intersect.points[0].x
                 y_t = intersect.points[0].y
-                if time is "past" and @app.game.phase().position is "next"
+                if time is "past" and @app.game.phase().type is "next"
                     color = "#7F7F7F"
                 else
                     color = "#FF0000"
@@ -513,7 +513,7 @@ class Screen
                 x_t = intersect.points[0].x
                 y_t = intersect.points[0].y
                 angle = Math.atan2(y_t-y,x_t-x)
-                if time is "past" and @app.game.phase().position is "next"
+                if time is "past" and @app.game.phase().type is "next"
                     color = "#7F7F7F"
                 else
                     color = "#00FF00"
@@ -554,7 +554,7 @@ class Screen
                 p3 = res.p0
                 p4 = res.p1
                 angle = res.angle
-                if time is "past" and @app.game.phase().position is "next"
+                if time is "past" and @app.game.phase().type is "next"
                     color = "#7F7F7F"
                 else
                     color = "#FFFF00"
@@ -569,7 +569,7 @@ class Screen
                 p3 = res.p0
                 p4 = res.p1
                 angle = res.angle
-                if time is "past" and @app.game.phase().position is "next"
+                if time is "past" and @app.game.phase().type is "next"
                     color = "#7F7F7F"
                 else
                     color = "#0000FF"
@@ -594,7 +594,7 @@ class Screen
                 y = p1.y
                 x_t = intersect.points[0].x
                 y_t = intersect.points[0].y
-                if time is "past" and @app.game.phase().position is "next"
+                if time is "past" and @app.game.phase().type is "next"
                     color = "#7F7F7F"
                 else
                     color = "#FF7F00"

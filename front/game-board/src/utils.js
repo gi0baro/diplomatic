@@ -46,7 +46,7 @@ export const ListMapper = () => ({
   }
 })
 
-export const buildGameStep = (mapData, gameData, data, orders=null) => {
+export const buildGameStep = (mapData, gameData, data, orders=null, isLast=false) => {
   let types = {
     0: 'diplomacy',
     1: 'retreats',
@@ -56,7 +56,7 @@ export const buildGameStep = (mapData, gameData, data, orders=null) => {
     id: data.id,
     type: types[data.type],
     parent: data.parent,
-    // countries: gameData.players,
+    isLast: isLast,
     supply_centers: {},
     troops: {},
     orders: orders,
@@ -90,7 +90,7 @@ export const buildGameStep = (mapData, gameData, data, orders=null) => {
   })
   if (orders !== null) {
     gameData.players.forEach((key) => {
-      rv.orders[key] = orders[key] || {}
+      rv.orders[key] = orders[key] || []
     })
   }
   return rv
@@ -101,16 +101,22 @@ export const buildPreGameStep = (mapData, gameData) => {
     id: null,
     type: 'pre',
     parent: null,
-    // countries: gameData.players,
+    isLast: false,
     supply_centers: {},
     troops: {},
     orders: {},
-    data: {},
+    data: {
+      territories: {},
+      troops: {},
+      coasts: {},
+      dislodged: {}
+    },
     label() {
       return 'Pre Game'
     }
   }
   gameData.players.forEach((key) => {
+    rv.data.territories[key] = mapData.init.territories[key]
     rv.supply_centers[key] = mapData.home_centers[key].length
     rv.troops[key] = {armies: 0, fleets: 0}
     rv.orders[key] = []
@@ -123,11 +129,16 @@ export const buildNextGameStep = (player, prevStep) => {
     id: null,
     type: 'next',
     parent: prevStep.id,
-    // countries: prevStep.players,
+    isLast: false,
     supply_centers: { ...prevStep.supply_centers },
     troops: { ...prevStep.troops },
     orders: {},
-    data: {},
+    data: {
+      territories: prevStep.data.territories,
+      troops: prevStep.data.troops,
+      coasts: prevStep.data.coasts,
+      dislodged: prevStep.data.dislodged
+    },
     label() {
       return 'Next'
     }

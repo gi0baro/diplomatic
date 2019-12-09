@@ -52,7 +52,9 @@
 
   gapp.net.route("map", "{{=url('api.map_get', game.map)}}");
   gapp.net.route("game", "{{=url('api.game_get', game.id)}}");
-  gapp.net.route("phases", "{{=url('api.game_phases', game.id)}}");
+  gapp.net.route("phase", "{{=url('api.game_phase', ':ID:')}}");
+  gapp.net.route("phase_prev", "{{=url('api.game_phase_prev', game.id)}}");
+  gapp.net.route("phase_next", "{{=url('api.game_phase_next', game.id)}}");
   gapp.net.route("status", "{{=url.ws('ws.game_state', game.id, scheme=True)}}");
   gapp.net.route("orders", "{{=url('api.authorized.game_orders', game.id)}}");
   gapp.net.route("phase_orders", "{{=url('api.phase_orders', ':PHASE_ID:')}}");
