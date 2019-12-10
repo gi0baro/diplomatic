@@ -101,6 +101,7 @@ class Interactions
             console.log('exiting')
             return
         do_map_upd = true
+        auto_switch_step = false
         switch @current
             when "none"
                 id = @app.env.getTerritoryByColor(refcolor)
@@ -119,6 +120,7 @@ class Interactions
                     @app.screen.onTerritory(id)
                     @active = id
                     console.log(@active, @current)
+                    auto_switch_step = true
                 else
                     do_map_upd = false
             #when "name"
@@ -212,6 +214,8 @@ class Interactions
                 @app.ui.closeMCMenu()
         if do_map_upd
             @app.screen.update()
+        if auto_switch_step and @app.game.phase().id isnt "next"
+            @app.game.movePhaseToNext()
         return
 
     _remapUxEvents: (action) ->
@@ -247,55 +251,35 @@ class Interactions
                 act = @app.game.hasBuild(m_id)
         re_act = false
         ## check if deactivating action
-        if act is eve
+        if act is eve or (act is false and eve is "hold")
             re_act = true
             @current = "menu"
         console.log(re_act)
         console.log(act)
         console.log(eve)
         ## check if action present
-        if act
-            if eve isnt "close"
-                if @app.game.phase().type is PHASE_TYPES.diplomacy
-                    #console.log("deleting move")
-                    ## need to check moves break on "move"
-                    ##
-                    #if act is "move"
-                    #   to_delete = []
-                    #   for key, value of @app.play.moves
-                    #       if value.from is m_id
-                    #           to_delete.push(key)
-                    #   for i in to_delete
-                    #       #delete @app.play.moves[i]
-                    #       @app.DelMove(i)
-                    #delete @app.play.moves[m_id]
+        if (act and eve isnt "close")
+            if @app.game.phase().type is PHASE_TYPES.diplomacy
+                @app.game.delMove(m_id)
+                @app.screen.drawLines()
+            if @app.game.phase().type is PHASE_TYPES.builds
+                todel = @app.game._nphases isnt 2 or (@app.game._nphases is 2 and not re_act)
+                if todel
+                    @app.game.delBuild(@active)
+                    @app.screen.drawTroops()
+            if @app.game.phase().type is PHASE_TYPES.retreats
+                # if was retreat -> disband
+                if act is "retreat"
                     @app.game.delMove(m_id)
                     @app.screen.drawLines()
-                if @app.game.phase().type is PHASE_TYPES.builds
-                    todel = @app.game._nphases isnt 2 or (@app.game._nphases is 2 and not re_act)
-                    if todel
-                        @app.game.delBuild(@active)
-                        @app.screen.drawTroops()
-                if @app.game.phase().type is PHASE_TYPES.retreats
-                    # if was retreat -> disband
-                    if act is "retreat"
-                        @app.game.delMove(m_id)
-                        @app.screen.drawLines()
-                        #@app.game.addBuild(m_id, "disband")
-                        if re_act
-                            @app.game.addBuild(m_id, "disband")
-            # if @app.game.phase().type is PHASE_TYPES.diplomacy
-            #     @app.ux.relevantActionMenuClose()
-            # if @app.game.phase().type is PHASE_TYPES.builds
-            #     todel = @app.game._nphases isnt 2 or (@app.game._nphases is 2 and not re_act)
-            #     if todel
-            #         @app.ux.relevantActionMenuClose()
-            # if @app.game.phase().type is PHASE_TYPES.retreats
-            #     # @app.ui.setMenuButtons("reset", @active)
-            #     if not (eve isnt "close" and @app.game.hasBuild(m_id))
-            #         # @app.ui.setMenuButtons("open", @active)
-            #         @app.ux.relevantActionMenuClose()
+                    #@app.game.addBuild(m_id, "disband")
+                    if re_act
+                        @app.game.addBuild(m_id, "disband")
         switch eve
+            when "hold"
+                if not re_act
+                    @app.ux.relevantActionMenuClose()
+                    @stop()
             when "move"
                 if not re_act
                     @_onMoveTo(@active)
@@ -351,8 +335,8 @@ class Interactions
                 # @app.ui.closeMenu()
                 @app.ux.relevantActionMenuClose()
                 @current = "none"
-        if eve isnt "close" and @app.game.ready
-            @app.ui.setReady()
+        # if eve isnt "close" and @app.game.ready
+        #     @app.ui.setReady()
         @app.screen.update()
         return
 

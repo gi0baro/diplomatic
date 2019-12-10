@@ -52,7 +52,6 @@ export default {
     origin: {
       type: Object,
       default: null
-      // default: () => ({x: 0, y: 0})
     },
     canConvoy: {
       type: Boolean,
@@ -117,16 +116,14 @@ export default {
   },
   watch: {
     origin(value) {
-      console.log('origin', value)
       if (value === null) {
         return
       }
       this.$nextTick(() => {
         let element = this.$refs.menu
         let multiplier = (value.x > (this.screenw / 2)) ? 1 : 0
-        let mx = element.clientWidth * multiplier
-        let my = Math.round(element.clientHeight / 2)
-        console.log(value.x, value.y, multiplier, mx, my)
+        let mx = Math.round((element.clientWidth * multiplier) + (element.clientWidth * 0.1 * (multiplier || -1)))
+        let my = Math.round(element.clientHeight)
         this.position.x = value.x - mx
         this.position.y = value.y - my
       })

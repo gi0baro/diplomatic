@@ -88,7 +88,7 @@ class Environment
         return id in @mcoasts
 
     isSupply: (id) ->
-        if app.game.buildew
+        if @app.game.buildew
             return id in @_supplylist
         return id in @homes[@app.game.country]
 

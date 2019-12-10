@@ -53,6 +53,7 @@
           :message="alertData.message"
           :dismissable="alertData.dismissable"
           :dismissAfter="alertData.autoDismiss"
+          @clear="alertClear"
         ></alert>
       </div>
       <div class="w-64 xl:w-1/5 bg-gray-800 border-l border-gray-700">
@@ -224,7 +225,7 @@ export default {
     },
     playerOrders() {
       let step = this.nextGameStep
-      if (step !== null) {
+      if (step !== null && step.orders !== null) {
         return step.orders[this.player]
       }
       return []
@@ -304,7 +305,7 @@ export default {
         let {status, data} = await this.$http.get(
           this.game.net.routes.orders
         )
-        if (status == 200) {
+        if (status == 200 && !!data.data) {
           return data.data
         } else {
           return []
@@ -337,6 +338,10 @@ export default {
       }
     },
     async storeStepOrders(step, storeStep=true) {
+      if (step.parent === null) {
+        step.orders = {}
+        return
+      }
       let {idx} = step
       try {
         let {status, data} = await this.$http.get(
@@ -490,6 +495,10 @@ export default {
       )
     },
     mapClicked(mousePosition, relativePosition, mapPosition) {
+      if (this.isPlayerReady) {
+        this.alert("You can't add new orders since you set yourself as ready", true, 5)
+        return
+      }
       this.game.act.click(mousePosition, relativePosition, mapPosition)
     },
     mapHoldOver(mousePosition, relativePosition, mapPosition) {
@@ -527,6 +536,11 @@ export default {
       this.alertData.message = message
       this.alertData.dismissable = dismissable
       this.alertData.autoDismiss = autoDismiss
+    },
+    alertClear() {
+      this.alertData.message = null
+      this.alertData.dismissable = true
+      this.alertData.autoDismiss = null
     },
     switchStepToVirtual() {
       this.gameStep = this.nextGameStep

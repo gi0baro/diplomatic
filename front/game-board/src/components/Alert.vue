@@ -1,7 +1,7 @@
 <template>
   <transition name="fade" mode="out-in">
     <div v-if="display" class="absolute flex flex-row flex-wrap w-full items-center justify-center pb-4 bottom-0">
-      <div class="max-w-sm flex flex-row flex-wrap bg-gray-800 rounded-sm px-5 py-4">
+      <div class="max-w-sm flex flex-row flex-wrap bg-gray-800 rounded-sm px-5 py-4 alert-solid">
         <span class="w-full text-gray-200 text-base text-center py-2">{{ content }}</span>
         <div v-if="dismissable" class="flex flex-1 items-center justify-end">
           <button class="text-yellow-500 focus:outline-none" @click="dismiss">DISMISS</button>
@@ -29,8 +29,8 @@ export default {
     }
   },
   mounted() {
-    this.content = this.message === undefined ? this.content : this.message
-    if (this.dismissAfter) {
+    this.content = (this.message === undefined) ? this.content : this.message
+    if (!!this.dismissAfter) {
       this.scheduleDismiss()
     }
   },
@@ -41,45 +41,41 @@ export default {
   },
   watch: {
     message(value) {
-      if (value) {
-        this.content = value
-        return
-      }
-      this.dismiss()
-    },
-    dismissAfter(value) {
-      if (value === null) {
+      if (!value) {
+        if (!!this.content) {
+          this.dismiss()
+        }
         clearTimeout(this.timeout)
         return
       }
+      this.content = value
+      this.scheduleDismiss()
+    },
+    dismissAfter(value) {
       this.scheduleDismiss()
     }
   },
   methods: {
     scheduleDismiss() {
+      clearTimeout(this.timeout)
+      if (!this.dismissAfter) {
+        return
+      }
       this.timeout = setTimeout(() => {
         this.dismiss()
       }, this.dismissAfter * 1000)
     },
     dismiss() {
       this.content = null
-      clearTimeout(this.timeout)
+      this.$emit('clear')
     }
   }
 }
 </script>
 
 <style scoped>
-.territory-label-wrapper {
-  @apply absolute block;
-}
-.territory-label {
-  @apply absolute z-10 bg-gray-800 text-gray-100 text-xs whitespace-no-wrap rounded px-4 py-1;
-  opacity: 0.8;
-}
-.territory-label-dim {
-  @apply absolute block text-xs px-4 py-1 whitespace-no-wrap invisible;
-  z-index: -10;
+.alert-solid {
+  opacity: 0.95;
 }
 .fade-enter-active, .fade-leave-active {
   transition: opacity .3s;
