@@ -40,6 +40,15 @@
           @left="mapLeft"
           ref="map"
         ></variant-map>
+        <territory-menu
+          :screenw="screenWidth"
+          :display="actionMenus.territory.display"
+          :origin="actionMenus.territory.position"
+          :canConvoy="actionMenus.territory.canConvoy"
+          :action="actionMenus.territory.action"
+          @action="controlTerritoryAction"
+          @close="menuTerritoryClose"
+        ></territory-menu>
         <alert
           :message="alertData.message"
           :dismissable="alertData.dismissable"
@@ -77,6 +86,7 @@ import VariantMap from './Map'
 import Orders from './Orders'
 import ChatFragment from './ChatFragment'
 import Stats from './Stats'
+import TerritoryMenu from './TerritoryMenu'
 import Alert from './Alert'
 
 import {
@@ -103,6 +113,7 @@ export default {
     Orders,
     ChatFragment,
     Stats,
+    TerritoryMenu,
     Alert
   },
   props: {
@@ -148,9 +159,18 @@ export default {
       isSaving: false,
       needSave: false,
       activeSection: 'stats',
+      screenWidth: 0,
       mapTerritoryLabel: {
         name: null,
         position: null
+      },
+      actionMenus: {
+        territory: {
+          display: false,
+          position: null,
+          canConvoy: false,
+          action: 'hold'
+        }
       },
       alertData: {
         message: null,
@@ -367,7 +387,13 @@ export default {
         this.gameStep = this.lastGameStep
       }
     },
-    mapImageLoaded() {
+    controlTerritoryAction(action) {
+      console.log('action', action)
+      // game
+      this.actionMenus.territory.display = false
+    },
+    mapImageLoaded(canvasWidth) {
+      this.screenWidth = canvasWidth
       this.game.init(
         this.image_src_map,
         this.image_src_army,
@@ -381,13 +407,16 @@ export default {
             this.launch()
           }
         },
+        (position, canConvoy, action='hold') => {
+          this.menuTerritoryShow(position, canConvoy, action)
+        },
         (message, dismissable=true, autoDismiss=null) => {
           this.alert(message, dismissable, autoDismiss)
         }
       )
     },
-    mapClicked(mousePosition, mapPosition) {
-      this.game.act.click(mousePosition, mapPosition)
+    mapClicked(mousePosition, relativePosition, mapPosition) {
+      this.game.act.click(mousePosition, relativePosition, mapPosition)
     },
     mapHoldOver(mousePosition, relativePosition, mapPosition) {
       let name = this.game.utils.getTerritoryNameByPosition(mapPosition)
@@ -403,6 +432,16 @@ export default {
     },
     mapUpdate(value) {
       this.$refs.map.updateFrame(value)
+    },
+    menuTerritoryShow(position, canConvoy, currentAction) {
+      this.actionMenus.territory.position = position
+      this.actionMenus.territory.canConvoy = canConvoy
+      this.actionMenus.territory.action = currentAction
+      this.actionMenus.territory.display = true
+    },
+    menuTerritoryClose() {
+      this.actionMenus.territory.display = false
+      this.actionMenus.territory.position = null
     },
     alert(message, dismissable, autoDismiss) {
       this.alertData.message = message

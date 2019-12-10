@@ -24,7 +24,8 @@ export default {
   },
   created() {
     window.gapp = window.gapp || {
-      init(map_src, army_src, fleet_src, map_update_callback, screen_init_callback, alert_method) {
+      init(map_src, army_src, fleet_src, map_update_callback, screen_init_callback, menu_territory_method, alert_method) {
+        this.act.menuTerritoryMethod = menu_territory_method
         screen_init_callback()
       },
       launch(mapData, gameData, player, isGameActive, isPregame, isGameOver, isPlayerReady, callback) {
@@ -40,7 +41,10 @@ export default {
         }
       },
       act: {
-        click(mousePosition, mapPosition) {}
+        click(mousePosition, relativePosition, mapPosition) {
+          console.log(relativePosition)
+          this.menuTerritoryMethod(relativePosition, false)
+        }
       },
       utils: {
         getTerritoryNameByPosition(mapPosition) {

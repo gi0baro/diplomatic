@@ -86,7 +86,7 @@ class Interactions
         console.log(res)
         return res
 
-    click: (mpos, pos) ->
+    click: (mpos, rpos, pos) ->
         ## TODO: add retreats and builds support
         # mpos = @getMousePosition(e)
         # pos = @app.ui._translatePosition(mpos)

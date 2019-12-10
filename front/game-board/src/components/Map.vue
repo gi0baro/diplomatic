@@ -92,7 +92,7 @@ export default {
       this.offsets.y = obj.y
       this.style = {height: `${this.layer.height}px`}
       this.srcLoaded = true
-      this.$emit('imgLoaded')
+      this.$emit('imgLoaded', this.canvas.width)
     },
     updateFrame(value) {
       this.currentSrc = value
@@ -121,7 +121,7 @@ export default {
     },
     mapClick(event) {
       let data = this.getEventPositions(event)
-      this.$emit('clicked', data.input, data.position)
+      this.$emit('clicked', data.input, data.relative, data.position)
     },
     mapMouseIn(event) {
       this.mouseTrack.enabled = true

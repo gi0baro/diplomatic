@@ -2,15 +2,14 @@ class UX
     constructor: (@app) ->
         @gamePre = false
         @gameOver = false
+        @menus =
+            territory: () -> return
         @alertMethod = () -> return
         return
 
-    configure: (alertMethod) ->
+    configure: (menuTerritory, alertMethod) ->
+        @menus.territory = menuTerritory
         @alertMethod = alertMethod
-
-    alert: (message, dismissable=true, autoDismiss=null) ->
-        @alertMethod(message, dismissable, autoDismiss)
-        return
 
     launched: (gamePre, gameOver) ->
         @gamePre = gamePre
@@ -36,6 +35,10 @@ class UX
         setTimeout (->
             @app.reload()
         ), 5000
+        return
+
+    alert: (message, dismissable=true, autoDismiss=null) ->
+        @alertMethod(message, dismissable, autoDismiss)
         return
 
 window.UX = UX

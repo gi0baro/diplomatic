@@ -13,10 +13,10 @@ class App
         console.log(@game.app)
         return
 
-    init: (map_src, army_src, fleet_src, map_update_callback, screen_init_callback, alert_method) ->
+    init: (map_src, army_src, fleet_src, map_update_callback, screen_init_callback, menu_territory_method, alert_method) ->
         @screen.buildElements(map_src, army_src, fleet_src)
         @screen.register_callbacks(map_update_callback, screen_init_callback)
-        @ux.configure(alert_method)
+        @ux.configure(menu_territory_method, alert_method)
 
     launch: (mapData, gameData, player, isGameActive, isPreGame, isGameOver, isPlayerReady, callback) ->
         console.log('launch')
