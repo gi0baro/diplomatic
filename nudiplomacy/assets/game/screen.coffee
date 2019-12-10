@@ -431,7 +431,7 @@ class Screen
         @_clearLines()
         for id, obj of @app.game.phase().pastMoves
             @newLine("past", obj.type, id, obj.src, obj.dst, obj.coast, obj.success or false)
-        if @app.game.phase().type is "next"
+        if @app.game.phase().id is "next"
             for id, obj of @app.game.moves
                 @newLine("future", obj.type, id, obj.src, obj.dst, obj.coast)
         return
@@ -441,16 +441,16 @@ class Screen
         console.log(country_troops)
         console.log(time)
         if time is "past"
-            mc_pos_data = @app.game.phase().previous().mcpos
+            mc_pos_data = @app.game.phase().prev.mcpos
             console.log(mc_pos_data)
-            #mc_move_data = @app.game.phase().previous().mcmoves
+            #mc_move_data = @app.game.phase().prev.mcmoves
             #console.log(mc_move_data)
             #mc_pos_data = @app.phase.mc_pos[@app.phase.id-1]
             #console.log(mc_pos_data)
             #mc_move_data = @app.env.moves_last_mc
-            isFleet = (id) ->
+            isFleet = (id) =>
                 #@app.WasFleet(id)
-                @app.game.phase().previous().isFleet(id)
+                @app.game.phase().prev.isFleet(id)
         else
             #mc_pos_data = @app.env.mc_pos
             #mc_move_data = @app.play.moves_mc
@@ -458,7 +458,7 @@ class Screen
             #mc_move_data = @app.game.phase().mcmoves
             console.log(mc_pos_data)
             #console.log(mc_move_data)
-            isFleet = (id) ->
+            isFleet = (id) =>
                 @app.game.phase().isFleet(id)
             #if id not in (key for key of @app.env.troops[@app.play.country])
             if id not in country_troops
@@ -487,7 +487,7 @@ class Screen
                 y = p1.y
                 x_t = intersect.points[0].x
                 y_t = intersect.points[0].y
-                if time is "past" and @app.game.phase().type is "next"
+                if time is "past" and @app.game.phase().id is "next"
                     color = "#7F7F7F"
                 else
                     color = "#FF0000"
@@ -513,7 +513,7 @@ class Screen
                 x_t = intersect.points[0].x
                 y_t = intersect.points[0].y
                 angle = Math.atan2(y_t-y,x_t-x)
-                if time is "past" and @app.game.phase().type is "next"
+                if time is "past" and @app.game.phase().id is "next"
                     color = "#7F7F7F"
                 else
                     color = "#00FF00"
@@ -554,7 +554,7 @@ class Screen
                 p3 = res.p0
                 p4 = res.p1
                 angle = res.angle
-                if time is "past" and @app.game.phase().type is "next"
+                if time is "past" and @app.game.phase().id is "next"
                     color = "#7F7F7F"
                 else
                     color = "#FFFF00"
@@ -569,7 +569,7 @@ class Screen
                 p3 = res.p0
                 p4 = res.p1
                 angle = res.angle
-                if time is "past" and @app.game.phase().type is "next"
+                if time is "past" and @app.game.phase().id is "next"
                     color = "#7F7F7F"
                 else
                     color = "#0000FF"
@@ -594,7 +594,7 @@ class Screen
                 y = p1.y
                 x_t = intersect.points[0].x
                 y_t = intersect.points[0].y
-                if time is "past" and @app.game.phase().type is "next"
+                if time is "past" and @app.game.phase().id is "next"
                     color = "#7F7F7F"
                 else
                     color = "#FF7F00"

@@ -24,11 +24,14 @@ export default {
   },
   created() {
     window.gapp = window.gapp || {
-      init(map_src, army_src, fleet_src, map_update_callback, screen_init_callback, menu_territory_method, alert_method) {
-        this.act.menuTerritoryMethod = menu_territory_method
+      init(map_src, army_src, fleet_src, map_update_callback, screen_init_callback) {
         screen_init_callback()
       },
-      launch(mapData, gameData, player, isGameActive, isPregame, isGameOver, isPlayerReady, callback) {
+      bindings(menu_territory_open, menu_territory_close, step_next_method, alert_method) {
+        this.act.menuTerritoryOpen = menu_territory_open
+        this.act.menuTerritoryClose = menu_territory_close
+      },
+      launch(mapData, gameData, player, isGameActive, isPregame, isGameOver, isPlayerReady, orders, callback) {
         callback()
       },
       net: {
@@ -37,13 +40,18 @@ export default {
           game: 'http://localhost:8000/api/game/3',
           phase: 'http://localhost:8000/api/phases/:ID:',
           phase_next: 'http://localhost:8000/api/game/3/phases/next',
-          phase_prev: 'http://localhost:8000/api/game/3/phases/prev'
+          phase_prev: 'http://localhost:8000/api/game/3/phases/prev',
+          orders: 'http://localhost:8000/api/game/3/orders',
+          order_save: 'http://localhost:8000/api/orders/:ID:'
         }
       },
       act: {
         click(mousePosition, relativePosition, mapPosition) {
           console.log(relativePosition)
-          this.menuTerritoryMethod(relativePosition, false)
+          this.menuTerritoryOpen({position: relativePosition, canConvoy: false})
+        },
+        uxEvent(action) {
+          console.log(action)
         }
       },
       utils: {

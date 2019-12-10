@@ -24,7 +24,13 @@ class Game
         @presstype = null
         @scsToWin = 0
         @win = null
+        @orderMethod = () -> return
+        @movePhaseToNext = () -> return
         return
+
+    bind: (stepNextMethod) ->
+        # @orderMethod = orderMethod
+        @movePhaseToNext = stepNextMethod
 
     init: (data, player, orders, isPlayerReady) ->
         #: load current player
@@ -52,7 +58,7 @@ class Game
         #     @ready = true
         # @ready = currentReady
         @ready = isPlayerReady
-        @_initOrders(orders.data)
+        @_initOrders(orders)
         @_setStartingColors()
         # if @phase('last') isnt undefined and @phase('last').type is PHASE_TYPES.won
         #     @win = data.phases[@_nphases-1].winner
@@ -237,7 +243,7 @@ class Game
         old_tcolors = {}
         old_c_terrs = []
         # @app.ui.setOrdersPhase(id)
-        if step.type is "next" and @isLastPhase()
+        if step.id is "next" and @isLastPhase()
             reset_map = false
         else
             for key, value of @colors
@@ -411,20 +417,25 @@ class Game
         #   @orders_country[country] = []
         #   @orders_country[country].push(id)
         @orders[territory]._changed = true
-        @app.ui.addOrder(territory, @orders[territory])
-        @app.ui.autoSave()
+        # @app.ui.addOrder(territory, @orders[territory])
+        # @app.ui.autoSave()
+        # @orderMethod(territory, @orders[territory])
         return
 
     delOrder: (territory) ->
-        @orders[territory] =
-            id: @orders[territory].id
-            territory: territory
-            type: ORDER_TYPES.internal_to_remote('hold')
-            stage: ORDER_STATES.planned
-            data: {}
-            _changed: true
-        @app.ui.delOrder(territory)
-        @app.ui.autoSave()
+        @orders[territory].type = ORDER_TYPES.internal_to_remote('hold')
+        @orders[territory].data = {}
+        @orders[territory]._changed = true
+        # @orders[territory] =
+        #     id: @orders[territory].id
+        #     territory: territory
+        #     type: ORDER_TYPES.internal_to_remote('hold')
+        #     stage: ORDER_STATES.planned
+        #     data: {}
+        #     _changed: true
+        # @app.ui.delOrder(territory)
+        # @app.ui.autoSave()
+        # @orderMethod(territory, @orders[territory])
         return
 
     saveOrders: ->

@@ -45,9 +45,9 @@
           :display="actionMenus.territory.display"
           :origin="actionMenus.territory.position"
           :canConvoy="actionMenus.territory.canConvoy"
-          :action="actionMenus.territory.action"
+          :order="actionMenus.territory.order"
           @action="controlTerritoryAction"
-          @close="menuTerritoryClose"
+          @close="menuTerritoryClose(true)"
         ></territory-menu>
         <alert
           :message="alertData.message"
@@ -157,9 +157,14 @@ export default {
       isLoadingStep: true,
       isPlayerReady: false,
       isSaving: false,
+      isChangingReady: false,
       needSave: false,
+      // playerOrders: null,
       activeSection: 'stats',
       screenWidth: 0,
+      timeouts: {
+        save: null,
+      },
       mapTerritoryLabel: {
         name: null,
         position: null
@@ -169,7 +174,7 @@ export default {
           display: false,
           position: null,
           canConvoy: false,
-          action: 'hold'
+          order: {type: 0}
         }
       },
       alertData: {
@@ -216,11 +221,46 @@ export default {
     },
     targetSupplyCenters() {
       return (!!this.mapData && !!this.gameData) ? (this.gameData.target_sc || this.mapData.scs_to_win) : 0
+    },
+    playerOrders() {
+      let step = this.nextGameStep
+      if (step !== null) {
+        return step.orders[this.player]
+      }
+      return []
+    },
+    playerOrdersMap() {
+      let rv = {}
+      this.playerOrders.forEach((element) => {
+        rv[element.territory] = element
+      })
+      return rv
+    },
+    canSave() {
+      return !this.isLoadingStep && !this.isSaving
     }
   },
   watch: {
     gameStep(value) {
       this.game.ux.stepChange(value)
+    },
+    playerOrders: {
+      deep: true,
+      handler() {
+        clearTimeout(this.timeouts.save)
+        if (!this.canSave) {
+          return
+        }
+        this.needSave = (this.playerOrders.filter((element) => {
+          return element._changed === true
+        }).length > 0)
+        if (!this.needSave) {
+          return
+        }
+        this.timeouts.save = setTimeout(() => {
+          this.saveOrders()
+        }, 3000)
+      }
     }
   },
   mounted() {
@@ -259,11 +299,38 @@ export default {
         }
       })).catch(() => {})
     },
+    async getPlayerOrders() {
+      try {
+        let {status, data} = await this.$http.get(
+          this.game.net.routes.orders
+        )
+        if (status == 200) {
+          return data.data
+        } else {
+          return []
+        }
+      } catch (err) {
+        throw err
+      }
+    },
     afterGameData() {
       if (this.hasPlayerFullControls) {
         this.gameSteps.append(buildNextGameStep(this.player, this.gameSteps.last()))
-        // TODO: player orders
+        let virtualStep = this.nextGameStep
+        this.getPlayerOrders().then((orders) => {
+          orders.forEach((element) => {
+            virtualStep.orders[this.player].push({
+              ...element,
+              _changed: false
+            })
+          })
+          this.dataLoaded()
+        })
+      } else {
+        this.dataLoaded()
       }
+    },
+    dataLoaded() {
       this.gameStep = this.lastGameStep
       if (this.launchFeasible) {
         this.launch()
@@ -364,8 +431,8 @@ export default {
         this.game_pre,
         this.game_over,
         this.playerReady,
+        this.playerOrders,
         () => {
-          console.log('launch callback')
           this.mapDisplay()
           this.isLoadingStep = false
         }
@@ -388,9 +455,8 @@ export default {
       }
     },
     controlTerritoryAction(action) {
-      console.log('action', action)
-      // game
-      this.actionMenus.territory.display = false
+      this.game.act.uxEvent(action)
+      // this.actionMenus.territory.display = false
     },
     mapImageLoaded(canvasWidth) {
       this.screenWidth = canvasWidth
@@ -406,9 +472,17 @@ export default {
           if (this.launchFeasible) {
             this.launch()
           }
+        }
+      )
+      this.game.bindings(
+        (data) => {
+          this.menuTerritoryShow(data.position, data.territory, !!data.canConvoy)
         },
-        (position, canConvoy, action='hold') => {
-          this.menuTerritoryShow(position, canConvoy, action)
+        () => {
+          this.menuTerritoryClose()
+        },
+        () => {
+          this.switchStepToVirtual()
         },
         (message, dismissable=true, autoDismiss=null) => {
           this.alert(message, dismissable, autoDismiss)
@@ -433,27 +507,75 @@ export default {
     mapUpdate(value) {
       this.$refs.map.updateFrame(value)
     },
-    menuTerritoryShow(position, canConvoy, currentAction) {
+    menuTerritoryShow(position, territory, canConvoy) {
+      let order = this.playerOrdersMap[territory]
       this.actionMenus.territory.position = position
       this.actionMenus.territory.canConvoy = canConvoy
-      this.actionMenus.territory.action = currentAction
+      this.actionMenus.territory.order = order
       this.actionMenus.territory.display = true
     },
-    menuTerritoryClose() {
+    menuTerritoryClose(action=false) {
       this.actionMenus.territory.display = false
       this.actionMenus.territory.position = null
+      this.actionMenus.territory.canConvoy = false
+      this.actionMenus.territory.order = {type: 0}
+      if (action === true) {
+        this.game.act.uxEvent('close')
+      }
     },
     alert(message, dismissable, autoDismiss) {
       this.alertData.message = message
       this.alertData.dismissable = dismissable
       this.alertData.autoDismiss = autoDismiss
     },
+    switchStepToVirtual() {
+      this.gameStep = this.nextGameStep
+    },
     saveOrders() {
+      if (!this.needSave) {
+        return
+      }
       this.isSaving = true
       this.needSave = false
+      let reqs = []
+      this.playerOrders.filter((element) => {
+        return element._changed === true
+      }).forEach((element) => {
+        reqs.push(
+          this.$http.put(
+            this.game.net.routes.order_save.replace(':ID:', element.id),
+            {type: element.type, data: element.data}
+          )
+        )
+      })
+      axios.all(reqs).then(axios.spread((...args) => {
+        args.forEach((arg) => {
+          let {status, data} = arg
+          if (status == 200) {
+            let order = this.playerOrdersMap[data.territory]
+            order._changed = false
+          }
+        })
+        this.isSaving = false
+      })).catch(() => {})
     },
-    setPlayerReady(value) {
-      this.isPlayerReady = value
+    async setPlayerReady(value) {
+      if (this.isChangingReady) {
+        return
+      }
+      this.isChangingReady = true
+      try {
+        let {status, data} = await this.$http.put(
+          this.game.net.routes.ready,
+          {ready: value}
+        )
+        if (status == 200) {
+          this.isPlayerReady = data.data
+        }
+        this.isChangingReady = false
+      } catch (err) {
+        throw err
+      }
     }
   }
 }

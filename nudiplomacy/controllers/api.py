@@ -176,17 +176,21 @@ async def order_save(order_id):
             (GameRole.user == auth.user.id) & (Game.id == GameRole.game)
     ).select(Order.table.ALL, GameRole.table.ALL, Game.table.ALL).first()
     if not row:
+        response.status = 400
         rv.data = "bad request"
         return rv
     if row.games.stage != Game.STAGES['game'] or row.games.is_ready:
+        response.status = 400
         rv.data = "Game doesn't allow orders"
         return rv
     #: if player is not active can't update orders
     if not row.game_roles.is_active:
+        response.status = 400
         rv.data = "Cannot update orders in this turn"
         return rv
     #: if player is ready can't update orders
     if row.game_roles.is_ready:
+        response.status = 400
         rv.data = "Cannot update orders when ready"
         return rv
     params = await request.body_params
@@ -195,17 +199,21 @@ async def order_save(order_id):
     data, errors = process_order(row.game_roles.country, row.games, row.orders.territory, data)
     order_type = data.pop('type')
     if errors:
+        response.status = 422
         rv.data = errors
         return rv
     res = Order.where(lambda m: m.id == order_id).validate_and_update(type=order_type, data=data)
     if res.errors:
+        response.status = 422
         rv.data = res.errors
         return rv
     rv.status = 'ok'
+    rv.id = order_id
+    rv.territory = row.orders.territory
     return rv
 
 
-@authorized.route('/game/<int:gid>/ready', methods=['post'])
+@authorized.route('/game/<int:gid>/ready', methods=['post', 'put'])
 async def player_ready(gid):
     rv = sdict(status='error')
     game = Game.get(id=gid, is_ready=False, stage=Game.STAGES['game'])

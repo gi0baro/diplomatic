@@ -16,16 +16,14 @@ class App
     init: (map_src, army_src, fleet_src, map_update_callback, screen_init_callback, menu_territory_method, alert_method) ->
         @screen.buildElements(map_src, army_src, fleet_src)
         @screen.register_callbacks(map_update_callback, screen_init_callback)
-        @ux.configure(menu_territory_method, alert_method)
 
-    launch: (mapData, gameData, player, isGameActive, isPreGame, isGameOver, isPlayerReady, callback) ->
+    bindings: (menu_territory_open, menu_territory_close, step, alert) ->
+        @game.bind(step)
+        @ux.configure(menu_territory_open, menu_territory_close, alert)
+
+    launch: (mapData, gameData, player, isGameActive, isPreGame, isGameOver, isPlayerReady, orders, callback) ->
         console.log('launch')
         @env.init(mapData)
-        # temp
-        phases = []
-        orders =
-            data: {}
-        #
         @game.init(gameData, player, orders, isPlayerReady)
         @screen.init()
         @ux.launched(isPreGame, isGameOver)

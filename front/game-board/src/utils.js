@@ -134,6 +134,7 @@ export const buildNextGameStep = (player, prevStep) => {
     troops: { ...prevStep.troops },
     orders: {},
     data: {
+      type: prevStep.data.type,
       territories: prevStep.data.territories,
       troops: prevStep.data.troops,
       coasts: prevStep.data.coasts,

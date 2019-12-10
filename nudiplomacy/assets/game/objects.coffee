@@ -1,8 +1,8 @@
 class Step
-    constructor: (@app, step) ->
+    constructor: (@app, step, prev=true) ->
         console.log('NEW STEP', step)
-        @id = step.id
-        @type = if step.id is null then step.type else step.data.type
+        @id = if step.type isnt "next" then step.id else "next"
+        @type = if step.data.type is undefined then step.type else step.data.type
         @year = if step.id is null then null else step.data.year
         @season = if step.id is null then null else step.data.season
         @territories = step.data.territories or {}
@@ -11,6 +11,9 @@ class Step
         @dislodged = step.data.dislodged or {}
         @orders = step.orders
         @isLast = step.isLast
+        @prev = null
+        if prev is true and step.prev() isnt null
+            @prev = new Step(@app, step.prev(), false)
         @builds = {}
         @pastMoves = {}
         @listArmies = []
@@ -22,8 +25,9 @@ class Step
                         @listArmies.push(i)
                     else
                         @listFleets.push(i)
-        @_genBuilds()
-        @_genPastMoves()
+        if step.type isnt "next"
+            @_genBuilds()
+            @_genPastMoves()
         return
 
     _genBuilds: ->

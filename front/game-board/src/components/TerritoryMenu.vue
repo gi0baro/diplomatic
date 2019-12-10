@@ -58,8 +58,8 @@ export default {
       type: Boolean,
       default: false
     },
-    action: {
-      type: String,
+    order: {
+      type: Object,
       default: null
     }
   },
@@ -71,6 +71,18 @@ export default {
   computed: {
     style() {
       return {top: `${this.position.y}px`, left: `${this.position.x}px`}
+    },
+    action() {
+      if (this.order === null) {
+        return null
+      }
+      return {
+        0: 'hold',
+        1: 'move',
+        2: 'support_hold',
+        3: 'support_move',
+        4: 'convoy'
+      }[this.order.type]
     },
     isHold() {
       return this.action == 'hold'
