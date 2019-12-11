@@ -5,6 +5,8 @@
       image_src_army="http://localhost:8000/static/images/tank.png"
       image_src_fleet="http://localhost:8000/static/images/ship.png"
       player="Austria"
+      :user_id="1"
+      user_name="gi0baro"
       :game_active="true"
       :game_pre="false"
       player_active

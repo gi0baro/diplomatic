@@ -27,7 +27,11 @@
           ></controls>
         </div>
       </div>
-      <header-side></header-side>
+      <header-side
+        :userId="user_id"
+        :username="user_name"
+        :avatarSrc="user_avatar"
+      ></header-side>
     </header>
     <div class="flex content">
       <div class="flex-1 relative">
@@ -177,6 +181,18 @@ export default {
     player_ready: {
       type: Boolean,
       default: false
+    },
+    user_id: {
+      type: Number,
+      default: null
+    },
+    user_name: {
+      type: String,
+      default: null
+    },
+    user_avatar: {
+      type: String,
+      default: null
     }
   },
   data() {
