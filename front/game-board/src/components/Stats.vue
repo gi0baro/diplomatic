@@ -71,9 +71,6 @@ export default {
         return (a.supply_centers > b.supply_centers) ? -1 : 1
       })
     }
-  },
-  methods: {
-
   }
 }
 </script>

@@ -89,8 +89,16 @@
       </div>
       <div class="w-64 xl:w-1/5 bg-gray-800 border-l border-gray-700">
         <transition name="fade" mode="out-in">
-          <orders v-if="activeSection == 'orders'"></orders>
-          <chat-fragment v-if="activeSection == 'chat'"></chat-fragment>
+          <orders
+            v-if="activeSection == 'orders'"
+            :territories="mapNames"
+            :player="player"
+            :step="gameStep"
+            :loading="isLoadingStep"
+          ></orders>
+          <chat-fragment
+            v-if="activeSection == 'chat'"
+          ></chat-fragment>
           <stats
             v-if="activeSection == 'stats'"
             :player="player"
@@ -302,6 +310,12 @@ export default {
         rv[element.territory] = element
       })
       return rv
+    },
+    mapNames() {
+      if (this.mapData === null) {
+        return {}
+      }
+      return this.mapData.names
     },
     canSave() {
       return !this.isLoadingStep && !this.isSaving

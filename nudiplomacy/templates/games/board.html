@@ -1,18 +1,6 @@
 {{ extend 'game_board.haml' }}
 
-{{ if player_country: }}
-<script type="text/javascript">
-  // var currentPlayer = "{{ =player_country }}";
-  // var currentActive = "{{ =player_active }}";
-  // var currentReady = "{{ =player_ready }}";
-</script>
-{{ else: }}
-<script type="text/javascript">
-  // var currentPlayer = null;
-  // var currentActive = false;
-  // var currentReady = false;
-</script>
-{{ pass }}
+{{ user = current_user() }}
 
 <script type="text/javascript">
   // var GROUND_COLOR = {r: 226, g: 198, b: 158};
@@ -24,31 +12,36 @@
   var NEUTRAL_COLOR = {r: 20, g: 20, b: 20};
 
   T.register({
-      spring: '{{=T("spring").title()}}',
-      autumn: '{{=T("autumn").title()}}'
+    spring: '{{=T("spring").title()}}',
+    autumn: '{{=T("autumn").title()}}'
   }, 'season');
   T.register({
-      retreats: '{{=T("retreats").title()}}',
-      builds: '{{=T("builds").title()}}',
-      pregame: '{{=T("pre-game").title()}}'
+    retreats: '{{=T("retreats").title()}}',
+    builds: '{{=T("builds").title()}}',
+    pregame: '{{=T("pre-game").title()}}'
   }, 'phase_type');
   T.register({
-      hold: '{{=T(":TERRITORY: holds")}}',
-      move: '{{=T(":SRC: moves to :DST::THROUGH::COAST:")}}',
-      support_move: '{{=T(":TERRITORY: supports :SRC: in movement to :DST:")}}',
-      sopport_hold: '{{=T(":TERRITORY: supports :DST: on hold")}}',
-      convoy: '{{=T(":TERRITORY: convoys :SRC: to :DST:")}}',
-      retreat: '{{=T(":TERRITORY: retreats to :DST::COAST:")}}',
-      build: '{{=T(":TERRITORY: builds a new :TROOP_TYPE::AT_COAST:")}}',
-      disband: '{{=T(":TERRITORY: disbands")}}',
-      through: '{{=T("via convoy")}}',
-      north_coast: '{{=T("north coast")}}',
-      south_coast: '{{=T("south coast")}}',
-      at_north_coast: '{{=T("at north coast")}}',
-      at_south_coast: '{{=T("at south coast")}}',
-      army: '{{=T("army")}}',
-      fleet: '{{=T("fleet")}}'
-  }, 'order_phrase')
+    hold: '{{=T(":TERRITORY: holds")}}',
+    move: '{{=T(":SRC: moves to :DST::THROUGH::COAST:")}}',
+    support_move: '{{=T(":TERRITORY: supports :SRC: in movement to :DST:")}}',
+    sopport_hold: '{{=T(":TERRITORY: supports :DST: on hold")}}',
+    convoy: '{{=T(":TERRITORY: convoys :SRC: to :DST:")}}',
+    retreat: '{{=T(":TERRITORY: retreats to :DST::COAST:")}}',
+    build_army: '{{=T(":TERRITORY: builds a new army")}}',
+    build_fleet: '{{=T(":TERRITORY: builds a new fleet:COAST:")}}',
+    disband: '{{=T(":TERRITORY: disbands")}}'
+  }, 'orders');
+  // T.register({
+  //   army: '{{=T("army")}}',
+  //   fleet: '{{=T("fleet")}}'
+  // }, 'orders.troops');
+  T.register({
+    north: ' {{=T("north coast")}}',
+    south: ' {{=T("south coast")}}'
+  }, 'orders.coasts');
+  T.register({
+    through: ' {{=T("via convoy")}}'
+  }, 'orders.vec');
 
   gapp.net.route("map", "{{=url('api.map_get', game.map)}}");
   gapp.net.route("game", "{{=url('api.game_get', game.id)}}");
@@ -70,6 +63,10 @@
   image_src_map="{{ =url('main.download', game.map.image) }}"
   image_src_army="{{ =url('static', 'images/tank.png') }}"
   image_src_fleet="{{ =url('static', 'images/ship.png') }}"
+  {{ if user: }}
+  user_id="{{ =user.id }}"
+  user_name="{{ =user.username }}"
+  {{ pass }}
   {{ if player_country: }}
   player="{{ =player_country }}"
   {{ pass }}
