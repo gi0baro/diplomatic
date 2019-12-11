@@ -7,6 +7,9 @@ class Interactions
         @trackedConvoyRoutes = {}
         @_trackedConvoyRST = []
         @trackedConvoyTerrs = []
+        @_lastRpos =
+            x: 0
+            y: 0
         return
 
     getMousePosition: (e) ->
@@ -95,6 +98,7 @@ class Interactions
         ## TODO: add retreats and builds support
         # mpos = @getMousePosition(e)
         # pos = @app.ui._translatePosition(mpos)
+        @_lastRpos = rpos
         console.log("called action")
         refcolor = @app.screen.getColor(pos)
         if not @_isColorValid(refcolor)
@@ -194,7 +198,8 @@ class Interactions
                 @_offTracked()
                 @app.screen.offTerritory(@active)
                 @current = "none"
-                @app.ui.closeMCMenu()
+                # @app.ui.closeMCMenu()
+                @app.ux.menuClose("coast")
             when "retreat"
                 if @_clickCheck("move", refcolor)
                     @intent("retreat", pos)
@@ -211,7 +216,8 @@ class Interactions
                 @_offTracked()
                 @app.screen.offTerritory(@active)
                 @current = "none"
-                @app.ui.closeMCMenu()
+                # @app.ui.closeMCMenu()
+                @app.ux.menuClose("coast")
         if do_map_upd
             @app.screen.update()
         if auto_switch_step and @app.game.phase().id isnt "next"
@@ -225,16 +231,21 @@ class Interactions
             support_hold: "sup_hold",
             support_move: "sup_move",
             convoy: "convoy",
-            army: "build_army",
-            fleet: "build_fleet",
+            build_army: "build_army",
+            build_fleet: "build_fleet",
             disband: "disband",
             retreat: "retreat",
+            north_coast: "coast_north",
+            south_coast: "coast_south",
             close: "close"
         }[action]
 
     uxEvent: (action) ->
         eve = @_remapUxEvents(action)
-        @uiClick(eve)
+        if eve.split("_")[0] isnt "coast"
+            @uiClick(eve)
+        else
+            @mcClick(eve)
         return
 
     uiClick: (eve) ->
@@ -275,6 +286,7 @@ class Interactions
                     #@app.game.addBuild(m_id, "disband")
                     if re_act
                         @app.game.addBuild(m_id, "disband")
+                        @app.screen.drawTroops()
         switch eve
             when "hold"
                 if not re_act
@@ -312,7 +324,8 @@ class Interactions
                     if @app.env.isMCoast(@active)
                         #position?
                         pos = @app.env.oxy[@active]
-                        @app.ui.openMCMenu(pos)
+                        # @app.ui.openMCMenu(pos)
+                        @app.ux.menuOpen("coast", {position: @_lastRpos})
                     else
                         @intent("build_f", null)
             when "retreat"
@@ -343,13 +356,12 @@ class Interactions
     mcClick: (act) ->
         pos = x: 0, y: 0
         switch act
-            ## north click
-            when "mc_n"
+            when "coast_north"
                 @intent("mcoast_n", pos)
-            ## south click
-            when "mc_s"
+            when "coast_south"
                 @intent("mcoast_s", pos)
-        @app.ui.closeMCMenu()
+        # @app.ui.closeMCMenu()
+        @app.ux.menuClose("coast")
         @app.screen.drawLines()
         @app.screen.update()
 
@@ -374,7 +386,8 @@ class Interactions
                         ccolor = r: 235, g: 0, b: 0
                         @app.screen.colorTerritory(t_id, ccolor)
                         #@app.UpdateMap()
-                        @app.ui.openMCMenu(pos)
+                        # @app.ui.openMCMenu(pos)
+                        @app.ux.menuOpen("coast", {position: @_lastRpos})
                     else
                         #if l0
                         #    @app.game.moves_mc[id] = 0
@@ -470,7 +483,8 @@ class Interactions
                             @app.screen.colorTerritory(t_id, ccolor)
                             @app.screen.update()
                             # open mc selection menu
-                            @app.ui.openMCMenu(pos)
+                            # @app.ui.openMCMenu(pos)
+                            @app.ux.menuOpen("coast", {position: @_lastRpos})
                         else
                             #if l0
                             #    @app.game.moves_mc[id] = 0
@@ -615,7 +629,7 @@ class Interactions
                 color = @app.screen.getColor(pos)
                 t_id = @app.env.getTerritoryByColor(color)
                 ## multi-coasts check
-                if @app.env.isMCoast(t_id) and @app.game.phase('last').previous().isFleet(id)
+                if @app.env.isMCoast(t_id) and @app.game.phase('last').prev.isFleet(id)
                     mv_mc_lst = @app.env.moves.mc[t_id]
                     l0 = id in mv_mc_lst[0]
                     l1 = id in mv_mc_lst[1]
@@ -627,7 +641,8 @@ class Interactions
                         ccolor = r: 235, g: 0, b: 0
                         @app.screen.colorTerritory(t_id, ccolor)
                         #@app.UpdateMap()
-                        @app.ui.openMCMenu(pos)
+                        # @app.ui.openMCMenu(pos)
+                        @app.ux.menuOpen("coast", {position: @_lastRpos})
                     else
                         mc = if l0 then 0 else 1
                         @_offTracked()
@@ -635,12 +650,14 @@ class Interactions
                         @current = "none"
                         @app.game.delBuild(id)
                         @app.game.addMoveMC(id, "retreat", id, t_id, mc)
+                        @app.screen.drawTroops()
                 else
                     @app.game.delBuild(id)
                     @app.game.addMove(id, "retreat", id, t_id)
                     @_offTracked()
                     @app.screen.offTerritory(@active)
                     @current = "none"
+                    @app.screen.drawTroops()
             when "disband"
                 if @app.game.phase('last').type is PHASE_TYPES.builds
                     @app.game.addBuild(@active, "disband")
@@ -648,7 +665,12 @@ class Interactions
                     @current = "none"
                     @app.screen.drawTroops()
                 else
-
+                    if @app.game.hasMove(@active)
+                        @app.game.delMove(@active)
+                    @app.game.addBuild(@active, "disband")
+                    @app.screen.offTerritory(@active)
+                    @current = "none"
+                    @app.screen.drawTroops()
         ## next phase auto swithing
         if @app.game.phase().id isnt "next" and @app.game.gotOrders()
             # @app.game.loadPhase("next", false)
@@ -986,12 +1008,12 @@ class Interactions
                     if @app.env.isCoast(i)
                         nears_res.push(i)
             when "retreat"
-                if @app.game.phase('last').previous().isArmy(id_f)
+                if @app.game.phase('last').prev.isArmy(id_f)
                     nears = @app.env.moves.armies[id_f]
                 else
                     #: check multicoasts
                     if @app.env.isMCoast(id_f)
-                        mc_pos = @app.game.phase('last').previous().mcpos[id_f]
+                        mc_pos = @app.game.phase('last').prev.mcpos[id_f]
                         nears = @app.env.moves.mc[id_f][mc_pos]
                     else
                         nears = @app.env.moves.fleets[id_f]
@@ -1001,12 +1023,14 @@ class Interactions
                         continue
                     #: don't track prior moves to terr
                     skip = false
-                    for country, orders of @app.game.phase('last').previous().orders
-                        for oid, odata of orders
-                            if odata.type is "move" and odata.dst is i
+                    for country, orders of @app.game.phase('last').prev.orders
+                        for odata in orders
+                            if odata.type is undefined
+                                continue
+                            if odata.type is ORDER_TYPES.move and odata.data.dst is i
                                 skip = true
                                 break
-                            if oid is i and odata.type is "move" and odata.dst is @active
+                            if odata.territory is i and odata.type is ORDER_TYPES.move and odata.data.dst is @active
                                 skip = true
                                 break
                     if skip

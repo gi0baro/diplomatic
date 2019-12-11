@@ -27,7 +27,7 @@ export default {
       init(map_src, army_src, fleet_src, map_update_callback, screen_init_callback) {
         screen_init_callback()
       },
-      bindings(menu_territory_open, menu_territory_close, step_next_method, alert_method) {
+      bindings(menu_territory_open, menu_territory_close, menu_build_open, menu_build_close, menu_retreat_open, menu_retreat_close, menu_coast_open, menu_coast_close, step_next_method, alert_method) {
         this.act.menuTerritoryOpen = menu_territory_open
         this.act.menuTerritoryClose = menu_territory_close
       },

@@ -17,9 +17,21 @@ class App
         @screen.buildElements(map_src, army_src, fleet_src)
         @screen.register_callbacks(map_update_callback, screen_init_callback)
 
-    bindings: (menu_territory_open, menu_territory_close, step, alert) ->
+    bindings: (
+        menu_territory_open, menu_territory_close,
+        menu_build_open, menu_build_close,
+        menu_retreat_open, menu_retreat_close,
+        menu_coast_open, menu_coast_close,
+        step, alert
+    ) ->
         @game.bind(step)
-        @ux.configure(menu_territory_open, menu_territory_close, alert)
+        @ux.configure(
+            menu_territory_open, menu_territory_close,
+            menu_build_open, menu_build_close,
+            menu_retreat_open, menu_retreat_close,
+            menu_coast_open, menu_coast_close
+            alert
+        )
 
     launch: (mapData, gameData, player, isGameActive, isPreGame, isGameOver, isPlayerReady, orders, callback) ->
         console.log('launch')

@@ -6,6 +6,7 @@
         <div class="flex-1 flex items-center justify-end">
           <time-controls
             :active="timeControlsEnabled"
+            :loading="isLoadingStep"
             :step="gameStep"
             :rewindEnabled="canTimeRewind"
             :forwardEnabled="canTimeForward"
@@ -49,6 +50,32 @@
           @action="controlTerritoryAction"
           @close="menuTerritoryClose(true)"
         ></territory-menu>
+        <build-menu
+          :screenw="screenWidth"
+          :display="actionMenus.build.display"
+          :origin="actionMenus.build.position"
+          :canBuild="actionMenus.build.canBuild"
+          :canBuildFleet="actionMenus.build.canBuildFleet"
+          :canDisband="actionMenus.build.canDisband"
+          :order="actionMenus.build.order"
+          @action="controlTerritoryAction"
+          @close="menuBuildClose(true)"
+        ></build-menu>
+        <retreat-menu
+          :screenw="screenWidth"
+          :display="actionMenus.retreat.display"
+          :origin="actionMenus.retreat.position"
+          :order="actionMenus.retreat.order"
+          @action="controlTerritoryAction"
+          @close="menuBuildClose(true)"
+        ></retreat-menu>
+        <coast-menu
+          :screenw="screenWidth"
+          :display="actionMenus.coast.display"
+          :origin="actionMenus.coast.position"
+          @action="controlTerritoryAction"
+          @close="menuCoastClose(true)"
+        ></coast-menu>
         <alert
           :message="alertData.message"
           :dismissable="alertData.dismissable"
@@ -88,6 +115,9 @@ import Orders from './Orders'
 import ChatFragment from './ChatFragment'
 import Stats from './Stats'
 import TerritoryMenu from './TerritoryMenu'
+import BuildMenu from './BuildMenu'
+import RetreatMenu from './RetreatMenu'
+import CoastMenu from './CoastMenu'
 import Alert from './Alert'
 
 import {
@@ -115,6 +145,9 @@ export default {
     ChatFragment,
     Stats,
     TerritoryMenu,
+    BuildMenu,
+    RetreatMenu,
+    CoastMenu,
     Alert
   },
   props: {
@@ -176,6 +209,23 @@ export default {
           position: null,
           canConvoy: false,
           order: {type: 0}
+        },
+        build: {
+          display: false,
+          position: null,
+          canBuild: false,
+          canBuildFleet: false,
+          canDisband: false,
+          order: {type: 0}
+        },
+        retreat: {
+          display: false,
+          position: null,
+          order: {type: 0}
+        },
+        coast: {
+          display: false,
+          position: null
         }
       },
       alertData: {
@@ -350,7 +400,10 @@ export default {
         if (status == 200) {
           step.orders = data.orders
           if (storeStep === true) {
-            this.gameSteps.insert(idx, buildGameStep(this.mapData, this.gameData, data))
+            let subStep = this.gameSteps.get(idx - 1)
+            if (subStep === null || subStep.id !== data.id) {
+              this.gameSteps.insert(idx, buildGameStep(this.mapData, this.gameData, data))
+            }
           }
         } else {
           throw 'bad step response'
@@ -367,12 +420,14 @@ export default {
       }
       let prevStep = this.gameStep.prev()
       if (this.gameStep.parent !== null && prevStep.orders === null) {
+        // this.mapLoading = true
         // we have previous step but is missing orders
         try {
           await this.storeStepOrders(prevStep)
         } catch (err) {
           throw err
         }
+        // this.mapLoading = false
       }
       return prevStep
     },
@@ -386,12 +441,13 @@ export default {
           return nextStep
         }
         // fetch the first real step
+        // this.mapLoading = true
         try {
           let {status, data} = await this.$http.get(
             this.game.net.routes.phase_prev
           )
           if (status == 200) {
-            this.gameSteps.insert(1, buildGameStep(this.mapData, this.gameData, data, data.orders))
+            this.gameSteps.insert(1, buildGameStep(this.mapData, this.gameData, data, {}))
             nextStep = this.gameStep.next()
           } else {
             throw 'bad step response'
@@ -399,7 +455,9 @@ export default {
         } catch (err) {
           throw err
         }
+        // this.mapLoading = false
       } else if (nextStep.parent !== this.gameStep.id) {
+        // this.mapLoading = true
         // we need the step(s) in the middle
         let {id, idx} = this.gameStep
         try {
@@ -409,7 +467,7 @@ export default {
             }
           )
           if (status == 200) {
-            this.gameSteps.insert(idx + 1, buildGameStep(this.mapData, this.gameData, data, data.orders))
+            this.gameSteps.insert(idx + 1, buildGameStep(this.mapData, this.gameData, data, this.gameStep.data.orders))
             nextStep = this.gameStep.next()
           } else {
             throw 'bad step response'
@@ -417,6 +475,7 @@ export default {
         } catch (err) {
           throw err
         }
+        // this.mapLoading = false
       } else if (nextStep.orders === null) {
         // we have next step but is missing orders
         try {
@@ -447,21 +506,20 @@ export default {
       this.activeSection = section
     },
     async controlTime(action) {
+      this.isLoadingStep = true
       if (action == 'begin') {
         this.gameStep = this.gameSteps.get(0)
       } else if (action == 'rewind') {
         this.gameStep = await this.getStepBack()
-        // this.gameStep = this.gameSteps.get(this.gameStep.idx - 1)
       } else if (action == 'forward') {
-        // this.gameStep = this.gameSteps.get(this.gameStep.idx + 1)
         this.gameStep = await this.getStepForward()
       } else if (action == 'end') {
         this.gameStep = this.lastGameStep
       }
+      this.isLoadingStep = false
     },
     controlTerritoryAction(action) {
       this.game.act.uxEvent(action)
-      // this.actionMenus.territory.display = false
     },
     mapImageLoaded(canvasWidth) {
       this.screenWidth = canvasWidth
@@ -485,6 +543,24 @@ export default {
         },
         () => {
           this.menuTerritoryClose()
+        },
+        (data) => {
+          this.menuBuildShow(data.position, data.territory, !!data.canBuild, !!data.canBuildFleet, !!data.canDisband)
+        },
+        () => {
+          this.menuBuildClose()
+        },
+        (data) => {
+          this.menuRetreatShow(data.position, data.territory)
+        },
+        () => {
+          this.menuRetreatClose()
+        },
+        (data) => {
+          this.menuCoastShow(data.position)
+        },
+        () => {
+          this.menuCoastClose()
         },
         () => {
           this.switchStepToVirtual()
@@ -528,6 +604,51 @@ export default {
       this.actionMenus.territory.position = null
       this.actionMenus.territory.canConvoy = false
       this.actionMenus.territory.order = {type: 0}
+      if (action === true) {
+        this.game.act.uxEvent('close')
+      }
+    },
+    menuBuildShow(position, territory, canBuild, canBuildFleet, canDisband) {
+      let order = this.playerOrdersMap[territory]
+      this.actionMenus.build.position = position
+      this.actionMenus.build.canBuild = canBuild
+      this.actionMenus.build.canBuildFleet = canBuildFleet
+      this.actionMenus.build.canDisband = canDisband
+      this.actionMenus.build.order = order
+      this.actionMenus.build.display = true
+    },
+    menuBuildClose(action=false) {
+      this.actionMenus.build.display = false
+      this.actionMenus.build.position = null
+      this.actionMenus.build.canBuild = false
+      this.actionMenus.build.canBuildFleet = false
+      this.actionMenus.build.canDisband = false
+      this.actionMenus.build.order = {type: 0}
+      if (action === true) {
+        this.game.act.uxEvent('close')
+      }
+    },
+    menuRetreatShow(position, territory) {
+      let order = this.playerOrdersMap[territory]
+      this.actionMenus.retreat.position = position
+      this.actionMenus.retreat.order = order
+      this.actionMenus.retreat.display = true
+    },
+    menuRetreatClose(action=false) {
+      this.actionMenus.retreat.display = false
+      this.actionMenus.retreat.position = null
+      this.actionMenus.retreat.order = {type: 0}
+      if (action === true) {
+        this.game.act.uxEvent('close')
+      }
+    },
+    menuCoastShow(position) {
+      this.actionMenus.coast.position = position
+      this.actionMenus.coast.display = true
+    },
+    menuCoastClose(action=false) {
+      this.actionMenus.coast.display = false
+      this.actionMenus.coast.position = null
       if (action === true) {
         this.game.act.uxEvent('close')
       }

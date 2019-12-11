@@ -52,7 +52,7 @@ export default {
 
 <style scoped>
 .territory-label-wrapper {
-  @apply absolute block;
+  @apply absolute block top-0;
 }
 .territory-label {
   @apply absolute z-10 bg-gray-800 text-gray-100 text-xs whitespace-no-wrap rounded px-4 py-1;

@@ -13,6 +13,7 @@ class Game
         @_nphases = 0
         @_phases_loaded = 0
         @moves = {}
+        @builds = {}
         @moves_mc = {}
         @moves_queue = []
         @orders = {}
@@ -138,14 +139,16 @@ class Game
             if order.type isnt ORDER_TYPES.hold
                 if order.type in [ORDER_TYPES.build, ORDER_TYPES.disband]
                     if order.data.troop is TROOP_TYPES.fleet
-                        d = type: "build_fleet"
+                        internalType = "build_fleet"
                     else if order.data.troop is TROOP_TYPES.army
-                        d = type: "build_army"
+                        internalType = "build_army"
                     else
-                        d = type: "disband"
-                    if order.data.coast isnt undefined
-                        d.mc = order.data.coast
+                        internalType = "disband"
+                    # if order.data.coast isnt undefined
+                    #     d.coast = order.data.coast
                     # @_nextPhase.builds[territory] = d
+                    @builds[territory] = order.data
+                    @builds[territory].type = internalType
                 else
                     @moves[territory] = order.data
                     @moves[territory].type = ORDER_TYPES.remote_to_internal(order.type)
@@ -355,32 +358,33 @@ class Game
         return false
 
     _addBuild: (id, data) ->
-        @_nextPhase.builds[id] = data
+        # @_nextPhase.builds[id] = data
+        @builds[id] = data
         if data.type is "disband"
-            odata = type: "disband"
+            order = type: "disband"
         else
-            odata = type: "build", troop: data.type.split("_")[1]
-        if data.mc isnt undefined
-            odata['coast'] = data.mc
+            order = type: "build", troop: data.type.split("_")[1]
+        if data.coast isnt undefined
+            order.coast = data.coast
         console.log(id)
-        console.log(odata)
-        @addOrder(id, odata)
+        console.log(order)
+        @addOrder(id, order)
         return
 
     addBuild: (id, type, mc=null) ->
         data = type: type
         if mc isnt null
-            data['mc'] = mc
+            data.coast = mc
         @_addBuild(id, data)
         return
 
     delBuild: (id) ->
-        delete @_nextPhase.builds[id]
+        delete @builds[id]
         @delOrder(id)
         return
 
     hasBuild: (id) ->
-        build = @_nextPhase.builds[id]
+        build = @builds[id]
         if build
             return build.type
         return false
@@ -410,32 +414,13 @@ class Game
                 @orders[territory].data.coast = data.coast
         else if data.type in ['support_move', 'convoy']
             @orders[territory].data.src = data.src
-        #country = @app.GetCountryByTerr(id)
-        #try
-        #   @orders_country[country].push(id)
-        #catch
-        #   @orders_country[country] = []
-        #   @orders_country[country].push(id)
         @orders[territory]._changed = true
-        # @app.ui.addOrder(territory, @orders[territory])
-        # @app.ui.autoSave()
-        # @orderMethod(territory, @orders[territory])
         return
 
     delOrder: (territory) ->
         @orders[territory].type = ORDER_TYPES.internal_to_remote('hold')
         @orders[territory].data = {}
         @orders[territory]._changed = true
-        # @orders[territory] =
-        #     id: @orders[territory].id
-        #     territory: territory
-        #     type: ORDER_TYPES.internal_to_remote('hold')
-        #     stage: ORDER_STATES.planned
-        #     data: {}
-        #     _changed: true
-        # @app.ui.delOrder(territory)
-        # @app.ui.autoSave()
-        # @orderMethod(territory, @orders[territory])
         return
 
     saveOrders: ->

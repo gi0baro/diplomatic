@@ -12,13 +12,28 @@ class UX
             retreat:
                 open: () -> return
                 close: () -> return
+            coast:
+                open: () -> return
+                close: () -> return
         @activeMenu = null
         @alertMethod = () -> return
         return
 
-    configure: (menuTerritoryOpen, menuTerritoryClose, alertMethod) ->
+    configure: (
+        menuTerritoryOpen, menuTerritoryClose,
+        menuBuildOpen, menuBuildClose,
+        menuRetreatOpen, menuRetreatClose,
+        menuCoastOpen, menuCoastClose,
+        alertMethod
+    ) ->
         @menus.territory.open = menuTerritoryOpen
         @menus.territory.close = menuTerritoryClose
+        @menus.build.open = menuBuildOpen
+        @menus.build.close = menuBuildClose
+        @menus.retreat.open = menuRetreatOpen
+        @menus.retreat.close = menuRetreatClose
+        @menus.coast.open = menuCoastOpen
+        @menus.coast.close = menuCoastClose
         @alertMethod = alertMethod
 
     launched: (gamePre, gameOver) ->
@@ -55,35 +70,19 @@ class UX
         @menus[type].close()
         @activeMenu = null
 
-    _remapAction: (action) ->
-        return {
-            hold: "hold",
-            move: "move",
-            sup_hold: "support_hold",
-            sup_move: "support_move",
-            convoy: "convoy",
-            build_army: "army",
-            build_fleet: "fleet",
-            disband: "disband",
-            retreat: "retreat"
-        }[action]
-
     relevantActionMenuOpen: (position, territory) ->
         if @app.game.phase().type is PHASE_TYPES.diplomacy
             canConvoy = @app.game.phase().canConvoy(territory)
-            # move = @app.game.hasMove(territory)
             @menuOpen('territory', {position: position, canConvoy: canConvoy, territory: territory})
         if @app.game.phase().type is PHASE_TYPES.builds
+            canBuild = true
             canBuildFleet = @app.env.isCoast(territory)
-            # if territory in @app.game.phase().getCountryTroops()
-            #     build = @app.game.hasBuild(territory)
-            #     action = if build then 'disband' else null
-            # else
-            #     action = @app.game.hasBuild(territory)
-            @menuOpen('build', {position: position, canBuildFleet: canBuildFleet, territory: territory})
+            canDisband = false
+            if territory in @app.game.phase().getCountryTroops()
+                if @app.game.hasBuild(territory)
+                    canDisband = true
+            @menuOpen('build', {position: position, canBuild: canBuild, canDisband: canDisband, canBuildFleet: canBuildFleet, territory: territory})
         if @app.game.phase().type is PHASE_TYPES.retreats
-            # move = @app.game.hasMove(territory)
-            # action = if move then 'retreat' else 'disband'
             @menuOpen('retreat', {position: position, territory: territory})
         return
 

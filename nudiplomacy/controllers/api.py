@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import random
-from emmett import request, sdict
+from emmett import request, response, sdict
 from emmett.pipeline import RequirePipe
 from emmett.tools import ServicePipe, requires
 from .. import app, db, auth, Map, Game, Order, GameRole, GamePhase
@@ -68,9 +68,11 @@ def game_phase(pid):
 @api.route('/game/<int:gid>/phases/prev')
 def game_phase_prev(gid):
     dbset, orders = GamePhase.where(lambda m: m.game == gid), {}
+    orderby = GamePhase.id
     if request.query_params.last_id:
-        dbset.where(lambda m: m.id < request.query_params.last_id)
-    row = dbset.select(orderby=GamePhase.id, limitby=(0, 1)).first()
+        dbset = dbset.where(lambda m: m.id < request.query_params.last_id)
+        orderby = ~GamePhase.id
+    row = dbset.select(orderby=orderby, limitby=(0, 1)).first()
     if not row:
         response.status = 404
         return {'error': 'not found'}
@@ -78,15 +80,17 @@ def game_phase_prev(gid):
         orders = row.orders_grouped()
     rv = row.as_dict()
     rv['orders'] = orders
-    return row
+    return rv
 
 
 @api.route('/game/<int:gid>/phases/next')
 def game_phase_next(gid):
     dbset, orders = GamePhase.where(lambda m: m.game == gid), {}
+    orderby = ~GamePhase.id
     if request.query_params.last_id:
-        dbset.where(lambda m: m.id > request.query_params.last_id)
-    row = dbset.select(orderby=~GamePhase.id, limitby=(0, 1)).first()
+        dbset = dbset.where(lambda m: m.id > request.query_params.last_id)
+        orderby = GamePhase.id
+    row = dbset.select(orderby=orderby, limitby=(0, 1)).first()
     if not row:
         response.status = 404
         return {'error': 'not found'}
@@ -94,7 +98,7 @@ def game_phase_next(gid):
         orders = row.orders_grouped()
     rv = row.as_dict()
     rv['orders'] = orders
-    return row
+    return rv
 
 
 # @api.route("/game/<int:gid>/status")

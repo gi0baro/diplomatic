@@ -400,8 +400,8 @@ class Screen
                             @arms.ctx.lineWidth = 2
                             @arms.ctx.strokeStyle = 'rgb(255,127,0)'
                             @arms.ctx.stroke()
-        console.log(@app.game.phase().builds)
-        for tid, tdata of @app.game.phase().builds
+        builds = if @app.game.phase().id is "next" then @app.game.builds else @app.game.phase().builds
+        for tid, tdata of builds
             if tdata.type in ["build_fleet", "disband"] and @app.env.isMCoast(tid)
                 mc_pos = tdata.mc
                 x = @app.env.mcoasts_oxy[tid][mc_pos].x

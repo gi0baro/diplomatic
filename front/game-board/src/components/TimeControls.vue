@@ -32,6 +32,10 @@ export default {
       type: Boolean,
       default: false
     },
+    loading: {
+      type: Boolean,
+      default: false
+    },
     step: {
       type: Object,
       default: null
@@ -47,6 +51,9 @@ export default {
   },
   computed: {
     label() {
+      if (this.loading) {
+        return '...'
+      }
       return this.step === null ? null : this.step.label()
     },
     display() {
