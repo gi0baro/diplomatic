@@ -99,13 +99,17 @@ class GameProcessor(Logger):
 
     def _load_map(self, data):
         self.seas = data['seas']
-        self.all_supply_centers = data['supply_centers']
+        self.all_supply_centers = set(data['supply_centers'])
         if self.build_everywhere:
-            self.allowed_supply_centers = list(data['supply_centers'])
+            self.allowed_supply_centers = {
+                country: self.all_supply_centers
+                for country in data['home_centers'].keys()
+            }
         else:
-            self.allowed_supply_centers = []
-            for country, centers in data['home_centers'].items():
-                self.allowed_supply_centers.extend(centers)
+            self.allowed_supply_centers = {
+                country: set(centers)
+                for country, centers in data['home_centers'].items()
+            }
         self.centers_to_win = data['scs_to_win']
         # debug
         self.territory_names = data['names']
@@ -151,7 +155,7 @@ class GameProcessor(Logger):
                 ctx.succeeded.append((country, territory))
         #: update needed disbands
         for country, orders in ctx.orders.items():
-            centers = set(self.all_supply_centers) & set(self.territories[country])
+            centers = self.all_supply_centers & set(self.territories[country])
             troops = self.troops[country]['armies'] + self.troops[country]['fleets']
             if len(troops) <= len(centers):
                 continue
@@ -256,7 +260,7 @@ class GameProcessor(Logger):
 
     def _update_territories(self, ctx):
         seas = set(self.seas)
-        supply_centers = set(self.all_supply_centers)
+        supply_centers = self.all_supply_centers
         for country, troop_data in ctx.positions.items():
             all_troops = troop_data['armies'] + troop_data['fleets']
             troops_set = set(all_troops) - seas
@@ -311,7 +315,7 @@ class GameProcessor(Logger):
     def _active_countries_builds(self, ctx):
         ctx.countries = []
         for country, troops in ctx.positions.items():
-            centers = set(self.all_supply_centers) & set(ctx.territories[country])
+            centers = self.all_supply_centers & set(ctx.territories[country])
             if len(troops['armies']) + len(troops['fleets']) != len(centers):
                 ctx.countries.append(country)
 
@@ -340,10 +344,10 @@ class GameProcessor(Logger):
         ctx.new_orders = {}
         for country in ctx.countries:
             ctx.new_orders[country] = {}
-            centers = set(self.all_supply_centers) & set(ctx.territories[country])
+            centers = self.all_supply_centers & set(ctx.territories[country])
             troops = ctx.positions[country]['armies'] + ctx.positions[country]['fleets']
             if len(centers) > len(troops):
-                allowed_supply_centers = set(self.allowed_supply_centers) & set(ctx.territories[country])
+                allowed_supply_centers = self.allowed_supply_centers[country] & set(ctx.territories[country])
                 troops = allowed_supply_centers - set(troops)
             for troop in troops:
                 ctx.new_orders[country][troop] = {'type': ORDERS.HOLD}
@@ -356,7 +360,7 @@ class GameProcessor(Logger):
     def _win_compute(self, ctx):
         winners = []
         for country, territories in ctx.territories.items():
-            centers = set(self.all_supply_centers) & set(territories)
+            centers = self.all_supply_centers & set(territories)
             if len(centers) >= self.centers_to_win:
                 winners.append((country, len(centers)))
         if not winners:
