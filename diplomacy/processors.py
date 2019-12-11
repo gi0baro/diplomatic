@@ -10,7 +10,7 @@ from .judge import Judge
 class OrdersProcessor(Logger):
     def __init__(
         self, map_data, build_everywhere_policy, phase_type, troops, multi_coasts_positions, player_country,
-        player_troops, player_territories, previous_orders=[], logger=None
+        player_troops, player_territories, previous_orders=None, logger=None
     ):
         super().__init__(logger)
         self.map_data = map_data
@@ -31,7 +31,7 @@ class OrdersProcessor(Logger):
             multi_coasts_positions=multi_coasts_positions,
             player_troops=player_troops,
             player_territories=player_territories,
-            previous_orders=previous_orders
+            previous_orders=previous_orders or {}
         )
         for country, troops_data in troops.items():
             rv.armies.extend(troops_data['armies'])
@@ -398,6 +398,7 @@ class GameProcessor(Logger):
             self._update_positions,
             self._next_phase_from_retreats,
             self._prepare_territories,
+            self._update_territories,
             self._build_active_countries,
             self._build_new_orders,
             self._check_win
