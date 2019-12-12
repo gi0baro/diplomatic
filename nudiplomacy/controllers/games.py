@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import os
+
 from emmett import url, abort, request, redirect
+from emmett.helpers import stream_file
 from emmett.tools import requires
 from .. import app, auth, Game, Map
 from . import front
@@ -125,6 +128,15 @@ def play(gid):
         #timer=game.time_to_next(),
         #statscol=statscol, unames=usernames)}
     }
+
+
+@games.route('/mapimg/<int:gid>')
+async def map_img(gid):
+    game = Game.get(gid)
+    if not game:
+        abort(404)
+    img_path = os.path.join(app.root_path, '..', 'variants', game.map.name.lower(), 'map.png')
+    stream_file(img_path)
 
 
 @games.route("/mine")

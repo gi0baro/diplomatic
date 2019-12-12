@@ -60,7 +60,7 @@
 </script>
 
 <game-board
-  image_src_map="{{ =url('main.download', game.map.image) }}"
+  image_src_map="{{ =url('.map_img', game.id) }}"
   image_src_army="{{ =url('static', 'images/tank.png') }}"
   image_src_fleet="{{ =url('static', 'images/ship.png') }}"
   {{ if user: }}
