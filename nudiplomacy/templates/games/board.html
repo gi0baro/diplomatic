@@ -1,6 +1,7 @@
 {{ extend 'game_board.haml' }}
 
 {{ user = current_user() }}
+{{ ws_scheme = 'ws' if debug() else 'wss' }}
 
 <script type="text/javascript">
   // var GROUND_COLOR = {r: 226, g: 198, b: 158};
@@ -48,7 +49,7 @@
   gapp.net.route("phase", "{{=url('api.game_phase', ':ID:')}}");
   gapp.net.route("phase_prev", "{{=url('api.game_phase_prev', game.id)}}");
   gapp.net.route("phase_next", "{{=url('api.game_phase_next', game.id)}}");
-  gapp.net.route("status", "{{=url.ws('ws.game_state', game.id, scheme=True)}}");
+  gapp.net.route("status", "{{=url.ws('ws.game_state', game.id, scheme=ws_scheme)}}");
   gapp.net.route("orders", "{{=url('api.authorized.game_orders', game.id)}}");
   gapp.net.route("phase_orders", "{{=url('api.phase_orders', ':PHASE_ID:')}}");
   gapp.net.route("order_save", "{{=url('api.authorized.order_save', ':ID:')}}");

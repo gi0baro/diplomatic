@@ -3,12 +3,16 @@
 # from gravatar import Gravatar
 from emmett import T, url
 from emmett.pipeline import Injector
-from . import auth
+from . import app, auth
 from .helpers.utils import cached_user_stats
 
 
 class BaseContext(Injector):
     T = T
+
+    @staticmethod
+    def debug():
+        return app.debug
 
     @staticmethod
     def current_user():
