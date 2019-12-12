@@ -72,41 +72,20 @@ class Game
         if @app.launched
             @loadStep(@step)
 
-    _loadPhasesOrders: (callback) ->
-        console.log('expected orders to load', @_nphases)
-        for pos, phase of @_phases
-            phase._fetchOrders((phase_id, loaded) =>
-                @_phases_loaded += 1
-                if @_phases_loaded is @_nphases
-                    @_completeInit(callback)
-                return
-            )
-        return
-
-    _completeInit: (after) ->
-        @_nextPhase = new PhaseNext(@app)
-        @_nextPhase._fetchOrders(->
-            return
-        )
-        if @gotOrders()
-            @_currentPhase = "next"
-        after()
-        return
-
-    reload: (data, orders) ->
-        @_phases = {}
-        for phase in data.phases
-            @_phases[i+''] = new Phase(@app, i, phase.id, phase.stage, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.mc, phase.dislodged, phase.orders)
-            i++
-        @_nphases = data.phases.length
-        @_currentPhase = @_nphases-1
-        @_nextPhase = new PhaseNext(@app)
-        @orders = {}
-        @moves = {}
-        @moves_mc = {}
-        @moves_queue = []
-        @_initOrders(orders.data)
-        return
+    # reload: (data, orders) ->
+    #     @_phases = {}
+    #     for phase in data.phases
+    #         @_phases[i+''] = new Phase(@app, i, phase.id, phase.stage, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.mc, phase.dislodged, phase.orders)
+    #         i++
+    #     @_nphases = data.phases.length
+    #     @_currentPhase = @_nphases-1
+    #     @_nextPhase = new PhaseNext(@app)
+    #     @orders = {}
+    #     @moves = {}
+    #     @moves_mc = {}
+    #     @moves_queue = []
+    #     @_initOrders(orders.data)
+    #     return
 
     phase: (id='current') ->
         # if id is 'next' or (id is 'current' and @_currentPhase is 'next')
@@ -193,59 +172,11 @@ class Game
                 @colors[i] = color
         return
 
-    loadPhase: (id, drawl=true, drawt=true) ->
-        console.log("LoadPhase called")
-        console.log(drawl)
-        reset_map = true
-        old_tcolors = {}
-        old_c_terrs = []
-        @app.ui.setOrdersPhase(id)
-        if id is "next" and @isLastPhase()
-            reset_map = false
-        else
-            for key, value of @colors
-                old_tcolors[key] = value
-            for key, terr_list of @phase().territories
-                for terr in terr_list
-                    old_c_terrs.push(terr)
-        @app.ui.setTopButtons("enable", false)
-        if id is 0
-            @app.ui.setTopButtons("disable", "r")
-        else if id is @_nphases-1
-            if not @gotOrders()
-                @app.ui.setTopButtons("disable", "f")
-        else if id is "next"
-            @app.ui.setTopButtons("disable", "f")
-        @app.ui.setPhase(id)
-        @_currentPhase = id
-        console.log(reset_map)
-        if reset_map
-            time_start = new Date().getTime()
-            #@app.SetMap()
-            @app.screen.change(old_c_terrs, old_tcolors)
-            time_end = new Date().getTime()
-            time_ex = time_end - time_start
-            console.log("ChangeMap time "+time_ex)
-        else
-            if drawl
-                time_start = new Date().getTime()
-                @app.screen.drawLines()
-                @app.screen.drawTroops()
-                time_end = new Date().getTime()
-                time_ex = time_end - time_start
-                console.log("DrawLines time "+time_ex)
-            if drawt
-                @app.screen.drawTroops()
-            if drawt or drawl
-                @app.screen.update()
-        return
-
     loadStep: (step, drawl=true, drawt=true) ->
         console.log("loadStep", step, drawl, drawt)
         reset_map = true
         old_tcolors = {}
         old_c_terrs = []
-        # @app.ui.setOrdersPhase(id)
         if step.id is "next" and @isLastPhase()
             reset_map = false
         else
@@ -424,7 +355,6 @@ class Game
         return
 
     saveOrders: ->
-        console.log(@orders)
         for territory, order of @orders
             if order._changed
                 @app.net.postOrder(order)

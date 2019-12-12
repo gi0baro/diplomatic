@@ -2,7 +2,6 @@
 class App
     constructor: ->
         @net = new Network(@)
-        @ui = new UI()
         @screen = new Screen(@)
         @act = new Interactions(@)
         @env = new Environment(@)
@@ -10,7 +9,6 @@ class App
         @ux = new UX(@)
         @utils = new Utils(@)
         @launched = false
-        console.log(@game.app)
         return
 
     init: (map_src, army_src, fleet_src, map_update_callback, screen_init_callback, menu_territory_method, alert_method) ->

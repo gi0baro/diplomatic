@@ -1,14 +1,15 @@
-*.DS_Store
+.DS_Store
 __pycache__
 
 *.sublime-*
+.vscode
 
 node_modules
-front/*/dist
 
 nudiplomacy/databases/*
 nudiplomacy/logs/*.log
 nudiplomacy/static/dist/*
+nudiplomacy/static/gboard/*
 nudiplomacy/static/bs3/*
 nudiplomacy/uploads/*
 

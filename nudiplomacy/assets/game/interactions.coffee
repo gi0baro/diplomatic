@@ -97,7 +97,6 @@ class Interactions
     click: (mpos, rpos, pos) ->
         ## TODO: add retreats and builds support
         # mpos = @getMousePosition(e)
-        # pos = @app.ui._translatePosition(mpos)
         @_lastRpos = rpos
         console.log("called action")
         refcolor = @app.screen.getColor(pos)
@@ -114,8 +113,6 @@ class Interactions
                 if @app.env.isSame(id)
                     id = @app.env.same[id]
                 if @_clickCheck("select", refcolor)
-                    # @app.ui.setMenuButtons("open", id)
-                    # @app.ui.openMenu(mpos)
                     @app.ux.relevantActionMenuOpen(rpos, id)
                     @current = "menu"
                 #else
@@ -132,8 +129,6 @@ class Interactions
             #   @app.screen.offTerritory(@active)
             #   @current = "none"
             when "menu"
-                # @app.ui.setMenuButtons("reset", @active)
-                # @app.ui.closeMenu()
                 @app.ux.relevantActionMenuClose()
                 @app.screen.offTerritory(@active)
                 @current = "none"
@@ -198,7 +193,6 @@ class Interactions
                 @_offTracked()
                 @app.screen.offTerritory(@active)
                 @current = "none"
-                # @app.ui.closeMCMenu()
                 @app.ux.menuClose("coast")
             when "retreat"
                 if @_clickCheck("move", refcolor)
@@ -216,7 +210,6 @@ class Interactions
                 @_offTracked()
                 @app.screen.offTerritory(@active)
                 @current = "none"
-                # @app.ui.closeMCMenu()
                 @app.ux.menuClose("coast")
         if do_map_upd
             @app.screen.update()
@@ -295,57 +288,46 @@ class Interactions
             when "move"
                 if not re_act
                     @_onMoveTo(@active)
-                    # @app.ui.closeMenu()
                     @app.ux.relevantActionMenuClose()
             when "sup_move"
                 if not re_act
                     @_onSupportMoveFrom(@active)
-                    # @app.ui.closeMenu()
                     @app.ux.relevantActionMenuClose()
             when "sup_hold"
                 if not re_act
                     @_onSupportHold(@active)
-                    # @app.ui.closeMenu()
                     @app.ux.relevantActionMenuClose()
             when "convoy"
                 if not re_act
                     @_onConvoyFrom(@active)
-                    # @app.ui.closeMenu()
                     @app.ux.relevantActionMenuClose()
             when "build_army"
                 if not re_act
-                    # @app.ui.closeMenu()
                     @app.ux.relevantActionMenuClose()
                     @intent("build_a", null)
             when "build_fleet"
                 if not re_act
-                    # @app.ui.closeMenu()
                     @app.ux.relevantActionMenuClose()
                     if @app.env.isMCoast(@active)
                         #position?
                         pos = @app.env.oxy[@active]
-                        # @app.ui.openMCMenu(pos)
                         @app.ux.menuOpen("coast", {position: @_lastRpos})
                     else
                         @intent("build_f", null)
             when "retreat"
                 if not re_act
                     @_onRetreatTo(@active)
-                    # @app.ui.closeMenu()
                     @app.ux.relevantActionMenuClose()
             when "disband"
                 if @app.game.phase('last').type is PHASE_TYPES.builds
                     if not re_act
                         @intent("disband", null)
-                        # @app.ui.closeMenu()
                         @app.ux.relevantActionMenuClose()
                 else
                     @intent("disband", null)
-                    # @app.ui.closeMenu()
                     @app.ux.relevantActionMenuClose()
             when "close"
                 @app.screen.offTerritory(@active)
-                # @app.ui.closeMenu()
                 @app.ux.relevantActionMenuClose()
                 @current = "none"
         # if eve isnt "close" and @app.game.ready
@@ -360,7 +342,6 @@ class Interactions
                 @intent("mcoast_n", pos)
             when "coast_south"
                 @intent("mcoast_s", pos)
-        # @app.ui.closeMCMenu()
         @app.ux.menuClose("coast")
         @app.screen.drawLines()
         @app.screen.update()
@@ -386,7 +367,6 @@ class Interactions
                         ccolor = r: 235, g: 0, b: 0
                         @app.screen.colorTerritory(t_id, ccolor)
                         #@app.UpdateMap()
-                        # @app.ui.openMCMenu(pos)
                         @app.ux.menuOpen("coast", {position: @_lastRpos})
                     else
                         #if l0
@@ -483,7 +463,6 @@ class Interactions
                             @app.screen.colorTerritory(t_id, ccolor)
                             @app.screen.update()
                             # open mc selection menu
-                            # @app.ui.openMCMenu(pos)
                             @app.ux.menuOpen("coast", {position: @_lastRpos})
                         else
                             #if l0
@@ -641,7 +620,6 @@ class Interactions
                         ccolor = r: 235, g: 0, b: 0
                         @app.screen.colorTerritory(t_id, ccolor)
                         #@app.UpdateMap()
-                        # @app.ui.openMCMenu(pos)
                         @app.ux.menuOpen("coast", {position: @_lastRpos})
                     else
                         mc = if l0 then 0 else 1

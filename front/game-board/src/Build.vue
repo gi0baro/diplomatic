@@ -5,5 +5,5 @@ export default Board
 </script>
 
 <style lang="scss">
-@import "./assets/css/main"
+@import "./assets/css/dist/tw"
 </style>

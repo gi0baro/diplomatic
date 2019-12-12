@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from nudiplomacy import app
 
 css_base = app.ext.Assets.css([
@@ -15,10 +17,8 @@ app.ext.Assets.register('css_base', css_base)
 app.ext.Assets.register('js_base', js_base)
 
 js_game = app.ext.Assets.js([
-    'helpers/Chart.min.js',
     'helpers/Point.js',
     'helpers/Intersection.js',
-    'base/counter.coffee',
     'base/translator.coffee',
     'game/proto.coffee',
     'game/constants.coffee',
@@ -28,12 +28,11 @@ js_game = app.ext.Assets.js([
     'game/game.coffee',
     'game/screen.coffee',
     'game/interactions.coffee',
-    'game/ui.coffee',
     'game/ux.coffee',
     'game/utils.coffee',
     'game/main.coffee'], output='game.js')
 
-css_game = app.ext.Assets.css(['css/game.css'], output='game.css').minify()
+# css_game = app.ext.Assets.css(['css/tw.css'], output='game.css').minify()
 
 app.ext.Assets.register('js_game', js_game)
-app.ext.Assets.register('css_game', css_game)
+# app.ext.Assets.register('css_game', css_game)

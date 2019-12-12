@@ -241,7 +241,6 @@ class Screen
         @res.ctx.drawImage(@arws.layer,0,0)
         @res.ctx.drawImage(@arms.layer,0,0)
         @callbacks.update(@res.layer.toDataURL())
-        # @app.ui.img.src = @res.layer.toDataURL()
         return
 
     _diffColor: (color1, color2) ->
