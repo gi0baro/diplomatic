@@ -58,13 +58,14 @@ export default {
       if (this.step === null) {
         return []
       }
-      let rv = this.gameData.players.map((country) => {
+      let rv = this.gameData.players.map((player) => {
         return {
-          label: country,
-          color: this.mapData.countries[country],
-          supply_centers: this.step.supply_centers[country] || 0,
-          troops: this.step.troops[country] || {armies: 0, fleets: 0},
-          self: (country === this.player)
+          label: player.country,
+          username: player.name,
+          color: this.mapData.countries[player.country],
+          supply_centers: this.step.supply_centers[player.country] || 0,
+          troops: this.step.troops[player.country] || {armies: 0, fleets: 0},
+          self: (player.country === this.player)
         }
       })
       return rv.sort((a, b) => {

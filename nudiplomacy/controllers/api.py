@@ -1,18 +1,28 @@
 # -*- coding: utf-8 -*-
 
-import random
+from collections import defaultdict
+
 from emmett import request, response, sdict
 from emmett.pipeline import RequirePipe
 from emmett.tools import ServicePipe, requires
-from .. import app, db, auth, Map, Game, Order, GameRole, GamePhase
+from .. import app, db, auth, Map, Game, Order, GameRole, GamePhase, ChatRoom, ChatMember
 # from nudiplomacy import app, auth, db, mdb, Map, Orders, NObject, NSubscription
 # from nudiplomacy.helpers.mongo import longToObjid
 from ..gameman.validation import process_order
 # from nudiplomacy.gameman import process_order
 from ..tasks import start_game, process_game
 
+
+# from emmett.pipeline import Pipe
+
+# class FuckCors(Pipe):
+#     async def open(self):
+#         response.headers['Access-Control-Allow-Origin'] = '*'
+
+
 api = app.module(__name__, 'api', url_prefix='api')
 api.pipeline = [ServicePipe('json')]
+# api.pipeline = [ServicePipe('json'), FuckCors()]
 
 
 def access_error():
@@ -43,7 +53,14 @@ def game_get(gid):
     #     rv.presstype = game.press_type
     #     rv.currentPlayer = game.player_country()
     rv = game.as_dict()
-    rv['players'] = game.players.select(GameRole.country).column('country')
+    players = game.players.join('user').select()
+    rv['players'] = [
+        {
+            'id': player.id,
+            'country': player.country,
+            'name': player.user.username if not game.anonymous else None
+        } for player in players
+    ]
     return rv
 
 
@@ -418,9 +435,24 @@ async def player_ready(gid):
 #     return dict(status="Ok", data=enabled)
 
 
+# @api.route('/game/<int:gid>/rooms', methods=['get'])
 @authorized.route('/game/<int:gid>/rooms', methods=['get'])
 def chat_rooms(gid):
+    # user = 1
+    # auth.user
+    player = ChatMember.where(
+        lambda m: (m.player == GameRole.id) & (GameRole.user == auth.user)
+    ).select(GameRole.table.ALL).first()
+    if not player:
+        return {'data': []}
     rows = ChatRoom.where(lambda m: m.game == gid).accessible_by_user(auth.user).select(ChatRoom.table.ALL)
+    rooms_id = rows.column('id')
+    all_members = ChatMember.where(lambda m: m.room.belongs(rooms_id) & (m.player != player.id)).select()
+    members = defaultdict(list)
+    for member in all_members:
+        members[member.room].append(member)
+    for row in rows:
+        row.members = members[row.id]
     return {'data': rows}
 
 

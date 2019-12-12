@@ -101,12 +101,14 @@ class Game
         # return @_currentPhase is @_nphases-1
         return @step.isLast
 
-    _setCountries: (ingame) ->
+    _setCountries: (players) ->
         all = []
+        countries = players.map (obj) ->
+            return obj.country
         for k, v of @app.env.countries
             all.push(k)
         for k in all
-            if k not in ingame
+            if k not in countries
                 delete @app.env.countries[k]
         return
 

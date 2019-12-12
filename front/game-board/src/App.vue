@@ -4,7 +4,8 @@
       image_src_map="http://localhost:8000/download/maps.image.b1eb206f03a87d22.6d61702e706e67.png"
       image_src_army="http://localhost:8000/static/images/tank.png"
       image_src_fleet="http://localhost:8000/static/images/ship.png"
-      player="Austria"
+      player="France"
+      :player_id="7"
       :user_id="1"
       user_name="gi0baro"
       :game_active="true"
@@ -39,12 +40,13 @@ export default {
       net: {
         routes: {
           map: 'http://localhost:8000/api/map/1',
-          game: 'http://localhost:8000/api/game/3',
+          game: 'http://localhost:8000/api/game/4',
           phase: 'http://localhost:8000/api/phases/:ID:',
-          phase_next: 'http://localhost:8000/api/game/3/phases/next',
-          phase_prev: 'http://localhost:8000/api/game/3/phases/prev',
-          orders: 'http://localhost:8000/api/game/3/orders',
-          order_save: 'http://localhost:8000/api/orders/:ID:'
+          phase_next: 'http://localhost:8000/api/game/4/phases/next',
+          phase_prev: 'http://localhost:8000/api/game/4/phases/prev',
+          orders: 'http://localhost:8000/api/game/4/orders',
+          order_save: 'http://localhost:8000/api/orders/:ID:',
+          chat_rooms: 'http://localhost:8000/api/game/4/rooms'
         }
       },
       act: {

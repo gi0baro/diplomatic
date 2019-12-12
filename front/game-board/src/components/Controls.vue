@@ -16,7 +16,7 @@
         <path d="M5,3C3.89,3 3,3.89 3,5V19C3,20.11 3.89,21 5,21H19C20.11,21 21,20.11 21,19V5C21,3.89 20.11,3 19,3H5M5,5H19V19H5V5M7,7V9H17V7H7M7,11V13H17V11H7M7,15V17H14V15H7Z"/>
       </svg>
     </button>
-    <button :class="`btn-ico ${chatCssColorCls}`" @click="section('chat')">
+    <button v-if="chatEnabled" :class="`btn-ico ${chatCssColorCls}`" @click="section('chat')">
       <svg class="btn-ico-svg" viewBox="0 0 24 24">
         <path d="M20,2H4A2,2 0 0,0 2,4V22L6,18H20A2,2 0 0,0 22,16V4A2,2 0 0,0 20,2M20,16H6L4,18V4H20"/>
       </svg>
@@ -34,6 +34,7 @@ export default {
   name: 'Controls',
   props: {
     isPlayer: Boolean,
+    chatEnabled: Boolean,
     isReady: Boolean,
     isSaving: Boolean,
     pendingSave: Boolean,

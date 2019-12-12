@@ -20,6 +20,7 @@
             :isReady="isPlayerReady"
             :isSaving="isSaving"
             :pendingSave="needSave"
+            :chatEnabled="chatEnabled"
             :activeSection="activeSection"
             @section="controlSection"
             @ready="setPlayerReady"
@@ -98,6 +99,9 @@
           ></orders>
           <chat-fragment
             v-if="activeSection == 'chat'"
+            :player="player"
+            :playersMap="playersMap"
+            :rooms="chatRooms"
           ></chat-fragment>
           <stats
             v-if="activeSection == 'stats'"
@@ -170,6 +174,10 @@ export default {
       type: String,
       default: null
     },
+    player_id: {
+      type: Number,
+      default: null
+    },
     game_active: {
       type: Boolean,
       default: false
@@ -210,6 +218,7 @@ export default {
       gameData: null,
       gameStep: null,
       gameSteps: ListMapper(),
+      chatRooms: [],
       framesLoaded: false,
       mapLoading: true,
       isLoadingStep: true,
@@ -217,7 +226,6 @@ export default {
       isSaving: false,
       isChangingReady: false,
       needSave: false,
-      // playerOrders: null,
       activeSection: 'stats',
       screenWidth: 0,
       timeouts: {
@@ -272,6 +280,15 @@ export default {
     launchFeasible() {
       return !!this.mapData && !!this.gameData && this.framesLoaded && this.gameStep !== null
     },
+    chatEnabled() {
+      if (this.gameStep === null) {
+        return false
+      }
+      if (!this.hasPlayerControls) {
+        return false
+      }
+      return this.gameData.press_type !== 2
+    },
     lastGameStep() {
       let sub = this.hasPlayerFullControls ? -2 : -1
       return this.gameSteps.get(sub)
@@ -296,6 +313,16 @@ export default {
     },
     targetSupplyCenters() {
       return (!!this.mapData && !!this.gameData) ? (this.gameData.target_sc || this.mapData.scs_to_win) : 0
+    },
+    playersMap() {
+      if (this.gameData === null) {
+        return {}
+      }
+      let rv = {}
+      this.gameData.players.map((obj) => {
+        rv[obj.id] = obj
+      })
+      return rv
     },
     playerOrders() {
       let step = this.nextGameStep
@@ -348,6 +375,9 @@ export default {
     this.game = window.gapp
     this.isPlayerReady = !!this.player_ready
     this.getGameData()
+    if (this.hasPlayerControls) {
+      this.getChatRooms()
+    }
   },
   methods: {
     getGameData() {
@@ -379,6 +409,20 @@ export default {
           }
         }
       })).catch(() => {})
+    },
+    async getChatRooms() {
+      try {
+        let {status, data} = await this.$http.get(
+          this.game.net.routes.chat_rooms
+        )
+        if (status == 200 && !!data.data) {
+          data.data.forEach((obj) => {
+            this.chatRooms.push(obj)
+          })
+        }
+      } catch (err) {
+        throw err
+      }
     },
     async getPlayerOrders() {
       try {

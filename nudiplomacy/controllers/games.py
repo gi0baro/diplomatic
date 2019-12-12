@@ -121,6 +121,7 @@ def play(gid):
     player = game.player(auth.user) if auth.is_logged() else None
     return {
         'game': game, 'scs': scs, 'chats': {'global': 1}, 'players': players, 'timer': game.timer(),
+        'player_id': player.id if player else None,
         'player_country': player.country if player else None,
         'player_ready': player.is_ready if player else False,
         'player_active': player.is_active if player else False,

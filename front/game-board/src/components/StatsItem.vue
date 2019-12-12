@@ -8,7 +8,7 @@
         </div>
         <div class="ml-3 flex-1 flex-row flex-wrap items-center justify-start text-left">
           <p class="text-lg leading-tight text-gray-100">{{ country.label }}</p>
-          <p class="text-sm text-gray-400">:player name:</p>
+          <p class="text-sm text-gray-400">{{ country.username }}</p>
           <div class="w-full px-1 pr-3 pt-2">
             <div class="w-full bg-gray-800">
               <div class="h-1" :style="style"></div>

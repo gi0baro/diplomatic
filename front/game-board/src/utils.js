@@ -76,7 +76,8 @@ export const buildGameStep = (mapData, gameData, data, orders=null, isLast=false
       return `${types[this.type]} ${this.data.year}`
     }
   }
-  gameData.players.forEach((key) => {
+  gameData.players.forEach((obj) => {
+    let key = obj.country
     rv.supply_centers[key] = 0
     data.territories[key].forEach((value) => {
       if (value in mapData.supply_centers) {
@@ -89,7 +90,8 @@ export const buildGameStep = (mapData, gameData, data, orders=null, isLast=false
     }
   })
   if (orders !== null) {
-    gameData.players.forEach((key) => {
+    gameData.players.forEach((obj) => {
+      let key = obj.country
       rv.orders[key] = orders[key] || []
     })
   }
@@ -115,7 +117,8 @@ export const buildPreGameStep = (mapData, gameData) => {
       return 'Pre Game'
     }
   }
-  gameData.players.forEach((key) => {
+  gameData.players.forEach((obj) => {
+    let key = obj.country
     rv.data.territories[key] = mapData.init.territories[key]
     rv.supply_centers[key] = mapData.home_centers[key].length
     rv.troops[key] = {armies: 0, fleets: 0}

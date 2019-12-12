@@ -54,6 +54,7 @@
   gapp.net.route("phase_orders", "{{=url('api.phase_orders', ':PHASE_ID:')}}");
   gapp.net.route("order_save", "{{=url('api.authorized.order_save', ':ID:')}}");
   gapp.net.route("ready", "{{=url('api.authorized.player_ready', game.id)}}");
+  gapp.net.route('chat_rooms', "{{ =url('api.authorized.chat_rooms', game.id) }}");
   gapp.net.route("messages", "{{=url('api.authorized.chat_get')}}");
   gapp.net.route("postmessage", "{{#=url('api.chat_post')}}");
   gapp.net.route("readmessage", "{{#=url('api.chat_read')}}");
@@ -68,8 +69,9 @@
   user_id="{{ =user.id }}"
   user_name="{{ =user.username }}"
   {{ pass }}
-  {{ if player_country: }}
+  {{ if player_id: }}
   player="{{ =player_country }}"
+  player_id="{{ =player_id }}"
   {{ pass }}
   {{ if game.stage == 0: }}
   game_pre
