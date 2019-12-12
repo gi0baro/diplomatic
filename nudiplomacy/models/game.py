@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import random
+
 from collections import defaultdict
 from datetime import timedelta
 from decimal import Decimal
 from diplomacy import constants as dip_const
 from emmett import now, T, sdict
-from emmett.orm import Model, Field, belongs_to, has_one, has_many, scope, refers_to, rowmethod
+from emmett.orm import Model, Field, belongs_to, has_one, has_many, scope, refers_to, after_insert, rowmethod
 
 from . import TSModel
 from .user import User
@@ -24,7 +25,9 @@ class Game(TSModel):
     has_many(
         {'players': 'GameRole'},
         {'phases': 'GamePhase'},
-        {'orders': {'via': 'phases'}})
+        {'orders': {'via': 'phases'}},
+        {'chat_rooms': 'ChatRoom'}
+    )
     has_one({'active_phase': {'target': 'GamePhase', 'where': lambda m: m.stage == GamePhase.STAGES['open']}})
 
     ACCESS_MODES = {'free': 0, 'password': 1}
@@ -175,11 +178,25 @@ class Game(TSModel):
     def filter_stage(self, stage):
         return self.stage == self.STAGES[stage]
 
+    @after_insert
+    def create_general_chatroom(self, fields, rid):
+        if fields.press_type != self.PRESS_TYPES['none']:
+            rid.chat_rooms.create(game=rid)
+
     @rowmethod('available_countries')
     def available_countries(self, row):
         enabled_countries = set([country for country in row.countries.keys() if row.countries[country]])
         joined_countries = set(row.players(GameRole.country).column('country'))
         return list(enabled_countries - joined_countries)
+
+    def _add_player_to_dm_chat_rooms(self, game, player):
+        for other_player in game.players.where(lambda m: m.id != player.id).select():
+            room = game.chat_rooms.create(
+                name=f'{other_player.country} - {player.id.country}',
+                type=10
+            )
+            room.id.members.create(player=player.id)
+            room.id.members.create(player=other_player.id)
 
     @rowmethod('add_player')
     def add_player(self, row, user, country=None):
@@ -187,12 +204,16 @@ class Game(TSModel):
         if not country or (country not in available_countries):
             random.shuffle(available_countries)
             country = next(iter(available_countries), None)
-        # app.log.debug('add_player', user, country)
         player = row.players.create(user=user.id, country=country)
-        # app.log.debug(player)
-        #: take coins from player
         if player.id:
+            #: take coins from player
             user.vault().transactions.create(value=-row.bet, description="Bet for game {}".format(row.name))
+            if row.press_type != self.PRESS_TYPES['none']:
+                #: add player to general chat room
+                room = row.chat_rooms.where(lambda m: m.type == 0).select(limitby=(0, 1)).first()
+                room.members.create(player=player.id)
+                if row.press_type == self.PRESS_TYPES['all']:
+                    self._add_player_to_dm_chat_rooms(row, player)
         return player.id
 
     @rowmethod('player')
@@ -361,7 +382,10 @@ class Game(TSModel):
 
 class GameRole(Model):
     belongs_to('game', 'user')
-    has_many('orders')
+    has_many(
+        'orders',
+        {'chat_memberships': 'ChatMember.player'}
+    )
 
     # TODO: add stage with relevant values, eg: participating, defeated, won..
     country = Field(notnull=True)

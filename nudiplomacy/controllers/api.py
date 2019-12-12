@@ -418,6 +418,17 @@ async def player_ready(gid):
 #     return dict(status="Ok", data=enabled)
 
 
+@authorized.route('/game/<int:gid>/rooms', methods=['get'])
+def chat_rooms(gid):
+    rows = ChatRoom.where(lambda m: m.game == gid).accessible_by_user(auth.user).select(ChatRoom.table.ALL)
+    return {'data': rows}
+
+
+@authorized.route('/room/<int:rid>/messages', methods=['get'])
+def chat_messages(rid):
+    return {'data': []}
+
+
 @authorized.route("/chat/<int:cid>", methods="get")
 def chat_get(cid):
     return sdict(status="Ok", data=[])
