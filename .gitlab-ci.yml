@@ -70,6 +70,7 @@ build_assets:
     paths:
       - front/game-board/dist/
   before_script:
+    - cd front/game-board
     - npm ci
   script:
     - npm run tailwind
