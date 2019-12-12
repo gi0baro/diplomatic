@@ -1,6 +1,7 @@
 stages:
   - test
   - build_deps
+  - assets
   - build
   - build_containers
   - deploy
@@ -26,6 +27,24 @@ test:
   script:
     - python -m pytest tests -v -x
 
+build_node:
+  stage: build_deps
+  image: quay.io/buildah/stable:latest
+  variables:
+    BUILDAH_FORMAT: docker
+    CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/node
+  before_script:
+    - buildah login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - buildah --storage-driver=vfs bud --file docker/Node.Dockerfile --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
+    - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
+    - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA $CONTAINER_IMAGE:latest
+  only:
+    refs:
+      - master
+    changes:
+      - docker/Node.Dockerfile
+
 build_py:
   stage: build_deps
   image: quay.io/buildah/stable:latest
@@ -43,6 +62,22 @@ build_py:
       - master
     changes:
       - requirements.txt
+
+build_assets:
+  stage: assets
+  image: ${CI_REGISTRY_IMAGE}/node:latest
+  artifacts:
+    paths:
+      - front/game-board/dist/
+  before_script:
+    - npm ci
+  script:
+    - npm run tailwind
+    - npm run build -- --target wc --inline-vue --name game-board src/Build.vue
+    - npm run postcss
+  only:
+    refs:
+      - master
 
 build_base:
   stage: build
