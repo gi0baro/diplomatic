@@ -56,6 +56,7 @@ db = Database(app)
 from .models.user import User, UserStats
 from .models.map import Map
 from .models.game import Game, GameRole, GamePhase, Order
+from .models.chat import ChatRoom, ChatMember, ChatMessage, ChatReading
 from .models.economy import Vault, Transaction
 from .models.system import SysProp
 
@@ -64,6 +65,7 @@ auth = Auth(app, db, user_model=User)
 db.define_models(
     UserStats,
     Map, Game, GameRole, GamePhase, Order,
+    ChatRoom, ChatMember, ChatMessage, ChatReading,
     Vault, Transaction,
     SysProp)
 

@@ -1,13 +1,45 @@
 
 class App
     constructor: ->
-        @net = new Network()
-        @ui = new UI()
-        @screen = new Screen()
-        @act = new Interactions()
-        @env = new Environment()
-        @game = new Game()
+        @net = new Network(@)
+        @screen = new Screen(@)
+        @act = new Interactions(@)
+        @env = new Environment(@)
+        @game = new Game(@)
+        @ux = new UX(@)
+        @utils = new Utils(@)
+        @launched = false
         return
+
+    init: (map_src, army_src, fleet_src, map_update_callback, screen_init_callback, menu_territory_method, alert_method) ->
+        @screen.buildElements(map_src, army_src, fleet_src)
+        @screen.register_callbacks(map_update_callback, screen_init_callback)
+
+    bindings: (
+        menu_territory_open, menu_territory_close,
+        menu_build_open, menu_build_close,
+        menu_retreat_open, menu_retreat_close,
+        menu_coast_open, menu_coast_close,
+        step, alert
+    ) ->
+        @game.bind(step)
+        @ux.configure(
+            menu_territory_open, menu_territory_close,
+            menu_build_open, menu_build_close,
+            menu_retreat_open, menu_retreat_close,
+            menu_coast_open, menu_coast_close
+            alert
+        )
+
+    launch: (mapData, gameData, player, isGameActive, isPreGame, isGameOver, isPlayerReady, orders, callback) ->
+        console.log('launch')
+        @env.init(mapData)
+        @game.init(gameData, player, orders, isPlayerReady)
+        @screen.init()
+        @ux.launched(isPreGame, isGameOver)
+        @net.setSockets()
+        @launched = true
+        callback()
 
     start: ->
         setTimeout(->
@@ -70,4 +102,4 @@ class App
         # @game.loadPhase(@game.phase('last').position)
         # return
 
-window.app = new App()
+window.gapp = new App()

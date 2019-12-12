@@ -25,7 +25,7 @@ class Validator(Logger):
 
     def __init__(
         self, map_data, allowed_supply_centers, phase_type, armies, fleets, multi_coasts_positions, player_troops,
-        player_territories, previous_orders=[], logger=None
+        player_territories, previous_orders=None, logger=None
     ):
         super().__init__(logger)
         self._load_map(map_data)
@@ -39,7 +39,7 @@ class Validator(Logger):
         self.territories = player_territories
         self.overcome_supply_centers = set(self.all_supply_centers) & set(self.territories)
         self.available_supply_centers = set(self.allowed_supply_centers) & set(self.territories)
-        self.previous_orders = previous_orders
+        self.previous_orders = previous_orders or {}
         self.__convoy_maps = {}
         self._convoy_routes = defaultdict(lambda: list())
         self._convoy_routes_stacks = []
@@ -266,10 +266,13 @@ class Validator(Logger):
     def _validate_retreats(self, orders):
         invalids = []
         previous_phase_movements = []
+        previous_moves_sources = defaultdict(list)
         for country, previous_orders in self.previous_orders.items():
             for territory_id, order in previous_orders.items():
                 if order["type"] == ORDERS.MOVE:
                     previous_phase_movements.append(order['dst'])
+                    # if order.get('stage') == 1:
+                    previous_moves_sources[order['dst']].append(order['src'])
         previous_phase_movements = set(previous_phase_movements)
         for territory_id, order in orders.items():
             if not order.get('dst'):
@@ -285,8 +288,17 @@ class Validator(Logger):
                 self.log("Order " + str(territory_id) + " is a retreat to a terr cannot move")
                 invalids.append(territory_id)
                 continue
-            # cannot move to a terr where was a move
+            #: cannot move to occupied territories
+            if not self._is_empty_territory(order['dst']):
+                self.log(f"Order {territory_id} is a retreat to an occupied terr")
+                invalids.append(territory_id)
+                continue
+            #: cannot move to a territory target in movements
             if order['dst'] in previous_phase_movements:
+                invalids.append(territory_id)
+                continue
+            #: cannot move against opponent
+            if order['dst'] in previous_moves_sources[territory_id]:
                 invalids.append(territory_id)
                 continue
         return invalids

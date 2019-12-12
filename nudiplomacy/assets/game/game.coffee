@@ -1,15 +1,23 @@
 class Game
-    constructor: ->
+    constructor: (@app) ->
         @country = null
         @_phases = {}
+        @steps = {}
+        @step =
+            territories: {}
+            troops: {}
+            mcpos: {}
+            dislodged: {}
         @colors = {}
         @_currentPhase = 0
         @_nphases = 0
         @_phases_loaded = 0
         @moves = {}
+        @builds = {}
         @moves_mc = {}
         @moves_queue = []
         @orders = {}
+        # useless?
         @ready = false
         @_nextPhase = null
         @buildew = null
@@ -17,111 +25,109 @@ class Game
         @presstype = null
         @scsToWin = 0
         @win = null
+        @orderMethod = () -> return
+        @movePhaseToNext = () -> return
         return
 
-    init: (data, phases, orders, callback) ->
+    bind: (stepNextMethod) ->
+        # @orderMethod = orderMethod
+        @movePhaseToNext = stepNextMethod
+
+    init: (data, player, orders, isPlayerReady) ->
         #: load current player
         # @country = data.currentPlayer
-        @country = currentPlayer
+        @country = player
         #: set participating countries
         @_setCountries(data.players)
         @buildew = data.build_everywhere
         @presstype = data.press_type
         #: load phases
-        @_phases["0"] = new Phase(0, null, 2, PHASE_TYPES.pregame, 1920, null, app.env.countries_init, {}, {}, {}, {})
-        i = 1
-        for phase in phases
-            @_phases[i+''] = new Phase(i, phase.id, phase.stage, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.coasts, phase.dislodged, {})
-            i++
+        # @step = new Step(@app, step)
+        # console.log('game init set step', step)
+        # @_phases["0"] = new Phase(@app, 0, null, 2, PHASE_TYPES.pregame, 1920, null, @app.env.countries_init, {}, {}, {}, {})
+        # i = 1
+        # for phase in phases
+        #     @_phases[i+''] = new Phase(@app, i, phase.id, phase.stage, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.coasts, phase.dislodged, {})
+        #     i++
         # TEMP
-        console.log(phases, orders)
-        @_nphases = phases.length + 1
-        @_currentPhase = @_nphases-1
+        # console.log(phases, orders)
+        # @_nphases = phases.length + 1
+        # @_currentPhase = @_nphases-1
         @orders = {}
         # TODO: change ready to endpoint
         # if orders.ready
         #     @ready = true
-        @ready = currentReady
-        @_initOrders(orders.data)
+        # @ready = currentReady
+        @ready = isPlayerReady
+        @_initOrders(orders)
         @_setStartingColors()
-        if @phase('last') isnt undefined and @phase('last').type is PHASE_TYPES.won
-            @win = data.phases[@_nphases-1].winner
-        @_loadPhasesOrders(callback)
+        # if @phase('last') isnt undefined and @phase('last').type is PHASE_TYPES.won
+        #     @win = data.phases[@_nphases-1].winner
+        # @_loadPhasesOrders(callback)
         return
 
-    _loadPhasesOrders: (callback) ->
-        console.log('expected orders to load', @_nphases)
-        for pos, phase of @_phases
-            phase._fetchOrders((phase_id, loaded) =>
-                @_phases_loaded += 1
-                if @_phases_loaded is @_nphases
-                    @_completeInit(callback)
-                return
-            )
-        return
+    setStep: (step) ->
+        console.log('setStep', step)
+        @step = step
+        if @app.launched
+            @loadStep(@step)
 
-    _completeInit: (after) ->
-        @_nextPhase = new PhaseNext()
-        @_nextPhase._fetchOrders(->
-            return
-        )
-        if @gotOrders()
-            @_currentPhase = "next"
-        after()
-        return
-
-    reload: (data, orders) ->
-        @_phases = {}
-        for phase in data.phases
-            @_phases[i+''] = new Phase(i, phase.id, phase.stage, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.mc, phase.dislodged, phase.orders)
-            i++
-        @_nphases = data.phases.length
-        @_currentPhase = @_nphases-1
-        @_nextPhase = new PhaseNext()
-        @orders = {}
-        @moves = {}
-        @moves_mc = {}
-        @moves_queue = []
-        @_initOrders(orders.data)
-        return
+    # reload: (data, orders) ->
+    #     @_phases = {}
+    #     for phase in data.phases
+    #         @_phases[i+''] = new Phase(@app, i, phase.id, phase.stage, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.mc, phase.dislodged, phase.orders)
+    #         i++
+    #     @_nphases = data.phases.length
+    #     @_currentPhase = @_nphases-1
+    #     @_nextPhase = new PhaseNext(@app)
+    #     @orders = {}
+    #     @moves = {}
+    #     @moves_mc = {}
+    #     @moves_queue = []
+    #     @_initOrders(orders.data)
+    #     return
 
     phase: (id='current') ->
-        if id is 'next' or (id is 'current' and @_currentPhase is 'next')
-            return @_nextPhase
-        if id is 'last'
-            return @_phases[@_nphases-1]
-        if id isnt 'current'
-            return @_phases[id+'']
-        return @_phases[@_currentPhase+'']
+        # if id is 'next' or (id is 'current' and @_currentPhase is 'next')
+        #     return @_nextPhase
+        # if id is 'last'
+        #     return @_phases[@_nphases-1]
+        # if id isnt 'current'
+        #     return @_phases[id+'']
+        # return @_phases[@_currentPhase+'']
+        return @step
 
     isLastPhase: ->
-        return @_currentPhase is @_nphases-1
+        # return @_currentPhase is @_nphases-1
+        return @step.isLast
 
     _setCountries: (ingame) ->
         all = []
-        for k, v of app.env.countries
+        for k, v of @app.env.countries
             all.push(k)
         for k in all
             if k not in ingame
-                delete app.env.countries[k]
+                delete @app.env.countries[k]
         return
 
     _initOrders: (orders) ->
+        console.log('init orders', orders)
         for order in orders
-            console.log(order)
             territory = order.territory
             @orders[territory] = order
             if order.type isnt ORDER_TYPES.hold
                 if order.type in [ORDER_TYPES.build, ORDER_TYPES.disband]
                     if order.data.troop is TROOP_TYPES.fleet
-                        d = type: "build_fleet"
+                        internalType = "build_fleet"
                     else if order.data.troop is TROOP_TYPES.army
-                        d = type: "build_army"
+                        internalType = "build_army"
                     else
-                        d = type: "disband"
-                    if order.data.coast isnt undefined
-                        d.mc = order.data.coast
+                        internalType = "disband"
+                    # if order.data.coast isnt undefined
+                    #     d.coast = order.data.coast
                     # @_nextPhase.builds[territory] = d
+                    @builds[territory] = order.data
+                    @builds[territory].type = internalType
                 else
                     @moves[territory] = order.data
                     @moves[territory].type = ORDER_TYPES.remote_to_internal(order.type)
@@ -147,70 +153,58 @@ class Game
         console.log('COLORS', GROUND_COLOR, NEUTRAL_COLOR, SEA_COLOR)
         #:set all terrs to ground color
         color = GROUND_COLOR
-        for i of app.env.colors
+        for i of @app.env.colors
             @colors[i] = color
         #:set neutrals
         color = NEUTRAL_COLOR
-        for i in app.env.neutrals
+        for i in @app.env.neutrals
             @colors[i] = color
         #:set seas
         color = SEA_COLOR
-        for i in app.env.seas
+        for i in @app.env.seas
             @colors[i] = color
         #:set countries terrs
         cterrs = @phase().territories
-        for key, color of app.env.countries
-            #for i in app.env.countries_terr[key]
+        for key, color of @app.env.countries
+            #for i in @app.env.countries_terr[key]
             #for i in @phase().territories[key]
-            for i in cterrs[key]
+            for i in (cterrs[key] or [])
                 @colors[i] = color
         return
 
-    loadPhase: (id, drawl=true, drawt=true) ->
-        console.log("LoadPhase called")
-        console.log(drawl)
+    loadStep: (step, drawl=true, drawt=true) ->
+        console.log("loadStep", step, drawl, drawt)
         reset_map = true
         old_tcolors = {}
         old_c_terrs = []
-        app.ui.setOrdersPhase(id)
-        if id is "next" and @isLastPhase()
+        if step.id is "next" and @isLastPhase()
             reset_map = false
         else
             for key, value of @colors
                 old_tcolors[key] = value
+            console.log(@phase())
             for key, terr_list of @phase().territories
                 for terr in terr_list
                     old_c_terrs.push(terr)
-        app.ui.setTopButtons("enable", false)
-        if id is 0
-            app.ui.setTopButtons("disable", "r")
-        else if id is @_nphases-1
-            if not @gotOrders()
-                app.ui.setTopButtons("disable", "f")
-        else if id is "next"
-            app.ui.setTopButtons("disable", "f")
-        app.ui.setPhase(id)
-        @_currentPhase = id
-        console.log(reset_map)
+        console.log('reset_map', reset_map)
         if reset_map
-            time_start = new Date().getTime()
-            #app.SetMap()
-            app.screen.change(old_c_terrs, old_tcolors)
-            time_end = new Date().getTime()
-            time_ex = time_end - time_start
-            console.log("ChangeMap time "+time_ex)
+            # time_start = new Date().getTime()
+            @app.screen.change(old_c_terrs, old_tcolors)
+            # time_end = new Date().getTime()
+            # time_ex = time_end - time_start
+            # console.log("ChangeMap time "+time_ex)
         else
             if drawl
-                time_start = new Date().getTime()
-                app.screen.drawLines()
-                app.screen.drawTroops()
-                time_end = new Date().getTime()
-                time_ex = time_end - time_start
-                console.log("DrawLines time "+time_ex)
+                # time_start = new Date().getTime()
+                @app.screen.drawLines()
+                @app.screen.drawTroops()
+                # time_end = new Date().getTime()
+                # time_ex = time_end - time_start
+                # console.log("DrawLines time "+time_ex)
             if drawt
-                app.screen.drawTroops()
+                @app.screen.drawTroops()
             if drawt or drawl
-                app.screen.update()
+                @app.screen.update()
         return
 
     canBuild: ->
@@ -218,7 +212,7 @@ class Game
             return 0
         ntroops = @phase('last').getCountryTroops().length
         nsupply = 0
-        for i in app.env._supplylist
+        for i in @app.env._supplylist
             if i in @phase('last').territories[@country]
                 nsupply++
         #if nsupply < ntroops
@@ -231,7 +225,7 @@ class Game
 
     _addMove: (id, data) ->
         @moves[id] = data
-        #if id in (key for key of app.map.troops[app.play.country])
+        #if id in (key for key of @app.map.troops[@app.play.country])
         if id in @phase().getCountryTroops()
             @addOrder(id, data)
         return
@@ -283,7 +277,7 @@ class Game
                         to_delete.push(key)
         for i in to_delete
             delete @moves[i]
-            #if i in (key for key of app.map.troops[app.play.country])
+            #if i in (key for key of @app.map.troops[@app.play.country])
             if i in @phase().getCountryTroops()
                 @delOrder(i)
         return
@@ -295,32 +289,33 @@ class Game
         return false
 
     _addBuild: (id, data) ->
-        @_nextPhase.builds[id] = data
+        # @_nextPhase.builds[id] = data
+        @builds[id] = data
         if data.type is "disband"
-            odata = type: "disband"
+            order = type: "disband"
         else
-            odata = type: "build", troop: data.type.split("_")[1]
-        if data.mc isnt undefined
-            odata['coast'] = data.mc
+            order = type: "build", troop: data.type.split("_")[1]
+        if data.coast isnt undefined
+            order.coast = data.coast
         console.log(id)
-        console.log(odata)
-        @addOrder(id, odata)
+        console.log(order)
+        @addOrder(id, order)
         return
 
     addBuild: (id, type, mc=null) ->
         data = type: type
         if mc isnt null
-            data['mc'] = mc
+            data.coast = mc
         @_addBuild(id, data)
         return
 
     delBuild: (id) ->
-        delete @_nextPhase.builds[id]
+        delete @builds[id]
         @delOrder(id)
         return
 
     hasBuild: (id) ->
-        build = @_nextPhase.builds[id]
+        build = @builds[id]
         if build
             return build.type
         return false
@@ -328,7 +323,8 @@ class Game
     gotOrders: ->
         # TEMP edited
         #return !$.isEmptyObject(@moves)
-        return !$.isEmptyObject(@moves) or !$.isEmptyObject(@_nextPhase.builds)
+        return !isObjectEmpty(@moves) or !isObjectEmpty(@_nextPhase.builds)
+        # return !$.isEmptyObject(@moves) or !$.isEmptyObject(@_nextPhase.builds)
 
     addOrder: (territory, data) ->
         console.log('addOrder', territory, data)
@@ -337,45 +333,30 @@ class Game
             @orders[territory].data.dst = data.dst
         else
             @orders[territory].data.troop = TROOP_TYPES.internal_to_remote(data.troop)
-            if app.env.isMCoast(territory) and data.troop is 'fleet'
+            if @app.env.isMCoast(territory) and data.troop is 'fleet'
                 @orders[territory].data.coast = data.coast
         #@orders[territory] = type: data.type, to: data.to
         if data.type is 'move'
             if data.through
                 @orders[territory].data.through = data.through
                 @orders[territory].data.routes = [data.croute]
-            if app.env.isMCoast(data.dst)
+            if @app.env.isMCoast(data.dst)
                 #@orders[territory]["mc"] = @moves_mc[territory]
                 @orders[territory].data.coast = data.coast
         else if data.type in ['support_move', 'convoy']
             @orders[territory].data.src = data.src
-        #country = app.GetCountryByTerr(id)
-        #try
-        #   @orders_country[country].push(id)
-        #catch
-        #   @orders_country[country] = []
-        #   @orders_country[country].push(id)
         @orders[territory]._changed = true
-        app.ui.addOrder(territory, @orders[territory])
-        app.ui.autoSave()
         return
 
     delOrder: (territory) ->
-        @orders[territory] =
-            id: @orders[territory].id
-            territory: territory
-            type: ORDER_TYPES.internal_to_remote('hold')
-            stage: ORDER_STATES.planned
-            data: {}
-            _changed: true
-        app.ui.delOrder(territory)
-        app.ui.autoSave()
+        @orders[territory].type = ORDER_TYPES.internal_to_remote('hold')
+        @orders[territory].data = {}
+        @orders[territory]._changed = true
         return
 
     saveOrders: ->
-        console.log(@orders)
         for territory, order of @orders
             if order._changed
-                app.net.postOrder(order)
+                @app.net.postOrder(order)
 
 window.Game = Game

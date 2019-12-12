@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import random
-from emmett import request, sdict
+from emmett import request, response, sdict
 from emmett.pipeline import RequirePipe
 from emmett.tools import ServicePipe, requires
 from .. import app, db, auth, Map, Game, Order, GameRole, GamePhase
@@ -50,6 +50,55 @@ def game_get(gid):
 @api.route("/game/<int:gid>/phases")
 def game_phases(gid):
     return {'data': GamePhase.where(lambda m: m.game == gid).select(orderby=GamePhase.created_at)}
+
+
+@api.route('/phases/<int:pid>')
+def game_phase(pid):
+    row, orders = GamePhase.get(id=pid), {}
+    if not row:
+        response.status = 404
+        return {'error': 'not found'}
+    if row.stage == GamePhase.STAGES['closed']:
+        orders = row.orders_grouped()
+    rv = row.as_dict()
+    rv['orders'] = orders
+    return rv
+
+
+@api.route('/game/<int:gid>/phases/prev')
+def game_phase_prev(gid):
+    dbset, orders = GamePhase.where(lambda m: m.game == gid), {}
+    orderby = GamePhase.id
+    if request.query_params.last_id:
+        dbset = dbset.where(lambda m: m.id < request.query_params.last_id)
+        orderby = ~GamePhase.id
+    row = dbset.select(orderby=orderby, limitby=(0, 1)).first()
+    if not row:
+        response.status = 404
+        return {'error': 'not found'}
+    if row.stage == GamePhase.STAGES['closed']:
+        orders = row.orders_grouped()
+    rv = row.as_dict()
+    rv['orders'] = orders
+    return rv
+
+
+@api.route('/game/<int:gid>/phases/next')
+def game_phase_next(gid):
+    dbset, orders = GamePhase.where(lambda m: m.game == gid), {}
+    orderby = ~GamePhase.id
+    if request.query_params.last_id:
+        dbset = dbset.where(lambda m: m.id > request.query_params.last_id)
+        orderby = GamePhase.id
+    row = dbset.select(orderby=orderby, limitby=(0, 1)).first()
+    if not row:
+        response.status = 404
+        return {'error': 'not found'}
+    if row.stage == GamePhase.STAGES['closed']:
+        orders = row.orders_grouped()
+    rv = row.as_dict()
+    rv['orders'] = orders
+    return rv
 
 
 # @api.route("/game/<int:gid>/status")
@@ -131,17 +180,21 @@ async def order_save(order_id):
             (GameRole.user == auth.user.id) & (Game.id == GameRole.game)
     ).select(Order.table.ALL, GameRole.table.ALL, Game.table.ALL).first()
     if not row:
+        response.status = 400
         rv.data = "bad request"
         return rv
     if row.games.stage != Game.STAGES['game'] or row.games.is_ready:
+        response.status = 400
         rv.data = "Game doesn't allow orders"
         return rv
     #: if player is not active can't update orders
     if not row.game_roles.is_active:
+        response.status = 400
         rv.data = "Cannot update orders in this turn"
         return rv
     #: if player is ready can't update orders
     if row.game_roles.is_ready:
+        response.status = 400
         rv.data = "Cannot update orders when ready"
         return rv
     params = await request.body_params
@@ -150,17 +203,21 @@ async def order_save(order_id):
     data, errors = process_order(row.game_roles.country, row.games, row.orders.territory, data)
     order_type = data.pop('type')
     if errors:
+        response.status = 422
         rv.data = errors
         return rv
     res = Order.where(lambda m: m.id == order_id).validate_and_update(type=order_type, data=data)
     if res.errors:
+        response.status = 422
         rv.data = res.errors
         return rv
     rv.status = 'ok'
+    rv.id = order_id
+    rv.territory = row.orders.territory
     return rv
 
 
-@authorized.route('/game/<int:gid>/ready', methods=['post'])
+@authorized.route('/game/<int:gid>/ready', methods=['post', 'put'])
 async def player_ready(gid):
     rv = sdict(status='error')
     game = Game.get(id=gid, is_ready=False, stage=Game.STAGES['game'])
@@ -359,6 +416,17 @@ async def player_ready(gid):
 #                 {"$set": {"is_ready": True}}
 #             )
 #     return dict(status="Ok", data=enabled)
+
+
+@authorized.route('/game/<int:gid>/rooms', methods=['get'])
+def chat_rooms(gid):
+    rows = ChatRoom.where(lambda m: m.game == gid).accessible_by_user(auth.user).select(ChatRoom.table.ALL)
+    return {'data': rows}
+
+
+@authorized.route('/room/<int:rid>/messages', methods=['get'])
+def chat_messages(rid):
+    return {'data': []}
 
 
 @authorized.route("/chat/<int:cid>", methods="get")

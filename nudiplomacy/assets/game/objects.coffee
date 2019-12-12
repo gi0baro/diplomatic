@@ -1,10 +1,21 @@
-
-class Phase
-    constructor: (@position, @id, @stage, @type, @year, @season, @territories, @troops, @mcpos, @dislodged) ->
-        @orders = {}
+class Step
+    constructor: (@app, step, prev=true) ->
+        console.log('NEW STEP', step)
+        @id = if step.type isnt "next" then step.id else "next"
+        @type = if step.data.type is undefined then step.type else step.data.type
+        @year = if step.id is null then null else step.data.year
+        @season = if step.id is null then null else step.data.season
+        @territories = step.data.territories or {}
+        @troops = step.data.troops or {}
+        @mcpos = step.data.coasts or {}
+        @dislodged = step.data.dislodged or {}
+        @orders = step.orders
+        @isLast = step.isLast
+        @prev = null
+        if prev is true and step.prev() isnt null
+            @prev = new Step(@app, step.prev(), false)
         @builds = {}
         @pastMoves = {}
-        #: shortcuts list for troops by type
         @listArmies = []
         @listFleets = []
         for key, value of @troops
@@ -14,37 +25,15 @@ class Phase
                         @listArmies.push(i)
                     else
                         @listFleets.push(i)
+        if step.type isnt "next"
+            @_genBuilds()
+            @_genPastMoves()
         return
-
-    _fetchOrders: (callback) ->
-        console.log('called _fetchOrders for phase', @id, @position, @stage)
-        if @id is null
-            callback(@id, false)
-            return
-        previous = app.game.phase(@position - 1)
-        if previous.id is null
-            callback(@id, false)
-            return
-        app.net.getOrders(previous, (orders) =>
-            @_ordersCallback(orders, callback)
-            return
-        )
-        return
-
-    _ordersCallback: (orders, callback) ->
-        for order in orders
-            if @orders[order.country] is undefined
-                @orders[order.country] = {}
-            @orders[order.country][order.territory] = order
-        @_genBuilds()
-        @_genPastMoves()
-        callback(@id, true)
-        return
-
 
     _genBuilds: ->
         for country, orders of @orders
-            for territory, order of orders
+            for order in orders
+                territory = order.territory
                 if order.type is ORDER_TYPES.build
                     if order.data.troop is TROOP_TYPES.fleet
                         @builds[territory] = type: "build_fleet"
@@ -58,7 +47,8 @@ class Phase
 
     _genPastMoves: ->
         for country, orders of @orders
-            for territory, order of orders
+            for order in orders
+                territory = order.territory
                 if order.type not in [ORDER_TYPES.hold, ORDER_TYPES.build]
                     w = order.data
                     w.src = order.data.src or territory
@@ -66,18 +56,6 @@ class Phase
                     @pastMoves[territory].type = ORDER_TYPES.remote_to_internal(order.type)
                     @pastMoves[territory].success = order.stage is ORDER_STATES.successful
         return
-
-    previous: ->
-        if @position is 0
-            return null
-        return app.game.phase(@position - 1)
-
-    next: ->
-        if @position is app.game._nphases - 1
-            next = "next"
-        else
-            next = @position + 1
-        return app.game.phase(next)
 
     isArmy: (id) ->
         return id in @listArmies
@@ -87,8 +65,8 @@ class Phase
 
     canConvoy: (id) ->
         res = false
-        if @isFleet(id) and app.env.isSea(id)
-            links = app.env.moves.fleets[id]
+        if @isFleet(id) and @app.env.isSea(id)
+            links = @app.env.moves.fleets[id]
             for i in links
                 if @isArmy(i)
                     res = true
@@ -98,53 +76,15 @@ class Phase
     getCountryByTerritory: (id) ->
         for country, list of @territories
             if id in list
-                console.log(country)
                 return country
         return false
 
-    getCountryTroops: (country=app.game.country) ->
+    getCountryTroops: (country=null) ->
+        country = country or @app.game.country
         troops = []
         for ttype, tlist of @troops[country]
             for troop in tlist
                 troops.push(troop)
         return troops
 
-
-class PhaseNext extends Phase
-    constructor: ->
-        prev = app.game.phase(app.game._nphases-1)
-        @position = 'next'
-        @id = null
-        @stage = 0
-        @type = prev.type
-        @year = null
-        @season = null
-        @territories = prev.territories
-        @troops = prev.troops
-        @mcpos = prev.mcpos
-        @dislodged = prev.dislodged
-        @orders = {}
-        @builds = {}
-        @pastMoves = {}
-        @listArmies = prev.listArmies
-        @listFleets = prev.listFleets
-        return
-
-    previous: ->
-        return app.game.phase(app.game._nphases-2)
-
-    next: ->
-        return null
-
-    _fetchOrders: (callback) ->
-        if not isGameActive
-            callback(@id, false)
-            return
-        @orders = @previous.orders
-        @_genBuilds()
-        @_genPastMoves()
-        callback(@id, true)
-        return
-
-window.Phase = Phase
-window.PhaseNext = PhaseNext
+window.Step = Step

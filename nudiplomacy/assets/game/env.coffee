@@ -1,6 +1,6 @@
 
 class Environment
-    constructor: ->
+    constructor: (@app) ->
         #: terr id and color
         @colors = {}
         #: pixels of terrs
@@ -88,9 +88,9 @@ class Environment
         return id in @mcoasts
 
     isSupply: (id) ->
-        if app.game.buildew
+        if @app.game.buildew
             return id in @_supplylist
-        return id in @homes[app.game.country]
+        return id in @homes[@app.game.country]
 
     getTerritoryByColor: (color) ->
         #: this get the territory id from color

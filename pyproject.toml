@@ -6,7 +6,7 @@ authors = ["gi0baro <gi0baro@d4net.org>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
-emmett = { git = "https://github.com/emmett-framework/emmett.git", rev = "85290f7" }
+emmett = { git = "https://github.com/emmett-framework/emmett.git", rev = "0201df5" }
 renoir-haml = { git = "https://github.com/gi0baro/renoir-haml.git", rev = "7fd8c7b" }
 emmett-haml = { git = "https://github.com/gi0baro/emmett-haml.git", rev = "e9e508d" }
 # weppy-bs3 = { git = "https://github.com/gi0baro/weppy-bs3.git", rev = "3978a5f" }
