@@ -4,6 +4,7 @@ __pycache__
 *.sublime-*
 .vscode
 
+.venv
 node_modules
 
 nudiplomacy/databases/*
