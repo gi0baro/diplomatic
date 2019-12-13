@@ -80,7 +80,8 @@ export default {
       if (this.srcLoaded) {
         return
       }
-      let obj = event.path[0]
+      let path = event.path || (event.composedPath && event.composedPath())
+      let obj = path[0]
       this.img.width = obj.naturalWidth
       this.img.height = obj.naturalHeight
       this.canvas.width = obj.width
@@ -103,7 +104,8 @@ export default {
       let rx = event.layerX || event.clientX
       let ry = event.layerY || event.clientY
       if (event.target.y === undefined) {
-        let obj = event.path[0]
+        let path = event.path || (event.composedPath && event.composedPath())
+        let obj = path[0]
         sx -= this.offsets.x
         rx -= this.offsets.x
         sy -= this.offsets.y
