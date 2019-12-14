@@ -306,7 +306,7 @@ class Game
 
     addBuild: (id, type, coast=null) ->
         data = type: type
-        if mc isnt null
+        if coast isnt null
             data.coast = coast
         @_addBuild(id, data)
         return

@@ -25,9 +25,9 @@ class Step
                         @listArmies.push(i)
                     else
                         @listFleets.push(i)
-        if step.type isnt "next"
+        @_genPastMoves()
+        if step.id isnt "next"
             @_genBuilds()
-            @_genPastMoves()
         return
 
     _genBuilds: ->
@@ -46,7 +46,8 @@ class Step
         return
 
     _genPastMoves: ->
-        for country, orders of @orders
+        allOrders = if @id is "next" then @prev.orders else @orders
+        for country, orders of allOrders
             for order in orders
                 territory = order.territory
                 if order.type not in [ORDER_TYPES.hold, ORDER_TYPES.build]
