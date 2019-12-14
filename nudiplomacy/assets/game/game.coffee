@@ -304,10 +304,10 @@ class Game
         @addOrder(id, order)
         return
 
-    addBuild: (id, type, mc=null) ->
+    addBuild: (id, type, coast=null) ->
         data = type: type
         if mc isnt null
-            data.coast = mc
+            data.coast = coast
         @_addBuild(id, data)
         return
 

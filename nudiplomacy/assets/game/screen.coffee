@@ -364,7 +364,7 @@ class Screen
                     if type is "fleets" and @app.env.isMCoast(id)
                         if id in dislodged
                             #? sure about that?
-                            mc_pos = @app.game.phase('last').previous().mcpos[id]
+                            mc_pos = @app.game.phase('last').prev.mcpos[id]
                         else
                             mc_pos = @app.game.phase().mcpos[id]
                         x = @app.env.mcoasts_oxy[id][mc_pos].x
@@ -402,7 +402,7 @@ class Screen
         builds = if @app.game.phase().id is "next" then @app.game.builds else @app.game.phase().builds
         for tid, tdata of builds
             if tdata.type in ["build_fleet", "disband"] and @app.env.isMCoast(tid)
-                mc_pos = tdata.mc
+                mc_pos = tdata.coast
                 x = @app.env.mcoasts_oxy[tid][mc_pos].x
                 y = @app.env.mcoasts_oxy[tid][mc_pos].y
             else
@@ -538,11 +538,11 @@ class Screen
                     #if f_id in (key for key of @app.env.troops[@app.play.country])
                     if time is "past"
                         if @app.game.phase().pastMoves[f_id]
-                            movemc = @app.game.phase().pastMoves[f_id].mc
+                            movemc = @app.game.phase().pastMoves[f_id].coast
                         else
                             movemc = null
                     else
-                        movemc = @app.game.moves[f_id].mc
+                        movemc = @app.game.moves[f_id].coast
                     if movemc in [0, 1]
                         p2 = new Point2D(@app.env.mcoasts_oxy[t_id][movemc].x, @app.env.mcoasts_oxy[t_id][movemc].y)
                     else
