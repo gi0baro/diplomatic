@@ -8,6 +8,7 @@ class Game
             troops: {}
             mcpos: {}
             dislodged: {}
+            isLast: false
         @colors = {}
         @_currentPhase = 0
         @_nphases = 0
@@ -68,9 +69,10 @@ class Game
 
     setStep: (step) ->
         console.log('setStep', step)
+        oldStep = @step
         @step = step
         if @app.launched
-            @loadStep(@step)
+            @loadStep(@step, oldStep)
 
     # reload: (data, orders) ->
     #     @_phases = {}
@@ -174,18 +176,18 @@ class Game
                 @colors[i] = color
         return
 
-    loadStep: (step, drawl=true, drawt=true) ->
+    loadStep: (step, oldStep, drawl=true, drawt=true) ->
         console.log("loadStep", step, drawl, drawt)
         reset_map = true
         old_tcolors = {}
         old_c_terrs = []
-        if step.id is "next" and @isLastPhase()
+        if step.id is "next" and oldStep.isLast
             reset_map = false
         else
             for key, value of @colors
                 old_tcolors[key] = value
-            console.log(@phase())
-            for key, terr_list of @phase().territories
+            console.log(oldStep)
+            for key, terr_list of oldStep.territories
                 for terr in terr_list
                     old_c_terrs.push(terr)
         console.log('reset_map', reset_map)
