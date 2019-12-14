@@ -57,7 +57,7 @@ class UX
 
     gameStateChanged: (data) ->
         @alert("Game changed, reloading in 5 seconds..", false)
-        setTimeout (->
+        setTimeout (=>
             @app.reload()
         ), 5000
         return
