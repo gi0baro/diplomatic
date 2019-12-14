@@ -40,7 +40,7 @@ class Step
                     else
                         @builds[territory] = type: "build_army"
                     if order.data.coast isnt undefined
-                        @builds[territory]['mc'] = order.data.coast
+                        @builds[territory].coast = order.data.coast
                 if order.type is ORDER_TYPES.disband
                     @builds[territory] = type: "disband"
         return
