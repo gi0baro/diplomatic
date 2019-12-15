@@ -6,6 +6,9 @@ export const ListMapper = () => ({
       ...data,
       idx: idx,
       prev() {
+        if (this.idx === 0) {
+          return null
+        }
         return self.get(this.idx - 1)
       },
       next() {
