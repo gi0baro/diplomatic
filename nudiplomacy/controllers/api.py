@@ -157,6 +157,7 @@ async def game_join(gid):
         return rv
     if game.players.count() == game.players_number:
         game.update_record(is_ready=True, is_open=False)
+        db.commit()
         start_game.delay(game.id)
     rv.status = 'ok'
     rv.data = 'joined successfully'
