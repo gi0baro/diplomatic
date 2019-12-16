@@ -24,7 +24,7 @@ app.language_default = 'en'
 app.language_force_on_url = True
 app.config.url_default_namespace = "main"
 app.config.static_version_urls = True
-app.config.static_version = '0.1.2'
+app.config.static_version = '0.1.3'
 app.config.Haml.set_as_default = True
 app.config_from_yaml('app.yml')
 # app.config_from_yaml('db.yml', 'db')

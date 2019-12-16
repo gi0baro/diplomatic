@@ -6,6 +6,9 @@
         :key="message.id"
         :message="message"
         :playerId="playerId"
+        :playersMap="playersMap"
+        :roomMembersMap="roomPlayersMap"
+        :showSender="room.type === 0"
       ></chat-message>
     </div>
     <div class="w-full flex px-2 py-1 items-center justify-between border-t border-gray-600">
@@ -17,7 +20,7 @@
           :disabled="room.isSending"
         ></textarea>
         <button
-          class="absolute bottom-0 right-0 h-8 w-8 ml-1 text-gray-400 focus:outline-none"
+          class="absolute bottom-0 right-0 h-8 w-8 ml-1 text-gray-400 focus:outline-none btn-send"
           :disabled="sendDisabled"
           @click="send"
         >
@@ -42,13 +45,19 @@ export default {
     room: {
       type: Object,
       default: () => ({
+        type: 0,
         messages: [],
+        members: [],
         isSending: false
       })
     },
     playerId: {
       type: Number,
       default: null
+    },
+    playersMap: {
+      type: Object,
+      default: () => ({})
     }
   },
   data() {
@@ -63,6 +72,13 @@ export default {
     this.$emit('read', this.room.messages[this.room.messages.length - 1])
   },
   computed: {
+    roomPlayersMap() {
+      let rv = {}
+      this.room.members.forEach((obj) => {
+        rv[obj.id] = this.playersMap[obj.player]
+      })
+      return rv
+    },
     sendDisabled() {
       return !this.inputMessage || this.room.isSending
     }
@@ -99,6 +115,12 @@ export default {
 }
 .text-input {
   resize: none;
+}
+.text-input:disabled {
+  @apply text-gray-600;
+}
+.btn-send:disabled {
+  @apply text-gray-600;
 }
 .text-input::-webkit-scrollbar-track {
   -webkit-box-shadow: inset 0 0 4px rgba(0,0,0,0.3);

@@ -21,6 +21,7 @@
         v-else 
         :room="activeRoom"
         :playerId="playerId"
+        :playersMap="playersMap"
         @send="sendMessage"
         @read="readMessage"
         ref="active_chat"

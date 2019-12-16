@@ -1,9 +1,15 @@
 <template>
-  <span
-    :class="`w-full flex my-1 px-1 rounded-lg border-2 text-sm text-gray-100 ${direction === 'in' ? 'msg-in' : 'msg-out'}`"
-  >
-    {{ message.text }}
-  </span>
+  <div :class="`w-full flex flex-row flex-wrap my-1 px-1 rounded-lg border-2 text-sm ${direction === 'in' ? 'msg-in' : 'msg-out'}`">
+    <span
+      v-if="senderDisplay"
+      class="w-full flex mb-1 text-xs text-gray-200 uppercase"
+    >
+      {{ senderName }}
+    </span>
+    <span class="text-gray-100">
+      {{ message.text }}
+    </span>
+  </div>
 </template>
 
 <script>
@@ -12,19 +18,39 @@ export default {
   props: {
     message: {
       type: Object,
-      default: null
+      default: () => ({
+        text: null,
+        sender: null
+      })
     },
     playerId: {
       type: Number,
       default: null
+    },
+    roomMembersMap: {
+      type: Object,
+      default: () => ({})
+    },
+    showSender: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {
     direction() {
-      if (this.message === null) {
+      return (this.message.sender === this.playerId) ? 'out' : 'in'
+    },
+    senderDisplay() {
+      return this.showSender && this.direction == 'in'
+    },
+    senderName() {
+      if (!this.showSender) {
         return null
       }
-      return (this.message.sender === this.playerId) ? 'out' : 'in'
+      if (!this.message.sender) {
+        return 'nuDiplomacy'
+      }
+      return this.roomMembersMap[this.message.sender].country
     }
   }
 }
