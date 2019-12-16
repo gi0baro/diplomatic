@@ -5,7 +5,7 @@ from collections import defaultdict
 from emmett import request, response, sdict
 from emmett.pipeline import RequirePipe
 from emmett.tools import ServicePipe, requires
-from .. import app, db, auth, Map, Game, Order, GameRole, GamePhase, ChatRoom, ChatMember
+from .. import app, db, redis, auth, Map, Game, Order, GameRole, GamePhase, ChatRoom, ChatMember, ChatReading, ChatMessage
 # from nudiplomacy import app, auth, db, mdb, Map, Orders, NObject, NSubscription
 # from nudiplomacy.helpers.mongo import longToObjid
 from ..gameman.validation import process_order
@@ -456,9 +456,59 @@ def chat_rooms(gid):
     return {'data': rows}
 
 
+@authorized.route('/game/<int:gid>/readings', methods=['get'])
+async def chat_readings(gid):
+    rows = ChatReading.accessible_by_user(auth.user).of_game(gid).select(ChatReading.table.ALL)
+    return {'data': rows}
+
+
 @authorized.route('/room/<int:rid>/messages', methods=['get'])
 def chat_messages(rid):
-    return {'data': []}
+    room = ChatRoom.accessible_by_user(auth.user).where(lambda m: m.id == rid).select(ChatRoom.table.ALL).first()
+    if not room:
+        return {'data': []}
+    page = request.query_params.page or 1
+    rows = room.messages(orderby=~ChatMessage.created_at, paginate=(page, 25))
+    return {'data': rows}
+
+
+@authorized.route('/game/<int:gid>/messages', methods=['post'])
+async def new_chat_message(gid):
+    response.status = 201
+    member = ChatMember.where(
+        lambda m: (m.player == GameRole.id) & (GameRole.user == auth.user) & (GameRole.game == gid)
+    ).select(ChatMember.table.ALL).first()
+    if not member:
+        response.status = 403
+        return {'error': 'no member'}
+    params = await request.body_params
+    room = ChatRoom.accessible_by_user(auth.user).where(lambda m: m.id == params.room).select(ChatRoom.table.ALL).first()
+    res = ChatMessage.create(room=room, sender=member, text=params.text)
+    if res.errors:
+        response.status = 422
+        return {'error': res.errors.as_dict()}
+    row = ChatMessage.get(res.id)
+    row.publish_on_relevant_channels(redis)
+    return row
+
+
+@authorized.route('/game/<int:gid>/readings/<int:rid>', methods=['put'])
+async def chat_read_message(gid, rid):
+    member = ChatMember.where(
+        lambda m: (m.player == GameRole.id) & (GameRole.user == auth.user) & (GameRole.game == gid)
+    ).select(ChatMember.table.ALL).first()
+    if not member:
+        response.status = 403
+        return {'error': 'no member'}
+    params = await request.body_params
+    res = ChatReading.where(
+        lambda m: (m.id == rid) & (m.member == member.id)
+    ).validate_and_update(message=params.message)
+    if res.errors:
+        response.status = 422
+        return {'error': res.errors.as_dict()}
+    row = ChatReading.get(id=rid)
+    return row
 
 
 @authorized.route("/chat/<int:cid>", methods="get")

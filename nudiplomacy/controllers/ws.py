@@ -14,6 +14,15 @@ async def game_state(gid):
         await websocket.accept()
 
         async for message in channel.iter():
-            app.log.debug(message)
             await websocket.send(message)
             break
+
+
+@ws.websocket('/chat/<int:player_id>/messages')
+async def chat_messages(player_id):
+    async with app.ext.Redis.ctx() as redis:
+        channel, = await redis.subscribe(f'chat:{player_id}:messages')
+        await websocket.accept()
+
+        async for message in channel.iter():
+            await websocket.send(message)

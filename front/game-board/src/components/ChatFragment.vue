@@ -9,8 +9,22 @@
       </button>
     </div>
     <transition name="fade" mode="out-in">
-      <chat-list v-if="!activeRoom" @selected="selectedRoom"></chat-list>
-      <chat v-else :name="activeRoom"></chat>
+      <chat-list 
+        v-if="!activeRoom" 
+        :rooms="rooms"
+        :readingsMap="readingsMap"
+        :playersMap="playersMap"
+        @selected="selectedRoom"
+        @needMessages="roomNeedMessages"
+      ></chat-list>
+      <chat
+        v-else 
+        :room="activeRoom"
+        :playerId="playerId"
+        @send="sendMessage"
+        @read="readMessage"
+        ref="active_chat"
+      ></chat>
     </transition>
   </div>
 </template>
@@ -25,19 +39,66 @@ export default {
     ChatList,
     Chat
   },
+  props: {
+    rooms: {
+      type: Array,
+      default: () => ([])
+    },
+    roomsMap: {
+      type: Object,
+      default: () => ({})
+    },
+    readings: {
+      type: Array,
+      default: () => ([])
+    },
+    playerId: {
+      type: Number,
+      default: null
+    },
+    playersMap: {
+      type: Object,
+      default: () => ({})
+    }
+  },
   data() {
     return {
       activeRoom: null
     }
   },
+  computed: {
+    readingsMap() {
+      let rv = {}
+      this.readings.forEach((element) => {
+        rv[element.room] = element
+      })
+      return rv
+    }
+  },
   methods: {
     selectedRoom(val) {
-      this.activeRoom = val
+      this.activeRoom = this.roomsMap[val]
+    },
+    roomNeedMessages(val) {
+      this.$emit('fetchRoomMessages', this.roomsMap[val])
+    },
+    sendMessage(roomId, message) {
+      this.$emit('send', this.roomsMap[roomId], message)
+    },
+    readMessage(message) {
+      this.$emit('read', this.readingsMap[message.room], message)
     },
     back() {
       if (this.activeRoom !== null) {
         this.activeRoom = null
       }
+    },
+    messageSent(message) {
+      this.readingsMap[message.room].message = message.id
+      this.$refs.active_chat.messageSent()
+    },
+    messageFailed() {
+      this.$refs.active_chat.messageFailed()
     }
   }
 }

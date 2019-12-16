@@ -20,7 +20,7 @@ class App
         menu_build_open, menu_build_close,
         menu_retreat_open, menu_retreat_close,
         menu_coast_open, menu_coast_close,
-        step, alert
+        step, chat_receiver, alert
     ) ->
         @game.bind(step)
         @ux.configure(
@@ -28,7 +28,7 @@ class App
             menu_build_open, menu_build_close,
             menu_retreat_open, menu_retreat_close,
             menu_coast_open, menu_coast_close
-            alert
+            chat_receiver, alert
         )
 
     launch: (mapData, gameData, player, isGameActive, isPreGame, isGameOver, isPlayerReady, orders, callback) ->
@@ -37,7 +37,8 @@ class App
         @game.init(gameData, player, orders, isPlayerReady)
         @screen.init()
         @ux.launched(isPreGame, isGameOver)
-        @net.setSockets()
+        if player
+            @net.setSockets(not isGameOver)
         @launched = true
         callback()
 

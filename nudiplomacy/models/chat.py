@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from emmett.orm import Model, Field, belongs_to, refers_to, has_many, scope, after_insert
+from emmett.orm import Model, Field, belongs_to, refers_to, has_many, scope, after_insert, rowmethod
+from emmett.serializers import Serializers
 
 from . import TSModel
+
+json_dump = Serializers.get_for('json')
 
 
 class ChatRoom(TSModel):
@@ -33,7 +36,7 @@ class ChatRoom(TSModel):
     }
 
     @scope('accessible_by_user')
-    def filter_stage(self, user):
+    def filter_accessible(self, user):
         return (
             (ChatMember.room == self.id) &
             (self.db.GameRole.id == ChatMember.player) &
@@ -83,6 +86,11 @@ class ChatMessage(TSModel):
                     (m.room == fields.room) & (m.member == fields.sender)
             ).update(message=rid)
 
+    @rowmethod('publish_on_relevant_channels')
+    def _publish_on_channels(self, row, pub_ctx):
+        for member in row.room.members.select(ChatMember.player):
+            pub_ctx.publish(f'chat:{member.player}:messages', json_dump(row))
+
 
 class ChatReading(TSModel):
     belongs_to(
@@ -95,3 +103,16 @@ class ChatReading(TSModel):
         'uniq_member': {'fields': ['room', 'member'], 'unique': True},
         'message': True
     }
+
+    @scope('accessible_by_user')
+    def filter_accessible(self, user):
+        return (
+            (self.member == ChatMember.id) &
+            (ChatMember.player == self.db.GameRole.id) &
+            (self.db.GameRole.user == user))
+
+    @scope('of_game')
+    def filter_by_game(self, game):
+        return (
+            (self.room == ChatRoom.id) &
+            (ChatRoom.game == game))

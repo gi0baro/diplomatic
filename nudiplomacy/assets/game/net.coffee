@@ -8,11 +8,18 @@ class Network
         @routes[name] = url
         return
 
-    setSockets: ->
-        @sockets.state = new WebSocket(@routes.status)
-        @sockets.state.binaryType = 'arraybuffer'
-        @sockets.state.addEventListener 'message', (event) =>
-            @app.ux.gameStateChanged(String.fromCharCode.apply(null, new Uint8Array(event.data)))
+    setSockets: (watchState) ->
+        if watchState
+            @sockets.state = new WebSocket(@routes.status)
+            @sockets.state.binaryType = 'arraybuffer'
+            @sockets.state.addEventListener 'message', (event) =>
+                @app.ux.gameStateChanged(String.fromCharCode.apply(null, new Uint8Array(event.data)))
+        @sockets.messages = new WebSocket(@routes.chat_sub)
+        @sockets.messages.binaryType = 'arraybuffer'
+        @sockets.messages.addEventListener 'message', (event) =>
+            @app.ux.chatMessageReceived(
+                JSON.parse(String.fromCharCode.apply(null, new Uint8Array(event.data)))
+            )
 
     # getMessages: (cid, country, since=null) ->
     #     u = @routes['messages']+"/"+cid

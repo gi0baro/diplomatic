@@ -1,21 +1,26 @@
 <template>
   <div class="h-full flex flex-wrap overflow-y-hidden">
     <div class="w-full flex flex-row flex-wrap overflow-y-auto chat px-1">
-      <span
-        v-for="message in messages"
-        :key="message.text"
-        :class="`w-full flex my-1 px-1 rounded-lg border-2 text-sm text-gray-100 ${message.direction === 'in' ? 'msg-in' : 'msg-out'}`"
-      >
-        {{ message.text }}
-      </span>
+      <chat-message
+        v-for="message in room.messages"
+        :key="message.id"
+        :message="message"
+        :playerId="playerId"
+      ></chat-message>
     </div>
     <div class="w-full flex px-2 py-1 items-center justify-between border-t border-gray-600">
       <div class="w-full relative">
         <textarea
           class="h-32 w-full block bg-gray-900 rounded-lg pl-2 pr-6 py-1 text-sm placeholder-gray-400 text-gray-100 focus:outline-none text-input"
           placeholder="Write something here.."
+          v-model="inputMessage"
+          :disabled="room.isSending"
         ></textarea>
-        <button class="absolute bottom-0 right-0 h-8 w-8 ml-1 text-gray-400 focus:outline-none">
+        <button
+          class="absolute bottom-0 right-0 h-8 w-8 ml-1 text-gray-400 focus:outline-none"
+          :disabled="sendDisabled"
+          @click="send"
+        >
           <svg class="h-6 w-6 mx-auto fill-current" viewBox="0 0 24 24">
             <path d="M8,7.71L18,12L8,16.29V12.95L15.14,12L8,11.05V7.71M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z"/>
           </svg>
@@ -26,37 +31,53 @@
 </template>
 
 <script>
+import ChatMessage from './ChatMessage'
+
 export default {
   name: 'Chat',
+  components: {
+    ChatMessage
+  },
   props: {
-    name: String
+    room: {
+      type: Object,
+      default: () => ({
+        messages: [],
+        isSending: false
+      })
+    },
+    playerId: {
+      type: Number,
+      default: null
+    }
   },
   data() {
     return {
-      messages: [
-        {text: 'Global Global Global Global Global Global Global', direction: 'in'},
-        {text: 'Russia', direction: 'out'},
-        {text: 'England', direction: 'out'},
-        {text: '100 100 100 100 100100100100100100', direction: 'in'},
-        {text: '101', direction: 'in'},
-        {text: '102', direction: 'in'},
-        {text: '103', direction: 'in'},
-        {text: '104', direction: 'out'},
-        {text: '105', direction: 'in'},
-        {text: '106', direction: 'out'},
-        {text: '107', direction: 'out'},
-        {text: '108', direction: 'in'},
-        {text: '109', direction: 'in'},
-        {text: '110', direction: 'in'},
-        {text: '111 111 111111111 111111 111 111 111111111 111111111', direction: 'out'},
-        {text: '112', direction: 'in'},
-        {text: '113', direction: 'out'},
-        {text: '114', direction: 'in'},
-        {text: '115 115115115 115115115 115115 115 115', direction: 'out'},
-        {text: '116', direction: 'in'},
-        {text: '117', direction: 'in'}
-      ]
+      inputMessage: ''
     }
+  },
+  mounted() {
+    if (this.room.messages.length === 0) {
+      return
+    }
+    this.$emit('read', this.room.messages[this.room.messages.length - 1])
+  },
+  computed: {
+    sendDisabled() {
+      return !this.inputMessage || this.room.isSending
+    }
+  },
+  methods: {
+    send() {
+      if (this.sendDisabled) {
+        return
+      }
+      this.$emit('send', this.room.id, this.inputMessage)
+    },
+    messageSent() {
+      this.inputMessage = ''
+    },
+    messageFailed() {}
   }
 }
 </script>
@@ -75,12 +96,6 @@ export default {
 }
 .chat::-webkit-scrollbar-thumb {
   background-color: #718096;
-}
-.msg-in {
-  @apply bg-gray-600 border-gray-400 mr-6;
-}
-.msg-out {
-  @apply bg-gray-700 border-gray-500 ml-6;
 }
 .text-input {
   resize: none;

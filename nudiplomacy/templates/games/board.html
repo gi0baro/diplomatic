@@ -51,13 +51,16 @@
   gapp.net.route("phase_next", "{{=url('api.game_phase_next', game.id)}}");
   gapp.net.route("status", "{{=url.ws('ws.game_state', game.id, scheme=ws_scheme)}}");
   gapp.net.route("orders", "{{=url('api.authorized.game_orders', game.id)}}");
-  gapp.net.route("phase_orders", "{{=url('api.phase_orders', ':PHASE_ID:')}}");
   gapp.net.route("order_save", "{{=url('api.authorized.order_save', ':ID:')}}");
   gapp.net.route("ready", "{{=url('api.authorized.player_ready', game.id)}}");
-  gapp.net.route('chat_rooms', "{{ =url('api.authorized.chat_rooms', game.id) }}");
-  gapp.net.route("messages", "{{=url('api.authorized.chat_get')}}");
-  gapp.net.route("postmessage", "{{#=url('api.chat_post')}}");
-  gapp.net.route("readmessage", "{{#=url('api.chat_read')}}");
+  gapp.net.route("chat_rooms", "{{ =url('api.authorized.chat_rooms', game.id) }}");
+  gapp.net.route("chat_readings", "{{ =url('api.authorized.chat_readings', game.id) }}");
+  gapp.net.route("chat_messages", "{{ =url('api.authorized.chat_messages', ':ID:') }}");
+  gapp.net.route("chat_push", "{{ =url('api.authorized.new_chat_message', game.id) }}");
+  gapp.net.route("chat_read", "{{ =url('api.authorized.chat_read_message', [game.id, ':ID:']) }}");
+  {{ if player_id: }}
+  gapp.net.route("chat_sub", "{{ =url.ws('ws.chat_messages', player_id, scheme=ws_scheme) }}");
+  {{ pass }}
   gapp.game.scsToWin = {{=scs}};
 </script>
 

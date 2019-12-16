@@ -99,9 +99,15 @@
           ></orders>
           <chat-fragment
             v-if="activeSection == 'chat'"
-            :player="player"
+            :playerId="player_id"
             :playersMap="playersMap"
             :rooms="chatRooms"
+            :roomsMap="chatRoomsMap"
+            :readings="chatReadings"
+            @fetchRoomMessages="getChatMessages"
+            @send="sendChatMessage"
+            @read="setChatReading"
+            ref="chat_fragment"
           ></chat-fragment>
           <stats
             v-if="activeSection == 'stats'"
@@ -219,6 +225,7 @@ export default {
       gameStep: null,
       gameSteps: ListMapper(),
       chatRooms: [],
+      chatReadings: [],
       framesLoaded: false,
       mapLoading: true,
       isLoadingStep: true,
@@ -338,6 +345,13 @@ export default {
       })
       return rv
     },
+    chatRoomsMap() {
+      let rv = {}
+      this.chatRooms.forEach((element) => {
+        rv[element.id] = element
+      })
+      return rv
+    },
     mapNames() {
       if (this.mapData === null) {
         return {}
@@ -377,6 +391,7 @@ export default {
     this.getGameData()
     if (this.hasPlayerControls) {
       this.getChatRooms()
+      this.getChatReadings()
     }
   },
   methods: {
@@ -417,9 +432,51 @@ export default {
         )
         if (status == 200 && !!data.data) {
           data.data.forEach((obj) => {
-            this.chatRooms.push(obj)
+            this.chatRooms.push({
+              ...obj,
+              messages: [],
+              messagesLoaded: false,
+              isLoadingMessages: false,
+              isSending: false
+            })
           })
         }
+      } catch (err) {
+        throw err
+      }
+    },
+    async getChatReadings() {
+      try {
+        let {status, data} = await this.$http.get(
+          this.game.net.routes.chat_readings
+        )
+        if (status == 200 & !!data.data) {
+          data.data.forEach((obj) => {
+            this.chatReadings.push(obj)
+          })
+        }
+      } catch (err) {
+        throw err
+      }
+    },
+    async getChatMessages(room) {
+      if (room.isLoadingMessages) {
+        return
+      }
+      try {
+        room.isLoadingMessages = true
+        let {status, data} = await this.$http.get(
+          this.game.net.routes.chat_messages.replace(':ID:', room.id)
+        )
+        if (status == 200 & !!data.data) {
+          data.data.forEach((obj) => {
+            room.messages.splice(0, 0, obj)
+          })
+        }
+        if (!room.messagesLoaded) {
+          room.messagesLoaded = true
+        }
+        room.isLoadingMessages = false
       } catch (err) {
         throw err
       }
@@ -639,6 +696,9 @@ export default {
         () => {
           this.switchStepToVirtual()
         },
+        (data) => {
+          this.chatMessageReceived(data)
+        },
         (message, dismissable=true, autoDismiss=null) => {
           this.alert(message, dismissable, autoDismiss)
         }
@@ -740,6 +800,12 @@ export default {
     switchStepToVirtual() {
       this.gameStep = this.nextGameStep
     },
+    chatMessageReceived(data) {
+      let room = this.chatRoomsMap[data.room]
+      if (room.messagesLoaded) {
+        room.messages.push(data)
+      }
+    },
     saveOrders() {
       if (!this.needSave) {
         return
@@ -782,6 +848,39 @@ export default {
           this.isPlayerReady = data.data
         }
         this.isChangingReady = false
+      } catch (err) {
+        throw err
+      }
+    },
+    async sendChatMessage(room, message) {
+      if (room.isSending) {
+        return
+      }
+      try {
+        room.isSending = true
+        let {status, data} = await this.$http.post(
+          this.game.net.routes.chat_push,
+          {room: room.id, text: message}
+        )
+        if (status == 201) {
+          this.$refs.chat_fragment.messageSent(data)
+        } else {
+          this.$regs.chat_fragment.messageFailed()
+        }
+        room.isSending = false
+      } catch (err) {
+        throw err
+      }
+    },
+    async setChatReading(reading, message) {
+      try {
+        let {status, data} = await this.$http.put(
+          this.game.net.routes.chat_read.replace(':ID:', reading.id),
+          {message: message.id}
+        )
+        if (status == 200) {
+          reading.message = message.id
+        }
       } catch (err) {
         throw err
       }

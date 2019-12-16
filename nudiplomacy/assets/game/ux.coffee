@@ -16,6 +16,7 @@ class UX
                 open: () -> return
                 close: () -> return
         @activeMenu = null
+        @messageReceiver = () -> return
         @alertMethod = () -> return
         return
 
@@ -24,7 +25,7 @@ class UX
         menuBuildOpen, menuBuildClose,
         menuRetreatOpen, menuRetreatClose,
         menuCoastOpen, menuCoastClose,
-        alertMethod
+        messageReceiver, alertMethod
     ) ->
         @menus.territory.open = menuTerritoryOpen
         @menus.territory.close = menuTerritoryClose
@@ -34,6 +35,7 @@ class UX
         @menus.retreat.close = menuRetreatClose
         @menus.coast.open = menuCoastOpen
         @menus.coast.close = menuCoastClose
+        @messageReceiver = messageReceiver
         @alertMethod = alertMethod
 
     launched: (gamePre, gameOver) ->
@@ -61,6 +63,9 @@ class UX
             @app.reload()
         ), 5000
         return
+
+    chatMessageReceived: (data) ->
+        @messageReceiver(data)
 
     menuOpen: (type, data) ->
         @activeMenu = type
