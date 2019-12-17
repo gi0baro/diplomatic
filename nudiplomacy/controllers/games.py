@@ -5,7 +5,7 @@ import os
 from emmett import url, abort, request, redirect
 from emmett.helpers import stream_file
 from emmett.tools import requires
-from .. import app, auth, Game, Map
+from .. import app, auth, Game, GameRole, Map
 from . import front
 
 games = front.module(__name__, 'games', url_prefix='games', template_folder='games')
@@ -143,4 +143,4 @@ async def map_img(gid):
 @games.route("/mine")
 @requires(auth.is_logged, url("front.games.index"))
 def owned():
-    return dict()
+    return {'games': auth.user.participated_games.where(Game.id == GameRole.game).select(Game.table.ALL)}

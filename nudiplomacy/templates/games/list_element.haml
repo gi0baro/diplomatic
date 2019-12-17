@@ -9,11 +9,11 @@
         .col-md-4
             %h5.grey-light
                 = T("Players no.")
-            = str(game.players.count())+"/"+str(len(game.countries))
+            = str(game.players.count())+"/"+str(game.players_number)
         .col-md-4{class: '{{=betclass}}'}
             %h5.grey-light
                 = T("Bet amount")
-            = game.bet
+            = round(game.bet, 2)
         .col-md-4
             %h5.grey-light
                 = T("Phase duration")
@@ -30,7 +30,7 @@
                 %h6
                     %i.fa.fa-truck.fa-fw
                     = T("starts with a build turn")
-    - if game.access == "password"
+    - if game.access == 1
         .row
             .col-md-12
                 %h6
@@ -53,11 +53,14 @@
                 :javascript
                     counters.add('timer_{{=game.id}}', {{=timer.s}}, {{=timer.m}}, {{=timer.h}}, {{=timer.d}});
             - else
+                - phase = game.active_phase()
                 %h5
-                    - if game.phases[-1].get('season') is not None
-                        = game.phases[-1]['season']+" "+str(game.phases[-1]['year'])
+                    - if phase and phase.type == 0
+                        - season = 'Spring' if phase.season == 0 else 'Autumn'
+                        = season + " " + str(phase.year)
                     - else
-                        = game.phases[-1]['type']+" "+str(game.phases[-1]['year'])
+                        - strtypes = {2: 'Builds', 1: 'Retreats'}
+                        = strtypes[phase.type] + " " + str(phase.year)
     %hr.divider
     .row
         - if current_user() and not game.player_country(current_user())
@@ -67,7 +70,7 @@
                         = T("Watch")
             - if game.is_open
                 .col-md-6
-                    - gp = game.password if game.access == "password" else "none"
+                    - gp = game.password if game.access == 1 else "none"
                     - gc = "yes" if game.countries_assignment == 1 else "nope"
                     .btn.btn-primary{id: 'joinb_{{=game.id}}', onclick: 'javascript: act.joinGame("{{=game.id}}", "{{=game.bet}}", "{{=gc}}", "{{=gp}}");'}
                         = T("Join")
