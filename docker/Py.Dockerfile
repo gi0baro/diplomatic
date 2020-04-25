@@ -1,13 +1,19 @@
 FROM python:3.7-alpine
 
-MAINTAINER gi0baro
+RUN apk add --no-cache curl libpq libstdc++ nodejs
 
-RUN apk add --no-cache libpq nodejs
+RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+ENV PATH /root/.poetry/bin:$PATH
+RUN poetry config virtualenvs.in-project true
 
-RUN mkdir -p /usr/src/app
+RUN mkdir -p /usr/src/deps
+COPY pyproject.toml /usr/src/deps
+COPY poetry.lock /usr/src/deps
+
 WORKDIR /usr/src/app
-COPY requirements.txt /usr/src/app
+
 RUN apk add --no-cache --virtual build-deps \
-    g++ musl-dev make git libffi-dev libuv-dev postgresql-dev && \
-    pip install -r /usr/src/app/requirements.txt && \
+    g++ git libffi-dev libuv-dev musl-dev make openssl-dev postgresql-dev && \
+    poetry install && \
     apk del build-deps
+ENV PATH /usr/src/deps/.venv/bin:$PATH

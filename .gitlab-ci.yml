@@ -61,7 +61,7 @@ build_py:
     refs:
       - master
     changes:
-      - requirements.txt
+      - poetry.lock
 
 build_assets:
   stage: assets
