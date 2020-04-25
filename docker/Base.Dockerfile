@@ -1,4 +1,6 @@
-FROM cr.amira.io/nudiplomacy/web/py:stable
+ARG SRC_IMAGE
+
+FROM ${SRC_IMAGE}
 
 WORKDIR /app
 

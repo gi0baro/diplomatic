@@ -89,10 +89,11 @@ build_base:
   variables:
     BUILDAH_FORMAT: docker
     CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/base
+    SRC_IMAGE: $CI_REGISTRY_IMAGE/py
   before_script:
     - buildah login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - buildah --storage-driver=vfs bud --file docker/Base.latest.Dockerfile --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
+    - buildah --storage-driver=vfs bud --file docker/Base.Dockerfile --build-arg SRC_IMAGE=$SRC_IMAGE:latest --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
     - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
     - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA $CONTAINER_IMAGE:latest
   only:
@@ -105,10 +106,11 @@ build_web:
   variables:
     BUILDAH_FORMAT: docker
     CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/web
+    SRC_IMAGE: $CI_REGISTRY_IMAGE/base
   before_script:
     - buildah login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - buildah --storage-driver=vfs bud --file docker/Web.latest.Dockerfile --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
+    - buildah --storage-driver=vfs bud --file docker/Web.Dockerfile --build-arg SRC_IMAGE=$SRC_IMAGE:latest --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
     - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
     - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA $CONTAINER_IMAGE:latest
   only:
@@ -121,10 +123,11 @@ build_worker:
   variables:
     BUILDAH_FORMAT: docker
     CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/worker
+    SRC_IMAGE: $CI_REGISTRY_IMAGE/base
   before_script:
     - buildah login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - buildah --storage-driver=vfs bud --file docker/Wrk.latest.Dockerfile --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
+    - buildah --storage-driver=vfs bud --file docker/Wrk.Dockerfile --build-arg SRC_IMAGE=$SRC_IMAGE:latest --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
     - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
     - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA $CONTAINER_IMAGE:latest
   only:
@@ -137,10 +140,11 @@ build_scheduler:
   variables:
     BUILDAH_FORMAT: docker
     CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/scheduler
+    SRC_IMAGE: $CI_REGISTRY_IMAGE/base
   before_script:
     - buildah login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - buildah --storage-driver=vfs bud --file docker/Wsc.latest.Dockerfile --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
+    - buildah --storage-driver=vfs bud --file docker/Wsc.Dockerfile --build-arg SRC_IMAGE=$SRC_IMAGE:latest --tag $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
     - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA
     - buildah --storage-driver=vfs push $CONTAINER_IMAGE:$CI_COMMIT_SHORT_SHA $CONTAINER_IMAGE:latest
   only:
@@ -149,7 +153,7 @@ build_scheduler:
 
 deploy:
   stage: deploy
-  image: ${CI_REGISTRY}/devops/k8s-deploy/csr1:latest
+  image: ${CI_REGISTRY}/${DEPLOY_IMAGE}:latest
   variables:
     CI_APPLICATION_TAG: $CI_COMMIT_SHORT_SHA
   script:

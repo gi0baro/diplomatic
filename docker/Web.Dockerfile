@@ -1,4 +1,6 @@
-FROM cr.amira.io/nudiplomacy/web/base:stable
+ARG SRC_IMAGE
+
+FROM ${SRC_IMAGE}
 
 EXPOSE 8000
 
