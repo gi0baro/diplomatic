@@ -402,7 +402,7 @@ class Screen
         builds = if @app.game.phase().id is "next" then @app.game.builds else @app.game.phase().builds
         for tid, tdata of builds
             if tdata.type in ["build_fleet", "disband"] and @app.env.isMCoast(tid)
-                mc_pos = tdata.coast
+                mc_pos = if tdata.type is "build_fleet" then tdata.coast else @app.game.phase().prev.mcpos[tid]
                 x = @app.env.mcoasts_oxy[tid][mc_pos].x
                 y = @app.env.mcoasts_oxy[tid][mc_pos].y
             else
