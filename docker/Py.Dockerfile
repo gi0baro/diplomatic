@@ -10,7 +10,7 @@ RUN mkdir -p /usr/src/deps
 COPY pyproject.toml /usr/src/deps
 COPY poetry.lock /usr/src/deps
 
-WORKDIR /usr/src/app
+WORKDIR /usr/src/deps
 
 RUN apk add --no-cache --virtual build-deps \
     g++ git libffi-dev libuv-dev musl-dev make openssl-dev postgresql-dev && \
