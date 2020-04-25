@@ -441,9 +441,7 @@ async def player_ready(gid):
 def chat_rooms(gid):
     # user = 1
     # auth.user
-    player = ChatMember.where(
-        lambda m: (m.player == GameRole.id) & (GameRole.user == auth.user)
-    ).select(GameRole.table.ALL).first()
+    player = GameRole.where(lambda m: (m.user == auth.user) & (m.game == gid)).select().first()
     if not player:
         return {'data': []}
     rows = ChatRoom.where(lambda m: m.game == gid).accessible_by_user(auth.user).select(ChatRoom.table.ALL)
@@ -476,8 +474,9 @@ def chat_messages(rid):
 @authorized.route('/game/<int:gid>/messages', methods=['post'])
 async def new_chat_message(gid):
     response.status = 201
+    params = await request.body_params
     member = ChatMember.where(
-        lambda m: (m.player == GameRole.id) & (GameRole.user == auth.user) & (GameRole.game == gid)
+        lambda m: (m.room == params.room) & (m.player == GameRole.id) & (GameRole.user == auth.user) & (GameRole.game == gid)
     ).select(ChatMember.table.ALL).first()
     if not member:
         response.status = 403
@@ -495,8 +494,12 @@ async def new_chat_message(gid):
 
 @authorized.route('/game/<int:gid>/readings/<int:rid>', methods=['put'])
 async def chat_read_message(gid, rid):
+    row = ChatReading.get(rid)
+    if not row:
+        response.status = 404
+        return {'error': 'not found'}
     member = ChatMember.where(
-        lambda m: (m.player == GameRole.id) & (GameRole.user == auth.user) & (GameRole.game == gid)
+        lambda m: (m.room == row.room) & (m.player == GameRole.id) & (GameRole.user == auth.user) & (GameRole.game == gid)
     ).select(ChatMember.table.ALL).first()
     if not member:
         response.status = 403
