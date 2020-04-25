@@ -168,22 +168,22 @@ websockets = ">=8.0,<9.0"
 
 [[package]]
 category = "main"
-description = "Assets management for Emmett"
-name = "Emmett-Assets"
+description = ""
+name = "emmett-assets"
 optional = false
-python-versions = ">=3.7"
+python-versions = "^3.7"
 version = "1.0.0.dev0"
 
 [package.dependencies]
-CoffeeScript = "*"
-PyExecJS = "1.3.1"
+coffeescript = "*"
 cssmin = "*"
-emmett = "*"
+emmett = ">1.0"
 jsmin = "*"
 libsass = "*"
+pyexecjs = "1.3.1"
 
 [package.source]
-reference = "abb504888afeb2e03e97f53cf767d7a255bea4d0"
+reference = "6ebbc164ec7270bf8c63e88eeef010d55ecfffc8"
 type = "git"
 url = "https://github.com/gi0baro/emmett-assets.git"
 [[package]]
@@ -574,7 +574,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "26b075e93d1ec1616fe34968ff3b10460e746ab8617cea67dc6e4cdab7a28f23"
+content-hash = "e2b6f1d135fb07096517a2a226a879bc284c30ca7dcd7084256a60f928e6edb8"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -625,7 +625,7 @@ emmett = [
     {file = "Emmett-2.0.0b2-py3-none-any.whl", hash = "sha256:fa03d327c37d4bfd1b1f2888eeb62b4fe16f6ef51874f0674f48da5953ae02b6"},
     {file = "Emmett-2.0.0b2.tar.gz", hash = "sha256:5b1f32b4ea00be1801590b7a9b0d970882a88d3a5bca61938f88648201b6cb3f"},
 ]
-Emmett-Assets = []
+emmett-assets = []
 emmett-haml = []
 h11 = [
     {file = "h11-0.9.0-py2.py3-none-any.whl", hash = "sha256:4bc6d6a1238b7615b266ada57e0618568066f57dd6fa967d1290ec9309b2f2f1"},
