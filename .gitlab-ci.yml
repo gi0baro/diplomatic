@@ -43,6 +43,7 @@ build_node:
     refs:
       - master
     changes:
+      - .gitlab-ci.yml
       - docker/Node.Dockerfile
 
 build_py:
@@ -61,6 +62,8 @@ build_py:
     refs:
       - master
     changes:
+      - .gitlab-ci.yml
+      - docker/Py.Dockerfile
       - poetry.lock
 
 build_assets:
