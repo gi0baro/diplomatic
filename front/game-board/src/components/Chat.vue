@@ -1,23 +1,25 @@
 <template>
   <div class="h-full flex flex-wrap overflow-y-hidden">
-    <div class="w-full flex flex-row flex-wrap overflow-y-auto chat px-1">
-      <chat-message
-        v-for="message in room.messages"
-        :key="message.id"
-        :message="message"
-        :playerId="playerId"
-        :playersMap="playersMap"
-        :roomMembersMap="roomPlayersMap"
-        :showSender="room.type === 0"
-      ></chat-message>
+    <div ref="scrollable" class="w-full flex flex-row flex-wrap overflow-y-auto chat px-1">
+      <div class="w-full flex flex-col flex-wrap justify-end">
+        <chat-message
+          v-for="message in messages"
+          :key="message.id"
+          :message="message"
+          :playerId="playerId"
+          :roomMembersMap="roomPlayersMap"
+          :showSender="room.type === 0"
+        ></chat-message>
+      </div>
     </div>
     <div class="w-full flex px-2 py-1 items-center justify-between border-t border-gray-600">
       <div class="w-full relative">
         <textarea
+          ref="input"
           class="h-32 w-full block bg-gray-900 rounded-lg pl-2 pr-6 py-1 text-sm placeholder-gray-400 text-gray-100 focus:outline-none text-input"
           placeholder="Write something here.."
           v-model="inputMessage"
-          :disabled="room.isSending"
+          @keyup.enter="send"
         ></textarea>
         <button
           class="absolute bottom-0 right-0 h-8 w-8 ml-1 text-gray-400 focus:outline-none btn-send"
@@ -72,6 +74,9 @@ export default {
     this.$emit('read', this.room.messages[this.room.messages.length - 1])
   },
   computed: {
+    messages() {
+      return this.room.messages
+    },
     roomPlayersMap() {
       let rv = {}
       this.room.members.forEach((obj) => {
@@ -83,15 +88,24 @@ export default {
       return !this.inputMessage || this.room.isSending
     }
   },
+  watch: {
+    messages() {
+      this.$nextTick(() => {
+        this.$refs.scrollable.scrollTop = (this.$refs.scrollable.scrollHeight - this.$refs.scrollable.clientHeight)
+      })
+    }
+  },
   methods: {
     send() {
       if (this.sendDisabled) {
         return
       }
       this.$emit('send', this.room.id, this.inputMessage)
+      this.inputMessage = ''
     },
     messageSent() {
-      this.inputMessage = ''
+      // this.inputMessage = ''
+      // this.$refs.input.focus()
     },
     messageFailed() {}
   }

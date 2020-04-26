@@ -1,14 +1,16 @@
 <template>
-  <div :class="`w-full flex flex-row flex-wrap my-1 px-1 rounded-lg border-2 text-sm ${direction === 'in' ? 'msg-in' : 'msg-out'}`">
-    <span
-      v-if="senderDisplay"
-      class="w-full flex mb-1 text-xs text-gray-200 uppercase"
-    >
-      {{ senderName }}
-    </span>
-    <span class="text-gray-100">
-      {{ message.text }}
-    </span>
+  <div :class="`w-full flex flex-row flex-wrap py-1 text-sm ${direction === 'in' ? 'msg-in' : 'msg-out'}`">
+    <div class="w-full px-1 rounded-lg border-2 msg-inner">
+      <span
+        v-if="senderDisplay"
+        class="w-full flex mb-1 text-xs text-gray-200 uppercase"
+      >
+        {{ senderName }}
+      </span>
+      <span class="text-gray-100">
+        {{ message.text }}
+      </span>
+    </div>
   </div>
 </template>
 
@@ -38,7 +40,7 @@ export default {
   },
   computed: {
     direction() {
-      return (this.message.sender === this.playerId) ? 'out' : 'in'
+      return (this.roomMembersMap[this.message.sender].id === this.playerId) ? 'out' : 'in'
     },
     senderDisplay() {
       return this.showSender && this.direction == 'in'
@@ -58,9 +60,15 @@ export default {
 
 <style scoped>
 .msg-in {
-  @apply bg-gray-600 border-gray-400 mr-6;
+  @apply pr-6;
+}
+.msg-in .msg-inner {
+  @apply bg-gray-600 border-gray-400;
 }
 .msg-out {
-  @apply bg-gray-700 border-gray-500 ml-6;
+  @apply pl-6;
+}
+.msg-out .msg-inner {
+  @apply bg-gray-700 border-gray-500;
 }
 </style>

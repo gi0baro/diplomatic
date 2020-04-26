@@ -446,7 +446,7 @@ def chat_rooms(gid):
         return {'data': []}
     rows = ChatRoom.where(lambda m: m.game == gid).accessible_by_user(auth.user).select(ChatRoom.table.ALL)
     rooms_id = rows.column('id')
-    all_members = ChatMember.where(lambda m: m.room.belongs(rooms_id) & (m.player != player.id)).select()
+    all_members = ChatMember.where(lambda m: m.room.belongs(rooms_id)).select()
     members = defaultdict(list)
     for member in all_members:
         members[member.room].append(member)
