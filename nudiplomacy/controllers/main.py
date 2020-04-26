@@ -48,6 +48,6 @@ def ranking():
 #     return locals()
 
 
-@app.route("/download/<str:filename>")
+@app.route("/download/<str:filename>", pipeline=[db.pipe])
 def download(filename):
     stream_dbfile(db, filename)

@@ -4,8 +4,8 @@ from collections import defaultdict
 
 from emmett import request, response, sdict
 from emmett.pipeline import RequirePipe
-from emmett.tools import ServicePipe, requires
-from .. import app, db, redis, auth, Map, Game, Order, GameRole, GamePhase, ChatRoom, ChatMember, ChatReading, ChatMessage
+from emmett.tools import ServicePipe
+from .. import app, db, sessions, redis, auth, Map, Game, Order, GameRole, GamePhase, ChatRoom, ChatMember, ChatReading, ChatMessage
 # from nudiplomacy import app, auth, db, mdb, Map, Orders, NObject, NSubscription
 # from nudiplomacy.helpers.mongo import longToObjid
 from ..gameman.validation import process_order
@@ -21,8 +21,12 @@ from ..tasks import start_game, process_game
 
 
 api = app.module(__name__, 'api', url_prefix='api')
-api.pipeline = [ServicePipe('json')]
-# api.pipeline = [ServicePipe('json'), FuckCors()]
+api.pipeline = [
+    sessions,
+    db.pipe,
+    auth.pipe,
+    ServicePipe('json')
+]
 
 
 def access_error():

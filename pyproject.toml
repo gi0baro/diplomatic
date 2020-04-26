@@ -6,7 +6,8 @@ authors = ["gi0baro <gi0baro@d4net.org>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
-emmett = "2.0.0b2"
+# emmett = "2.0.0b2"
+emmett = { git = "https://github.com/emmett-framework/emmett.git", rev = "6851f2b", allow-prereleases = true }
 renoir-haml = "1.0.0"
 emmett-haml = { git = "https://github.com/gi0baro/emmett-haml.git", rev = "9c03df6", allow-prereleases = true }
 # weppy-bs3 = { git = "https://github.com/gi0baro/weppy-bs3.git", rev = "3978a5f" }
@@ -19,6 +20,7 @@ celery = "~4.3.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "~5.2.2"
+pylint = "^2.4.4"
 
 [build-system]
 requires = ["poetry>=0.12"]

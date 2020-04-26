@@ -2,20 +2,36 @@
 
 from emmett import url, redirect
 from emmett.pipeline import RequirePipe
-from .. import app, auth
+
+from .. import app, auth, db, sessions
 from ..contexts import BaseContext
 from ..pipes import AppStatusPipe
 
 
-auth_routes = auth.module(__name__, url_prefix='account')
-auth_routes.injectors = [BaseContext()]
+auth_routes = auth.module(
+    __name__,
+    url_prefix='account',
+    pipeline=[
+        sessions,
+        db.pipe,
+        auth.pipe
+    ],
+    injectors=[BaseContext()]
+)
 
 front = app.module(__name__, 'front')
-front.pipeline = [AppStatusPipe()]
+front.pipeline = [
+    sessions,
+    db.pipe,
+    auth.pipe,
+    AppStatusPipe()
+]
 front.injectors = [BaseContext()]
 
 authenticated = front.module(__name__, 'auth')
-authenticated.pipeline = [RequirePipe(auth.is_logged, url('auth.login'))]
+authenticated.pipeline = [
+    RequirePipe(auth.is_logged, url('auth.login'))
+]
 
 
 @auth_routes.after_login
@@ -31,3 +47,12 @@ def after_registration(form, user, logged_in):
 @app.route('/_health', methods='get', output='bytes')
 def health():
     return b'ok'
+
+
+from . import (
+    main,
+    maps,
+    games,
+    api,
+    ws
+)
