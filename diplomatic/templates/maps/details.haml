@@ -7,12 +7,11 @@
         %br
         .row
             .col-md-8
-                %img{src: '{{=url("download", map.thumb)}}', style: 'width: 90%; margin-left: 5%;'}
             .col-md-4
                 .col-md-8
                     = T("Land territories")
                 .col-md-4
-                    = len(map.colors)-len(map.seas)-len(map.neutrals)
+                    = len(map.names)-len(map.seas)-len(map.neutrals)
                 .col-md-8
                     = T("Water territories")
                 .col-md-4

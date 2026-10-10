@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import os
+import xml.etree.ElementTree as ET
+from collections import Counter
+
 import yaml
 
 
@@ -8,6 +12,8 @@ PAINTED = ("neutral", "child")
 LAND = ("coast", "inland")
 WATER = ("sea", "coast")
 UNITS = {"army": "armies", "fleet": "fleets"}
+SVG_NS = "http://www.w3.org/2000/svg"
+REMOVED = ("png", "position")
 
 
 class VariantError(ValueError):
@@ -19,7 +25,12 @@ def load(path):
         doc = yaml.safe_load(f)
     _check_structure(doc)
     _check_references(doc)
-    return _compile(doc)
+    with open(os.path.join(os.path.dirname(path), "map.svg"), encoding="utf-8", newline="") as f:
+        svg = f.read()
+    _check_svg(doc, svg)
+    row = _compile(doc)
+    row["svg"] = svg
+    return row
 
 
 def _field(mapping, key, where, kind=None, optional=False):
@@ -31,10 +42,6 @@ def _field(mapping, key, where, kind=None, optional=False):
     if kind is not None and not isinstance(value, kind):
         raise VariantError(f"{where}: '{key}' must be a {kind.__name__}")
     return value
-
-
-def _is_point(value):
-    return isinstance(value, list) and len(value) == 2 and all(isinstance(v, int) for v in value)
 
 
 def _is_rgb(value):
@@ -62,10 +69,9 @@ def _check_province(province):
     kind = _field(province, "kind", where, str)
     if kind not in KINDS:
         raise VariantError(f"{where}: unknown kind '{kind}'")
-    if not _is_rgb(_field(province, "png", where)):
-        raise VariantError(f"{where}: 'png' must be an RGB triple")
+    _check_removed(province, where)
     if kind in PAINTED:
-        for key in ("position", "supply_center", "coasts", "links"):
+        for key in ("supply_center", "coasts", "links"):
             if key in province:
                 raise VariantError(f"{where}: {kind} provinces cannot have '{key}'")
         if not isinstance(province.get("water", False), bool):
@@ -75,22 +81,27 @@ def _check_province(province):
         return
     if "water" in province:
         raise VariantError(f"{where}: only {' and '.join(PAINTED)} provinces take 'water'")
-    if not _is_point(_field(province, "position", where)):
-        raise VariantError(f"{where}: 'position' must be a pair of coordinates")
     center = _field(province, "supply_center", where, optional=True)
-    if center is not None and (kind == "sea" or not _is_point(center)):
-        raise VariantError(f"{where}: 'supply_center' must be a pair of coordinates on a land province")
+    if center is not None and not isinstance(center, bool):
+        raise VariantError(f"{where}: 'supply_center' must be a boolean")
+    if center and kind == "sea":
+        raise VariantError(f"{where}: 'supply_center' needs a land province")
     coasts = _field(province, "coasts", where, list, optional=True)
     if coasts is not None:
         if kind != "coast" or len(coasts) < 2:
             raise VariantError(f"{where}: 'coasts' needs a coast province with at least two entries")
         for coast in coasts:
             cwhere = f"{where}/{_field(coast, 'name', where, str)}"
-            if not _is_point(_field(coast, "position", cwhere)):
-                raise VariantError(f"{cwhere}: 'position' must be a pair of coordinates")
+            _check_removed(coast, cwhere)
             _check_links(_field(coast, "links", cwhere, dict), cwhere, army=False)
     links = _field(province, "links", where, dict, optional=True) or {}
     _check_links(links, where, army=kind != "sea", fleet=kind != "inland" and coasts is None)
+
+
+def _check_removed(mapping, where):
+    for key in REMOVED:
+        if key in mapping:
+            raise VariantError(f"{where}: '{key}' is not supported, coordinates live in map.svg")
 
 
 def _check_country(country):
@@ -171,7 +182,7 @@ def _check_references(doc):
         for target in owned:
             resolve(target, where, with_coast=False)
         for target in country["home_centers"]:
-            if "supply_center" not in resolve(target, where, with_coast=False):
+            if not resolve(target, where, with_coast=False).get("supply_center"):
                 raise VariantError(f"{where}: home center '{target}' is not a supply center")
         for unit, kind in country["units"].items():
             province = resolve(unit, where, with_coast=kind == "fleet")
@@ -181,6 +192,114 @@ def _check_references(doc):
                 raise VariantError(f"{where}: {kind} cannot start on '{unit}'")
 
 
+def _svg(tag):
+    return f"{{{SVG_NS}}}{tag}"
+
+
+def _classes(element):
+    return element.get("class", "").split()
+
+
+def _is_number(value):
+    try:
+        float(value)
+    except (TypeError, ValueError):
+        return False
+    return True
+
+
+def _svg_groups(root, provinces):
+    groups = {}
+    for group in root.iter(_svg("g")):
+        name = group.get("data-province")
+        if name is None:
+            continue
+        where = f"map.svg: group '{name}'"
+        if name not in provinces or provinces[name]["kind"] == "child":
+            raise VariantError(f"{where}: no such province in the variant")
+        if name in groups:
+            raise VariantError(f"{where}: duplicate group")
+        if group.find(f".//{_svg('g')}[@data-province]") is not None:
+            raise VariantError(f"{where}: province groups cannot be nested")
+        groups[name] = group
+    for name, province in provinces.items():
+        if province["kind"] != "child" and name not in groups:
+            raise VariantError(f"map.svg: missing group for province '{name}'")
+    return groups
+
+
+def _check_svg_children(root, provinces, groups):
+    owners = {path: name for name, group in groups.items() for path in group.iter(_svg("path"))}
+    seen = set()
+    for path in root.iter(_svg("path")):
+        name = path.get("data-child")
+        if name is None:
+            continue
+        where = f"map.svg: child path '{name}'"
+        if name not in provinces or provinces[name]["kind"] != "child":
+            raise VariantError(f"{where}: no such child province in the variant")
+        if name in seen:
+            raise VariantError(f"{where}: duplicate path")
+        seen.add(name)
+        parent = provinces[name]["parent"]
+        if owners.get(path) != parent:
+            raise VariantError(f"{where}: must be inside the group of its parent '{parent}'")
+        if ("water" in _classes(path)) != provinces[name].get("water", False):
+            raise VariantError(f"{where}: class 'water' must match the variant's 'water'")
+    for name, province in provinces.items():
+        if province["kind"] == "child" and name not in seen:
+            raise VariantError(f"map.svg: missing path for child province '{name}'")
+
+
+def _check_svg_group(province, group):
+    where = f"map.svg: group '{province['name']}'"
+    kind = province["kind"]
+    if group.get("data-kind") != kind:
+        raise VariantError(f"{where}: data-kind must be '{kind}'")
+    paths = [path for path in group.iter(_svg("path")) if path.get("data-child") is None]
+    if not paths:
+        raise VariantError(f"{where}: needs at least one path")
+    for path in paths:
+        if ("water" in _classes(path)) != province.get("water", False):
+            raise VariantError(f"{where}: class 'water' on its paths must match the variant's 'water'")
+    circles = list(group.iter(_svg("circle")))
+    anchors = [c for c in circles if "anchor" in _classes(c)]
+    centers = [c for c in circles if "center" in _classes(c)]
+    for circle in anchors + centers:
+        if not (_is_number(circle.get("cx")) and _is_number(circle.get("cy"))):
+            raise VariantError(f"{where}: anchor and center circles need numeric 'cx' and 'cy'")
+    if kind == "neutral":
+        if anchors or centers:
+            raise VariantError(f"{where}: neutral provinces have no anchors and no center")
+        return
+    defaults = [c for c in anchors if c.get("data-coast") is None]
+    if len(defaults) != 1:
+        raise VariantError(f"{where}: needs exactly one default anchor, found {len(defaults)}")
+    found = Counter(c.get("data-coast") for c in anchors if c.get("data-coast") is not None)
+    for coast in province.get("coasts", []):
+        if found.pop(coast["name"], 0) != 1:
+            raise VariantError(f"{where}: needs exactly one anchor for coast '{coast['name']}'")
+    if found:
+        raise VariantError(f"{where}: anchor for undeclared coast '{next(iter(found))}'")
+    expected = 1 if province.get("supply_center") else 0
+    if len(centers) != expected:
+        raise VariantError(f"{where}: needs {expected} center marker(s), found {len(centers)}")
+
+
+def _check_svg(doc, text):
+    try:
+        root = ET.fromstring(text)  # noqa: S314 - the document comes from the variant folder
+    except ET.ParseError as e:
+        raise VariantError(f"map.svg: {e}")
+    if root.tag != _svg("svg"):
+        raise VariantError(f"map.svg: root element must be an <svg> in the {SVG_NS} namespace")
+    provinces = {p["name"]: p for p in doc["provinces"]}
+    groups = _svg_groups(root, provinces)
+    _check_svg_children(root, provinces, groups)
+    for name, group in groups.items():
+        _check_svg_group(provinces[name], group)
+
+
 def _compile(doc):
     ids = {p["name"]: str(i) for i, p in enumerate(doc["provinces"])}
     coast_ids = {p["name"]: {c["name"]: i for i, c in enumerate(p.get("coasts", []))} for p in doc["provinces"]}
@@ -188,9 +307,6 @@ def _compile(doc):
     def ref(text):
         name, _, coast = text.partition("/")
         return ids[name], coast_ids[name].get(coast)
-
-    def point(value):
-        return {"x": value[0], "y": value[1]}
 
     def unique(items):
         return list(dict.fromkeys(items))
@@ -205,11 +321,8 @@ def _compile(doc):
         "seas": [],
         "coasts": [],
         "neutrals": [],
-        "supply_centers": {},
-        "oxy": {},
-        "multi_coasts": {},
-        "colors": {},
-        "same": {},
+        "supply_centers": [],
+        "multi_coasts": [],
         "links": {"armies": {}, "fleets": {}, "multi_coasts": {}},
         "home_centers": {},
         "countries": {},
@@ -218,27 +331,23 @@ def _compile(doc):
     for province in doc["provinces"]:
         pid, kind = ids[province["name"]], province["kind"]
         row["names"][pid] = province["name"]
-        row["colors"][pid] = province["png"]
         if kind == "neutral":
             row["neutrals"].append(pid)
-        if kind == "child":
-            row["same"][pid] = ids[province["parent"]]
         if kind == "sea" or province.get("water"):
             row["seas"].append(pid)
         if kind in PAINTED:
             continue
         if kind == "coast":
             row["coasts"].append(pid)
-        row["oxy"][pid] = point(province["position"])
-        if "supply_center" in province:
-            row["supply_centers"][pid] = point(province["supply_center"])
+        if province.get("supply_center"):
+            row["supply_centers"].append(pid)
         links = province.get("links", {})
         if "army" in links:
             row["links"]["armies"][pid] = [ids[t] for t in links["army"]]
         if "fleet" in links:
             row["links"]["fleets"][pid] = unique(ref(t)[0] for t in links["fleet"])
         if "coasts" in province:
-            row["multi_coasts"][pid] = [point(c["position"]) for c in province["coasts"]]
+            row["multi_coasts"].append(pid)
             row["links"]["multi_coasts"][pid] = [[ids[t] for t in c["links"]["fleet"]] for c in province["coasts"]]
             row["links"]["fleets"][pid] = unique(t for reach in row["links"]["multi_coasts"][pid] for t in reach)
     for country in doc["countries"]:

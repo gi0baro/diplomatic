@@ -41,8 +41,7 @@ def load_maps():
             variant = load(path)
             if stored.get(variant["name"], 0) >= variant["revision"]:
                 continue
-            with open(os.path.join(os.path.dirname(path), "map.png"), "rb") as image:
-                res = Map.create(image=image, **variant)
+            res = Map.create(**variant)
             if res.errors:
                 raise click.ClickException(f"{path}: {res.errors}")
             print(f"Loaded {variant['name']} revision {variant['revision']}")

@@ -3,7 +3,7 @@
 from emmett import abort, redirect, request, response, url
 from emmett.tools import requires
 
-from .. import Game, GameRole, Map, app, auth, db
+from .. import Game, GameRole, Map, app, auth
 from . import front
 
 
@@ -137,7 +137,8 @@ async def map_img(gid):
     game = Game.get(gid)
     if not game:
         abort(404)
-    return response.wrap_dbfile(db, game.map.image)
+    response.content_type = "image/svg+xml"
+    return game.map.svg
 
 
 @games.route("/mine")

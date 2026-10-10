@@ -465,9 +465,9 @@ def chat_rooms(gid):
     members = defaultdict(list)
     for member in all_members:
         members[member.room].append(member)
-    #for row in rows:
+    # for row in rows:
     #    row.members = members[row.id]
-    #return {"data": rows}
+    # return {"data": rows}
     return {"data": [{**row.as_dict(), "members": members[row.id]} for row in rows]}
 
 

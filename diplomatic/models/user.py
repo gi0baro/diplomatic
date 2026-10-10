@@ -9,7 +9,6 @@ from .economy import Vault
 
 
 # from diplomatic.helpers.validators import UserAvatarSet
-# from diplomatic.helpers.images import thumb_on_send
 
 
 class User(AuthUserBasic):
@@ -44,11 +43,6 @@ class User(AuthUserBasic):
             return
         UserStats.create(user=rid)
         Vault.create(user=rid)
-
-    # @before_update
-    # def update_avatar_thumb(self, dbset, fields):
-    #     if fields.get('avatar_img'):
-    #         thumb_on_send(fields, "avatar_img")
 
 
 class UserStats(TSModel):
