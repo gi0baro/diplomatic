@@ -1,27 +1,85 @@
-[tool.poetry]
-name = "nudiplomacy"
+[project]
+name = "diplomatic"
 version = "0.1.0"
-description = ""
-authors = ["gi0baro <gi0baro@d4net.org>"]
 
-[tool.poetry.dependencies]
-python = "^3.7"
-# emmett = "2.0.0b2"
-emmett = { git = "https://github.com/emmett-framework/emmett.git", rev = "6851f2b", allow-prereleases = true }
-renoir-haml = "1.0.0"
-emmett-haml = { git = "https://github.com/gi0baro/emmett-haml.git", rev = "9c03df6", allow-prereleases = true }
-# weppy-bs3 = { git = "https://github.com/gi0baro/weppy-bs3.git", rev = "3978a5f" }
-emmett-assets = { git = "https://github.com/gi0baro/emmett-assets.git", rev = "6ebbc16", allow-prereleases = true }
-coffeescript = "1.1.2"
-redis = "~3.3.11"
-aioredis = "~1.3.0"
-psycopg2-binary = "~2.8.4"
-celery = "~4.3.0"
+dependencies = [
+    "emmett[rapidjson]~=2.8.2",
+    "emmett-haml",
+    "emmett-assets",
+    "coffeescript==1.1.2",
+    "redis~=8.1.0",
+    "psycopg2-binary",
+    "celery",
+    "diplomatico",
+]
 
-[tool.poetry.dev-dependencies]
-pytest = "~5.2.2"
-pylint = "^2.4.4"
+[tool.uv.sources]
+diplomatico = { path = "./diplomatico", editable = true }
+emmett-assets = { git = "https://github.com/gi0baro/emmett-assets", rev = "6ebbc16" }
 
-[build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+[tool.ruff]
+line-length = 120
+extend-exclude = ['diplomatic/migrations']
+
+[tool.ruff.format]
+quote-style = 'double'
+
+[tool.ruff.lint]
+extend-select = [
+    # E and F are enabled by default
+    'B',      # flake8-bugbear
+    'C4',     # flake8-comprehensions
+    'C90',    # mccabe
+    'I',      # isort
+    'N',      # pep8-naming
+    'Q',      # flake8-quotes
+    'RUF100', # ruff (unused noqa)
+    'S',      # flake8-bandit
+    'W',      # pycodestyle
+]
+extend-ignore = [
+    'B006', # mutable function args are fine
+    'B008', # function calls in args defaults are fine
+    'B009', # getattr with constants is fine
+    'B023', # lambdas in loops are consumed by ORM queries immediately
+    'B034', # re.split won't confuse us
+    'B904', # rising without from is fine
+    'B905',
+    'C408', # dict() calls are fine
+    'E711', # ORM query syntax: field == None means IS NULL
+    'E712', # ORM query syntax: field == True is the query, not a truth check
+    'E731', # assigning lambdas is fine
+    'F403', # import * is fine
+    'N801', # leave to us class naming
+    'N802', # leave to us method naming
+    'N806', # leave to us var naming
+    'N811', # leave to us var naming
+    'N814', # leave to us var naming
+    'N818', # leave to us exceptions naming
+    'S101', # assert is fine
+    'S102', # exec is fine
+    'S104', # leave to us security
+    'S105', # leave to us security
+    'S106', # leave to us security
+    'S107', # leave to us security
+    'S110', # pass on exceptions is fine
+    'S301', # leave to us security
+    'S307', # leave to us security
+    'S324', # leave to us security
+]
+mccabe = { max-complexity = 44 }
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+lines-after-imports = 2
+known-first-party = ['diplomatic', 'tests']
+
+[tool.ruff.lint.per-file-ignores]
+'**/__init__.py' = ['E402', 'F401']
+'tests/**' = ['B017', 'B018', 'E711', 'E712', 'E741', 'F841', 'N803', 'S110', 'S501']
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.4",
+    "ruff~=0.15.0",
+]

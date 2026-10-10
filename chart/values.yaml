@@ -10,16 +10,16 @@ image:
     - name: gitlab-registry
 images:
   web:
-    repository: cr.amira.io/nudiplomacy/web/web
+    repository: cr.amira.io/diplomatic/web/web
   worker:
-    repository: cr.amira.io/nudiplomacy/web/worker
+    repository: cr.amira.io/diplomatic/web/worker
   scheduler:
-    repository: cr.amira.io/nudiplomacy/web/scheduler
+    repository: cr.amira.io/diplomatic/web/scheduler
 podAnnotations: {}
 application:
   track: stable
   tier: web
-  migrateCommand: emmett -a nudiplomacy migrations up
+  migrateCommand: emmett -a diplomatic migrations up
   secretName:
   secretChecksum:
 hpa:

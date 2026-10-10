@@ -51,6 +51,7 @@ Feature: Support can be cut with other coast
         Spain fails
         Mid-Atlantic Ocean fails
         Gulf of Lyon fails
+        Mid-Atlantic Ocean is dislodged
 
 Feature: Coastal crawl not allowed
     Given

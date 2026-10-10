@@ -1,50 +1,48 @@
 # -*- coding: utf-8 -*-
 
-import json
+from diplomatico.constants import OrderType, Phase, Season
 
-from diplomacy.constants import PHASES, ORDERS
-from diplomacy.checkers import Validator, PreProcessor
-from diplomacy.judge import Judge
+from diplomatic.variants import load
+from diplomatico import Board, Turn, process
 
 
 def _load_raw_orders(group):
-    with open('tests/raw/{}.txt'.format(group)) as f:
+    with open("tests/raw/{}.txt".format(group)) as f:
         lines = f.readlines()
     return lines
 
 
 def load_map():
-    with open('variants/classic/classic.json') as f:
-        rv = json.load(f)
-    return rv
+    return load("variants/classic/classic.yaml")
 
 
 def get_test_data(raw, mapref):
-    tests, troops, mcpos, expected = [], [], [], []
+    tests, troops, mcpos, expected, dislodged = [], [], [], [], []
     #: build inverse dict for map reference
     nameref = {}
-    for k, v in mapref['names'].items():
+    for k, v in mapref["names"].items():
         nameref[v] = k
     #: process
     reading = None
     i = -1
     for line in raw:
         sline = line.strip()
-        if sline.startswith('Feature:'):
+        if sline.startswith("Feature:"):
             i += 1
-            tests.append({'data': {}, 'feature': sline.split("Feature: ")[1]})
+            tests.append({"data": {}, "feature": sline.split("Feature: ")[1]})
             troops.append({})
             mcpos.append({})
             expected.append({})
+            dislodged.append(set())
         else:
             if sline == "Given":
                 reading = "orders"
             elif sline == "Then":
                 reading = "results"
-            elif sline.endswith(':'):
+            elif sline.endswith(":"):
                 country = sline[:-1]
-                tests[i]['data'][country] = {}
-                troops[i][country] = {'armies': [], 'fleets': []}
+                tests[i]["data"][country] = {}
+                troops[i][country] = {"armies": [], "fleets": []}
             else:
                 if not sline:
                     continue
@@ -68,12 +66,12 @@ def get_test_data(raw, mapref):
                     if mc in [0, 1]:
                         mcpos[i][troop_id] = mc
                     if troop_type == "fleet":
-                        troops[i][country]['fleets'].append(troop_id)
+                        troops[i][country]["fleets"].append(troop_id)
                     else:
-                        troops[i][country]['armies'].append(troop_id)
+                        troops[i][country]["armies"].append(troop_id)
                     order_data = sline.split(cmd)[1]
                     if cmd == " holds":
-                        data = {'type': ORDERS.HOLD}
+                        data = {"type": OrderType.HOLD}
                     elif cmd == " moves ":
                         sub = order_data.split("to ")[1]
                         via_convoy = False
@@ -87,140 +85,88 @@ def get_test_data(raw, mapref):
                         if sub.endswith(" (sc)"):
                             mc = 1
                             sub = sub[:-5]
-                        data = {'type': ORDERS.MOVE, 'dst': nameref[sub]}
+                        data = {"type": OrderType.MOVE, "dst": nameref[sub]}
                         if via_convoy:
-                            data['through'] = True
+                            data["through"] = True
                         if mc in [0, 1]:
-                            data['coast'] = mc
+                            data["coast"] = mc
                     elif cmd == " supports movement ":
                         sub = order_data.split("of ")[1]
                         sub = sub.split(" to ")
-                        data = {'type': ORDERS.SUPPORT_MOVE, 'src': nameref[sub[0]], 'dst': nameref[sub[1]]}
+                        data = {"type": OrderType.SUPPORT_MOVE, "src": nameref[sub[0]], "dst": nameref[sub[1]]}
                     elif cmd == " supports hold ":
                         sub = order_data.split("of ")[1]
-                        data = {'type': ORDERS.SUPPORT_HOLD, 'dst': nameref[sub]}
+                        data = {"type": OrderType.SUPPORT_HOLD, "dst": nameref[sub]}
                     elif cmd == " convoys ":
                         sub = order_data.split(" to ")
-                        data = {'type': ORDERS.CONVOY, 'src': nameref[sub[0]], 'dst': nameref[sub[1]]}
-                    tests[i]['data'][country][troop_id] = data
-                else:
-                    troop_pos = sline.split(" fails")[0]
-                    expected[i][nameref[troop_pos]] = False
-    return tests, troops, expected
+                        data = {"type": OrderType.CONVOY, "src": nameref[sub[0]], "dst": nameref[sub[1]]}
+                    tests[i]["data"][country][troop_id] = data
+                elif sline.endswith(" fails"):
+                    expected[i][nameref[sline[: -len(" fails")]]] = False
+                elif sline.endswith(" is dislodged"):
+                    dislodged[i].add(nameref[sline[: -len(" is dislodged")]])
+    return tests, troops, mcpos, expected, dislodged
 
 
-def apply_convoys_fixture(mapref, tests, troops):
-    for _, test in enumerate(tests):
-        game_data = {}
-        for key in ["terrs", "supply", "centers", "phase", "prev", "mc_pos"]:
-            game_data[key] = None
-        game_data["troops"] = {'armies': [], 'fleets': []}
-        game_data["armies"] = []
-        game_data["fleets"] = []
-        for country, tdata in troops[_].items():
-            for troop in tdata["armies"]:
-                game_data["armies"].append(troop)
-            for troop in tdata["fleets"]:
-                game_data["fleets"].append(troop)
-        for country, orders in test['data'].items():
-            validator = Validator(
-                mapref, mapref['home_centers'], PHASES.DIPLOMACY, game_data['armies'], game_data['fleets'],
-                {}, troops[_][country]['armies'] + troops[_][country]['fleets'], [])
+def apply_convoys_fixture(mapref, tests, troops, coasts):
+    for test, test_troops, test_coasts in zip(tests, troops, coasts):
+        board = Board(mapref, test_troops, test_coasts)
+        for country, orders in test["data"].items():
             for territory_id, order in orders.items():
-                if order['type'] == ORDERS.MOVE:
-                    if territory_id in troops[_][country]['armies']:
-                        make_convoy = False
-                        if order.get('through'):
-                            make_convoy = True
-                        if not make_convoy:
-                            for other_order in orders.values():
-                                if other_order['type'] == ORDERS.CONVOY and other_order.get('src', 0) == territory_id:
-                                    make_convoy = True
-                        if make_convoy or order['dst'] not in mapref['links']['armies'].get(territory_id, []):
-                            if order['dst'] in validator._convoy_maps(territory_id):
-                                routes = validator._get_convoy_routes(territory_id, order['dst'])
-                                order['through'] = True
-                                order['routes'] = routes
-
-
-def _prnt(*args):
-    print(*args)
-
-
-def _test_game(obj, testn):
-    test = obj.data[testn]
-    print("Orders:\n" + str(test['data']))
-    preproc = PreProcessor(test['data'], _prnt)
-    failed_orders = preproc.process("diplomacy")
-    print("[GameProc:Pre] failed: " + str(preproc.fails))
-    for fail_tup in failed_orders:
-        test['data'][fail_tup[0]][fail_tup[1]]['failed'] = True
-    adjOrders = dict()
-    for country, order in test['data'].items():
-        for tid, data in order.items():
-            adjOrders[tid] = data
-            adjOrders[tid]['country'] = country
-            adjOrders[tid]['name'] = obj.mapref["names"][tid]
-    adj = Judge(adjOrders, _prnt)
-    print("Feature: " + test['feature'])
-    adj.adjudicate()
-    for node in adj.orders.list:
-        assert node.succeeded == obj.expected[testn].get(node.id, True)
+                if order["type"] != OrderType.MOVE or territory_id not in test_troops[country]["armies"]:
+                    continue
+                convoyed = order.get("through") or any(
+                    other["type"] == OrderType.CONVOY and other.get("src") == territory_id for other in orders.values()
+                )
+                if convoyed or order["dst"] not in mapref["links"]["armies"].get(territory_id, []):
+                    if board.convoy_routes(territory_id, order["dst"]):
+                        order["through"] = True
 
 
 def pytest_generate_tests(metafunc):
     raw_name = "_".join(metafunc.function.__name__.split("_")[1:])
     raw_data = _load_raw_orders(raw_name)
-    tests, troops, expected = get_test_data(raw_data, metafunc.cls.mapref)
-    apply_convoys_fixture(metafunc.cls.mapref, tests, troops)
+    tests, troops, coasts, expected, dislodged = get_test_data(raw_data, metafunc.cls.mapref)
+    apply_convoys_fixture(metafunc.cls.mapref, tests, troops, coasts)
     idlist = []
     argvalues = []
     for _, test in enumerate(tests):
-        idlist.append(test['feature'])
-        argvalues.append((test['data'], expected[_]))
-    metafunc.parametrize(['orders', 'expected'], argvalues, ids=idlist, scope="class")
+        idlist.append(test["feature"])
+        argvalues.append((test["data"], troops[_], coasts[_], expected[_], dislodged[_]))
+    metafunc.parametrize(["orders", "troops", "coasts", "expected", "dislodged"], argvalues, ids=idlist, scope="class")
 
 
 class TestClass(object):
     mapref = load_map()
 
-    def _run_tests(self, orders, expected):
-        preproc = PreProcessor(orders, _prnt)
-        failed_orders = preproc.process(PHASES.DIPLOMACY)
-        print("[GameProc:Pre] failed: {}".format(failed_orders))
-        for fail_tup in failed_orders:
-            orders[fail_tup[0]][fail_tup[1]]['failed'] = True
-        judge_orders = {}
-        for country, order in orders.items():
-            for tid, data in order.items():
-                judge_orders[tid] = data
-                judge_orders[tid]['country'] = country
-                judge_orders[tid]['name'] = self.mapref["names"][tid]
-        adj = Judge(judge_orders, _prnt)
-        # print("Feature: " + test['feature'])
-        adj.process()
-        for node in adj.orders.list:
-            try:
-                assert node.succeeded == expected.get(node.id, True)
-            except AssertionError:
-                raise Exception(
-                    f'Check failed over node {node.id}: '
-                    f'succeeded {node.succeeded} expected {expected.get(node.id, True)}')
+    def _run_tests(self, orders, troops, coasts, expected, dislodged):
+        territories = {country: [] for country in troops}
+        turn = Turn(
+            Phase.DIPLOMACY, 1901, Season.SPRING, territories, self.mapref["home_centers"], self.mapref["scs_to_win"]
+        )
+        outcome = process(Phase.DIPLOMACY, orders, Board(self.mapref, troops, coasts), turn)
+        succeeded = {territory for _, territory in outcome.succeeded}
+        dislodged_out = {territory for territories in outcome.dislodged.values() for territory in territories}
+        for country_orders in orders.values():
+            for territory in country_orders:
+                name = self.mapref["names"][territory]
+                assert (territory in succeeded) == expected.get(territory, True), f"{name}: succeeded"
+                assert (territory in dislodged_out) == (territory in dislodged), f"{name}: dislodged"
 
-    def test_basic(self, orders, expected):
-        self._run_tests(orders, expected)
+    def test_basic(self, orders, troops, coasts, expected, dislodged):
+        self._run_tests(orders, troops, coasts, expected, dislodged)
 
-    def test_circular(self, orders, expected):
-        self._run_tests(orders, expected)
+    def test_circular(self, orders, troops, coasts, expected, dislodged):
+        self._run_tests(orders, troops, coasts, expected, dislodged)
 
-    def test_supports(self, orders, expected):
-        self._run_tests(orders, expected)
+    def test_supports(self, orders, troops, coasts, expected, dislodged):
+        self._run_tests(orders, troops, coasts, expected, dislodged)
 
-    def test_head2head(self, orders, expected):
-        self._run_tests(orders, expected)
+    def test_head2head(self, orders, troops, coasts, expected, dislodged):
+        self._run_tests(orders, troops, coasts, expected, dislodged)
 
-    def test_convoys(self, orders, expected):
-        self._run_tests(orders, expected)
+    def test_convoys(self, orders, troops, coasts, expected, dislodged):
+        self._run_tests(orders, troops, coasts, expected, dislodged)
 
-    def test_convoys_adjacent(self, orders, expected):
-        self._run_tests(orders, expected)
+    def test_convoys_adjacent(self, orders, troops, coasts, expected, dislodged):
+        self._run_tests(orders, troops, coasts, expected, dislodged)

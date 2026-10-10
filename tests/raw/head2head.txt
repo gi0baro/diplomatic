@@ -8,6 +8,7 @@ Feature: Dislodged unit has no effect on attackers area
             army in Prussia moves to Berlin
     Then
         Prussia fails
+        Prussia is dislodged
 
 Feature: Avoid self dislodgement on head2head
     Given
@@ -80,6 +81,7 @@ Feature: Dislodged loser keeps effect
         Holland fails
         North Sea fails
         Ruhr fails
+        North Sea is dislodged
 
 Feature: Non-dislodged army because of self support keeps effect
     Given

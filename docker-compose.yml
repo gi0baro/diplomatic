@@ -1,31 +1,37 @@
-version: '3.7'
+x-env: &env
+  POSTGRES_HOST: db
+  POSTGRES_DB: diplomatic
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  REDIS_HOST: redis
+  WRK_BROKER_URL: redis://redis:6379/1
+
+x-src: &src
+  - ./diplomatic:/app/diplomatic
+  - ./variants:/app/variants
 
 services:
   db:
-    image: postgres:10-alpine
+    image: docker.io/library/postgres:18-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: diplomacy
+      POSTGRES_DB: diplomatic
 
   redis:
-    image: redis:latest
+    image: docker.io/library/redis:latest
 
   web:
     build:
       context: .
-      dockerfile: docker/Base.latest.Dockerfile
-    entrypoint: emmett -a nudiplomacy
+      target: web
     command: develop --host=0.0.0.0
-    environment:
-      POSTGRES_HOST: db
-      POSTGRES_DB: diplomacy
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      REDIS_HOST: redis
-      WRK_BROKER_URL: redis://redis:6379/1
+    environment: *env
     volumes:
-      - .:/app
+      - ./diplomatic:/app/diplomatic
+      - ./variants:/app/variants
+      # keep the game-board bundle built in the image, not the host's empty folder
+      - /app/diplomatic/static/gboard
     depends_on:
       - db
       - redis
@@ -35,18 +41,20 @@ services:
   wrk:
     build:
       context: .
-      dockerfile: docker/Base.latest.Dockerfile
-    command: celery worker -l debug -A nudiplomacy:celery -Q games
-    environment:
-      POSTGRES_HOST: db
-      POSTGRES_DB: diplomacy
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      REDIS_HOST: redis
-      WRK_BROKER_URL: redis://redis:6379/1
-      C_FORCE_ROOT: 'true'
-    volumes:
-      - .:/app
+      target: worker
+    command: worker -Q games -l debug
+    environment: *env
+    volumes: *src
+    depends_on:
+      - db
+      - redis
+
+  wsc:
+    build:
+      context: .
+      target: scheduler
+    environment: *env
+    volumes: *src
     depends_on:
       - db
       - redis

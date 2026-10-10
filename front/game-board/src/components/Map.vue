@@ -80,8 +80,7 @@ export default {
       if (this.srcLoaded) {
         return
       }
-      let path = event.path || (event.composedPath && event.composedPath())
-      let obj = path[0]
+      let obj = event.target
       this.img.width = obj.naturalWidth
       this.img.height = obj.naturalHeight
       this.canvas.width = obj.width
@@ -104,8 +103,7 @@ export default {
       let rx = event.layerX || event.clientX
       let ry = event.layerY || event.clientY
       if (event.target.y === undefined) {
-        let path = event.path || (event.composedPath && event.composedPath())
-        let obj = path[0]
+        let obj = event.target
         sx -= this.offsets.x
         rx -= this.offsets.x
         sy -= this.offsets.y
@@ -139,13 +137,11 @@ export default {
       }
       this.$emit('left')
       clearTimeout(this.mouseTrack.timeout)
-      this.mouseTrack.timeout = setTimeout(() => {
-        this.mapMouseMoved(event)
-      }, 300)
-    },
-    mapMouseMoved(event) {
+      // read the event now: its target and path are cleared once dispatch ends
       let data = this.getEventPositions(event)
-      this.$emit('holdOver', data.input, data.relative, data.position)
+      this.mouseTrack.timeout = setTimeout(() => {
+        this.$emit('holdOver', data.input, data.relative, data.position)
+      }, 300)
     }
   }
 }

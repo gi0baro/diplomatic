@@ -50,7 +50,7 @@ export default {
         return null
       }
       if (!this.message.sender) {
-        return 'nuDiplomacy'
+        return 'Diplomatic'
       }
       return this.roomMembersMap[this.message.sender].country
     }

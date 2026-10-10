@@ -7,11 +7,14 @@ __pycache__
 .venv
 node_modules
 
-nudiplomacy/databases/*
-nudiplomacy/logs/*.log
-nudiplomacy/static/dist/*
-nudiplomacy/static/gboard/*
-nudiplomacy/static/bs3/*
-nudiplomacy/uploads/*
+diplomatico/**/*.so
+diplomatico/target
+
+diplomatic/databases/*
+diplomatic/logs/*.log
+diplomatic/static/dist/*
+diplomatic/static/gboard/*
+diplomatic/static/bs3/*
+diplomatic/uploads/*
 
 *.haml.html

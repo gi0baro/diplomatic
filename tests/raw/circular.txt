@@ -63,6 +63,7 @@ Feature: Disrupted circular movement due to dislodged convoy
         Bulgaria fails
         Serbia fails
         Trieste fails
+        Ionian Sea is dislodged
 
 Feature: 2 armies with 2 convoys
     Given

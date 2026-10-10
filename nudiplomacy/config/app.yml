@@ -1,9 +1,0 @@
-db:
-  adapter: postgres
-  encoding: utf8
-  big_id_fields: yes
-langs: ["en", "it"]
-worker:
-  cron:
-    manage_games:
-      schedule: 60

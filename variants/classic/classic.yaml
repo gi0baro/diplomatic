@@ -1,0 +1,645 @@
+name: Classic
+revision: 1
+year: 1901
+centers_to_win: 18
+min_players: 2
+provinces:
+  - name: Norwegian Sea
+    kind: sea
+    png: [255, 253, 10]
+    position: [467, 125]
+    links:
+      fleet: [North Sea, Barents Sea, North Atlantic Ocean, Norway, Edinburgh, Clyde]
+  - name: Eastern Mediterranean
+    kind: sea
+    png: [255, 252, 160]
+    position: [846, 967]
+    links:
+      fleet: [Smyrna, Ionian Sea, Syria, Aegean Sea]
+  - name: Warsaw
+    kind: inland
+    supply_center: [691, 534]
+    png: [0, 210, 0]
+    position: [664, 539]
+    links:
+      army: [Prussia, Galicia, Silesia, Ukraine, Moscow, Livonia]
+  - name: Crete
+    kind: neutral
+    png: [240, 30, 255]
+  - name: Norway
+    kind: coast
+    supply_center: [504, 312]
+    png: [0, 130, 0]
+    position: [526, 279]
+    links:
+      army: [St. Petersburg, Sweden, Finland]
+      fleet: [Norwegian Sea, Skagerrak, North Sea, St. Petersburg/North, Sweden, Barents Sea]
+  - name: Barents Sea
+    kind: sea
+    png: [255, 253, 20]
+    position: [837, 37]
+    links:
+      fleet: [St. Petersburg/North, Norway, Norwegian Sea]
+  - name: Cyprus
+    kind: neutral
+    water: true
+    png: [240, 20, 255]
+  - name: Liverpool
+    kind: coast
+    supply_center: [326, 434]
+    png: [0, 0, 170]
+    position: [320, 411]
+    links:
+      army: [Wales, Yorkshire, Edinburgh, Clyde]
+      fleet: [North Atlantic Ocean, Wales, Irish Sea, Clyde]
+  - name: Baltic Sea
+    kind: sea
+    png: [255, 252, 90]
+    position: [626, 430]
+    links:
+      fleet: [Gulf of Bothnia, Berlin, Kiel, Livonia, Sweden, Denmark, Prussia]
+  - name: Gulf of Bothnia
+    kind: sea
+    png: [255, 252, 100]
+    position: [651, 310]
+    links:
+      fleet: [Sweden, Livonia, St. Petersburg/South, Baltic Sea, Finland]
+  - name: Yorkshire
+    kind: coast
+    png: [0, 0, 160]
+    position: [345, 427]
+    links:
+      army: [Edinburgh, London, Wales, Liverpool]
+      fleet: [Edinburgh, London, North Sea]
+  - name: Wales
+    kind: coast
+    png: [0, 0, 150]
+    position: [301, 472]
+    links:
+      army: [Yorkshire, Liverpool, London]
+      fleet: [Irish Sea, English Channel, Liverpool, London]
+  - name: Switzerland
+    kind: neutral
+    png: [240, 60, 255]
+  - name: Berlin
+    kind: coast
+    supply_center: [564, 501]
+    png: [0, 100, 0]
+    position: [550, 488]
+    links:
+      army: [Munich, Kiel, Prussia, Silesia]
+      fleet: [Baltic Sea, Kiel, Prussia]
+  - name: London
+    kind: coast
+    supply_center: [335, 480]
+    png: [0, 0, 140]
+    position: [346, 489]
+    links:
+      army: [Wales, Yorkshire]
+      fleet: [North Sea, English Channel, Wales, Yorkshire]
+  - name: Ruhr
+    kind: inland
+    png: [0, 60, 0]
+    position: [454, 561]
+    links:
+      army: [Burgundy, Belgium, Munich, Holland, Kiel]
+  - name: Silesia
+    kind: inland
+    png: [0, 80, 0]
+    position: [593, 547]
+    links:
+      army: [Galicia, Bohemia, Warsaw, Munich, Berlin, Prussia]
+  - name: Vienna
+    kind: inland
+    supply_center: [590, 660]
+    png: [0, 240, 0]
+    position: [602, 640]
+    links:
+      army: [Bohemia, Trieste, Budapest, Tyrolia, Galicia]
+  - name: Adriatic Sea
+    kind: sea
+    png: [255, 252, 150]
+    position: [570, 775]
+    links:
+      fleet: [Venice, Ionian Sea, Albania, Apulia, Trieste]
+  - name: Portugal
+    kind: coast
+    supply_center: [86, 760]
+    png: [0, 0, 50]
+    position: [102, 726]
+    links:
+      army: [Spain]
+      fleet: [Spain/North, Spain/South, Mid-Atlantic Ocean]
+  - name: Cyprus (east)
+    kind: neutral
+    water: true
+    png: [240, 10, 255]
+  - name: Finland
+    kind: coast
+    png: [0, 150, 0]
+    position: [708, 249]
+    links:
+      army: [Norway, St. Petersburg, Sweden]
+      fleet: [Gulf of Bothnia, St. Petersburg/South, Sweden]
+  - name: Irish Sea
+    kind: sea
+    png: [255, 253, 40]
+    position: [228, 478]
+    links:
+      fleet: [Liverpool, Mid-Atlantic Ocean, North Atlantic Ocean, English Channel, Wales]
+  - name: Galicia
+    kind: inland
+    png: [0, 220, 0]
+    position: [688, 603]
+    links:
+      army: [Warsaw, Ukraine, Silesia, Budapest, Bohemia, Rumania, Vienna]
+  - name: Armenia
+    kind: coast
+    png: [0, 0, 90]
+    position: [1134, 826]
+    links:
+      army: [Sevastopol, Syria, Ankara, Smyrna]
+      fleet: [Sevastopol, Ankara, Black Sea]
+  - name: Ankara
+    kind: coast
+    supply_center: [903, 809]
+    png: [0, 0, 100]
+    position: [949, 815]
+    links:
+      army: [Smyrna, Armenia, Constantinople]
+      fleet: [Black Sea, Armenia, Constantinople]
+  - name: Skagerrak
+    kind: sea
+    png: [255, 252, 80]
+    position: [506, 369]
+    links:
+      fleet: [Norway, Denmark, North Sea, Sweden]
+  - name: Greece
+    kind: coast
+    supply_center: [678, 844]
+    png: [0, 0, 130]
+    position: [683, 875]
+    links:
+      army: [Bulgaria, Serbia, Albania]
+      fleet: [Bulgaria/South, Ionian Sea, Aegean Sea, Albania]
+  - name: Sardinia
+    kind: neutral
+    png: [240, 40, 255]
+  - name: Denmark
+    kind: coast
+    supply_center: [499, 416]
+    png: [0, 120, 0]
+    position: [521, 435]
+    links:
+      army: [Kiel, Sweden]
+      fleet: [Skagerrak, Baltic Sea, Helgoland Bight, North Sea, Kiel, Sweden]
+  - name: Denmark (strait)
+    kind: child
+    parent: Denmark
+    water: true
+    png: [240, 50, 255]
+  - name: North Atlantic Ocean
+    kind: sea
+    png: [255, 252, 0]
+    position: [170, 234]
+    links:
+      fleet: [Mid-Atlantic Ocean, Irish Sea, Norwegian Sea, Clyde, Liverpool]
+  - name: Ukraine
+    kind: inland
+    png: [0, 170, 0]
+    position: [794, 580]
+    links:
+      army: [Moscow, Warsaw, Sevastopol, Rumania, Galicia]
+  - name: Spain
+    kind: coast
+    supply_center: [164, 766]
+    png: [250, 0, 0]
+    position: [210, 759]
+    coasts:
+      - name: North
+        position: [183, 682]
+        links:
+          fleet: [Mid-Atlantic Ocean, Portugal, Gascony]
+      - name: South
+        position: [182, 835]
+        links:
+          fleet: [Mid-Atlantic Ocean, Western Mediterranean, Portugal, Gulf of Lyon, Marseilles]
+    links:
+      army: [Portugal, Gascony, Marseilles]
+  - name: Smyrna
+    kind: coast
+    supply_center: [933, 872]
+    png: [0, 0, 110]
+    position: [906, 899]
+    links:
+      army: [Armenia, Syria, Ankara, Constantinople]
+      fleet: [Eastern Mediterranean, Aegean Sea, Syria, Constantinople]
+  - name: Iceland
+    kind: neutral
+    png: [240, 70, 255]
+  - name: Black Sea
+    kind: sea
+    png: [255, 252, 180]
+    position: [947, 738]
+    links:
+      fleet: [Sevastopol, Constantinople, Bulgaria/East, Armenia, Ankara, Rumania]
+  - name: Picardy
+    kind: coast
+    png: [230, 0, 0]
+    position: [363, 553]
+    links:
+      army: [Paris, Brest, Burgundy, Belgium]
+      fleet: [English Channel, Brest, Belgium]
+  - name: North Africa
+    kind: coast
+    png: [0, 0, 60]
+    position: [201, 943]
+    links:
+      army: [Tunis]
+      fleet: [Mid-Atlantic Ocean, Tunis, Western Mediterranean]
+  - name: Brest
+    kind: coast
+    supply_center: [282, 578]
+    png: [220, 0, 0]
+    position: [300, 590]
+    links:
+      army: [Gascony, Picardy, Paris]
+      fleet: [English Channel, Gascony, Picardy, Mid-Atlantic Ocean]
+  - name: Syria
+    kind: coast
+    png: [0, 0, 80]
+    position: [1135, 935]
+    links:
+      army: [Armenia, Smyrna]
+      fleet: [Eastern Mediterranean, Smyrna]
+  - name: Paris
+    kind: inland
+    supply_center: [330, 633]
+    png: [210, 0, 0]
+    position: [353, 611]
+    links:
+      army: [Picardy, Gascony, Brest, Burgundy]
+  - name: North Sea
+    kind: sea
+    png: [255, 252, 50]
+    position: [412, 381]
+    links:
+      fleet: [Norwegian Sea, Belgium, Norway, Holland, Edinburgh, Skagerrak, Yorkshire, Denmark, Helgoland Bight, London,
+        English Channel]
+  - name: Burgundy
+    kind: inland
+    png: [200, 0, 0]
+    position: [402, 624]
+    links:
+      army: [Belgium, Marseilles, Paris, Munich, Gascony, Picardy, Ruhr]
+  - name: Tunis
+    kind: coast
+    supply_center: [429, 925]
+    png: [0, 0, 70]
+    position: [427, 953]
+    links:
+      army: [North Africa]
+      fleet: [Tyrrhenian Sea, North Africa, Ionian Sea, Western Mediterranean]
+  - name: Prussia
+    kind: coast
+    png: [0, 90, 0]
+    position: [631, 488]
+    links:
+      army: [Livonia, Silesia, Berlin, Warsaw]
+      fleet: [Livonia, Berlin, Baltic Sea]
+  - name: Gascony
+    kind: coast
+    png: [190, 0, 0]
+    position: [305, 669]
+    links:
+      army: [Brest, Marseilles, Spain, Burgundy, Paris]
+      fleet: [Brest, Spain/North, Mid-Atlantic Ocean]
+  - name: English Channel
+    kind: sea
+    png: [255, 252, 60]
+    position: [284, 530]
+    links:
+      fleet: [Wales, Brest, Mid-Atlantic Ocean, Belgium, Picardy, London, Irish Sea, North Sea]
+  - name: Kiel
+    kind: coast
+    supply_center: [509, 508]
+    png: [0, 110, 0]
+    position: [484, 503]
+    links:
+      army: [Denmark, Munich, Berlin, Holland, Ruhr]
+      fleet: [Denmark, Helgoland Bight, Berlin, Holland, Baltic Sea]
+  - name: Piedmont
+    kind: coast
+    png: [170, 0, 0]
+    position: [455, 702]
+    links:
+      army: [Tyrolia, Marseilles, Venice, Tuscany]
+      fleet: [Gulf of Lyon, Marseilles, Tuscany]
+  - name: Helgoland Bight
+    kind: sea
+    png: [255, 252, 70]
+    position: [450, 447]
+    links:
+      fleet: [North Sea, Holland, Denmark, Kiel]
+  - name: Tuscany
+    kind: coast
+    png: [160, 0, 0]
+    position: [488, 757]
+    links:
+      army: [Piedmont, Venice, Rome]
+      fleet: [Piedmont, Gulf of Lyon, Tyrrhenian Sea, Rome]
+  - name: Rome
+    kind: coast
+    supply_center: [508, 792]
+    png: [150, 0, 0]
+    position: [522, 793]
+    links:
+      army: [Venice, Apulia, Naples, Tuscany]
+      fleet: [Tyrrhenian Sea, Naples, Tuscany]
+  - name: Naples
+    kind: coast
+    supply_center: [559, 837]
+    png: [140, 0, 0]
+    position: [538, 905]
+    links:
+      army: [Apulia, Rome]
+      fleet: [Apulia, Ionian Sea, Tyrrhenian Sea, Rome]
+  - name: Bohemia
+    kind: inland
+    png: [0, 250, 0]
+    position: [572, 591]
+    links:
+      army: [Silesia, Tyrolia, Munich, Galicia, Vienna]
+  - name: Apulia
+    kind: coast
+    png: [130, 0, 0]
+    position: [585, 826]
+    links:
+      army: [Rome, Naples, Venice]
+      fleet: [Adriatic Sea, Ionian Sea, Naples, Venice]
+  - name: Sweden
+    kind: coast
+    supply_center: [571, 362]
+    png: [0, 140, 0]
+    position: [595, 270]
+    links:
+      army: [Finland, Norway, Denmark]
+      fleet: [Baltic Sea, Skagerrak, Finland, Norway, Gulf of Bothnia, Denmark]
+  - name: Munich
+    kind: inland
+    supply_center: [518, 613]
+    png: [0, 70, 0]
+    position: [498, 589]
+    links:
+      army: [Berlin, Tyrolia, Burgundy, Silesia, Kiel, Ruhr, Bohemia]
+  - name: Venice
+    kind: coast
+    supply_center: [512, 677]
+    png: [120, 0, 0]
+    position: [498, 702]
+    links:
+      army: [Tyrolia, Rome, Piedmont, Trieste, Tuscany, Apulia]
+      fleet: [Trieste, Adriatic Sea, Apulia]
+  - name: Sevastopol
+    kind: coast
+    supply_center: [914, 623]
+    png: [0, 180, 0]
+    position: [1002, 599]
+    links:
+      army: [Moscow, Armenia, Rumania, Ukraine]
+      fleet: [Armenia, Rumania, Black Sea]
+  - name: Constantinople
+    kind: coast
+    supply_center: [839, 849]
+    png: [110, 0, 0]
+    position: [805, 841]
+    links:
+      army: [Bulgaria, Smyrna, Ankara]
+      fleet: [Bulgaria/East, Bulgaria/South, Smyrna, Aegean Sea, Ankara, Black Sea]
+  - name: Rumania
+    kind: coast
+    supply_center: [731, 721]
+    png: [100, 0, 0]
+    position: [777, 712]
+    links:
+      army: [Ukraine, Bulgaria, Sevastopol, Budapest, Galicia, Serbia]
+      fleet: [Bulgaria/East, Sevastopol, Black Sea]
+  - name: Bulgaria
+    kind: coast
+    supply_center: [713, 778]
+    png: [90, 0, 0]
+    position: [744, 778]
+    coasts:
+      - name: East
+        position: [785, 762]
+        links:
+          fleet: [Rumania, Black Sea, Constantinople]
+      - name: South
+        position: [753, 810]
+        links:
+          fleet: [Aegean Sea, Constantinople, Greece]
+    links:
+      army: [Rumania, Serbia, Constantinople, Greece]
+  - name: Albania
+    kind: coast
+    png: [80, 0, 0]
+    position: [645, 817]
+    links:
+      army: [Greece, Trieste, Serbia]
+      fleet: [Adriatic Sea, Greece, Trieste, Ionian Sea]
+  - name: Gulf of Lyon
+    kind: sea
+    png: [255, 252, 120]
+    position: [354, 766]
+    links:
+      fleet: [Piedmont, Spain/South, Tuscany, Marseilles, Tyrrhenian Sea, Western Mediterranean]
+  - name: Serbia
+    kind: inland
+    supply_center: [668, 752]
+    png: [70, 0, 0]
+    position: [664, 777]
+    links:
+      army: [Trieste, Greece, Bulgaria, Albania, Budapest, Rumania]
+  - name: Livonia
+    kind: coast
+    png: [0, 160, 0]
+    position: [709, 432]
+    links:
+      army: [Moscow, Warsaw, St. Petersburg, Prussia]
+      fleet: [Gulf of Bothnia, Baltic Sea, St. Petersburg/South, Prussia]
+  - name: Moscow
+    kind: inland
+    supply_center: [922, 434]
+    png: [0, 190, 0]
+    position: [1002, 401]
+    links:
+      army: [St. Petersburg, Warsaw, Livonia, Ukraine, Sevastopol]
+  - name: Mid-Atlantic Ocean
+    kind: sea
+    png: [255, 253, 30]
+    position: [141, 581]
+    links:
+      fleet: [North Atlantic Ocean, North Africa, Gascony, Irish Sea, English Channel, Brest, Portugal, Spain/North, Spain/South,
+        Western Mediterranean]
+  - name: Trieste
+    kind: coast
+    supply_center: [570, 693]
+    png: [60, 0, 0]
+    position: [585, 725]
+    links:
+      army: [Tyrolia, Serbia, Albania, Vienna, Venice, Budapest]
+      fleet: [Adriatic Sea, Albania, Venice]
+  - name: Tyrrhenian Sea
+    kind: sea
+    png: [255, 252, 130]
+    position: [496, 839]
+    links:
+      fleet: [Gulf of Lyon, Tunis, Naples, Tuscany, Western Mediterranean, Ionian Sea, Rome]
+  - name: Marseilles
+    kind: coast
+    supply_center: [394, 689]
+    png: [180, 0, 0]
+    position: [365, 704]
+    links:
+      army: [Burgundy, Spain, Piedmont, Gascony]
+      fleet: [Gulf of Lyon, Spain/South, Piedmont]
+  - name: Tyrolia
+    kind: inland
+    png: [50, 0, 0]
+    position: [537, 645]
+    links:
+      army: [Bohemia, Venice, Munich, Vienna, Trieste, Piedmont]
+  - name: Holland
+    kind: coast
+    supply_center: [439, 494]
+    png: [0, 50, 0]
+    position: [428, 502]
+    links:
+      army: [Ruhr, Kiel, Belgium]
+      fleet: [Helgoland Bight, North Sea, Kiel, Belgium]
+  - name: Western Mediterranean
+    kind: sea
+    png: [255, 252, 110]
+    position: [268, 854]
+    links:
+      fleet: [Gulf of Lyon, North Africa, Tyrrhenian Sea, Spain/South, Tunis, Mid-Atlantic Ocean]
+  - name: Caspian Sea
+    kind: neutral
+    water: true
+    png: [240, 0, 255]
+  - name: Aegean Sea
+    kind: sea
+    png: [255, 252, 170]
+    position: [759, 934]
+    links:
+      fleet: [Eastern Mediterranean, Greece, Constantinople, Smyrna, Ionian Sea, Bulgaria/South]
+  - name: Clyde
+    kind: coast
+    png: [0, 0, 190]
+    position: [310, 332]
+    links:
+      army: [Edinburgh, Liverpool]
+      fleet: [North Atlantic Ocean, Norwegian Sea, Edinburgh, Liverpool]
+  - name: Ionian Sea
+    kind: sea
+    png: [255, 252, 140]
+    position: [609, 953]
+    links:
+      fleet: [Apulia, Tunis, Naples, Greece, Aegean Sea, Tyrrhenian Sea, Albania, Adriatic Sea, Eastern Mediterranean]
+  - name: Budapest
+    kind: inland
+    supply_center: [635, 680]
+    png: [0, 230, 0]
+    position: [678, 675]
+    links:
+      army: [Galicia, Serbia, Trieste, Rumania, Vienna]
+  - name: Belgium
+    kind: coast
+    supply_center: [415, 550]
+    png: [240, 0, 0]
+    position: [400, 536]
+    links:
+      army: [Burgundy, Picardy, Ruhr, Holland]
+      fleet: [North Sea, Picardy, Holland, English Channel]
+  - name: Edinburgh
+    kind: coast
+    supply_center: [330, 347]
+    png: [0, 0, 180]
+    position: [348, 344]
+    links:
+      army: [Yorkshire, Clyde, Liverpool]
+      fleet: [Norwegian Sea, Yorkshire, Clyde, North Sea]
+  - name: St. Petersburg
+    kind: coast
+    supply_center: [892, 241]
+    png: [0, 200, 0]
+    position: [985, 192]
+    coasts:
+      - name: North
+        position: [843, 102]
+        links:
+          fleet: [Barents Sea, Norway]
+      - name: South
+        position: [764, 335]
+        links:
+          fleet: [Gulf of Bothnia, Finland, Livonia]
+    links:
+      army: [Moscow, Finland, Livonia, Norway]
+countries:
+  - name: England
+    color: [239, 196, 228]
+    home_centers: [Liverpool, London, Edinburgh]
+    provinces: [Liverpool, Yorkshire, Wales, London, Clyde, Edinburgh]
+    units:
+      Liverpool: army
+      London: fleet
+      Edinburgh: fleet
+  - name: France
+    color: [121, 175, 198]
+    home_centers: [Brest, Paris, Marseilles]
+    provinces: [Picardy, Brest, Paris, Burgundy, Gascony, Marseilles]
+    units:
+      Paris: army
+      Marseilles: army
+      Brest: fleet
+  - name: Italy
+    color: [164, 196, 153]
+    home_centers: [Rome, Naples, Venice]
+    provinces: [Piedmont, Tuscany, Rome, Naples, Apulia, Venice]
+    units:
+      Rome: army
+      Venice: army
+      Naples: fleet
+  - name: Germany
+    color: [160, 138, 117]
+    home_centers: [Berlin, Kiel, Munich]
+    provinces: [Berlin, Ruhr, Silesia, Prussia, Kiel, Munich]
+    units:
+      Berlin: army
+      Munich: army
+      Kiel: fleet
+  - name: Austria
+    color: [196, 143, 133]
+    home_centers: [Vienna, Trieste, Budapest]
+    provinces: [Vienna, Galicia, Bohemia, Trieste, Tyrolia, Budapest]
+    units:
+      Vienna: army
+      Budapest: army
+      Trieste: fleet
+  - name: Turkey
+    color: [234, 234, 175]
+    home_centers: [Ankara, Smyrna, Constantinople]
+    provinces: [Armenia, Ankara, Smyrna, Syria, Constantinople]
+    units:
+      Smyrna: army
+      Constantinople: army
+      Ankara: fleet
+  - name: Russia
+    color: [168, 126, 159]
+    home_centers: [Warsaw, Sevastopol, Moscow, St. Petersburg]
+    provinces: [Warsaw, Finland, Ukraine, Sevastopol, Livonia, Moscow, St. Petersburg]
+    units:
+      Warsaw: army
+      Moscow: army
+      Sevastopol: fleet
+      St. Petersburg/South: fleet

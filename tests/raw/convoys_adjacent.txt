@@ -34,6 +34,7 @@ Feature: Avoid kidnap with disrupted convoy
             fleet in English Channel convoys Picardy to Belgium
     Then
         English Channel fails
+        English Channel is dislodged
 
 Feature: Avoid kidnap with disrupted convoy and opposite move
     Given
@@ -49,6 +50,8 @@ Feature: Avoid kidnap with disrupted convoy and opposite move
     Then
         English Channel fails
         Belgium fails
+        English Channel is dislodged
+        Belgium is dislodged
 
 Feature: Swapped or head2head battle?
     Given
@@ -70,6 +73,7 @@ Feature: Swapped or head2head battle?
     Then
         Sweden fails
         Norwegian Sea fails
+        Sweden is dislodged
 
 Feature: Adjacent convoy with a paradox
     Given
@@ -84,6 +88,7 @@ Feature: Adjacent convoy with a paradox
     Then
         Skagerrak fails
         Sweden fails
+        Skagerrak is dislodged
 
 Feature: Swapping 2 units with 2 convoys
     Given
@@ -109,6 +114,7 @@ Feature: Support cut on self attack with convoy
             fleet in Albania moves to Trieste
     Then
         Trieste fails
+        Trieste is dislodged
 
 Feature: Adjacent convoys bounce
     Given
@@ -130,6 +136,7 @@ Feature: Adjacent convoys bounce
     Then
         Sweden fails
         Norwegian Sea fails
+        Sweden is dislodged
 
 Feature: Bounce and dislodge with adjacent convoys
     Given
@@ -145,6 +152,7 @@ Feature: Bounce and dislodge with adjacent convoys
     Then
         Yorkshire fails
         Belgium fails
+        Belgium is dislodged
 
 Feature: Prevent 2 units in same area by convoy
     Given

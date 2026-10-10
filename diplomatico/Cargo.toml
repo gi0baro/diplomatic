@@ -1,0 +1,36 @@
+[package]
+name = "diplomatico"
+version = "0.1.0"
+edition = "2024"
+
+include = [
+    "/Cargo.toml",
+    "/pyproject.toml",
+    "/src",
+    "/diplomatico",
+    "/tests",
+    "!__pycache__",
+    "!tests/.pytest_cache",
+    "!*.so",
+]
+
+[lib]
+name = "_diplomatico"
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = "=1.0"
+pyo3 = { version = "=0.29", features = ["anyhow", "generate-import-lib"] }
+
+[features]
+default = ["extension-module"]
+extension-module = ["pyo3/extension-module"]
+
+[profile.release]
+codegen-units = 1
+debug = false
+incremental = false
+lto = "fat"
+opt-level = 3
+panic = "abort"
+strip = true

@@ -24,6 +24,7 @@ Feature: Move cuts support hold
         Tyrolia fails
         Venice fails
         Vienna fails
+        Venice is dislodged
 
 Feature: Move cuts support move
     Given
@@ -93,6 +94,7 @@ Feature: Support hold on a moving unit
         Prussia fails
         Baltic Sea fails
         Finland fails
+        Baltic Sea is dislodged
 
 Feature: Failed convoy cannot receive hold support
     Given
@@ -107,6 +109,7 @@ Feature: Failed convoy cannot receive hold support
     Then
         Greece fails
         Bulgaria fails
+        Greece is dislodged
 
 Feature: Support move a holding unit
     Given
@@ -120,6 +123,7 @@ Feature: Support move a holding unit
     Then
         Albania fails
         Trieste fails
+        Trieste is dislodged
 
 Feature: Avoid self dislodgements
     Given
@@ -182,6 +186,7 @@ Feature: Supporting foreign unit not enough to prevent dislodgement
             fleet in Adriatic Sea supports movement of Venice to Trieste
     Then
         Trieste fails
+        Trieste is dislodged
 
 Feature: Defender cannot cut support for attack on itself
     Given
@@ -193,6 +198,7 @@ Feature: Defender cannot cut support for attack on itself
             fleet in Ankara moves to Constantinople
     Then
         Ankara fails
+        Ankara is dislodged
 
 Feature: Convoying a unit dislodging a unit of same power
     Given
@@ -205,6 +211,7 @@ Feature: Convoying a unit dislodging a unit of same power
             army in Belgium moves to London
     Then
         London fails
+        London is dislodged
 
 Feature: Dislodgement cuts support
     Given
@@ -220,6 +227,7 @@ Feature: Dislodgement cuts support
         Constantinople fails
         Black Sea fails
         Armenia fails
+        Constantinople is dislodged
 
 Feature: Surviving unit support
     Given
@@ -235,6 +243,7 @@ Feature: Surviving unit support
     Then
         Ankara fails
         Armenia fails
+        Ankara is dislodged
 
 Feature: Even when surviving is an alternative way
     Given
@@ -247,6 +256,7 @@ Feature: Even when surviving is an alternative way
             fleet in Ankara moves to Constantinople
     Then
         Ankara fails
+        Ankara is dislodged
 
 Feature: Avoid support cut from same country
     Given
@@ -260,6 +270,7 @@ Feature: Avoid support cut from same country
     Then
         Yorkshire fails
         English Channel fails
+        English Channel is dislodged
 
 Feature: Dislodgement doesn't cancel a support cut
     Given
@@ -280,6 +291,7 @@ Feature: Dislodgement doesn't cancel a support cut
         Munich fails
         Tyrolia fails
         Venice fails
+        Munich is dislodged
 
 Feature: Failing hold support can be supported
     Given
@@ -353,3 +365,4 @@ Feature: Avoid support targeting own territory
     Then
         Prussia fails
         Livonia fails
+        Prussia is dislodged

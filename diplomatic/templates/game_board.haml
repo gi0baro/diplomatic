@@ -1,0 +1,18 @@
+!!! 5
+%html
+    %head
+        %title {{=current.response.meta.title or 'Diplomatic'}}
+        %meta{name: "viewport", content:"width=device-width, initial-scale=1"}
+
+        - include_meta
+        - block head
+        - end
+
+        - include_static 'gboard/tw.css'
+        - assets 'js_game'
+        - include_static 'gboard/game-board.js'
+
+    %body
+        - block center
+        - include
+        - end

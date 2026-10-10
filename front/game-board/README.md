@@ -23,5 +23,5 @@ npm run lint
 ### Build for ext
 ```
 npm run build -- --target wc --inline-vue --name game-board src/Build.vue
-cp dist/game-board.js ../../nudiplomacy/static/gboard
+cp dist/game-board.js ../../diplomatic/static/gboard
 ```

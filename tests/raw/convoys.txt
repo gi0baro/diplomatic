@@ -70,6 +70,7 @@ Feature: Dislodged convoy doesn't cut a support
         London fails
         Belgium fails
         Picardy fails
+        North Sea is dislodged
 
 Feature: Dislodged convoy doesn't cause a bounce
     Given
@@ -84,6 +85,7 @@ Feature: Dislodged convoy doesn't cause a bounce
     Then
         North Sea fails
         London fails
+        North Sea is dislodged
 
 Feature: Dislodge of multi-route convoy
     Given
@@ -97,6 +99,7 @@ Feature: Dislodge of multi-route convoy
             fleet in Mid-Atlantic Ocean moves to English Channel
     Then
         English Channel fails
+        English Channel is dislodged
 
 Feature: Dislodge of multi-route convoy (foreign)
     Given
@@ -112,6 +115,7 @@ Feature: Dislodge of multi-route convoy (foreign)
             fleet in Mid-Atlantic Ocean moves to English Channel
     Then
         English Channel fails
+        English Channel is dislodged
 
 Feature: Dislodge of multi-route convoy (foreign)
     Given
@@ -129,6 +133,7 @@ Feature: Dislodge of multi-route convoy (foreign)
             fleet in Mid-Atlantic Ocean moves to English Channel
     Then
         English Channel fails
+        English Channel is dislodged
 
 Feature: The unwanted alternative
     Given
@@ -144,6 +149,7 @@ Feature: The unwanted alternative
             fleet in Holland supports movement of Denmark to North Sea
     Then
         North Sea fails
+        North Sea is dislodged
 
 Feature: Simple convoy paradox
     Given
@@ -157,6 +163,7 @@ Feature: Simple convoy paradox
     Then
         English Channel fails
         Brest fails
+        English Channel is dislodged
 
 Feature: Simple convoy paradox with additional convoy
     Given
@@ -175,6 +182,7 @@ Feature: Simple convoy paradox with additional convoy
     Then
         English Channel fails
         Brest fails
+        English Channel is dislodged
 
 Feature: Pandin's paradox
     Given
@@ -265,6 +273,7 @@ Feature: Unwanted multi-route convoy paradox
         Ionian Sea fails
         Tunis fails
         Naples fails
+        Ionian Sea is dislodged
 
 Feature: Dad's army convoy
     Given
@@ -285,6 +294,8 @@ Feature: Dad's army convoy
         Clyde fails
         North Atlantic Ocean fails
         Liverpool fails
+        North Atlantic Ocean is dislodged
+        Clyde is dislodged
 
 Feature: 2nd order paradox with 2 resolutions
     Given
@@ -308,12 +319,14 @@ Feature: 2nd order paradox with 2 resolutions
         English Channel fails
         Brest fails
         Norway fails
+        English Channel is dislodged
+        North Sea is dislodged
 
 Feature: 2nd order paradox with 2 exclusive convoys
     Given
         England:
             fleet in Edinburgh moves to North Sea
-            fleet in London supports movement of Edinburgh to North Sea
+            fleet in Yorkshire supports movement of Edinburgh to North Sea
 
         France:
             army in Brest moves to London
@@ -321,7 +334,7 @@ Feature: 2nd order paradox with 2 exclusive convoys
 
         Germany:
             fleet in Belgium supports hold of English Channel
-            fleet in Picardy supports hold of North Sea
+            fleet in London supports hold of North Sea
 
         Italy:
             fleet in Mid-Atlantic Ocean moves to English Channel
@@ -360,3 +373,4 @@ Feature: 2nd order paradox with no resolution
         Brest fails
         Norway fails
         Irish Sea fails
+        North Sea is dislodged

@@ -1,0 +1,70 @@
+[project]
+name = "diplomatico"
+
+dynamic = [
+    "version"
+]
+
+requires-python = ">=3.9"
+dependencies = []
+
+[dependency-groups]
+build = [
+    'maturin~=1.8',
+]
+lint = [
+    'ruff~=0.15.0',
+]
+test = [
+    'pytest~=8.3',
+]
+
+all = [
+    { include-group = 'build' },
+    { include-group = 'lint' },
+    { include-group = 'test' },
+]
+
+[build-system]
+requires = ["maturin>=1.8.0,<2"]
+build-backend = "maturin"
+
+[tool.maturin]
+module-name = "diplomatico._diplomatico"
+bindings = "pyo3"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.format]
+quote-style = 'double'
+
+[tool.ruff.lint]
+extend-select = [
+    # E and F are enabled by default
+    'B',      # flake8-bugbear
+    'C4',     # flake8-comprehensions
+    'C90',    # mccabe
+    'I',      # isort
+    'N',      # pep8-naming
+    'Q',      # flake8-quotes
+    'RUF100', # ruff (unused noqa)
+    'S',      # flake8-bandit
+    'W',      # pycodestyle
+]
+extend-ignore = [
+    'S101', # assert is fine
+]
+mccabe = { max-complexity = 24 }
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+lines-after-imports = 2
+known-first-party = ['diplomatico', 'tests']
+
+[tool.ruff.lint.per-file-ignores]
+'diplomatico/__init__.py' = ['F401']
+'tests/**' = ['B018', 'S110', 'S501']
+
+[tool.uv]
+package = false
