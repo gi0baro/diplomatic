@@ -37,7 +37,9 @@
             %symbol#i-reset{viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round"}
                 %path{d: "M3 12a9 9 0 1 0 2.64-6.36L3 8.3 M3 3v5.3h5.3"}
 
+        - block header
         - include '_header.haml'
+        - end
 
         %main{class: "{{=main_cls}}"}
             %div{class: "{{=wrap_cls}}"}
@@ -46,7 +48,5 @@
                 - end
 
         - block footer
-        - if globals().get('footer_enabled', False)
         - include '_footer.haml'
-        - end
         - end

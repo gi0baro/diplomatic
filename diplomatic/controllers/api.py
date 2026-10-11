@@ -26,6 +26,7 @@ from .. import (
 # from diplomatic import app, auth, db, mdb, Map, Orders, NObject, NSubscription
 # from diplomatic.helpers.mongo import longToObjid
 from ..diplomacy import process_order
+from ..helpers.events import publish
 from ..tasks import process_game, start_game
 
 
@@ -72,7 +73,13 @@ def game_get(gid):
     rv = game.as_dict()
     players = game.players.join("user").select()
     rv["players"] = [
-        {"id": player.id, "country": player.country, "name": player.user.username if not game.anonymous else None}
+        {
+            "id": player.id,
+            "country": player.country,
+            "name": player.user.username if not game.anonymous else None,
+            "is_ready": bool(player.is_ready),
+            "is_active": bool(player.is_active),
+        }
         for player in players
     ]
     return rv
@@ -169,6 +176,12 @@ async def game_join(gid):
     if not role:
         rv.data = "Cannot join game"
         return rv
+    await publish(
+        app.ext.Redis.client,
+        f"game:{gid}:players",
+        "players",
+        {"country": role.country, "is_active": role.is_active},
+    )
     if game.players.count() == game.players_number:
         game.update_record(is_ready=True, is_open=False)
         db.commit()
@@ -263,7 +276,12 @@ async def player_ready(gid):
     if not game:
         return rv
     status = (await request.body_params).get("ready", False)
-    game.players.where(lambda p: (p.user == auth.user.id) & (p.is_active == True)).update(is_ready=status)
+    roles = game.players.where(lambda p: (p.user == auth.user.id) & (p.is_active == True))
+    if roles.update(is_ready=status):
+        role = roles.select(GameRole.country).first()
+        await publish(
+            app.ext.Redis.client, f"game:{gid}:players", "players", {"country": role.country, "is_ready": status}
+        )
     if game.players.where(lambda p: p.is_ready == True).count() == game.players_number:
         game.update_record(is_ready=True)
         process_game.delay(game.id)
@@ -484,7 +502,7 @@ def chat_messages(rid):
     room = ChatRoom.accessible_by_user(auth.user).where(lambda m: m.id == rid).select(ChatRoom.table.ALL).first()
     if not room:
         return {"data": []}
-    page = request.query_params.page or 1
+    page = int(request.query_params.page or 1)
     rows = room.messages(orderby=~ChatMessage.created_at, paginate=(page, 25))
     return {"data": rows}
 

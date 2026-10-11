@@ -30,8 +30,6 @@ services:
     volumes:
       - ./diplomatic:/app/diplomatic
       - ./variants:/app/variants
-      # keep the game-board bundle built in the image, not the host's empty folder
-      - /app/diplomatic/static/gboard
     depends_on:
       - db
       - redis

@@ -255,3 +255,241 @@
     opacity: 0;
   }
 }
+
+/* ============================================================================
+   BOARD: the game page's SVG (svg#map), plain CSS, lifted from the mockup
+   (docs/design/template.html, "BOARD"). Everything is scoped under #map.
+   Country colours are data: the page generates --c-<key> on :root and
+   [data-power="<key>"], [data-owner="<key>"] { --c: var(--c-<key>) }; every
+   rule below reads var(--c). --c-me is the player's colour.
+   Scoping: rules that carry #map in the mockup keep it; the others are scoped
+   with :where(#map), which adds no specificity, so the mockup's cascade holds
+   (e.g. .selected and .target still beat the owner tint).
+   Glyphs are authored in the mockup's glyph units inside .kg / .kf groups;
+   static/js/viewBox.js sets, at every zoom: --u = map units per screen px,
+   --kf = reference px per unit x --u, --kg = glyph preset x --kf.
+   ============================================================================ */
+
+#map {
+  --line-cur: #e7eef4;
+  --signal: #9fe8ff; /* signal */
+  --alert: #ff4d4d; /* alert */
+  --ground: #05080c; /* ink-950 */
+  --u: 1;
+  --kf: 1;
+  --kg: 1;
+  width: 100%;
+  height: 100%;
+  display: block;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  cursor: default;
+  touch-action: none;
+}
+#map.dragging { cursor: grabbing; }
+#map.instant, #map.instant * { transition: none !important; }
+
+/* ---- screen-constant annotations ---- */
+#map .kg { transform: scale(var(--kg)); }
+#map .kf { transform: scale(var(--kf)); }
+
+/* ---- provinces: muted, always (saturate(.55) brightness(.82) baked into the values;
+   owner colours go through the same matrix with relative colour syntax) ---- */
+:where(#map) .provinces path { vector-effect: non-scaling-stroke; stroke-linejoin: round; transition: fill .25s; }
+:where(#map) g[data-kind="sea"] > path, :where(#map) .provinces path.water {
+  fill: url(#sea); stroke: #4f6578; stroke-opacity: .28; stroke-width: .8; stroke-dasharray: 3 3; }
+:where(#map) g[data-kind="coast"] > path:not(.water), :where(#map) g[data-kind="inland"] > path {
+  fill: #12161a; stroke: #748796; stroke-opacity: .42; stroke-width: .9; }
+:where(#map) g[data-kind="neutral"] > path:not(.water) {
+  fill: url(#hatch); stroke: #748796; stroke-opacity: .2; stroke-width: .8; }
+:where(#map) .provinces g[data-owner] {
+  --cm: rgb(from var(--c) calc(.5294 * r + .2639 * g + .0266 * b) calc(.0784 * r + .7149 * g + .0266 * b) calc(.0784 * r + .2639 * g + .4776 * b));
+  --tint: color-mix(in srgb, var(--cm) 21%, #12161a); }
+@supports not (color: rgb(from red r g b)) {
+  :where(#map) .provinces g[data-owner] { --cm: color-mix(in srgb, var(--c) 45%, #6e6e6e); --tint: color-mix(in srgb, var(--c) 9.5%, #1e2125); } }
+:where(#map) .provinces g[data-owner] > path:not(.water) { fill: var(--tint); stroke: var(--cm); stroke-opacity: .6; stroke-width: 1; }
+
+/* order entry: highlights keep the province's own colour (the owner's, or a light grey when unowned);
+   `--hl` is that colour, `--hb` the base fill it is mixed into. The pulse and the shapes carry the meaning. */
+:where(#map) .provinces g { --hl: #9ab2c6; --hb: #12161a; }
+:where(#map) .provinces g[data-kind="sea"] { --hb: #070a0d; }
+:where(#map) .provinces g[data-kind="neutral"] { --hb: #0a0c0f; }
+:where(#map) .provinces g[data-owner] { --hl: var(--c); --hb: var(--tint); }
+#map .provinces g.selected > path {
+  fill: color-mix(in srgb, var(--hl) 30%, var(--hb)); stroke: var(--hl); stroke-opacity: 1; stroke-width: 1.6;
+  stroke-dasharray: 6 3; animation: march 1.1s linear infinite; }
+#map .provinces g.target > path {
+  fill: color-mix(in srgb, var(--hl) 18%, var(--hb)); stroke: var(--hl); stroke-opacity: .95; stroke-width: 1.3;
+  stroke-dasharray: 1.5 3.5; animation: breathe 2.2s ease-in-out infinite; }
+/* hoverable: provinces where an order can start (`act`) and, while picking, the valid targets */
+#map .provinces g.act, #map .provinces g.target { cursor: pointer; }
+#map .provinces g.act:not(.selected):hover > path, #map .provinces g.target:hover > path {
+  stroke: var(--hl); stroke-opacity: 1; stroke-width: 2; stroke-dasharray: none; }
+#map .provinces g.act:not(.selected):not(.target):hover > path:not(.water) { fill: color-mix(in srgb, var(--hl) 14%, var(--hb)); }
+#map .provinces g.target:hover > path { fill: color-mix(in srgb, var(--hl) 30%, var(--hb)); animation: none; fill-opacity: 1; }
+/* while targets are being picked, own units that are not targets stop reacting */
+#map.picking .provinces g.act:not(.target):not(.selected) { cursor: default; }
+#map.picking .provinces g.act:not(.target):not(.selected):hover > path { stroke: var(--cm, #748796); stroke-opacity: .6; stroke-width: 1; }
+#map.picking .provinces g.act:not(.target):not(.selected):hover > path:not(.water) { fill: var(--tint, #12161a); }
+@keyframes march { to { stroke-dashoffset: -18; } }
+@keyframes breathe { 0%, 100% { fill-opacity: .55; } 50% { fill-opacity: 1; } }
+
+/* ---- supply centres: diamonds ---- */
+:where(#map) .sc { fill: var(--ground); stroke: #6b8296; stroke-width: 1.6; vector-effect: non-scaling-stroke; pointer-events: none; }
+:where(#map) .sc[data-owner] { stroke: var(--c); filter: drop-shadow(0 0 3px var(--c)); }
+
+/* ---- province codes: always on, owner-coloured ---- */
+:where(#map) .labels { pointer-events: none; }
+:where(#map) .lbl { font-size: 13.5px; font-weight: 500; letter-spacing: .09em; text-anchor: middle;
+            fill: #9ab2c6; fill-opacity: .72; pointer-events: none; }
+:where(#map) .lbl.sea { fill: #6a9cc4; font-style: italic; font-weight: 400; }
+:where(#map) .lbl[data-owner] { fill: var(--c); fill-opacity: .95; font-weight: 700; }
+
+/* ---- units: one element per unit, gliding between phases ---- */
+:where(#map) .units { pointer-events: none; }
+:where(#map) .unit { transition: transform .7s cubic-bezier(.4, 0, .2, 1), opacity .45s; }
+:where(#map) .unit.gone { opacity: 0; }
+:where(#map) .unit > .kg { filter: drop-shadow(0 0 4px var(--c)); transition: opacity .3s; }
+:where(#map) .unit .body { fill: var(--c); stroke: var(--ground); stroke-width: 1.6; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+:where(#map) .unit .off { transition: transform .7s cubic-bezier(.4, 0, .2, 1); }
+:where(#map) .unit.dislodged .off { transform: translate(22px, 20px); }   /* = DIS_OFF in board.coffee, glyph units */
+:where(#map) .unit .dis, :where(#map) .unit .dis-tether { opacity: 0; transition: opacity .35s; }
+:where(#map) .unit.dislodged .dis { opacity: 1; }
+:where(#map) .unit.dislodged .dis-tether { opacity: .85; }
+:where(#map) .unit .dis { fill: var(--alert); fill-opacity: .12; stroke: var(--alert); stroke-width: 1.6; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; animation: spin 5s linear infinite; }
+:where(#map) .unit .dis-tether { stroke: var(--alert); stroke-width: 1; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
+:where(#map) .unit.dislodged .body { stroke: var(--alert); }
+:where(#map) .unit.dislodged > .kg { filter: drop-shadow(0 0 5px var(--alert)); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- orders: shape carries the type ----
+   current (.orders.cur): the player's orders, one neutral colour, a pulse in the player's colour;
+   history (.orders.hist): every power's orders in the owner's colour, still */
+:where(#map) .orders { pointer-events: none; }
+:where(#map) .orders.cur .order { --oc: var(--line-cur); }
+:where(#map) .orders.hist .order { --oc: var(--c); }
+:where(#map) .order { filter: drop-shadow(0 0 calc(var(--u) * 2.5px) color-mix(in srgb, var(--oc) 70%, transparent)); }
+:where(#map) .order .ln { fill: none; stroke: var(--oc); stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+:where(#map) .orders.cur .order .ln { stroke-opacity: .8; }
+:where(#map) .order .flow { fill: none; stroke: var(--c-me); stroke-width: 2.8; stroke-linecap: round; vector-effect: non-scaling-stroke;
+                    stroke-dasharray: 7 67; animation: flow 2.8s linear infinite; }
+:where(#map) .orders.hist .flow, :where(#map) .orders.hist .pulse { display: none; }
+@keyframes flow { to { stroke-dashoffset: -74; } }
+:where(#map) .order .head { fill: var(--oc); stroke: none; }
+:where(#map) .order.support .ln { stroke-dasharray: 7 4; }
+:where(#map) .order .knob { fill: var(--oc); stroke: var(--ground); stroke-width: 1; vector-effect: non-scaling-stroke; }
+:where(#map) .order .oct { fill: color-mix(in srgb, var(--oc) 26%, transparent); stroke: var(--oc); stroke-width: 1.7; vector-effect: non-scaling-stroke; }
+:where(#map) .order .cring { fill: none; stroke: var(--oc); stroke-width: 1.8; stroke-dasharray: 1 4; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+:where(#map) .order.retreat .ln { stroke-dasharray: 9 4; }
+/* failed, every type: the terminal glyph drawn hollow, the line a notch fainter */
+:where(#map) .order.failed .ln { opacity: .7; }
+:where(#map) .order.failed .head, :where(#map) .order.failed .knob, :where(#map) .order.failed .oct {
+  fill: var(--ground); stroke: var(--oc); stroke-width: 1.4; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+:where(#map) .order.failed .oct { fill: none; }
+/* build: dashed ghost + plus badge, expanding pulse */
+:where(#map) .order.build .pulse { fill: none; stroke: var(--oc); stroke-width: 1; vector-effect: non-scaling-stroke; animation: grow 2.4s ease-out infinite; }
+:where(#map) .order.build .ghost { fill: color-mix(in srgb, var(--oc) 28%, transparent); stroke: var(--oc); stroke-width: 1.7; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
+:where(#map) .order.build .plusbg { fill: var(--ground); stroke: var(--oc); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+:where(#map) .order.build .plus { stroke: var(--oc); stroke-width: 1.6; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+@keyframes grow { 0% { transform: scale(.45); opacity: .9; } 100% { transform: scale(1.25); opacity: 0; } }
+/* disband: dotted ring + cross over the unit */
+:where(#map) .order.disband { filter: drop-shadow(0 0 3px var(--alert)); }
+:where(#map) .order.disband .dring { fill: none; stroke: var(--alert); stroke-width: 1.4; stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
+:where(#map) .order.disband .x { stroke: var(--alert); stroke-width: 2.2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+
+/* phase change: the outgoing order layer fades out, the incoming one fades in (units glide meanwhile) */
+#map [data-layer] { opacity: 0; visibility: hidden; transition: opacity .3s ease-in, visibility 0s linear .3s; }
+#map [data-layer].on { opacity: 1; visibility: visible; transition: opacity .45s ease-out .3s, visibility 0s linear .3s; }
+
+/* history: no motion anywhere on the board */
+body.past #map * { animation: none !important; }
+
+/* ============================================================================
+   BOARD CHROME: the game page's sidebar (orders, powers, legend) and the
+   province popover, lifted from the mockup (docs/design/template.html,
+   "sidebar" and "popover"). The mockup's .act (popover action) is .pact here:
+   .act is reserved for actionable provinces on the map (#map g.act).
+   ============================================================================ */
+
+@layer components {
+  /* orders panel row: glyph, text, trailing control/status */
+  .orow {
+    @apply grid items-center gap-2 rounded-sm border border-ink-700 bg-ink-800 px-2 py-1.5 font-mono text-[12px] font-medium
+      text-fog-200;
+    grid-template-columns: 16px 1fr auto;
+  }
+  .orow .rm {
+    @apply grid h-5 w-5 place-items-center rounded-sm text-fog-500;
+  }
+  .orow .rm:hover {
+    @apply bg-alert/10 text-alert;
+  }
+  .orow.pending {
+    @apply border-dashed border-signal/50 bg-signal/5;
+  }
+  .orow.ro {
+    @apply border-ink-700/70 bg-transparent text-fog-300;
+  }
+
+  /* powers row: swatch, name, SC, units, ready */
+  .prow {
+    @apply grid items-center gap-x-2 rounded-sm px-2 py-[3px];
+    grid-template-columns: 14px 1fr 30px 38px 30px;
+  }
+  .prow.me {
+    background: color-mix(in srgb, var(--c) 10%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 28%, transparent);
+  }
+
+  /* popover action */
+  .pact {
+    @apply flex w-full items-center gap-2.5 rounded-sm px-[9px] py-1.5 text-left font-mono text-[12px] font-medium
+      text-fog-300;
+  }
+  .pact:hover:not(:disabled) {
+    @apply bg-ink-700 text-white;
+  }
+  .pact.on {
+    @apply text-white;
+    background: color-mix(in srgb, theme('colors.signal') 11%, theme('colors.ink.700'));
+    box-shadow: inset 0 0 0 1px rgb(159 232 255 / 0.4);
+  }
+  .pact:disabled {
+    @apply cursor-not-allowed opacity-40;
+  }
+  .pact .ico {
+    @apply h-[18px] w-[18px] flex-none;
+  }
+  .pact .ico * {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .pact .ico .fill {
+    fill: currentColor;
+    stroke: none;
+  }
+
+  /* ready switch; .on when ready */
+  .toggle {
+    @apply relative inline-block h-[18px] w-[34px] rounded-[9px] border border-ink-500 bg-ink-600 text-fog-500;
+  }
+  .toggle::after {
+    @apply absolute top-px h-3.5 w-3.5 rounded-[7px] bg-current;
+    content: "";
+    left: 2px;
+    transition: left 0.15s;
+  }
+  .toggle.on {
+    @apply border-ok/50 bg-ok/25 text-ok;
+  }
+  .toggle.on::after {
+    left: 16px;
+  }
+
+  /* legend sample */
+  .lg {
+    @apply h-[15px] w-[34px] flex-none;
+  }
+}

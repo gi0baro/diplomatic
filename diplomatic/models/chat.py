@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from emmett.orm import Field, Model, after_insert, belongs_to, has_many, refers_to, rowmethod, scope
-from emmett.serializers import Serializers
 
+from ..helpers.events import publish
 from . import TSModel
-
-
-json_dump = Serializers.get_for("json")
 
 
 class ChatRoom(TSModel):
@@ -61,7 +58,7 @@ class ChatMessage(TSModel):
     @rowmethod("publish_on_relevant_channels")
     def _publish_on_channels(self, row, pub_ctx):
         for member in row.room.members.select(ChatMember.player):
-            pub_ctx.publish(f"chat:{member.player}:messages", json_dump(row))
+            publish(pub_ctx, f"chat:{member.player}:messages", "chat", row)
 
 
 class ChatReading(TSModel):

@@ -1,0 +1,47 @@
+%section.border-b.border-ink-700{"x-data": "orders"}
+    %div{class: "px-4 pt-3 pb-2 flex items-center justify-between gap-3"}
+        .min-w-0
+            %div{class: "font-display uppercase tracking-wider text-[16px] text-fog-200 leading-none"} Orders
+            %div{"x-text": "subtitle", class: "font-mono text-[9.5px] tracking-[.15em] text-fog-500 mt-1 uppercase truncate"}
+        %div{"x-show": "isNext && canOrder", "x-cloak": None, class: "shrink-0 font-mono text-[9.5px] tracking-[.15em]"}
+            %span{":class": "statusStyle.text", class: "flex items-center gap-1.5"}
+                %span{":class": "statusStyle.dot", class: "h-1.5 w-1.5 rounded-full"}
+                %span{"x-text": "statusStyle.label"}
+        %div{"x-show": "!isNext && rows.length", "x-cloak": None, class: "shrink-0 flex items-center gap-1.5 font-mono text-[9.5px] tracking-[.15em] text-fog-400"}
+            %span{class: "h-1.5 w-1.5 rounded-full bg-fog-500"}
+            RESOLVED
+
+    %ul{"x-show": "isNext && errors.length", "x-cloak": None, class: "mx-2 mb-2 px-2 py-1.5 space-y-0.5 rounded-sm border border-alert/40 bg-alert/5 font-mono text-[10px] leading-snug text-alert"}
+        %template{"x-for": "e in errors", ":key": "e.territory"}
+            %li
+                %span.font-bold{"x-text": "e.code"}
+                %span.text-fog-300{"x-text": "e.reason"}
+
+    %ul{class: "px-2 pb-2 space-y-1"}
+        %template{"x-for": "o in rows", ":key": 'o.country + ":" + o.territory'}
+            %li.orow{":class": "{pending: o.pending, ro: !isNext}", ":data-power": "o.power", ":title": "o.mine ? null : o.country"}
+                %svg{width: "16", height: "16", viewBox: "-11 -11 22 22", "aria-hidden": "true"}
+                    %circle{"x-show": 'o.unit === "army"', r: "8.5", ":fill": "glyph(o).fill", ":stroke": "glyph(o).stroke", ":stroke-width": "glyph(o).width", ":stroke-dasharray": "glyph(o).dash"}
+                    %path{"x-show": 'o.unit === "fleet"', d: "M0 10L10 -7.5L-10 -7.5Z", ":fill": "glyph(o).fill", ":stroke": "glyph(o).stroke", ":stroke-width": "glyph(o).width", ":stroke-dasharray": "glyph(o).dash"}
+                %span.min-w-0
+                    %span{"x-text": "o.code", class: "text-fog-500 mr-1"}
+                    %span{"x-text": "o.text", ":class": 'o.type === "hold" ? "text-fog-400" : ""'}
+                %span.flex.items-center.gap-1
+                    %span{"x-show": "o.pending", title: "Not saved yet", class: "h-1.5 w-1.5 rounded-full bg-signal"}
+                    %button.rm{type: "button", "x-show": "removable(o)", "@click": "remove(o)", title: "Back to hold"} ×
+                    %span{"x-show": "!isNext && o.failed", title: "Failed", class: "text-alert"} ✗
+                    %span{"x-show": "!isNext && o.success", title: "Succeeded", class: "text-ok"} ✓
+        %li{"x-show": "!rows.length", class: "px-2 py-1 font-mono text-[9.5px] tracking-[.12em] text-fog-500"} NO ORDERS
+
+    %div{"x-show": "!isNext && resolvedAt", "x-cloak": None, class: "px-4 py-2 bg-ink-800/60 border-t border-ink-700 font-mono text-[9.5px] tracking-[.12em] text-fog-500"}
+        %span{"x-show": "!isCurrent"} READ ONLY ·
+        RESOLVED ·
+        %span{"x-text": "resolvedAt"}
+    %div{"x-show": "showControls", "x-cloak": None, class: "px-4 py-2.5 bg-ink-800/60 border-t border-ink-700 flex items-center justify-between"}
+        %button.btn.btn-primary{type: "button", "@click": "save()", ":disabled": "!unsaved || saving || ready"} Save orders
+        %button{type: "button", "@click": "toggleReady()", ":disabled": "readyBusy", title: "Ready (R)", class: "flex items-center gap-2 disabled:opacity-50"}
+            %span{class: "font-mono text-[9.5px] tracking-[.15em] text-fog-400"} READY
+            %span.toggle{":class": "{on: ready}"}
+            %span{class: "font-mono text-[9.5px] text-fog-500 w-6 text-left"}
+                %span.text-ok{"x-show": "ready"} YES
+                %span{"x-show": "!ready"} NO

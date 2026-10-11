@@ -1,6 +1,6 @@
 // Single dark theme. darkMode 'selector' with no selector ever present, so stray dark: classes are inert.
 module.exports = {
-  content: ['../diplomatic/templates/**/*.haml'],
+  content: ['../diplomatic/templates/**/*.haml', '../diplomatic/static/js/*.js'],
   darkMode: 'selector',
   theme: {
     extend: {

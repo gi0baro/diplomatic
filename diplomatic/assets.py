@@ -21,16 +21,15 @@ app.ext.Assets.register("js_base", js_base)
 
 js_game = app.ext.Assets.js(
     [
-        "helpers/Point.js",
-        "helpers/Intersection.js",
         "base/translator.coffee",
         "game/proto.coffee",
         "game/constants.coffee",
         "game/objects.coffee",
+        "game/steps.coffee",
         "game/net.coffee",
         "game/env.coffee",
         "game/game.coffee",
-        "game/screen.coffee",
+        "game/board.coffee",
         "game/interactions.coffee",
         "game/ux.coffee",
         "game/utils.coffee",
@@ -39,7 +38,4 @@ js_game = app.ext.Assets.js(
     output="game.js",
 )
 
-# css_game = app.ext.Assets.css(['css/tw.css'], output='game.css').minify()
-
 app.ext.Assets.register("js_game", js_game)
-# app.ext.Assets.register('css_game', css_game)

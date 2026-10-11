@@ -9,12 +9,9 @@ diplomatico/.venv
 diplomatico/target
 diplomatico/**/*.so
 
-front/game-board/dist
-
 diplomatic/databases
 diplomatic/logs/*.log
 diplomatic/static/dist
-diplomatic/static/gboard
 diplomatic/uploads
 
 chart

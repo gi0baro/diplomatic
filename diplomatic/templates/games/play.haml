@@ -1,0 +1,156 @@
+- layout_mode = 'fixed'
+- extend 'layout.haml'
+
+- block head
+%style
+    = asis(country_css)
+%script{src: "{{=url('static', 'js/geometry.js')}}"}
+%script{src: "{{=url('static', 'js/viewBox.js')}}"}
+%script{src: "{{=url('static', 'js/floating.js')}}"}
+%script{src: "{{=url('static', 'js/board-ui.js')}}"}
+- assets 'js_game'
+%script{src: "{{=url('static', 'js/play.js')}}"}
+- if player_id
+    %script{src: "{{=url('static', 'js/chat.js')}}", defer: None}
+- end
+
+- block header
+%header.h-12.shrink-0.flex.items-center.gap-3.px-4.border-b.border-ink-700.bg-ink-900.relative.z-30
+    .flex.items-baseline.shrink-0{class: "gap-2.5"}
+        %a{href: "/", class: "font-display font-semibold text-[23px] leading-none tracking-[.16em] uppercase text-fog-200"} Diplomatic
+        %span{class: "font-display text-[18px] leading-none text-fog-500"} /
+        %span{class: "font-display font-medium text-[17px] leading-none tracking-[.08em] uppercase text-signal whitespace-nowrap"}
+            = game.name
+        %span{class: "font-mono text-[9px] leading-[11px] tracking-[.1em] uppercase text-fog-500 whitespace-nowrap self-center relative top-[3px]"}
+            {{=variant.name}} · {{=game.players_number}} powers
+            %br
+            {{=scs}} SC to win
+    .flex.items-center.gap-1.ml-auto
+        %button.nb{type: "button", "data-nav": "first", title: "First phase (Home)"} |&lt;
+        %button.nb{type: "button", "data-nav": "prev", title: "Previous phase (←)"} &lt;
+        .px-3.flex.items-center.gap-3.whitespace-nowrap
+            .text-right
+                #phase-name{class: "font-display text-[20px] leading-none uppercase tracking-wider text-fog-200"} &nbsp;
+                #phase-type{class: "font-mono text-[10px] tracking-[.2em] uppercase text-signal/80"} &nbsp;
+            %span#badge-cur{class: "font-mono text-[10px] tracking-[.15em] px-2 py-1 rounded-sm bg-signal/10 text-signal border border-signal/30"} CURRENT
+            %span#badge-next{class: "hidden font-mono text-[10px] tracking-[.15em] px-2 py-1 rounded-sm bg-ink-700 text-fog-200 border border-fog-200"} NEXT
+            %span#badge-past{class: "hidden font-mono text-[10px] tracking-[.15em] px-2 py-1 rounded-sm bg-warn/10 text-warn border border-warn/40 inline-flex items-center gap-1.5 whitespace-nowrap"}
+                HISTORY ·
+                %span#behind 1
+                BEHIND
+        %button.nb{type: "button", "data-nav": "next", title: "Next phase (→)"} &gt;
+        %button.nb{type: "button", "data-nav": "last", title: "Current phase (End)"} &gt;|
+
+    .ml-1.pl-4.border-l.border-ink-700.flex.items-center.gap-3.shrink-0
+        .h-8.rounded-sm.bg-ink-600.flex.flex-col.justify-end.overflow-hidden{class: "w-[3px]", title: "{{=left_pct}} % of the phase time left"}
+            .w-full.rounded-sm.bg-signal{class: "shadow-[0_0_8px_#9fe8ff]", style: "height: {{=left_pct}}%"}
+        %div
+            .flex.items-center.gap-2
+                %span#clock{class: "font-mono text-[18px] leading-none tabular-nums text-fog-200"}
+                    = countdown
+                - if deadline
+                    %span{class: "h-1.5 w-1.5 rounded-full bg-signal shadow-[0_0_8px_#9fe8ff] animate-pulse"}
+            %div{class: "font-mono text-[9px] tracking-[.12em] text-fog-500 uppercase mt-0.5 whitespace-nowrap"}
+                - if deadline
+                    left · due {{=deadline}}
+                - else
+                    no deadline
+
+    - include '_header_user.haml'
+- end
+
+- ws_scheme = 'ws' if debug() else 'wss'
+
+#board.relative.flex-1.min-w-0.overflow-hidden.bg-ink-950.select-none
+    = asis(board_svg)
+    - if player_id
+        - include 'games/_chat.haml'
+
+    %div{"x-data": "alerts", class: "absolute left-3 top-3 z-20 flex flex-col gap-1.5 w-[340px] pointer-events-none"}
+        %template{"x-for": "a in items", ":key": "a.id"}
+            .toast.pointer-events-auto.shadow-glow{class: "border-signal/40"}
+                %span.toast-dot
+                %div{"x-text": "a.message", class: "flex-1 text-[12px] text-fog-300 leading-snug"}
+                %button.toast-close{type: "button", "x-show": "a.dismissable", "@click": "dismiss(a.id)", title: "Dismiss"} ×
+
+    - include 'games/_popover.haml'
+
+    .absolute.right-3.bottom-3.z-20.flex.items-end{class: "gap-2.5"}
+        %div{class: "font-mono text-[9.5px] tracking-[.14em] uppercase text-fog-500 pb-1 whitespace-nowrap"}
+            %span#zoomlvl.text-fog-300.tabular-nums 1.0×
+            · wheel zooms at cursor · drag pans
+        .flex.flex-col.rounded-sm.border.border-ink-600.overflow-hidden{class: "bg-ink-900/95"}
+            %button.h-8.w-8.grid.place-items-center.text-fog-300{type: "button", "data-z": "in", title: "Zoom in (+)", class: "hover:text-signal hover:bg-ink-800"}
+                %svg{width: "14", height: "14", "aria-hidden": "true"}
+                    %use{href: "#i-plus"}
+            %button.h-8.w-8.grid.place-items-center.text-fog-300.border-t.border-ink-600{type: "button", "data-z": "out", title: "Zoom out (-)", class: "hover:text-signal hover:bg-ink-800"}
+                %svg{width: "14", height: "14", "aria-hidden": "true"}
+                    %use{href: "#i-minus"}
+            %button.h-8.w-8.grid.place-items-center.text-fog-300.border-t.border-ink-600{type: "button", "data-z": "reset", title: "Reset view (0)", class: "hover:text-signal hover:bg-ink-800"}
+                %svg{width: "13", height: "13", "aria-hidden": "true"}
+                    %use{href: "#i-reset"}
+
+%aside.shrink-0.border-l.border-ink-700.bg-ink-900.flex.flex-col.overflow-y-auto{class: "w-[320px]"}
+    - include 'games/_orders.haml'
+    - include 'games/_powers.haml'
+    - include 'games/_legend.haml'
+
+:javascript
+    T.register({
+      spring: '{{=T("spring").title()}}',
+      autumn: '{{=T("autumn").title()}}',
+      winter: '{{=T("winter").title()}}'
+    }, 'season');
+    T.register({
+      diplomacy: '{{=T("diplomacy").title()}}',
+      retreats: '{{=T("retreats").title()}}',
+      builds: '{{=T("builds").title()}}',
+      pregame: '{{=T("pre-game").title()}}'
+    }, 'phase_type');
+    T.register({
+      hold: '{{=T(":TERRITORY: holds")}}',
+      move: '{{=T(":TERRITORY: moves to :DST::THROUGH::COAST:")}}',
+      support_move: '{{=T(":TERRITORY: supports :SRC: in movement to :DST:")}}',
+      support_hold: '{{=T(":TERRITORY: supports :DST: on hold")}}',
+      convoy: '{{=T(":TERRITORY: convoys :SRC: to :DST:")}}',
+      retreat: '{{=T(":TERRITORY: retreats to :DST::COAST:")}}',
+      build_army: '{{=T(":TERRITORY: builds a new army")}}',
+      build_fleet: '{{=T(":TERRITORY: builds a new fleet:COAST:")}}',
+      disband: '{{=T(":TERRITORY: disbands")}}'
+    }, 'orders');
+    T.register({
+      north: ' {{=T("north coast")}}',
+      south: ' {{=T("south coast")}}',
+      east: ' {{=T("east coast")}}',
+      west: ' {{=T("west coast")}}'
+    }, 'orders.coasts');
+    T.register({
+      through: ' {{=T("via convoy")}}'
+    }, 'orders.vec');
+
+    gapp.net.route("map", "{{=url('api.map_get', game.map)}}");
+    gapp.net.route("game", "{{=url('api.game_get', game.id)}}");
+    gapp.net.route("phases", "{{=url('api.game_phases', game.id)}}");
+    gapp.net.route("phase", "{{=url('api.game_phase', ':ID:')}}");
+    gapp.net.route("phase_prev", "{{=url('api.game_phase_prev', game.id)}}");
+    gapp.net.route("phase_next", "{{=url('api.game_phase_next', game.id)}}");
+    gapp.net.route("orders", "{{=url('api.authorized.game_orders', game.id)}}");
+    gapp.net.route("order_save", "{{=url('api.authorized.order_save', ':ID:')}}");
+    gapp.net.route("ready", "{{=url('api.authorized.player_ready', game.id)}}");
+    gapp.net.route("chat_rooms", "{{=url('api.authorized.chat_rooms', game.id)}}");
+    gapp.net.route("chat_readings", "{{=url('api.authorized.chat_readings', game.id)}}");
+    gapp.net.route("chat_messages", "{{=url('api.authorized.chat_messages', ':ID:')}}");
+    gapp.net.route("chat_push", "{{=url('api.authorized.new_chat_message', game.id)}}");
+    gapp.net.route("chat_read", "{{=url('api.authorized.chat_read_message', [game.id, ':ID:'])}}");
+    {{if player_id:}}
+    gapp.net.route("socket", "{{=url.ws('ws.game', game.id, scheme=ws_scheme)}}");
+    {{pass}}
+    gapp.game.scsToWin = {{=scs}};
+    var PLAYER = {{if player_country:}}"{{=player_country}}"{{else:}}null{{pass}};
+    var PRE = {{='true' if game.stage == 0 else 'false'}};
+    var ACTIVE = {{='true' if game.stage == 1 else 'false'}};
+    var OVER = {{='true' if game.stage == 5 else 'false'}};
+    var PLAYER_ACTIVE = {{='true' if player_active else 'false'}};
+    var PLAYER_READY = {{='true' if player_ready else 'false'}};
+    var FULL = ACTIVE && PLAYER !== null && PLAYER_ACTIVE;
+    gapp.game.canOrder = FULL;
