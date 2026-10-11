@@ -11,6 +11,17 @@ RUN npm run tailwind && \
     npm run postcss
 
 
+FROM denoland/deno:2.9.7 AS css
+
+COPY css /wrk/css
+COPY diplomatic/templates /wrk/diplomatic/templates
+WORKDIR /wrk/css
+
+ENV NODE_ENV=production
+
+RUN deno run -A tailwindcss -i src/tailwind.css -c tailwind.config.js -o dist/main.css --minify
+
+
 FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS builder
 
 RUN apt-get update && \
@@ -41,6 +52,7 @@ COPY diplomatic diplomatic
 COPY variants variants
 COPY --from=front /front/dist/game-board.min.js diplomatic/static/gboard/game-board.js
 COPY --from=front /front/dist/tw.min.css diplomatic/static/gboard/tw.css
+COPY --from=css /wrk/css/dist/main.css diplomatic/static/bundled/main.css
 
 
 FROM base AS web

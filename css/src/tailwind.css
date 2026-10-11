@@ -1,0 +1,257 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Self-hosted fonts (diplomatic/static/fonts, latin subset). Paths are relative
+   to the built file, diplomatic/static/bundled/main.css. */
+
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/barlow-latin-400.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/barlow-latin-500.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/barlow-latin-600.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/barlow-latin-700.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/barlow-condensed-latin-500.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/barlow-condensed-latin-600.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/barlow-condensed-latin-700.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* variable font, wght axis 400-800 */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('../fonts/jetbrains-mono-latin-wght.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Components, lifted from the board mockup (docs/design/template.html).
+   Colours are theme tokens only: #9fe8ff is signal, #0a0f15 ink-900, etc.
+   Usage notes:
+   - .btn is the base; add .btn-primary or .btn-ghost for the variants;
+   - .seg is a segmented group of <button>s, the active one gets .on;
+   - .toast holds a .toast-dot (colour from a text-* utility, default signal),
+     the message, and a .toast-close button;
+   - .sw reads the country colour from --c, set on the element or an
+     ancestor (style="--c: rgb(r g b)" or a [data-power] rule). */
+
+@layer components {
+  /* ---- surfaces ---- */
+  .panel {
+    @apply rounded-sm border border-ink-700 bg-ink-900;
+  }
+  /* section heading: small caps, mono */
+  .panel-title {
+    @apply font-mono text-[10px] font-medium uppercase tracking-[.2em] text-fog-400;
+  }
+  /* smaller caption (mockup .cap) */
+  .cap {
+    @apply font-mono text-[9px] font-medium uppercase tracking-[.16em] text-fog-500;
+  }
+
+  /* ---- buttons ---- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-sm border border-ink-600 px-3 py-1.5
+      font-mono text-[10px] font-medium uppercase tracking-[.15em] text-fog-400 transition-colors;
+  }
+  .btn:hover:not(:disabled) {
+    @apply border-ink-500 text-fog-200;
+  }
+  .btn:disabled {
+    @apply cursor-not-allowed opacity-35;
+  }
+  /* SAVE ORDERS / SEND */
+  .btn-primary {
+    @apply border-signal/50 bg-signal/15 text-signal;
+  }
+  .btn-primary:hover:not(:disabled) {
+    @apply border-signal/60 bg-signal/25 text-signal;
+  }
+  .btn-ghost {
+    @apply border-transparent bg-transparent;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    @apply border-transparent bg-ink-800;
+  }
+
+  /* segmented button group */
+  .seg {
+    @apply inline-flex overflow-hidden rounded-sm border border-ink-500;
+  }
+  .seg > button {
+    @apply px-2.5 py-1 font-mono text-[10.5px] font-medium text-fog-400;
+  }
+  .seg > button + button {
+    @apply border-l border-ink-500;
+  }
+  .seg > button:hover {
+    @apply text-fog-200;
+  }
+  .seg > button.on {
+    @apply bg-fog-200 text-ink-950;
+  }
+
+  /* square icon button (phase navigation, notifications bell) */
+  .nb {
+    @apply grid h-7 w-7 shrink-0 place-items-center rounded-sm border border-ink-600 font-mono text-[11px] font-medium
+      text-fog-400;
+  }
+  .nb:hover:not(:disabled) {
+    @apply border-signal/60 text-signal;
+  }
+  .nb:disabled {
+    @apply cursor-not-allowed opacity-35;
+  }
+
+  /* ---- form controls ---- */
+  .input {
+    @apply rounded-sm border border-ink-600 bg-ink-800 px-2.5 py-[3px] text-[12.5px] leading-5 text-fog-200
+      placeholder:text-fog-500 focus:border-signal/60 focus:outline-none;
+  }
+
+  /* key cap */
+  .kbd {
+    @apply inline-block min-w-[18px] rounded-[3px] border border-b-2 border-ink-500 bg-ink-800 px-1 text-center
+      font-mono text-[9.5px] font-medium leading-4 text-fog-300;
+  }
+  .kbd + .kbd {
+    @apply ml-0.5;
+  }
+
+  /* count badge (bell, chat rooms) */
+  .badge {
+    @apply inline-grid h-4 min-w-[16px] place-items-center rounded-sm bg-alert px-1 font-mono text-[9px] font-bold
+      leading-none text-ink-950;
+  }
+
+  /* ---- notifications: the dismissable toast, also the site's flash messages ---- */
+  .toast {
+    @apply flex items-start gap-3 rounded-sm border border-ink-600 bg-ink-900/95 px-3 py-2;
+    animation: toast-in 0.35s ease-out both;
+  }
+  .toast-dot {
+    @apply mt-1 h-2 w-2 shrink-0 rounded-full bg-current text-signal;
+    box-shadow: 0 0 8px currentColor;
+  }
+  .toast-close {
+    @apply font-mono text-[12px] leading-none text-fog-500 hover:text-fog-200;
+  }
+
+  /* ---- shared elements ---- */
+  /* country swatch; size overridable with h-* w-* utilities */
+  .sw {
+    @apply inline-block h-2.5 w-2.5 shrink-0 rounded-sm;
+    background: var(--c);
+    box-shadow: 0 0 6px color-mix(in srgb, var(--c) 65%, transparent);
+  }
+  /* avatar circle: initials, with the picture (if any) on top */
+  .avatar {
+    @apply relative grid h-7 w-7 flex-none place-items-center overflow-hidden rounded-full bg-ink-600 font-mono
+      text-[10.5px] font-semibold leading-none tracking-[.04em] text-fog-200;
+  }
+  .avatar > img {
+    @apply absolute inset-0 h-full w-full object-cover;
+  }
+
+  /* tables (the powers table style: mono, hairline rows) */
+  .table {
+    @apply w-full font-mono text-[11px] tabular-nums text-fog-300;
+  }
+  .table th {
+    @apply px-2 py-1.5 text-left text-[9px] font-medium uppercase tracking-[.15em] text-fog-500;
+  }
+  .table td {
+    @apply border-t border-ink-700 px-2 py-1.5;
+  }
+  .table tbody tr:hover {
+    @apply bg-ink-800/50;
+  }
+
+  .link {
+    @apply text-signal underline decoration-dotted underline-offset-2 hover:text-fog-200;
+  }
+
+  /* ---- dark scrollbar ---- */
+  html {
+    scrollbar-color: theme('colors.ink.600') transparent;
+  }
+  * {
+    scrollbar-width: thin;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-[3px] bg-ink-600;
+  }
+
+  /* Alpine: hidden until initialised */
+  [x-cloak] {
+    display: none !important;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    transform: translateX(-12px);
+    opacity: 0;
+  }
+}

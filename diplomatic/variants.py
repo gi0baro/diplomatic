@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import math
 import os
+import re
 import xml.etree.ElementTree as ET
 from collections import Counter
 
@@ -14,6 +16,20 @@ WATER = ("sea", "coast")
 UNITS = {"army": "armies", "fleet": "fleets"}
 SVG_NS = "http://www.w3.org/2000/svg"
 REMOVED = ("png", "position")
+CODE = re.compile(r"[A-Z]{2,4}")
+# The board ground (the darkest surface country colours are drawn on). Codes
+# and labels are drawn in the owner's colour on it; the thresholds encode what
+# was judged legible by eye on the approved design (docs/design), not a WCAG
+# level: classic's Russia [138,95,181] sits at 4.2 and reads fine.
+GROUND = (5, 8, 12)
+MIN_CONTRAST = 4.0
+# Euclidean RGB distance below which two countries are near-duplicates. RGB is
+# not perceptual, so the threshold is deliberately loose and only catches clear
+# collisions: classic's closest pair, Germany [160,138,117] vs Austria
+# [196,143,133] (~40), was judged distinct on the design; England vs the old
+# Russia [168,126,159] (~104) was the pair that looked too close for other
+# reasons (same hue, differing only in lightness) and is not what this catches.
+MIN_DISTANCE = 35
 
 
 class VariantError(ValueError):
@@ -48,6 +64,28 @@ def _is_rgb(value):
     return isinstance(value, list) and len(value) == 3 and all(isinstance(v, int) and 0 <= v <= 255 for v in value)
 
 
+def _channel(value):
+    c = value / 255
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+
+def luminance(rgb):
+    """WCAG relative luminance of an sRGB triple (0-255)."""
+    r, g, b = (_channel(v) for v in rgb)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def contrast(a, b):
+    """WCAG contrast ratio between two sRGB triples, from 1 to 21."""
+    hi, lo = sorted((luminance(a), luminance(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def distance(a, b):
+    """Euclidean distance between two sRGB triples."""
+    return math.dist(a, b)
+
+
 def _check_names(values, where):
     if not isinstance(values, list) or not all(isinstance(v, str) for v in values):
         raise VariantError(f"{where}: must be a list of names")
@@ -70,6 +108,11 @@ def _check_province(province):
     if kind not in KINDS:
         raise VariantError(f"{where}: unknown kind '{kind}'")
     _check_removed(province, where)
+    if kind == "child":
+        if "code" in province:
+            raise VariantError(f"{where}: child provinces cannot have 'code'")
+    elif not CODE.fullmatch(_field(province, "code", where, str)):
+        raise VariantError(f"{where}: 'code' must be 2 to 4 uppercase letters")
     if kind in PAINTED:
         for key in ("supply_center", "coasts", "links"):
             if key in province:
@@ -108,6 +151,9 @@ def _check_country(country):
     where = _field(country, "name", "country", str)
     if not _is_rgb(_field(country, "color", where)):
         raise VariantError(f"{where}: 'color' must be an RGB triple")
+    ratio = contrast(country["color"], GROUND)
+    if ratio < MIN_CONTRAST:
+        raise VariantError(f"{where}: 'color' contrast against the ground is {ratio:.1f}, needs {MIN_CONTRAST}")
     _check_names(_field(country, "home_centers", where), f"{where}: home_centers")
     _check_names(_field(country, "provinces", where), f"{where}: provinces")
     units = _field(country, "units", where, dict)
@@ -121,10 +167,23 @@ def _check_structure(doc):
     for key in ("revision", "year", "centers_to_win", "min_players"):
         if _field(doc, key, where, int) < 1:
             raise VariantError(f"{where}: '{key}' must be positive")
+    codes = {}
     for province in _field(doc, "provinces", where, list):
         _check_province(province)
-    for country in _field(doc, "countries", where, list):
+        code = province.get("code")
+        if code in codes:
+            raise VariantError(f"{province['name']}: code '{code}' already used by '{codes[code]}'")
+        if code is not None:
+            codes[code] = province["name"]
+    countries = _field(doc, "countries", where, list)
+    for i, country in enumerate(countries):
         _check_country(country)
+        for other in countries[:i]:
+            gap = distance(country["color"], other["color"])
+            if gap < MIN_DISTANCE:
+                raise VariantError(
+                    f"{country['name']}: 'color' too close to {other['name']} (distance {gap:.1f}, needs {MIN_DISTANCE})"
+                )
 
 
 def _fleet_refs(province):
@@ -318,11 +377,13 @@ def _compile(doc):
         "scs_to_win": doc["centers_to_win"],
         "min_players": doc["min_players"],
         "names": {},
+        "codes": {},
         "seas": [],
         "coasts": [],
         "neutrals": [],
         "supply_centers": [],
         "multi_coasts": [],
+        "coast_names": {},
         "links": {"armies": {}, "fleets": {}, "multi_coasts": {}},
         "home_centers": {},
         "countries": {},
@@ -331,6 +392,8 @@ def _compile(doc):
     for province in doc["provinces"]:
         pid, kind = ids[province["name"]], province["kind"]
         row["names"][pid] = province["name"]
+        if "code" in province:
+            row["codes"][pid] = province["code"]
         if kind == "neutral":
             row["neutrals"].append(pid)
         if kind == "sea" or province.get("water"):
@@ -348,6 +411,7 @@ def _compile(doc):
             row["links"]["fleets"][pid] = unique(ref(t)[0] for t in links["fleet"])
         if "coasts" in province:
             row["multi_coasts"].append(pid)
+            row["coast_names"][pid] = [c["name"] for c in province["coasts"]]
             row["links"]["multi_coasts"][pid] = [[ids[t] for t in c["links"]["fleet"]] for c in province["coasts"]]
             row["links"]["fleets"][pid] = unique(t for reach in row["links"]["multi_coasts"][pid] for t in reach)
     for country in doc["countries"]:

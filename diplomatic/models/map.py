@@ -17,10 +17,12 @@ class Map(TSModel):
     seas = Field.json()
     coasts = Field.json()
     multi_coasts = Field.json()
+    coast_names = Field.json()
     links = Field.json()
     supply_centers = Field.json()
     home_centers = Field.json()
     names = Field.json()
+    codes = Field.json()
     countries = Field.json()
     init = Field.json()
     svg = Field.text(auto_validation=False)
@@ -32,9 +34,11 @@ class Map(TSModel):
         "seas": {},
         "coasts": {},
         "multi_coasts": [],
+        "coast_names": {},
         "links": {"armies": [], "fleets": [], "multi_coasts": []},
         "supply_centers": [],
         "home_centers": {},
+        "codes": {},
         "countries": {},
         "init": {"territories": {}, "troops": {}, "coasts": {}},
     }

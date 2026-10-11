@@ -1,0 +1,44 @@
+- current_user = locals().get('current_user', lambda: None)
+- route = current.request.name
+- nav_cls = lambda prefix: 'text-fog-200' if route.startswith(prefix) else 'text-fog-500'
+
+%header.h-12.shrink-0.flex.items-center.gap-3.px-4.border-b.border-ink-700.bg-ink-900.relative.z-30
+    - block topbar_left
+    %a{href: "/", class: "font-display font-semibold text-[23px] leading-none tracking-[.16em] uppercase text-fog-200 shrink-0"} Diplomatic
+    %nav.flex.items-center.gap-5.ml-4.shrink-0
+        %a{href: "{{=url('front.games.index')}}", class: "font-mono text-[11px] tracking-[.18em] uppercase hover:text-fog-200 {{=nav_cls('front.games.')}}"}
+            = T("Games")
+        %a{href: "{{=url('front.maps.index')}}", class: "font-mono text-[11px] tracking-[.18em] uppercase hover:text-fog-200 {{=nav_cls('front.maps.')}}"}
+            = T("Variants")
+        %a{href: "{{=url('front.ranking')}}", class: "font-mono text-[11px] tracking-[.18em] uppercase hover:text-fog-200 {{=nav_cls('front.ranking')}}"}
+            = T("Ranking")
+    - end
+    .flex-1.min-w-0.flex.items-center.gap-3
+        - block topbar_center
+        - end
+
+    .flex.items-center.gap-3.shrink-0
+        - if current_user()
+            - user = current_user()
+            %button.nb.relative{type: "button", title: "Notifications"}
+                %svg{width: "15", height: "15", "aria-hidden": "true"}
+                    %use{href: "#i-bell"}
+                %span.badge.absolute.hidden{class: "-top-1 -right-1", "data-badge": None}
+            .relative.pl-3.border-l.border-ink-700{"x-data": "{open: false}", "@click.outside": "open = false", "@keydown.escape.window": "open = false"}
+                %button.flex.items-center{class: "gap-2.5", type: "button", "@click": "open = !open", "aria-haspopup": "true"}
+                    %span{class: "font-display text-[16px] tracking-wider text-fog-200 hover:text-signal"}
+                        = user.username
+                    %span.avatar
+                        = (user.username or '?')[:2].upper()
+                        - if user.avatar_img
+                            %img{src: "{{=userpic()}}", alt: "", onerror: "this.remove()"}
+                .absolute.right-0.top-full.mt-2.w-44.py-1.panel.shadow-2xl.z-40{class: "shadow-black/50", "x-show": "open", "x-cloak": None, "x-transition.opacity": None}
+                    %a{href: "{{=url('front.games.owned')}}", class: "block px-3 py-1.5 font-mono text-[11px] tracking-[.12em] uppercase text-fog-400 hover:text-fog-200 hover:bg-ink-800"}
+                        = T("My games")
+                    %a{href: "{{=url('auth.logout')}}", class: "block px-3 py-1.5 font-mono text-[11px] tracking-[.12em] uppercase text-fog-400 hover:text-fog-200 hover:bg-ink-800 border-t border-ink-700"}
+                        = T("Sign out")
+        - else
+            %a{href: "{{=url('auth.login')}}", class: "font-mono text-[11px] tracking-[.18em] uppercase text-fog-400 hover:text-fog-200"}
+                = T("Sign in")
+            %a.btn.btn-primary{href: "{{=url('auth.registration')}}"}
+                = T("Sign up")
