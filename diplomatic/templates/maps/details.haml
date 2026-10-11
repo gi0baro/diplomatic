@@ -7,6 +7,7 @@
         %br
         .row
             .col-md-8
+                %img{src: '{{=url("map_files.preview_svg", map.id)}}', style: "width: 100%"}
             .col-md-4
                 .col-md-8
                     = T("Land territories")
@@ -23,9 +24,9 @@
                 .col-md-8
                     = T("Supply centers")
                 .col-md-4
-                    = len(map.supply)
+                    = len(map.supply_centers)
                 .col-md-8
                     = T("Supply centers to win")
                 .col-md-4
-                    = map.scs_towin
+                    = map.scs_to_win
 

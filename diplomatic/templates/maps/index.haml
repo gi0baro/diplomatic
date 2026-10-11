@@ -7,6 +7,7 @@
             %table.table.table-hover.table-responsive
                 %thead
                     %tr
+                        %th
                         %th Name:
                         %th Games:
                 %tbody
@@ -14,6 +15,9 @@
                         %p
                             %tr
                                 %td
-                                    %a{href: '{{=url("maps.details", map.id)}}'}
+                                    %a{href: '{{=url("front.maps.detail", map.id)}}'}
+                                        %img{src: '{{=url("map_files.preview_svg", map.id)}}', style: "width: 240px"}
+                                %td
+                                    %a{href: '{{=url("front.maps.detail", map.id)}}'}
                                         = map.name
                                 %td

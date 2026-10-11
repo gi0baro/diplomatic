@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from emmett import abort, redirect, request, response, url
+from emmett import abort, redirect, request, url
 from emmett.tools import requires
 
 from .. import Game, GameRole, Map, app, auth
@@ -130,15 +130,6 @@ def play(gid):
         # timer=game.time_to_next(),
         # statscol=statscol, unames=usernames)}
     }
-
-
-@games.route("/mapimg/<int:gid>")
-async def map_img(gid):
-    game = Game.get(gid)
-    if not game:
-        abort(404)
-    response.content_type = "image/svg+xml"
-    return game.map.svg
 
 
 @games.route("/mine")

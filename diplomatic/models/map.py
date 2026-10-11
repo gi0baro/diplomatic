@@ -23,7 +23,7 @@ class Map(TSModel):
     names = Field.json()
     countries = Field.json()
     init = Field.json()
-    svg = Field.text()
+    svg = Field.text(auto_validation=False)
 
     validation = {"revision": {"gt": 0}, "min_players": {"gte": 2}, "scs_to_win": {"gt": 0}}
 

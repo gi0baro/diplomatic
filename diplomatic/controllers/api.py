@@ -50,7 +50,9 @@ authorized.pipeline = [RequirePipe(auth.is_logged, access_error)]
 
 @api.route("/map/<int:mid>")
 def map_get(mid):
-    return Map.get(mid)
+    #: the document is served by /maps/<id>/map.svg
+    fields = [field for field in Map.table if field.name != "svg"]
+    return Map.where(lambda m: m.id == mid).select(*fields).first()
 
 
 @api.route("/game/<int:gid>")

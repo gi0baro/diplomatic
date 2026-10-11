@@ -2,6 +2,7 @@
 
 import json
 
+from emmett import url
 from emmett.html import asis, cat, tag
 
 from .. import db
@@ -27,10 +28,13 @@ def games_map(field, value):
         jsref[str(variant["id"])] = {
             "countries": list(variant["countries"].keys()),
             "players_number": [variant["min_players"], len(variant["countries"])],
+            "preview": url("map_files.preview_svg", variant["id"]),
         }
     script = _games_map_js % dict(mapref=json.dumps(jsref))
+    preview = url("map_files.preview_svg", variants[0]["id"]) if variants else ""
     return cat(
         tag.div(tag.select(*choices, _id="games_map", _name="map", _class="form-control"), _class="col-md-6"),
+        tag.div(tag.img(_id="games_map_img", _src=preview, _style="width: 80%; margin-left: 10%"), _class="col-md-6"),
         asis(script),
     )
 
