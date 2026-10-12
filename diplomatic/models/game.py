@@ -685,7 +685,7 @@ class Order(TSModel, UUIDModel):
         "data": {"presence": False},
     }
 
-    default_values = {"type": Type.HOLD, "data": {}, "stage": Stage.PLANNED}
+    default_values = {"type": Type.HOLD.value, "data": {}, "stage": Stage.PLANNED}
 
     repr_values = {"stage": Stage.repr()}
 
