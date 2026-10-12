@@ -1,17 +1,11 @@
 
 class Environment
     constructor: (@app) ->
-        #: terr id and color
-        @colors = {}
-        #: pixels of terrs
-        @pix = {}
         #: allowed movements
         @moves =
             armies: ''
             fleets: ''
             mc: ''
-        #: coord ref for armies
-        @oxy = {}
         #: countries in game
         @countries = {}
         #: starting countries terrs
@@ -21,34 +15,36 @@ class Environment
         @seas = []
         @coasts = []
         @mcoasts = []
-        @mcoasts_oxy = {}
-        @same = {}
+        #: coast names per multi-coast terr, in index order (the engine speaks indices, the SVG names)
+        @coastNames = {}
         #: supply centers
-        @supply = {}
         @_supplylist = []
         @homes = {}
-        #: terr names
+        #: terr names (id -> name) and the inverse (name -> id, the SVG speaks names)
         @names = {}
+        @ids = {}
+        #: terr codes (id -> three-letter code)
+        @codes = {}
         return
 
     init: (data) ->
-        @colors = data.colors
         @moves.armies = data.links.armies
         @moves.fleets = data.links.fleets
         @moves.mc = data.links.multi_coasts
-        @oxy = data.oxy
-        @neutrals = data.neutrals
-        @same = data.same
-        @seas = data.seas
-        @coasts = data.coasts
-        @mcoasts_oxy = data.multi_coasts
-        @supply = data.supply_centers
-        @_supplylist = (key for key of @supply)
+        @neutrals = data.neutrals or []
+        @seas = data.seas or []
+        @coasts = data.coasts or []
+        @mcoasts = data.multi_coasts or []
+        @coastNames = data.coast_names or {}
+        @_supplylist = data.supply_centers or []
         @homes = data.home_centers
         @names = data.names
+        @ids = {}
+        for id, name of @names
+            @ids[name] = id
+        @codes = data.codes or {}
         @countries = data.countries
         @countries_init = data.init.territories
-        @mcoasts = (key for key of @mcoasts_oxy)
         #@_cleanAvailMoves()
         return
 
@@ -75,8 +71,11 @@ class Environment
         @moves = rv
         return
 
-    isSame: (id) ->
-        return id in (key for key of @same)
+    #: the key used for a country in the page: `--c-<key>` custom properties, `data-power` / `data-owner`
+    #: attributes. Must match the server side (controllers/games.py, play): lowercase, every run of
+    #: characters other than a-z and 0-9 becomes one dash, no leading or trailing dash.
+    countryKey: (name) ->
+        return String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
 
     isSea: (id) ->
         return id in @seas
@@ -90,15 +89,6 @@ class Environment
     isSupply: (id) ->
         if @app.game.buildew
             return id in @_supplylist
-        return id in @homes[@app.game.country]
-
-    getTerritoryByColor: (color) ->
-        #: this get the territory id from color
-        for key, value of @colors
-            db_color = r: value[0], g: value[1], b: value[2]
-            if db_color.r is color.r and db_color.g is color.g and db_color.b is color.b
-                Id = key
-                break
-        return Id
+        return id in (@homes[@app.game.country] or [])
 
 window.Environment = Environment

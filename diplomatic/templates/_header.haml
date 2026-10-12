@@ -1,0 +1,14 @@
+- route = current.request.name
+- nav_cls = lambda prefix: 'text-fog-200' if route.startswith(prefix) else 'text-fog-500'
+
+%header.h-12.shrink-0.flex.items-center.gap-3.px-4.border-b.border-ink-700.bg-ink-900.relative.z-30
+    %a{href: "/", class: "font-display font-semibold text-[23px] leading-none tracking-[.16em] uppercase text-fog-200 shrink-0"} Diplomatic
+    %nav.flex.items-center.gap-5.ml-4.shrink-0
+        %a{href: "{{=url('front.games.index')}}", class: "font-mono text-[11px] tracking-[.18em] uppercase hover:text-fog-200 {{=nav_cls('front.games.')}}"}
+            = T("Games")
+        %a{href: "{{=url('front.maps.index')}}", class: "font-mono text-[11px] tracking-[.18em] uppercase hover:text-fog-200 {{=nav_cls('front.maps.')}}"}
+            = T("Variants")
+        %a{href: "{{=url('front.ranking')}}", class: "font-mono text-[11px] tracking-[.18em] uppercase hover:text-fog-200 {{=nav_cls('front.ranking')}}"}
+            = T("Ranking")
+    .flex-1.min-w-0
+    - include '_header_user.haml'

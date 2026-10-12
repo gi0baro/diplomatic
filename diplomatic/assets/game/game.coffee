@@ -9,7 +9,6 @@ class Game
             mcpos: {}
             dislodged: {}
             isLast: false
-        @colors = {}
         @_currentPhase = 0
         @_nphases = 0
         @_phases_loaded = 0
@@ -25,9 +24,22 @@ class Game
         #@builds = {}
         @presstype = null
         @scsToWin = 0
+        #: set by the page before launch: the player has the virtual "next" step (can give orders now)
+        @canOrder = false
+        #: game players as /api/game returns them ({id, country, name, is_ready, is_active})
+        @players = []
         @win = null
         @orderMethod = () -> return
         @movePhaseToNext = () -> return
+        #: saving: 3 s debounce after the last change; one save in flight at a time
+        @_saveTimer = null
+        @_saving = null
+        @_saveAgain = false
+        @_emitQueued = false
+        #: live updates of the players (ready / join), relayed by the game socket
+        document.addEventListener "game:players", (e) =>
+            @_playerUpdate(e.detail or {})
+            return
         return
 
     bind: (stepNextMethod) ->
@@ -38,6 +50,7 @@ class Game
         #: load current player
         # @country = data.currentPlayer
         @country = player
+        @players = ((Object.assign({}, p) for p in (data.players or [])))
         #: set participating countries
         @_setCountries(data.players)
         @buildew = data.build_everywhere
@@ -61,14 +74,12 @@ class Game
         # @ready = currentReady
         @ready = isPlayerReady
         @_initOrders(orders)
-        @_setStartingColors()
         # if @phase('last') isnt undefined and @phase('last').type is PHASE_TYPES.won
         #     @win = data.phases[@_nphases-1].winner
         # @_loadPhasesOrders(callback)
         return
 
     setStep: (step) ->
-        console.log('setStep', step)
         oldStep = @step
         @step = step
         if @app.launched
@@ -115,9 +126,9 @@ class Game
         return
 
     _initOrders: (orders) ->
-        console.log('init orders', orders)
         for order in orders
             territory = order.territory
+            order.data = order.data or {}
             @orders[territory] = order
             if order.type isnt ORDER_TYPES.hold
                 if order.type in [ORDER_TYPES.build, ORDER_TYPES.disband]
@@ -130,10 +141,11 @@ class Game
                     # if order.data.coast isnt undefined
                     #     d.coast = order.data.coast
                     # @_nextPhase.builds[territory] = d
-                    @builds[territory] = order.data
+                    #: copies: the internal type and src must not leak into the server row's data
+                    @builds[territory] = Object.assign({}, order.data)
                     @builds[territory].type = internalType
                 else
-                    @moves[territory] = order.data
+                    @moves[territory] = Object.assign({}, order.data)
                     @moves[territory].type = ORDER_TYPES.remote_to_internal(order.type)
                     if not @moves[territory].src
                         @moves[territory].src = territory
@@ -153,47 +165,11 @@ class Game
                     #                     type: 'convoy'
         return
 
-    _setStartingColors: ->
-        console.log('COLORS', GROUND_COLOR, NEUTRAL_COLOR, SEA_COLOR)
-        #:set all terrs to ground color
-        color = GROUND_COLOR
-        for i of @app.env.colors
-            @colors[i] = color
-        #:set neutrals
-        color = NEUTRAL_COLOR
-        for i in @app.env.neutrals
-            @colors[i] = color
-        #:set seas
-        color = SEA_COLOR
-        for i in @app.env.seas
-            @colors[i] = color
-        #:set countries terrs
-        cterrs = @phase().territories
-        for key, color of @app.env.countries
-            #for i in @app.env.countries_terr[key]
-            #for i in @phase().territories[key]
-            for i in (cterrs[key] or [])
-                @colors[i] = color
-        return
-
     loadStep: (step, oldStep, drawl=true, drawt=true) ->
-        console.log("loadStep", step, drawl, drawt)
-        reset_map = true
-        old_tcolors = {}
-        old_c_terrs = []
-        if step.id is "next" and oldStep.isLast
-            reset_map = false
-        else
-            for key, value of @colors
-                old_tcolors[key] = value
-            console.log(oldStep)
-            for key, terr_list of oldStep.territories
-                for terr in terr_list
-                    old_c_terrs.push(terr)
-        console.log('reset_map', reset_map)
+        reset_map = not (step.id is "next" and oldStep.isLast)
         if reset_map
             # time_start = new Date().getTime()
-            @app.screen.change(old_c_terrs, old_tcolors)
+            @app.screen.change()
             # time_end = new Date().getTime()
             # time_ex = time_end - time_start
             # console.log("ChangeMap time "+time_ex)
@@ -211,18 +187,21 @@ class Game
                 @app.screen.update()
         return
 
-    canBuild: ->
-        if not @phase('last').type is PHASE_TYPES.builds
-            return 0
-        ntroops = @phase('last').getCountryTroops().length
+    #: supply centres minus units of the player in the viewed step: > 0 builds, < 0 disbands
+    buildBalance: ->
+        ntroops = @phase().getCountryTroops().length
+        owned = @phase().territories[@country] or []
         nsupply = 0
         for i in @app.env._supplylist
-            if i in @phase('last').territories[@country]
+            if i in owned
                 nsupply++
-        #if nsupply < ntroops
-        #    return 0
-        base = nsupply-ntroops
-        builds = (b for b of @phase('next').builds).length
+        return nsupply - ntroops
+
+    canBuild: ->
+        if @phase().type isnt PHASE_TYPES.builds
+            return 0
+        base = @buildBalance()
+        builds = (b for b of @builds).length
         if base < 0
             return base+builds
         return base-builds
@@ -255,7 +234,7 @@ class Game
         return
 
     dequeueMove: ->
-        m = @moves_queue.pop(0)
+        return @moves_queue.shift()
 
     delMove: (id) ->
         to_delete = []
@@ -301,8 +280,6 @@ class Game
             order = type: "build", troop: data.type.split("_")[1]
         if data.coast isnt undefined
             order.coast = data.coast
-        console.log(id)
-        console.log(order)
         @addOrder(id, order)
         return
 
@@ -325,42 +302,274 @@ class Game
         return false
 
     gotOrders: ->
-        # TEMP edited
-        #return !$.isEmptyObject(@moves)
-        return !isObjectEmpty(@moves) or !isObjectEmpty(@_nextPhase.builds)
-        # return !$.isEmptyObject(@moves) or !$.isEmptyObject(@_nextPhase.builds)
+        return !isObjectEmpty(@moves) or !isObjectEmpty(@builds)
 
     addOrder: (territory, data) ->
-        console.log('addOrder', territory, data)
-        @orders[territory].type = ORDER_TYPES.internal_to_remote(data.type)
+        order = @orders[territory]
+        if not order
+            console.warn("no order row for", territory)
+            return
+        order.type = ORDER_TYPES.internal_to_remote(data.type)
+        #: a fresh payload: keys of the previous order type must not survive
+        order.data = {}
         if data.type isnt 'build'
-            @orders[territory].data.dst = data.dst
+            order.data.dst = data.dst if data.dst?
         else
-            @orders[territory].data.troop = TROOP_TYPES.internal_to_remote(data.troop)
+            order.data.troop = TROOP_TYPES.internal_to_remote(data.troop)
             if @app.env.isMCoast(territory) and data.troop is 'fleet'
-                @orders[territory].data.coast = data.coast
+                order.data.coast = data.coast
         #@orders[territory] = type: data.type, to: data.to
-        if data.type is 'move'
-            if data.through
-                @orders[territory].data.through = data.through
-                @orders[territory].data.routes = [data.croute]
-            if @app.env.isMCoast(data.dst)
+        if data.type in ['move', 'retreat']
+            if data.type is 'move' and data.through
+                order.data.through = data.through
+                order.data.routes = [data.croute]
+            if @app.env.isMCoast(data.dst) and data.coast?
                 #@orders[territory]["mc"] = @moves_mc[territory]
-                @orders[territory].data.coast = data.coast
+                order.data.coast = data.coast
         else if data.type in ['support_move', 'convoy']
-            @orders[territory].data.src = data.src
-        @orders[territory]._changed = true
+            order.data.src = data.src
+        @_touch(order)
         return
 
     delOrder: (territory) ->
-        @orders[territory].type = ORDER_TYPES.internal_to_remote('hold')
-        @orders[territory].data = {}
-        @orders[territory]._changed = true
+        order = @orders[territory]
+        return unless order
+        order.type = ORDER_TYPES.internal_to_remote('hold')
+        order.data = {}
+        @_touch(order)
         return
 
-    saveOrders: ->
+    #: an order row changed: pending until saved (_rev tells a save in flight that it went stale)
+    _touch: (order) ->
+        order._changed = true
+        order._rev = (order._rev or 0) + 1
+        @_scheduleSave()
+        @_emitOrders()
+        return
+
+    # ------------------------------------------------------------------ events
+
+    _emit: (name, detail) ->
+        document.dispatchEvent(new CustomEvent(name, {detail: detail}))
+        return
+
+    #: `orders:changed`, once per tick however many rows a mutation touched (delMove cascades)
+    _emitOrders: ->
+        return unless @app.launched
+        return if @_emitQueued
+        @_emitQueued = true
+        Promise.resolve().then =>
+            @_emitQueued = false
+            @_emit("orders:changed", @ordersState())
+            return
+        return
+
+    ordersState: ->
+        step = @phase()
+        orders = @orderList(step)
+        unsaved = false
+        for o in orders
+            unsaved = true if o.pending
+        unsaved = true if not unsaved and @_hasChanged()
+        return {
+            orders: orders
+            phase: {id: step.id, type: step.type, isNext: step.id is "next"}
+            editable: step.id is "next" and not @ready
+            unsaved: unsaved
+            saving: @_saving isnt null
+            ready: @ready
+        }
+
+    _hasChanged: ->
         for territory, order of @orders
-            if order._changed
-                @app.net.postOrder(order)
+            return true if order._changed
+        return false
+
+    # ------------------------------------------------------------------ saving and ready
+
+    _scheduleSave: ->
+        clearTimeout(@_saveTimer) if @_saveTimer isnt null
+        @_saveTimer = setTimeout (=>
+            @_saveTimer = null
+            @saveNow()
+            return
+        ), 3000
+        return
+
+    #: save every changed row now; resolves {saved, errors}. While a save is in flight, another one is
+    #: chained after it (rows changed meanwhile keep _changed and go in the next round).
+    saveNow: ->
+        if @_saveTimer isnt null
+            clearTimeout(@_saveTimer)
+            @_saveTimer = null
+        if @_saving isnt null
+            @_saveAgain = true
+            return @_saving
+        changed = (order for territory, order of @orders when order._changed)
+        if not changed.length
+            return Promise.resolve({saved: 0, errors: {}})
+        @_emit("orders:saving", {count: changed.length})
+        @_saving = @app.net.saveOrders(changed).then (res) =>
+            @_saving = null
+            if not isObjectEmpty(res.errors)
+                @_emit("orders:error", res.errors)
+            else if not @_hasChanged()
+                #: "saved" only when nothing is pending: rows changed during the save wait for the next round
+                @_emit("orders:saved", res)
+            @_emitOrders()
+            if @_saveAgain
+                @_saveAgain = false
+                @_scheduleSave() if @_hasChanged()
+            return res
+        return @_saving
+
+    #: kept for older callers
+    saveOrders: ->
+        return @saveNow()
+
+    #: pending orders are saved first (the server refuses orders from a ready player); a failed save
+    #: keeps the player not ready
+    setReady: (ready) ->
+        ready = !!ready
+        none = {saved: 0, errors: {}}
+        if ready
+            #: twice: a save already in flight resolves with its own round, rows changed meanwhile need another
+            before = @saveNow().then (res) =>
+                return res if not isObjectEmpty(res.errors) or not @_hasChanged()
+                return @saveNow()
+        else
+            before = Promise.resolve(none)
+        return before.then (res) =>
+            if ready and not isObjectEmpty(res.errors)
+                @app.ux.alert("Some orders could not be saved: you are not ready yet.", true, 6)
+                @_emit("game:ready", @ready)
+                return @ready
+            return @app.net.setReady(ready).then (r) =>
+                if r and r.status is "ok"
+                    @_applyReady(!!r.data)
+                else
+                    @app.ux.alert("Could not change the ready state.", true, 6)
+                    @_emit("game:ready", @ready)
+                return @ready
+        .catch (err) =>
+            console.error(err)
+            @app.ux.alert("Could not change the ready state.", true, 6)
+            @_emit("game:ready", @ready)
+            return @ready
+
+    _applyReady: (ready) ->
+        @ready = ready
+        #: a ready player gives no orders: drop whatever was being built
+        @app.act.cancel() if ready and @app.act.current isnt "none"
+        @_emit("game:ready", @ready)
+        @_emitOrders()
+        @app.screen.markActionable()
+        return
+
+    _playerUpdate: (data) ->
+        return unless data.country
+        player = null
+        for p in @players
+            player = p if p.country is data.country
+        if player is null
+            player = {country: data.country, name: null, is_ready: false, is_active: false}
+            @players.push(player)
+        player.is_ready = data.is_ready if data.is_ready?
+        player.is_active = data.is_active if data.is_active?
+        #: the same player in another tab
+        if data.country is @country and data.is_ready? and !!data.is_ready isnt @ready
+            @_applyReady(!!data.is_ready)
+        return
+
+    # ------------------------------------------------------------------ orders list
+
+    #: the order kind as the T strings name it (orders.<kind>)
+    _orderKind: (order) ->
+        if order.type is ORDER_TYPES.build
+            return if order.data?.troop is TROOP_TYPES.fleet then "build_fleet" else "build_army"
+        return ORDER_TYPES.remote_to_internal(order.type) or "hold"
+
+    _coastText: (tid, coast) ->
+        return "" unless coast?
+        name = (@app.env.coastNames[tid] or [])[coast]
+        return "" unless name
+        key = "orders.coasts." + name.toLowerCase()
+        text = T.get(key)
+        return if text is key then " (" + name.toLowerCase() + " coast)" else text
+
+    orderText: (order) ->
+        kind = @_orderKind(order)
+        d = order.data or {}
+        name = (id) => if id? then (@app.env.names[id] or id) else ""
+        coastAt = if kind is "build_fleet" then order.territory else d.dst
+        return T.get("orders." + kind)
+            .replace(":TERRITORY:", name(order.territory))
+            .replace(":SRC:", name(d.src))
+            .replace(":DST:", name(d.dst))
+            .replace(":THROUGH:", if d.through then T.get("orders.vec.through") else "")
+            .replace(":COAST:", @_coastText(coastAt, d.coast))
+
+    _orderRow: (order, country, units, pending) ->
+        kind = @_orderKind(order)
+        t = order.territory
+        unit = null
+        if kind is "build_army"
+            unit = "army"
+        else if kind is "build_fleet"
+            unit = "fleet"
+        else if units
+            unit = if units.isFleet(t) then "fleet" else if units.isArmy(t) then "army" else null
+        return {
+            id: order.id
+            territory: t
+            code: @app.env.codes[t] or ""
+            name: @app.env.names[t] or t
+            text: @orderText(order)
+            type: kind
+            unit: unit
+            country: country
+            power: if country then @app.env.countryKey(country) else null
+            mine: country is @country
+            failed: order.stage is ORDER_STATES.failed
+            success: order.stage is ORDER_STATES.successful
+            pending: pending and !!order._changed
+        }
+
+    #: the orders of a step for the sidebar: the player's pending orders on the virtual "next" step
+    #: (holds included), the resolved orders that led to any other step (every power, the player's first)
+    orderList: (step=@step) ->
+        rows = []
+        return rows unless step and @app.launched
+        if step.id is "next"
+            for territory, order of @orders
+                rows.push(@_orderRow(order, @country, step, true))
+        else
+            units = step.prev or step
+            for country, list of (step.orders or {})
+                for order in (list or [])
+                    rows.push(@_orderRow(order, country, units, false))
+        rows.sort (a, b) ->
+            return (if a.mine then -1 else 1) if a.mine isnt b.mine
+            return (if a.country < b.country then -1 else 1) if a.country isnt b.country
+            return a.name.localeCompare(b.name)
+        return rows
+
+    #: back to hold (a retreat: back to no order), from the orders panel
+    resetOrder: (territory) ->
+        return if @ready
+        order = @orders[territory]
+        return unless order
+        @app.act.cancel() if @app.act.current isnt "none"
+        if @builds[territory]
+            @delBuild(territory)
+        else if @moves[territory]
+            @delMove(territory)
+        else if order.type isnt ORDER_TYPES.hold
+            @delOrder(territory)
+        else
+            return
+        @app.screen.drawLines()
+        @app.screen.drawTroops()
+        return
 
 window.Game = Game

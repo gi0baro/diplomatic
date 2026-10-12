@@ -3,6 +3,7 @@
 from emmett import now
 
 from . import Game, celery, db, redis
+from .helpers.events import publish
 
 
 @celery.task(queue="games")
@@ -61,7 +62,7 @@ def start_game(game_id):
     with db.connection():
         game = Game.get(game_id)
         game.start()
-    redis.publish(f"game:{game_id}:state", "started")
+    publish(redis, f"game:{game_id}:state", "state", "started")
 
 
 @celery.task(queue="games")
@@ -76,4 +77,4 @@ def process_game(game_id):
     with db.connection():
         game = Game.get(game_id)
         game.process()
-    redis.publish(f"game:{game_id}:state", "processed")
+    publish(redis, f"game:{game_id}:state", "state", "processed")

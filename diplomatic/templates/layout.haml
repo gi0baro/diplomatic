@@ -1,33 +1,52 @@
 - T = current.T
+- layout_mode = globals().get('layout_mode', 'document')
+- fixed = layout_mode == 'fixed'
+- body_cls = 'h-screen overflow-hidden' if fixed else 'min-h-screen'
+- main_cls = 'flex-1 min-h-0 flex' if fixed else 'flex-1'
+- wrap_cls = 'contents' if fixed else 'w-full max-w-7xl mx-auto px-6 py-8'
 
 !!! 5
-%html
+%html.h-full
     %head
+        %meta{charset: "utf-8"}
         %title {{=current.response.meta.title or 'Diplomatic'}}
-        %meta{name: "viewport", content:"width=device-width, initial-scale=1"}
+        %meta{name: "viewport", content: "width=device-width, initial-scale=1"}
         - include_meta
-
-        - include_helpers
-        - include_bs3
-
-        - assets 'css_base'
-        - assets 'js_base'
-
+        %link{rel: "preload", as: "font", type: "font/woff2", crossorigin: None, href: "{{=url('static', 'fonts/barlow-latin-400.woff2')}}"}
+        %link{rel: "preload", as: "font", type: "font/woff2", crossorigin: None, href: "{{=url('static', 'fonts/barlow-latin-600.woff2')}}"}
+        %link{rel: "preload", as: "font", type: "font/woff2", crossorigin: None, href: "{{=url('static', 'fonts/barlow-condensed-latin-600.woff2')}}"}
+        %link{rel: "preload", as: "font", type: "font/woff2", crossorigin: None, href: "{{=url('static', 'fonts/jetbrains-mono-latin-wght.woff2')}}"}
+        %link{rel: "stylesheet", href: "{{=url('static', 'bundled/main.css')}}"}
+        %script{src: "{{=url('static', 'vendor/htmx-2.0.11.min.js')}}", defer: None}
+        %script{src: "{{=url('static', 'vendor/alpine-3.17.4.min.js')}}", defer: None}
         - block head
         - end
 
-    %body
-        - include 'header.haml'
+    %body{class: "bg-ink-950 text-fog-300 font-sans antialiased flex flex-col {{=body_cls}}"}
+        %svg{xmlns: "http://www.w3.org/2000/svg", style: "display:none", "aria-hidden": "true"}
+            %symbol#i-bell{viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.8", "stroke-linejoin": "round"}
+                %path{d: "M6 16V11a6 6 0 0 1 12 0v5l2 2H4z M10 20a2 2 0 0 0 4 0"}
+            %symbol#i-chevron{viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round"}
+                %path{d: "M6 9l6 6 6-6"}
+            %symbol#i-close{viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.8", "stroke-linecap": "round"}
+                %path{d: "M6 6l12 12M18 6L6 18"}
+            %symbol#i-plus{viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.8", "stroke-linecap": "round"}
+                %path{d: "M12 5v14M5 12h14"}
+            %symbol#i-minus{viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.8", "stroke-linecap": "round"}
+                %path{d: "M5 12h14"}
+            %symbol#i-reset{viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round"}
+                %path{d: "M3 12a9 9 0 1 0 2.64-6.36L3 8.3 M3 3v5.3h5.3"}
 
-        :javascript
-            api.route('join', '{{=url("api.authorized.game_join", ":GAME_ID:")}}');
-            api.route('game', '{{=url("front.games.play")}}');
+        - block header
+        - include '_header.haml'
+        - end
 
-        .content
-            - block center
-            - include
-            - end
+        %main{class: "{{=main_cls}}"}
+            %div{class: "{{=wrap_cls}}"}
+                - block center
+                - include
+                - end
 
-        %footer
-            .pull-left Diplomatic 0.1 beta
-            .pull-right crafted with weppy framework
+        - block footer
+        - include '_footer.haml'
+        - end

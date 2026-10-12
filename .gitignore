@@ -6,6 +6,8 @@ __pycache__
 
 .venv
 node_modules
+css/node_modules
+css/dist/*
 
 diplomatico/**/*.so
 diplomatico/target
@@ -13,8 +15,8 @@ diplomatico/target
 diplomatic/databases/*
 diplomatic/logs/*.log
 diplomatic/static/dist/*
-diplomatic/static/gboard/*
 diplomatic/static/bs3/*
+diplomatic/static/bundled/*
 diplomatic/uploads/*
 
 *.haml.html

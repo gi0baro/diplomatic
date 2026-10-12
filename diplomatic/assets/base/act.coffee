@@ -116,7 +116,7 @@ class Act
     _gameFormChange: ->
         map_id = $('#games_map').val()
         #: set map preview
-        $('#games_map_img').attr('src', mapdata[map_id].thumb)
+        $('#games_map_img').attr('src', mapdata[map_id].preview)
         #: set nplayers
         nplayers = mapdata[map_id].players_number
         $('#games_players_number').html ''

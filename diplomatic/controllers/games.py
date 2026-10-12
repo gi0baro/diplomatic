@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from emmett import abort, redirect, request, response, url
+from emmett import abort, redirect, request, url
 from emmett.tools import requires
 
-from .. import Game, GameRole, Map, app, auth, db
+from .. import Game, GameRole, Map, app, auth
 from . import front
 
 
@@ -75,13 +75,14 @@ async def create():
     return dict(form=form)
 
 
-@games.route("/play/<int:gid>", template="board.html")
+@games.route("/play/<int:gid>", template="play.haml")
 def play(gid):
     game = Game.get(gid)
     if not game:
         abort(404)
+    variant = Map.get(game.map)
     #: evaluate real sc for win
-    scs = game.target_sc or game.map.scs_to_win
+    scs = game.target_sc or variant.scs_to_win
     #: get player chats
     # inMatch = ['all']
     # playercountry = game.player_country(auth.user)
@@ -116,12 +117,80 @@ def play(gid):
     #     usernames[el['country']] = db.User(id=objidToLong(el['player'])).username
     players = game.players.join("user").select()
     player = game.player(auth.user) if auth.is_logged() else None
+
+    #: the country key used by the board (`--c-<key>`, data-power, data-owner): lowercase, every run of
+    #: characters other than a-z and 0-9 becomes one dash, no dash at the ends. Must match
+    #: `Environment.countryKey` in assets/game/env.coffee.
+    def country_key(name):
+        return "-".join("".join(ch if ch.isascii() and ch.isalnum() else " " for ch in name.lower()).split())
+
+    #: one custom property per country plus the attribute rules every board/chrome element reads
+    colors = variant.countries or {}
+    keys = {name: country_key(name) for name in colors}
+    css = [":root {"]
+    css += [f"  --c-{keys[name]}: rgb({c['r']} {c['g']} {c['b']});" for name, c in colors.items()]
+    if player and player.country in keys:
+        css.append(f"  --c-me: var(--c-{keys[player.country]});")
+    css.append("}")
+    css += [f'[data-power="{k}"], [data-owner="{k}"] {{ --c: var(--c-{k}); }}' for k in keys.values()]
+
+    #: the stored SVG inlined: its draft <style> dropped (the page's stylesheet styles it), the
+    #: board's id/classes on the root, and the patterns the stylesheet fills with (mockup values)
+    svg = variant.svg or ""
+    start = svg.find("<style")
+    end = svg.find("</style>", start) if start >= 0 else -1
+    if end >= 0:
+        svg = svg[:start] + svg[end + len("</style>") :]
+    root = svg.find("<svg")
+    root_end = svg.find(">", root)
+    board_svg = ""
+    if root >= 0 and root_end >= 0:
+        defs = (
+            "<defs>"
+            '<pattern id="sea" width="26" height="26" patternUnits="userSpaceOnUse">'
+            '<rect width="26" height="26" fill="#070a0d"/>'
+            '<path d="M26 0H0V26" fill="none" stroke="#597082" stroke-opacity=".09" stroke-width=".6"/></pattern>'
+            '<pattern id="seaHi" width="26" height="26" patternUnits="userSpaceOnUse">'
+            '<rect width="26" height="26" fill="#0e1c28"/>'
+            '<path d="M26 0H0V26" fill="none" stroke="#9fe8ff" stroke-opacity=".16" stroke-width=".6"/></pattern>'
+            '<pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'
+            '<rect width="7" height="7" fill="#0a0c0f"/>'
+            '<line x1="0" y1="0" x2="0" y2="7" stroke="#252d35" stroke-width="1"/></pattern>'
+            "</defs>"
+        )
+        board_svg = (
+            '<svg id="map" class="instant" preserveAspectRatio="xMidYMid meet"'
+            + svg[root + len("<svg") : root_end + 1]
+            + defs
+            + svg[root_end + 1 :]
+        )
+
+    #: deadline: countdown (static for now), absolute time, share of the phase time left
+    timer = game.timer()
+    left = timer.d * 86400 + timer.h * 3600 + timer.m * 60 + timer.s
+    if not game.next_process_at or game.stage != Game.STAGES["game"]:
+        countdown, deadline, left_pct = "--:--:--", None, 0
+    else:
+        if timer.d:
+            countdown = f"{timer.d}d {timer.h:02d}:{timer.m:02d}"
+        else:
+            countdown = f"{timer.h:02d}:{timer.m:02d}:{timer.s:02d}"
+        deadline = game.next_process_at.strftime("%d %b %H:%M UTC")
+        left_pct = max(0, min(100, round(100 * left / max(1, game.phase_time * 60))))
+
     return {
         "game": game,
+        "variant": variant,
+        "board_svg": board_svg,
+        "country_css": "\n".join(css),
+        "player_key": keys.get(player.country) if player else None,
+        "countdown": countdown,
+        "deadline": deadline,
+        "left_pct": left_pct,
         "scs": scs,
         "chats": {"global": 1},
         "players": players,
-        "timer": game.timer(),
+        "timer": timer,
         "player_id": player.id if player else None,
         "player_country": player.country if player else None,
         "player_ready": player.is_ready if player else False,
@@ -130,14 +199,6 @@ def play(gid):
         # timer=game.time_to_next(),
         # statscol=statscol, unames=usernames)}
     }
-
-
-@games.route("/mapimg/<int:gid>")
-async def map_img(gid):
-    game = Game.get(gid)
-    if not game:
-        abort(404)
-    return response.wrap_dbfile(db, game.map.image)
 
 
 @games.route("/mine")

@@ -1,0 +1,33 @@
+- current_user = locals().get('current_user', lambda: None)
+- player_country = globals().get('player_country', None)
+- player_key = globals().get('player_key', None)
+
+.flex.items-center.gap-3.shrink-0
+    - if current_user()
+        - user = current_user()
+        %button.nb.relative{type: "button", title: "Notifications"}
+            %svg{width: "15", height: "15", "aria-hidden": "true"}
+                %use{href: "#i-bell"}
+            %span.badge.absolute.hidden{class: "-top-1 -right-1", "data-badge": None}
+        - if player_country
+            .flex.items-center.pl-3.border-l.border-ink-700{class: "gap-2.5", "data-power": "{{=player_key}}"}
+                %span.sw.h-3.w-3
+                %span{class: "font-display uppercase tracking-wider text-[16px] text-fog-200"}
+                    = player_country
+        .relative.pl-3.border-l.border-ink-700{"x-data": "{open: false}", "@click.outside": "open = false", "@keydown.escape.window": "open = false"}
+            %button.avatar{type: "button", "@click": "open = !open", "aria-haspopup": "true", title: "{{=user.username}}"}
+                = (user.username or '?')[:2].upper()
+                - if user.avatar_img
+                    %img{src: "{{=userpic()}}", alt: "", onerror: "this.remove()"}
+            .absolute.right-0.top-full.mt-2.w-44.py-1.panel.shadow-2xl.z-40{class: "shadow-black/50", "x-show": "open", "x-cloak": None, "x-transition.opacity": None}
+                %div{class: "px-3 py-1.5 font-mono text-[10px] tracking-[.12em] uppercase text-fog-500 border-b border-ink-700"}
+                    = user.username
+                %a{href: "{{=url('front.games.owned')}}", class: "block px-3 py-1.5 font-mono text-[11px] tracking-[.12em] uppercase text-fog-400 hover:text-fog-200 hover:bg-ink-800"}
+                    = T("My games")
+                %a{href: "{{=url('auth.logout')}}", class: "block px-3 py-1.5 font-mono text-[11px] tracking-[.12em] uppercase text-fog-400 hover:text-fog-200 hover:bg-ink-800 border-t border-ink-700"}
+                    = T("Sign out")
+    - else
+        %a{href: "{{=url('auth.login')}}", class: "font-mono text-[11px] tracking-[.18em] uppercase text-fog-400 hover:text-fog-200"}
+            = T("Sign in")
+        %a.btn.btn-primary{href: "{{=url('auth.registration')}}"}
+            = T("Sign up")

@@ -1,14 +1,12 @@
-FROM node:12-alpine AS front
+FROM denoland/deno:2.9.7 AS css
 
-WORKDIR /front
+COPY css /wrk/css
+COPY diplomatic/templates /wrk/diplomatic/templates
+WORKDIR /wrk/css
 
-COPY front/game-board/package.json front/game-board/package-lock.json ./
-RUN npm ci
+ENV NODE_ENV=production
 
-COPY front/game-board .
-RUN npm run tailwind && \
-    npm run build -- --target wc --inline-vue --name game-board src/Build.vue && \
-    npm run postcss
+RUN deno run -A tailwindcss -i src/tailwind.css -c tailwind.config.js -o dist/main.css --minify
 
 
 FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS builder
@@ -39,8 +37,7 @@ ENV PATH=/app/.venv/bin:$PATH
 
 COPY diplomatic diplomatic
 COPY variants variants
-COPY --from=front /front/dist/game-board.min.js diplomatic/static/gboard/game-board.js
-COPY --from=front /front/dist/tw.min.css diplomatic/static/gboard/tw.css
+COPY --from=css /wrk/css/dist/main.css diplomatic/static/bundled/main.css
 
 
 FROM base AS web

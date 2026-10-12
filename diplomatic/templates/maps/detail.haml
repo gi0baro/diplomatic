@@ -1,0 +1,58 @@
+- footer_enabled = True
+- extend 'layout.haml'
+
+.mb-6
+    %a.cap{href: "{{=url('front.maps.index')}}", class: "hover:text-fog-200"}
+        = T("Variants")
+    %h1{class: "mt-2 font-display font-semibold text-[32px] leading-none tracking-[.12em] uppercase text-fog-200"}
+        = map.name
+
+.grid.gap-6{class: "lg:grid-cols-3"}
+    .panel.p-3{class: "lg:col-span-2"}
+        .bg-ink-950
+            %img.block.w-full.h-auto{src: "{{=url('map_files.preview_svg', map.id)}}", alt: ""}
+
+    .panel.self-start
+        %h2.panel-title.px-4.pt-4.pb-2
+            = T("Statistics")
+        %table.table
+            %tbody
+                %tr
+                    %td.pl-4
+                        = T("Land territories")
+                    %td.pr-4.text-right.text-fog-200
+                        = len(map.names)-len(map.seas)-len(map.neutrals)
+                %tr
+                    %td.pl-4
+                        = T("Water territories")
+                    %td.pr-4.text-right.text-fog-200
+                        = len(map.seas)
+                %tr
+                    %td.pl-4
+                        = T("Coastal territories")
+                    %td.pr-4.text-right.text-fog-200
+                        = len(map.coasts)
+                %tr
+                    %td.pl-4
+                        = T("Supply centers")
+                    %td.pr-4.text-right.text-fog-200
+                        = len(map.supply_centers)
+                %tr
+                    %td.pl-4
+                        = T("Supply centers to win")
+                    %td.pr-4.text-right.text-fog-200
+                        = map.scs_to_win
+                %tr
+                    %td.pl-4
+                        = T("Min players")
+                    %td.pr-4.text-right.text-fog-200
+                        = map.min_players
+
+        %h2.panel-title.px-4.pt-5.pb-2.border-t.border-ink-700
+            = T("Countries")
+        %ul.px-4.pb-4.space-y-2
+            - for name, c in map.countries.items()
+                %li.flex.items-center.gap-3{style: "--c: rgb({{=c['r']}} {{=c['g']}} {{=c['b']}})"}
+                    %span.sw
+                    %span{class: "font-display text-[16px] uppercase tracking-wider text-fog-200"}
+                        = name
