@@ -1,6 +1,7 @@
 [project]
 name = "diplomatic"
 version = "0.1.0"
+requires-python = ">=3.14"
 
 dependencies = [
     "emmett[rapidjson]~=2.8.2",
@@ -8,7 +9,8 @@ dependencies = [
     "emmett-assets",
     "coffeescript==1.1.2",
     "redis~=8.1.0",
-    "psycopg2-binary",
+    "psycopg2-binary~=2.9.11",
+    "pyyaml~=6.0.3",
     "celery",
     "diplomatico",
 ]
@@ -79,8 +81,8 @@ known-first-party = ['diplomatic', 'tests']
 'diplomatic/web.py' = ['E402', 'F401']
 'tests/**' = ['B017', 'B018', 'E711', 'E712', 'E741', 'F841', 'N803', 'S110', 'S501']
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pytest>=7.4",
     "ruff~=0.15.0",
 ]
