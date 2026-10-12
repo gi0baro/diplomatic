@@ -386,10 +386,18 @@ class Game(TSModel, UUIDModel):
             game.update_roles(phase, defeats=current_phase.season == GamePhase.Season.AUTUMN)
             game.update_record(
                 stage=self.Stage.GAME,
-                next_process_at=now() + timedelta(minutes=game.phase_time),
+                next_process_at=game.next_deadline(),
                 processed_at=now(),
                 is_ready=False,
             )
+
+    @rowmethod("next_deadline")
+    def _next_deadline(self, game):
+        deadline = now() + timedelta(minutes=game.phase_time)
+        skipped = {day for day, skip in game.skip_processing.items() if skip}
+        while self.PROC_DAYS[deadline.weekday()] in skipped:
+            deadline = (deadline + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        return deadline
 
     @rowmethod("payouts")
     def _payouts(self, game, winner, centers):

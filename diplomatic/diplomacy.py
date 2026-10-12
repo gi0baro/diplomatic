@@ -29,7 +29,9 @@ def process_game(game):
         country: game.map.supply_centers if game.build_everywhere else centers
         for country, centers in game.map.home_centers.items()
     }
-    turn = Turn(phase.type, phase.year, phase.season, phase.territories, build_centers, game.map.scs_to_win)
+    turn = Turn(
+        phase.type, phase.year, phase.season, phase.territories, build_centers, game.target_sc or game.map.scs_to_win
+    )
     outcome = process(phase.type, phase.orders_for_processor(), board, turn)
     updated_orders = {}
     for country_orders in outcome.orders.values():
