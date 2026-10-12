@@ -1,6 +1,6 @@
 from emmett import now
 
-from . import Game, celery, db, redis
+from . import Game, app, celery, db, redis
 from .helpers.events import publish
 
 
@@ -16,52 +16,59 @@ def start_games():
     for game in (
         Game.in_stage(Game.Stage.PREGAME)
         .where(lambda g: (g.is_ready == True) & (g.starts_on == Game.Start.ASAP))
-        .select(Game.id)
+        .select()
     ):
-        Game.where(lambda g: g.id == game.id).update(stage=Game.Stage.PROCESSING)
-        db.commit()
-        start_game.delay(game.id)
+        if game.claim(Game.Stage.PREGAME):
+            db.commit()
+            start_game.delay(game.id)
     for game in (
         Game.in_stage(Game.Stage.PREGAME)
         .where(lambda g: (g.is_ready == True) & (g.starts_on == Game.Start.ON_TIME) & (g.next_process_at <= now()))
-        .select(Game.id)
+        .select()
     ):
-        Game.where(lambda g: g.id == game.id).update(stage=Game.Stage.PROCESSING)
-        db.commit()
-        start_game.delay(game.id)
+        if game.claim(Game.Stage.PREGAME):
+            db.commit()
+            start_game.delay(game.id)
 
 
 def cancel_games():
     for game in (
-        Game.in_stage(Game.Stage.PREGAME)
-        .where(lambda g: (g.is_ready == False) & (g.next_process_at <= now()))
-        .select(Game.id)
+        Game.in_stage(Game.Stage.PREGAME).where(lambda g: (g.is_ready == False) & (g.next_process_at <= now())).select()
     ):
-        Game.where(lambda g: g.id == game.id).update(stage=Game.Stage.PROCESSING)
-        db.commit()
-        cancel_game.delay(game.id)
+        if game.claim(Game.Stage.PREGAME):
+            db.commit()
+            cancel_game.delay(game.id)
 
 
 def process_games():
-    for game in Game.in_stage(Game.Stage.GAME).where(lambda g: g.is_ready == True).select(Game.id):
-        Game.where(lambda g: g.id == game.id).update(stage=Game.Stage.PROCESSING)
-        db.commit()
-        process_game.delay(game.id)
+    for game in Game.in_stage(Game.Stage.GAME).where(lambda g: g.is_ready == True).select():
+        if game.claim(Game.Stage.GAME):
+            db.commit()
+            process_game.delay(game.id)
     for game in (
-        Game.in_stage(Game.Stage.GAME)
-        .where(lambda g: (g.is_ready == False) & (g.next_process_at <= now()))
-        .select(Game.id)
+        Game.in_stage(Game.Stage.GAME).where(lambda g: (g.is_ready == False) & (g.next_process_at <= now())).select()
     ):
-        Game.where(lambda g: g.id == game.id).update(stage=Game.Stage.PROCESSING)
-        db.commit()
-        process_game.delay(game.id)
+        if game.claim(Game.Stage.GAME):
+            db.commit()
+            process_game.delay(game.id)
 
 
 @celery.task(queue="games")
 def start_game(game_id):
     with db.connection():
         game = Game.get(game_id)
-        game.start()
+        if not game or game.stage != Game.Stage.PROCESSING:
+            app.log.warning(f"start_game: game {game_id} not claimed, skipping")
+            return
+        try:
+            with db.atomic():
+                game.start()
+        except Exception:
+            app.log.exception(f"start_game: game {game_id} crashed")
+            game.update_record(stage=Game.Stage.CRASH)
+            db.commit()
+            publish(redis, f"game:{game_id}:state", "state", "crashed")
+            return
     publish(redis, f"game:{game_id}:state", "state", "started")
 
 
@@ -69,12 +76,35 @@ def start_game(game_id):
 def cancel_game(game_id):
     with db.connection():
         game = Game.get(game_id)
-        game.cancel()
+        if not game or game.stage != Game.Stage.PROCESSING:
+            app.log.warning(f"cancel_game: game {game_id} not claimed, skipping")
+            return
+        try:
+            with db.atomic():
+                game.cancel()
+        except Exception:
+            app.log.exception(f"cancel_game: game {game_id} crashed")
+            game.update_record(stage=Game.Stage.CRASH)
+            db.commit()
+            publish(redis, f"game:{game_id}:state", "state", "crashed")
+            return
+    publish(redis, f"game:{game_id}:state", "state", "over")
 
 
 @celery.task(queue="games")
 def process_game(game_id):
     with db.connection():
         game = Game.get(game_id)
-        game.process()
-    publish(redis, f"game:{game_id}:state", "state", "processed")
+        if not game or game.stage != Game.Stage.PROCESSING:
+            app.log.warning(f"process_game: game {game_id} not claimed, skipping")
+            return
+        try:
+            with db.atomic():
+                game.process()
+        except Exception:
+            app.log.exception(f"process_game: game {game_id} crashed")
+            game.update_record(stage=Game.Stage.CRASH)
+            db.commit()
+            publish(redis, f"game:{game_id}:state", "state", "crashed")
+            return
+    publish(redis, f"game:{game_id}:state", "state", "over" if game.stage == Game.Stage.OVER else "processed")

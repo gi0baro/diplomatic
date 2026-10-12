@@ -85,7 +85,7 @@
 
   function factory(cfg) {
     // per instance, not reactive
-    var playerId = Number(cfg.playerId);
+    var playerId = cfg.playerId;
     var loads = {};        // room id -> in-flight page fetch
     var readBusy = {};     // room id -> a PUT reading is in flight
     var readDirty = {};    // room id -> the mark moved while it was in flight
@@ -195,7 +195,7 @@
         ((res && res.data) || []).forEach(function (rd) {
           var have = self.readings[rd.room];
           // never move a known mark backwards
-          if (have && (have.message || 0) > (rd.message || 0)) rd.message = have.message;
+          if (have && (have.message || '') > (rd.message || '')) rd.message = have.message;
           self.readings[rd.room] = rd;
         });
       },
@@ -204,9 +204,9 @@
       normalize: function (row) {
         var players = this.players;
         var members = row.members || [];
-        var me = members.filter(function (m) { return Number(m.player) === playerId; })[0];
+        var me = members.filter(function (m) { return m.player === playerId; })[0];
         var general = row.type !== 10;
-        var other = general ? null : members.filter(function (m) { return Number(m.player) !== playerId; })[0];
+        var other = general ? null : members.filter(function (m) { return m.player !== playerId; })[0];
         var who = other ? players[other.player] : null;
         var country = who ? who.country : null;
         var name = general ? 'Global' : (country || row.name || 'Room ' + row.id);
@@ -228,7 +228,7 @@
         });
         list.sort(function (a, b) {
           if (a.general !== b.general) return a.general ? -1 : 1;
-          return a.name.localeCompare(b.name) || a.id - b.id;
+          return a.name.localeCompare(b.name) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
         });
         var dms = list.filter(function (r) { return !r.general; });
         for (var n = 4; n <= 16; n++) {
@@ -265,7 +265,6 @@
       },
 
       findRoom: function (id) {
-        id = Number(id);
         for (var i = 0; i < this.rooms.length; i++) if (this.rooms[i].id === id) return this.rooms[i];
         return null;
       },
@@ -281,7 +280,7 @@
         });
         if (!add.length) return 0;
         var list = room.messages.concat(add);
-        list.sort(function (a, b) { return a.id - b.id; });
+        list.sort(function (a, b) { return a.id < b.id ? -1 : a.id > b.id ? 1 : 0; });
         room.messages = list;
         return add.length;
       },
@@ -345,10 +344,10 @@
       // ---- unread ----
       mark: function (id) {
         var rd = this.readings[id];
-        return (rd && rd.message) || 0;
+        return (rd && rd.message) || '';
       },
 
-      // unread = messages after the reading's message (all of them when it is null), not counting our own
+      // unread = messages after the reading's message (all of them when it is empty), not counting our own
       recount: function (room) {
         var mark = this.mark(room.id);
         var me = room.me;
@@ -360,7 +359,7 @@
       // our own message moved the mark on the server (ChatMessage.update_readings): follow locally, no PUT
       bump: function (id, messageId) {
         var rd = this.readings[id];
-        if (rd && (rd.message || 0) < messageId) rd.message = messageId;
+        if (rd && (rd.message || '') < messageId) rd.message = messageId;
       },
 
       // the room is being read: move the mark to its last message and tell the server
@@ -372,7 +371,7 @@
           var rd = this.readings[id];
           if (!rd) {
             this.readings[id] = { id: null, room: id, member: room.me, message: last };
-          } else if ((rd.message || 0) < last) {
+          } else if ((rd.message || '') < last) {
             rd.message = last;
             this.putRead(id);
           }

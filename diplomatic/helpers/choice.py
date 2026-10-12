@@ -8,6 +8,9 @@ class Choice(IntEnum):
         obj.label = label
         return obj
 
+    def __repr__(self):
+        return repr(self.value)
+
     @classmethod
     def choices(cls):
         return [(member, member.label) for member in cls]

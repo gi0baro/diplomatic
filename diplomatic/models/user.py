@@ -44,13 +44,14 @@ class UserStats(TSModel):
     belongs_to("user")
 
     points = Field.int(notnull=True)
+    score = Field.int(notnull=True)
     played = Field.int(notnull=True)
     won = Field.int(notnull=True)
     survived = Field.int(notnull=True)
     defeated = Field.int(notnull=True)
     drawn = Field.int(notnull=True)
 
-    default_values = {"points": 0, "played": 0, "won": 0, "survived": 0, "defeated": 0, "drawn": 0}
+    default_values = {"points": 0, "score": 0, "played": 0, "won": 0, "survived": 0, "defeated": 0, "drawn": 0}
 
 
 # _default_notif_settings = {

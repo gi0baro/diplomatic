@@ -14,6 +14,7 @@ from .. import (
     GameRole,
     Map,
     Order,
+    Vault,
     app,
     auth,
     db,
@@ -54,41 +55,62 @@ def map_get(mid):
     return Map.where(lambda m: m.id == mid).select(*fields).first()
 
 
-@api.route("/game/<int:gid>")
+@api.route("/game/<str:gid>")
 def game_get(gid):
     game = Game.get(gid)
-    # game = db(db.Game.id == gid).select(
-    #     db.Game.phases, db.Game.countries, db.Game.build_ew,
-    #     db.Game.target_sc, db.Game.press_type).first()
-    # rv = sdict()
-    # if game:
-    #     rv.phases = game.phases
-    #     rv.countries = [el['country'] for el in game.countries]
-    #     rv.buildew = game.build_ew
-    #     rv.scs = game.target_sc
-    #     rv.presstype = game.press_type
-    #     rv.currentPlayer = game.player_country()
-    rv = game.as_dict()
-    players = game.players.join("user").select()
-    rv["players"] = [
-        {
-            "id": player.id,
-            "country": player.country,
-            "name": player.user.username if not game.anonymous else None,
-            "is_ready": bool(player.is_ready),
-            "is_active": bool(player.is_active),
-        }
-        for player in players
-    ]
-    return rv
+    if not game:
+        response.status = 404
+        return {"error": "not found"}
+    players = game.players.current().join("user").select()
+    return {
+        "id": game.id,
+        "created_at": game.created_at,
+        "updated_at": game.updated_at,
+        "name": game.name,
+        "lang": game.lang,
+        "players_number": game.players_number,
+        "bet": game.bet,
+        "pot_type": game.pot_type,
+        "phase_time": game.phase_time,
+        "join_time": game.join_time,
+        "starts_on": game.starts_on,
+        "build_everywhere": game.build_everywhere,
+        "build_on_start": game.build_on_start,
+        "anonymous": game.anonymous,
+        "press_type": game.press_type,
+        "access": game.access,
+        "max_turns": game.max_turns,
+        "target_sc": game.target_sc,
+        "skip_processing": game.skip_processing,
+        "stage": game.stage,
+        "is_open": game.is_open,
+        "is_ready": game.is_ready,
+        "countries_assignment": game.countries_assignment,
+        "processed_at": game.processed_at,
+        "next_process_at": game.next_process_at,
+        "countries": game.countries,
+        "user": game.user,
+        "map": game.map,
+        "players": [
+            {
+                "id": player.id,
+                "country": player.country,
+                "name": player.user.username if not game.anonymous else None,
+                "is_ready": player.is_ready,
+                "is_active": player.is_active,
+                "state": player.state,
+            }
+            for player in players
+        ],
+    }
 
 
-@api.route("/game/<int:gid>/phases")
+@api.route("/game/<str:gid>/phases")
 def game_phases(gid):
     return {"data": GamePhase.where(lambda m: m.game == gid).select(orderby=GamePhase.created_at)}
 
 
-@api.route("/phases/<int:pid>")
+@api.route("/phases/<str:pid>")
 def game_phase(pid):
     row, orders = GamePhase.get(id=pid), {}
     if not row:
@@ -101,7 +123,7 @@ def game_phase(pid):
     return rv
 
 
-@api.route("/game/<int:gid>/phases/prev")
+@api.route("/game/<str:gid>/phases/prev")
 def game_phase_prev(gid):
     dbset, orders = GamePhase.where(lambda m: m.game == gid), {}
     orderby = GamePhase.id
@@ -119,7 +141,7 @@ def game_phase_prev(gid):
     return rv
 
 
-@api.route("/game/<int:gid>/phases/next")
+@api.route("/game/<str:gid>/phases/next")
 def game_phase_next(gid):
     dbset, orders = GamePhase.where(lambda m: m.game == gid), {}
     orderby = ~GamePhase.id
@@ -143,19 +165,23 @@ def game_phase_next(gid):
 #     return dict(status=game.status, phase=len(game.phases) - 1)
 
 
-@authorized.route("/game/<int:gid>/join", methods=["post"])
+@authorized.route("/game/<str:gid>/join", methods=["post"])
 async def game_join(gid):
     rv = sdict(status="error")
-    game = Game.get(gid)
+    game = Game.where(lambda m: m.id == gid).select(for_update=True).first()
     if not game:
         rv.data = "no game found"
+        return rv
+    if game.stage != Game.Stage.PREGAME:
+        rv.data = "game already started"
         return rv
     params = await request.body_params
     if game.player_country(auth.user) is not None:
         rv.data = "already in game"
         return rv
-    if auth.user.vault().balance < game.bet:
-        rv.data = "Not enough credits"
+    vault = Vault.where(lambda m: m.user == auth.user.id).select(for_update=True).first()
+    if vault.balance < game.bet:
+        rv.data = "Not enough points"
         return rv
     if game.players.count() == game.players_number:
         rv.data = "no slots available"
@@ -164,32 +190,36 @@ async def game_join(gid):
         if params.password != game.password:
             rv.data = "wrong password"
             return rv
-    chosen_country = params.country
     try:
         with db.atomic():
-            role = game.add_player(auth.user, chosen_country)
+            role_id = game.add_player(auth.user, params.country)
     except Exception as e:
         app.log.exception(e)
-        role = None
-    if not role:
+        role_id = None
+    if not role_id:
         rv.data = "Cannot join game"
         return rv
+    claimed = False
+    if game.players.count() == game.players_number:
+        game.update_record(is_ready=True, is_open=False)
+        if game.starts_on == Game.Start.ASAP:
+            claimed = game.claim(Game.Stage.PREGAME)
+    db.commit()
+    role = GameRole.get(role_id)
     await publish(
         app.ext.Redis.client,
         f"game:{gid}:players",
         "players",
-        {"country": role.country, "is_active": role.is_active},
+        {"country": role.country, "is_active": role.is_active, "is_ready": role.is_ready, "state": role.state},
     )
-    if game.players.count() == game.players_number:
-        game.update_record(is_ready=True, is_open=False)
-        db.commit()
+    if claimed:
         start_game.delay(game.id)
     rv.status = "ok"
     rv.data = "joined successfully"
     return rv
 
 
-@api.route("/phases/<int:pid>/orders")
+@api.route("/phases/<str:pid>/orders")
 def phase_orders(pid):
     rv = []
     rows = Order.where(lambda o: (o.game_phase == pid) & (o.stage != Order.Stage.PLANNED)).join("game_role").select()
@@ -200,7 +230,7 @@ def phase_orders(pid):
     return {"data": rv}
 
 
-@authorized.route("/game/<int:gid>/orders", methods=["get"])
+@authorized.route("/game/<str:gid>/orders", methods=["get"])
 def game_orders(gid):
     rv = sdict(status="error")
     game = Game.get(gid)
@@ -212,7 +242,7 @@ def game_orders(gid):
     return rv
 
 
-@authorized.route("/orders/<int:order_id>", methods=["put", "patch"])
+@authorized.route("/orders/<str:order_id>", methods=["put", "patch"])
 async def order_save(order_id):
     rv = sdict(status="error")
     row = (
@@ -235,8 +265,7 @@ async def order_save(order_id):
         response.status = 400
         rv.data = "Game doesn't allow orders"
         return rv
-    #: if player is not active can't update orders
-    if not row.game_roles.is_active:
+    if not row.game_roles.is_active or row.game_roles.state != GameRole.State.PLAYING:
         response.status = 400
         rv.data = "Cannot update orders in this turn"
         return rv
@@ -265,21 +294,29 @@ async def order_save(order_id):
     return rv
 
 
-@authorized.route("/game/<int:gid>/ready", methods=["post", "put"])
+@authorized.route("/game/<str:gid>/ready", methods=["post", "put"])
 async def player_ready(gid):
     rv = sdict(status="error")
     game = Game.get(id=gid, is_ready=False, stage=Game.Stage.GAME)
     if not game:
         return rv
     status = (await request.body_params).get("ready", False)
-    roles = game.players.where(lambda p: (p.user == auth.user.id) & (p.is_active == True))
+    if not isinstance(status, bool):
+        response.status = 422
+        rv.data = "invalid ready status"
+        return rv
+    roles = game.players.playing().where(lambda m: m.user == auth.user.id)
+    country = None
     if roles.update(is_ready=status):
-        role = roles.select(GameRole.country).first()
-        await publish(
-            app.ext.Redis.client, f"game:{gid}:players", "players", {"country": role.country, "is_ready": status}
-        )
-    if game.players.where(lambda p: p.is_ready == True).count() == game.players_number:
+        country = roles.select(GameRole.country).first().country
+    db.commit()
+    claimed = game.all_ready() and game.claim(Game.Stage.GAME)
+    if claimed:
         game.update_record(is_ready=True)
+    db.commit()
+    if country:
+        await publish(app.ext.Redis.client, f"game:{gid}:players", "players", {"country": country, "is_ready": status})
+    if claimed:
         process_game.delay(game.id)
     rv.data = status
     rv.status = "ok"
@@ -468,7 +505,7 @@ async def player_ready(gid):
 
 
 # @api.route('/game/<int:gid>/rooms', methods=['get'])
-@authorized.route("/game/<int:gid>/rooms", methods=["get"])
+@authorized.route("/game/<str:gid>/rooms", methods=["get"])
 def chat_rooms(gid):
     # user = 1
     # auth.user
@@ -487,13 +524,13 @@ def chat_rooms(gid):
     return {"data": [{**row.as_dict(), "members": members[row.id]} for row in rows]}
 
 
-@authorized.route("/game/<int:gid>/readings", methods=["get"])
+@authorized.route("/game/<str:gid>/readings", methods=["get"])
 async def chat_readings(gid):
     rows = ChatReading.accessible_by_user(auth.user).of_game(gid).select(ChatReading.table.ALL)
     return {"data": rows}
 
 
-@authorized.route("/room/<int:rid>/messages", methods=["get"])
+@authorized.route("/room/<str:rid>/messages", methods=["get"])
 def chat_messages(rid):
     room = ChatRoom.accessible_by_user(auth.user).where(lambda m: m.id == rid).select(ChatRoom.table.ALL).first()
     if not room:
@@ -503,7 +540,7 @@ def chat_messages(rid):
     return {"data": rows}
 
 
-@authorized.route("/game/<int:gid>/messages", methods=["post"])
+@authorized.route("/game/<str:gid>/messages", methods=["post"])
 async def new_chat_message(gid):
     response.status = 201
     params = await request.body_params
@@ -526,7 +563,7 @@ async def new_chat_message(gid):
     room = (
         ChatRoom.accessible_by_user(auth.user).where(lambda m: m.id == params.room).select(ChatRoom.table.ALL).first()
     )
-    res = ChatMessage.create(room=room, sender=member, text=params.text)
+    res = ChatMessage.create(room=room.id, sender=member.id, text=params.text)
     if res.errors:
         response.status = 422
         return {"error": res.errors.as_dict()}
@@ -535,7 +572,7 @@ async def new_chat_message(gid):
     return row
 
 
-@authorized.route("/game/<int:gid>/readings/<int:rid>", methods=["put"])
+@authorized.route("/game/<str:gid>/readings/<str:rid>", methods=["put"])
 async def chat_read_message(gid, rid):
     row = ChatReading.get(rid)
     if not row:
@@ -564,7 +601,7 @@ async def chat_read_message(gid, rid):
     return row
 
 
-@authorized.route("/chat/<int:cid>", methods="get")
+@authorized.route("/chat/<str:cid>", methods="get")
 def chat_get(cid):
     return sdict(status="Ok", data=[])
     # chat = db.Chat(id=cid)

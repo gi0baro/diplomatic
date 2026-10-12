@@ -1,3 +1,5 @@
+import uuid
+
 from emmett import now
 from emmett.orm import Field, Model
 
@@ -11,3 +13,7 @@ class TSModel(Model):
     update_values = {"updated_at": now}
 
     fields_rw = {"created_at": False, "updated_at": False}
+
+
+class UUIDModel(Model):
+    id = Field.string(length=32, default=lambda: uuid.uuid7().hex)

@@ -1,5 +1,1 @@
-from decimal import Decimal
-
-
-GAME_FEE = Decimal("0.5")
-WIN_FEE = Decimal("0.005")
+START_POINTS = 100

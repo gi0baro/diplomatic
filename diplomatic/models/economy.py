@@ -1,63 +1,82 @@
-from decimal import Decimal
-
 from emmett import T
-from emmett.orm import Field, after_insert, before_insert, belongs_to, has_many
+from emmett.orm import Field, after_insert, after_update, before_insert, belongs_to, has_many, rowmethod
 
+from ..constants import START_POINTS
 from ..helpers.choice import Choice
-from . import TSModel
+from . import TSModel, UUIDModel
 
 
 class Vault(TSModel):
     belongs_to("user")
     has_many("transactions")
 
-    balance = Field.decimal(18, 6, notnull=True)
+    balance = Field.int(notnull=True)
+    credit = Field.int(notnull=True)
 
-    default_values = {"balance": Decimal(0)}
+    default_values = {"balance": 0, "credit": 0}
 
     indexes = {"uniq_user": {"fields": ["user"], "unique": True}}
 
     @after_insert
-    def add_welcome_funds(self, fields, rid):
-        vault_n = self.all().count()
-        if vault_n <= 100:
-            welcome_amount = 1000
-        elif 100 < vault_n <= 250:
-            welcome_amount = 500
-        elif 250 < vault_n <= 500:
-            welcome_amount = 250
-        else:
-            welcome_amount = 100
-        rid.transactions.create(value=welcome_amount, description="Welcome funds")
+    def add_welcome_points(self, fields, rid):
+        rid.transactions.create(type=Transaction.Type.WELCOME, credit=START_POINTS, description="Welcome points")
+
+    @after_update
+    def refresh_user_points(self, dbset, fields):
+        for row in dbset.select(self.user, self.balance, self.credit):
+            self.db(self.db.UserStats.user == row.user).update(points=row.balance + row.credit)
+
+    @rowmethod("supplement")
+    def _supplement(self, row, bet, won):
+        total = row.balance + (row.credit - bet) + won
+        if total < START_POINTS:
+            return min(START_POINTS - total, bet)
+        return 0
 
 
-class Transaction(TSModel):
+class Transaction(TSModel, UUIDModel):
     belongs_to("vault")
 
-    class Direction(Choice):
-        IN = 0, T("In")
-        OUT = 1, T("Out")
+    class Type(Choice):
+        WELCOME = 0, T("Welcome")
+        BET = 1, T("Bet")
+        CANCEL = 2, T("Cancel")
+        POT = 3, T("Pot")
+        WON = 4, T("Won")
+        SUPPLEMENT = 5, T("Supplement")
 
-    value = Field.decimal(18, 6, notnull=True)
-    direction = Field.int(notnull=True)
+    type = Field.int(notnull=True)
+    credit = Field.int(notnull=True)
+    debit = Field.int(notnull=True)
     description = Field(notnull=True)
 
-    validation = {"direction": {"in": Direction.choices(), "allow": "empty"}}
+    validation = {"type": {"in": Type.choices()}, "credit": {"gte": 0}, "debit": {"gte": 0}}
 
-    repr_values = {"direction": Direction.repr()}
+    default_values = {"credit": 0, "debit": 0}
 
-    fields_rw = {"direction": False}
+    repr_values = {"type": Type.repr()}
 
-    indexes = {"vault": True, "direction": True}
+    indexes = {"vault": True, "type": True}
 
     @before_insert
-    def set_direction(self, fields):
-        fields.direction = self.Direction.IN if fields.value >= 0 else self.Direction.OUT
+    def check_one_side(self, fields):
+        if (fields.credit > 0) == (fields.debit > 0):
+            raise ValueError("A transaction needs exactly one of credit and debit positive")
 
     @after_insert
-    def update_vault_balance(self, fields, rid):
-        Vault.where(lambda m: m.id).update(balance=Vault.balance + fields.value)
-
-
-class ChainTransaction(TSModel):
-    pass
+    def apply_to_vault(self, fields, rid):
+        vault = Vault.where(lambda m: m.id == fields.vault)
+        if fields.type == self.Type.WELCOME:
+            vault.update(balance=Vault.balance + fields.credit)
+        elif fields.type == self.Type.BET:
+            vault.update(balance=Vault.balance - fields.debit, credit=Vault.credit + fields.debit)
+        elif fields.type == self.Type.CANCEL:
+            vault.update(balance=Vault.balance + fields.credit, credit=Vault.credit - fields.credit)
+        elif fields.type == self.Type.POT:
+            vault.update(credit=Vault.credit - fields.debit)
+        elif fields.type == self.Type.WON:
+            vault.update(balance=Vault.balance + fields.credit)
+        elif fields.type == self.Type.SUPPLEMENT:
+            vault.update(balance=Vault.balance + fields.credit)
+        else:
+            raise ValueError(f"Unknown transaction type {fields.type}")
