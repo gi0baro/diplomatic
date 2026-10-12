@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from decimal import Decimal
 
 from emmett.orm import Field, after_insert, before_insert, belongs_to, has_many

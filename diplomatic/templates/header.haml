@@ -34,19 +34,18 @@
                                     %br
                                     %img.img-circle.img-responsive{src:"{{=userpic()}}"}
                                     %br
-                            - if not current_user().is_admin
-                                %li
-                                    %a{href:"#"}
-                                        = T("Points")+": "
-                                        = userdata()['points']
-                                %li
-                                    %a{href:"#"}
-                                        = T("Credits")+": "
-                                        = round(uservault()['balance'], 2)
-                                %li
-                                    %a{href:"#"} Profile
-                                %li
-                                    %a{href:"{{=url('front.games.owned')}}"} My games
+                            %li
+                                %a{href:"#"}
+                                    = T("Points")+": "
+                                    = userdata()['points']
+                            %li
+                                %a{href:"#"}
+                                    = T("Credits")+": "
+                                    = round(uservault()['balance'], 2)
+                            %li
+                                %a{href:"#"} Profile
+                            %li
+                                %a{href:"{{=url('front.games.owned')}}"} My games
                             %li.divider
                             %li
                                 %a{href:"{{=url('auth.logout')}}"} Sign out

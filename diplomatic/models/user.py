@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from emmett.orm import Field, after_insert, belongs_to, has_many, has_one
 from emmett.tools.auth.models import AuthUserBasic
 
@@ -21,12 +19,9 @@ class User(AuthUserBasic):
     )
 
     username = Field(notnull=True)
-    is_admin = Field.bool(notnull=True)
     avatar_src = Field()
     avatar_img = Field.upload()
     # facebook = Field()
-
-    default_values = {"is_admin": False}
 
     form_registration_rw = {"username": True}
     form_profile_rw = {"avatar_src": True, "avatar_img": True}
@@ -35,12 +30,10 @@ class User(AuthUserBasic):
         # 'avatar_src': UserAvatarSet(app.config.auth.photo_source, zero=None)
     }
 
-    indexes = {"email": True, "is_admin": True}
+    indexes = {"email": True}
 
     @after_insert
     def create_account_data(self, fields, rid):
-        if fields.is_admin:
-            return
         UserStats.create(user=rid)
         Vault.create(user=rid)
 

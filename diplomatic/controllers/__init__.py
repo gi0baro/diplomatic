@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
-
 from emmett import redirect, url
 from emmett.pipeline import RequirePipe
 
 from .. import app, auth, db, sessions
 from ..contexts import BaseContext
-from ..pipes import AppStatusPipe
 
 
 auth_routes = auth.module(
@@ -13,7 +10,7 @@ auth_routes = auth.module(
 )
 
 front = app.module(__name__, "front")
-front.pipeline = [sessions, db.pipe, auth.pipe, AppStatusPipe()]
+front.pipeline = [sessions, db.pipe, auth.pipe]
 front.injectors = [BaseContext()]
 
 authenticated = front.module(__name__, "auth")

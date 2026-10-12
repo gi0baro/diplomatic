@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from emmett.orm import Field, Model, after_insert, belongs_to, has_many, refers_to, rowmethod, scope
 
 from ..helpers.events import publish

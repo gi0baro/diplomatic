@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from emmett import abort, redirect, request, url
 from emmett.tools import requires
 

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from emmett.orm.adapters import PostgrePsycoBoolean
 from pydal.adapters import adapters
 from pydal.dialects.postgre import PostgreDialectBooleanJSON

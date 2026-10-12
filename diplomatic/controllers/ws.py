@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from emmett import session, websocket
 from emmett.http import HTTPResponse
 

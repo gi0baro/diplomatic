@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from diplomatico.constants import Phase
 
 from diplomatico import Board, Player, Turn, process, validate

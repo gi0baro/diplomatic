@@ -44,7 +44,7 @@ FROM base AS web
 
 EXPOSE 8000
 
-ENTRYPOINT ["emmett", "-a", "diplomatic"]
+ENTRYPOINT ["emmett", "-a", "diplomatic.web"]
 CMD ["serve", "--no-access-log"]
 
 

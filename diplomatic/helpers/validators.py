@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from emmett import session
 from emmett.validators import Validator, inSet
 

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from emmett import request
 from emmett.dal import Field, Model, belongs_to
 

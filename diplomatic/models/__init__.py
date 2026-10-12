@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from emmett import now
 from emmett.orm import Field, Model
 

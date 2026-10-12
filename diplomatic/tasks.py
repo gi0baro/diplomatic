@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from emmett import now
 
 from . import Game, celery, db, redis

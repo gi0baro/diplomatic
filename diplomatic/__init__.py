@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import os
 
 from celery import Celery
@@ -8,15 +6,8 @@ from emmett.cache import Cache, RamCache, RedisCache
 from emmett.orm import Database
 from emmett.sessions import SessionManager
 from emmett.tools import Auth
-from emmett_assets import Assets
-
-# from emmett_bs3 import BS3
-from emmett_haml import Haml
 from redis import Redis
 
-from .exts.bs3 import BS3
-
-# from .helpers import postgres
 from .helpers.config import parse_celery_cron
 from .helpers.redis_ext import Redis as RedisExtension
 
@@ -48,19 +39,12 @@ redis = Redis(**app.config.redis)
 cache = Cache(ram=RamCache(), redis=RedisCache(**app.config.redis))
 
 # db and auth
-# from .models.system import SysProp, SysJoincode
-# from .models.user import User, UserData, UserSettings
-# from .models.game import Game, Orders, Chat
-# from .models.notification import NObject, NEvent, NSubscription
-# from .models.stats import TimeStats, GameStats, CountryStats
-
 db = Database(app)
 
 from .models.chat import ChatMember, ChatMessage, ChatReading, ChatRoom
 from .models.economy import Transaction, Vault
 from .models.game import Game, GamePhase, GameRole, Order
 from .models.map import Map
-from .models.system import SysProp
 from .models.user import User, UserStats
 
 
@@ -79,7 +63,6 @@ db.define_models(
     ChatReading,
     Vault,
     Transaction,
-    SysProp,
 )
 
 # db = DAL(app, pool_size=5, adapter_args={'uploads_in_blob': True})
@@ -96,13 +79,6 @@ celery.conf.beat_schedule = parse_celery_cron(app.config.worker.get("cron", {}))
 sessions = SessionManager.cookies("foobar")
 
 # extensions
-app.use_extension(Haml)
-app.use_extension(Assets)
-app.use_extension(BS3)
 app.use_extension(RedisExtension)
 
-# routes
-# from .controllers import main, admin, games, maps, api
-# from . import assets
-from . import assets, commands, controllers, tasks
-# from . import tasks
+from . import commands, tasks
