@@ -51,9 +51,10 @@ CMD ["serve", "--no-access-log"]
 FROM base AS worker
 
 ENV C_FORCE_ROOT=yup
+ENV CELERY_WORKER_QUEUES=games,stats
 
 ENTRYPOINT ["celery", "-A", "diplomatic:celery"]
-CMD ["worker", "-Q", "games", "--loglevel=INFO", "--concurrency=1"]
+CMD ["worker", "--loglevel=INFO", "--concurrency=1"]
 
 
 FROM base AS scheduler

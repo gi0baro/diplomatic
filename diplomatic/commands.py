@@ -3,7 +3,7 @@ import os
 
 import click
 
-from . import Map, User, app, db
+from . import Map, StatsCountries, StatsGames, User, app, db
 from .variants import load
 
 
@@ -21,6 +21,12 @@ def load_maps():
             res = Map.create(**variant)
             if res.errors:
                 raise click.ClickException(f"{path}: {res.errors}")
+            if not StatsCountries.get(variant=variant["name"]):
+                zero = dict.fromkeys(variant["countries"], 0)
+                StatsCountries.create(
+                    variant=variant["name"], played=zero, won=zero, survived=zero, defeated=zero, drawn=zero
+                )
+                StatsGames.create(variant=variant["name"])
             print(f"Loaded {variant['name']} revision {variant['revision']}")
         db.commit()
 

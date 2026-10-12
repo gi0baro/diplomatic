@@ -1,6 +1,9 @@
+from collections import defaultdict
+from datetime import date, datetime, timedelta
+
 from emmett import now
 
-from . import Game, app, celery, db, redis
+from . import Game, GameRole, StatsCountries, StatsEvent, StatsGames, StatsTime, app, celery, db, redis
 from .helpers.events import publish
 
 
@@ -108,3 +111,56 @@ def process_game(game_id):
             publish(redis, f"game:{game_id}:state", "state", "crashed")
             return
     publish(redis, f"game:{game_id}:state", "state", "over" if game.stage == Game.Stage.OVER else "processed")
+
+
+@celery.task(queue="stats")
+def fold_stats(day=None):
+    day = date.fromisoformat(day) if day else now().date() - timedelta(days=1)
+    start = datetime(day.year, day.month, day.day)
+    end = start + timedelta(days=1)
+    outcomes = {
+        GameRole.State.WON: "won",
+        GameRole.State.SURVIVED: "survived",
+        GameRole.State.DEFEATED: "defeated",
+        GameRole.State.DRAWN: "drawn",
+    }
+    with db.connection():
+        events = defaultdict(list)
+        for event in StatsEvent.where(lambda m: (m.created_at >= start) & (m.created_at < end)).select(
+            orderby=StatsEvent.created_at
+        ):
+            events[event.variant].append(event)
+        with db.atomic():
+            for variant, rows in events.items():
+                countries = StatsCountries.get(variant=variant)
+                games = StatsGames.get(variant=variant)
+                started = 0
+                for event in rows:
+                    if event.kind == StatsEvent.Kind.GAME_STARTED:
+                        started += 1
+                        for field, key in (("lang", "lang"), ("players", "players_number"), ("pot", "pot_type")):
+                            value = str(event.data[key])
+                            games[field][value] = games[field].get(value, 0) + 1
+                        for country in event.data["countries"]:
+                            countries.played[country] = countries.played.get(country, 0) + 1
+                    elif event.kind == StatsEvent.Kind.GAME_ENDED:
+                        turns = str(event.data["turns"])
+                        games.turns[turns] = games.turns.get(turns, 0) + 1
+                        for country, state in event.data["outcomes"].items():
+                            if state in outcomes:
+                                counter = countries[outcomes[state]]
+                                counter[country] = counter.get(country, 0) + 1
+                countries.update_record(
+                    played=countries.played,
+                    won=countries.won,
+                    survived=countries.survived,
+                    defeated=countries.defeated,
+                    drawn=countries.drawn,
+                )
+                games.update_record(lang=games.lang, players=games.players, pot=games.pot, turns=games.turns)
+                if started:
+                    stats_time = StatsTime.get(variant=variant, date=day)
+                    if stats_time:
+                        stats_time.update_record(games=started)
+                    else:
+                        StatsTime.create(variant=variant, date=day, games=started)

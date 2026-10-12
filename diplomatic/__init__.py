@@ -45,6 +45,7 @@ from .models.chat import ChatMember, ChatMessage, ChatReading, ChatRoom
 from .models.economy import Transaction, Vault
 from .models.game import Game, GamePhase, GameRole, Order
 from .models.map import Map
+from .models.stats import StatsCountries, StatsEvent, StatsGames, StatsTime
 from .models.user import User, UserStats
 
 
@@ -63,6 +64,10 @@ db.define_models(
     ChatReading,
     Vault,
     Transaction,
+    StatsEvent,
+    StatsCountries,
+    StatsGames,
+    StatsTime,
 )
 
 # db = DAL(app, pool_size=5, adapter_args={'uploads_in_blob': True})

@@ -8,3 +8,8 @@ worker:
     manage_games:
       task: diplomatic.tasks.manage_games
       schedule: 60
+    fold_stats:
+      task: diplomatic.tasks.fold_stats
+      crontab:
+        minute: 0
+        hour: 2

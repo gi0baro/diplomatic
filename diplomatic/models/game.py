@@ -32,6 +32,7 @@ from ..helpers.widgets import (
 from . import TSModel, UUIDModel
 from .chat import ChatMessage, ChatRoom
 from .economy import Transaction, Vault
+from .stats import StatsEvent
 from .user import UserStats
 
 
@@ -339,6 +340,17 @@ class Game(TSModel, UUIDModel):
             for order in orders_builder(game, role.country):
                 phase.orders.create(game_role=role.id, **order)
         game.update_roles(phase)
+        StatsEvent.create(
+            variant=game.map.name,
+            kind=StatsEvent.Kind.GAME_STARTED,
+            data={
+                "game": game.id,
+                "lang": game.lang,
+                "players_number": game.players_number,
+                "pot_type": game.pot_type,
+                "countries": countries,
+            },
+        )
         game.update_record(
             stage=self.Stage.GAME,
             next_process_at=now() + timedelta(minutes=game.phase_time),
@@ -438,6 +450,15 @@ class Game(TSModel, UUIDModel):
                 score=UserStats.score + won - game.bet,
                 **{counter.name: counter + 1},
             )
+        StatsEvent.create(
+            variant=game.map.name,
+            kind=StatsEvent.Kind.GAME_ENDED,
+            data={
+                "game": game.id,
+                "turns": game.phases.count(),
+                "outcomes": {role.country: role.state for role in roles},
+            },
+        )
         history, chat_history = game.snapshot()
         game.update_record(
             stage=self.Stage.OVER,
