@@ -166,7 +166,7 @@ def play(gid):
     #: deadline: countdown (static for now), absolute time, share of the phase time left
     timer = game.timer()
     left = timer.d * 86400 + timer.h * 3600 + timer.m * 60 + timer.s
-    if not game.next_process_at or game.stage != Game.STAGES["game"]:
+    if not game.next_process_at or game.stage != Game.Stage.GAME:
         countdown, deadline, left_pct = "--:--:--", None, 0
     else:
         if timer.d:

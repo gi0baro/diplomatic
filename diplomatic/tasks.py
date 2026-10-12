@@ -14,43 +14,45 @@ def manage_games():
 
 def start_games():
     for game in (
-        Game.in_stage("pregame")
-        .where(lambda g: (g.is_ready == True) & (g.starts_on == Game.START_MODES["asap"]))
+        Game.in_stage(Game.Stage.PREGAME)
+        .where(lambda g: (g.is_ready == True) & (g.starts_on == Game.Start.ASAP))
         .select(Game.id)
     ):
-        Game.where(lambda g: g.id == game.id).update(stage=Game.STAGES["processing"])
+        Game.where(lambda g: g.id == game.id).update(stage=Game.Stage.PROCESSING)
         db.commit()
         start_game.delay(game.id)
     for game in (
-        Game.in_stage("pregame")
-        .where(
-            lambda g: (g.is_ready == True) & (g.starts_on == Game.START_MODES["on_time"]) & (g.next_process_at <= now())
-        )
+        Game.in_stage(Game.Stage.PREGAME)
+        .where(lambda g: (g.is_ready == True) & (g.starts_on == Game.Start.ON_TIME) & (g.next_process_at <= now()))
         .select(Game.id)
     ):
-        Game.where(lambda g: g.id == game.id).update(stage=Game.STAGES["processing"])
+        Game.where(lambda g: g.id == game.id).update(stage=Game.Stage.PROCESSING)
         db.commit()
         start_game.delay(game.id)
 
 
 def cancel_games():
     for game in (
-        Game.in_stage("pregame").where(lambda g: (g.is_ready == False) & (g.next_process_at <= now())).select(Game.id)
+        Game.in_stage(Game.Stage.PREGAME)
+        .where(lambda g: (g.is_ready == False) & (g.next_process_at <= now()))
+        .select(Game.id)
     ):
-        Game.where(lambda g: g.id == game.id).update(stage=Game.STAGES["processing"])
+        Game.where(lambda g: g.id == game.id).update(stage=Game.Stage.PROCESSING)
         db.commit()
         cancel_game.delay(game.id)
 
 
 def process_games():
-    for game in Game.in_stage("game").where(lambda g: g.is_ready == True).select(Game.id):
-        Game.where(lambda g: g.id == game.id).update(stage=Game.STAGES["processing"])
+    for game in Game.in_stage(Game.Stage.GAME).where(lambda g: g.is_ready == True).select(Game.id):
+        Game.where(lambda g: g.id == game.id).update(stage=Game.Stage.PROCESSING)
         db.commit()
         process_game.delay(game.id)
     for game in (
-        Game.in_stage("game").where(lambda g: (g.is_ready == False) & (g.next_process_at <= now())).select(Game.id)
+        Game.in_stage(Game.Stage.GAME)
+        .where(lambda g: (g.is_ready == False) & (g.next_process_at <= now()))
+        .select(Game.id)
     ):
-        Game.where(lambda g: g.id == game.id).update(stage=Game.STAGES["processing"])
+        Game.where(lambda g: g.id == game.id).update(stage=Game.Stage.PROCESSING)
         db.commit()
         process_game.delay(game.id)
 

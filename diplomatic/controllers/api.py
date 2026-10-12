@@ -94,7 +94,7 @@ def game_phase(pid):
     if not row:
         response.status = 404
         return {"error": "not found"}
-    if row.stage == GamePhase.STAGES["closed"]:
+    if row.stage == GamePhase.Stage.CLOSED:
         orders = row.orders_grouped()
     rv = row.as_dict()
     rv["orders"] = orders
@@ -112,7 +112,7 @@ def game_phase_prev(gid):
     if not row:
         response.status = 404
         return {"error": "not found"}
-    if row.stage == GamePhase.STAGES["closed"]:
+    if row.stage == GamePhase.Stage.CLOSED:
         orders = row.orders_grouped()
     rv = row.as_dict()
     rv["orders"] = orders
@@ -130,7 +130,7 @@ def game_phase_next(gid):
     if not row:
         response.status = 404
         return {"error": "not found"}
-    if row.stage == GamePhase.STAGES["closed"]:
+    if row.stage == GamePhase.Stage.CLOSED:
         orders = row.orders_grouped()
     rv = row.as_dict()
     rv["orders"] = orders
@@ -160,7 +160,7 @@ async def game_join(gid):
     if game.players.count() == game.players_number:
         rv.data = "no slots available"
         return rv
-    if game.access == Game.ACCESS_MODES["password"]:
+    if game.access == Game.Access.PASSWORD:
         if params.password != game.password:
             rv.data = "wrong password"
             return rv
@@ -192,9 +192,7 @@ async def game_join(gid):
 @api.route("/phases/<int:pid>/orders")
 def phase_orders(pid):
     rv = []
-    rows = (
-        Order.where(lambda o: (o.game_phase == pid) & (o.stage != Order.STAGES["planned"])).join("game_role").select()
-    )
+    rows = Order.where(lambda o: (o.game_phase == pid) & (o.stage != Order.Stage.PLANNED)).join("game_role").select()
     for row in rows:
         element = row.as_dict()
         element["country"] = row.game_role.country
@@ -233,7 +231,7 @@ async def order_save(order_id):
         response.status = 400
         rv.data = "bad request"
         return rv
-    if row.games.stage != Game.STAGES["game"] or row.games.is_ready:
+    if row.games.stage != Game.Stage.GAME or row.games.is_ready:
         response.status = 400
         rv.data = "Game doesn't allow orders"
         return rv
@@ -270,7 +268,7 @@ async def order_save(order_id):
 @authorized.route("/game/<int:gid>/ready", methods=["post", "put"])
 async def player_ready(gid):
     rv = sdict(status="error")
-    game = Game.get(id=gid, is_ready=False, stage=Game.STAGES["game"])
+    game = Game.get(id=gid, is_ready=False, stage=Game.Stage.GAME)
     if not game:
         return rv
     status = (await request.body_params).get("ready", False)

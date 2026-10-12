@@ -1,5 +1,7 @@
+from emmett import T
 from emmett.orm import Field, Model, after_insert, belongs_to, has_many, refers_to, rowmethod, scope
 
+from ..helpers.choice import Choice
 from ..helpers.events import publish
 from . import TSModel
 
@@ -8,14 +10,18 @@ class ChatRoom(TSModel):
     belongs_to("game")
     has_many({"members": "ChatMember.room"}, {"messages": "ChatMessage.room"}, {"readings": "ChatReading.room"})
 
-    TYPES = {"general": 0, "dm": 10}
+    class Type(Choice):
+        GENERAL = 0, T("General")
+        DM = 10, T("Direct")
 
     type = Field.int()
     name = Field()
 
-    validation = {"type": {"in": list(TYPES.values())}}
+    validation = {"type": {"in": Type.choices()}}
 
-    default_values = {"type": TYPES["general"], "name": "General"}
+    default_values = {"type": Type.GENERAL, "name": "General"}
+
+    repr_values = {"type": Type.repr()}
 
     indexes = {"game": True, "type": True}
 

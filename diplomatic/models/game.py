@@ -10,6 +10,7 @@ from emmett.orm import Field, Model, after_insert, belongs_to, has_many, has_one
 from .. import app
 from ..constants import GAME_FEE, WIN_FEE
 from ..diplomacy import process_game
+from ..helpers.choice import Choice
 from ..helpers.validators import SkipProcessingValidator
 from ..helpers.widgets import (
     games_bet,
@@ -21,7 +22,11 @@ from ..helpers.widgets import (
     games_skip_processing,
 )
 from . import TSModel
+from .chat import ChatRoom
 from .user import User
+
+
+LANGS = {"en": T("English"), "it": T("Italian")}
 
 
 class Game(TSModel):
@@ -29,14 +34,37 @@ class Game(TSModel):
     has_many(
         {"players": "GameRole"}, {"phases": "GamePhase"}, {"orders": {"via": "phases"}}, {"chat_rooms": "ChatRoom"}
     )
-    has_one({"active_phase": {"target": "GamePhase", "where": lambda m: m.stage == GamePhase.STAGES["open"]}})
+    has_one({"active_phase": {"target": "GamePhase", "where": lambda m: m.stage == GamePhase.Stage.OPEN}})
 
-    ACCESS_MODES = {"free": 0, "password": 1}
-    ASSIGNMENT_MODES = {"random": 0, "choice": 1}
-    POT_TYPES = {"wta": 0, "ppsc": 1}
-    PRESS_TYPES = {"all": 0, "global": 1, "none": 2}
-    STAGES = {"pregame": 0, "game": 1, "processing": 2, "pause": 3, "crash": 4, "over": 5}
-    START_MODES = {"asap": 0, "on_time": 1}
+    class Access(Choice):
+        FREE = 0, T("Free access")
+        PASSWORD = 1, T("Password protected")
+
+    class Assignment(Choice):
+        RANDOM = 0, T("Random assignment")
+        CHOICE = 1, T("Players choice")
+
+    class PotType(Choice):
+        WTA = 0, T("Winner takes all")
+        PPSC = 1, T("Points per supply center")
+
+    class Press(Choice):
+        ALL = 0, T("Allow all")
+        GLOBAL = 1, T("Global chat only")
+        NONE = 2, T("Disable in-game messaging")
+
+    class Stage(Choice):
+        PREGAME = 0, T("Waiting for players")
+        GAME = 1, T("In progress")
+        PROCESSING = 2, T("Processing")
+        PAUSE = 3, T("Paused")
+        CRASH = 4, T("Crashed")
+        OVER = 5, T("Over")
+
+    class Start(Choice):
+        ASAP = 0, T("As soon as enough players joined the game")
+        ON_TIME = 1, T("When the join period expired")
+
     PROC_DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 
     name = Field(notnull=True)
@@ -66,37 +94,14 @@ class Game(TSModel):
     next_process_at = Field.datetime()
     countries = Field.json(notnull=True)
 
-    #     repr_lang = {'en': T("English"), 'it': T("Italian")}
-    # repr_starts_on = {
-    #     Game.START_MODES['asap']: T("As soon as enough players joined the game"),
-    #     Game.START_MODES['on_time']: T("When the join period expired")}
-
     validation = {
         "lang": {"in": app.config.langs},
-        "access": {"in": [(ACCESS_MODES["free"], T("Free")), (ACCESS_MODES["password"], T("Password protected"))]},
-        "countries_assignment": {
-            "in": [
-                (ASSIGNMENT_MODES["random"], T("Random assignment")),
-                (ASSIGNMENT_MODES["choice"], T("Players choice")),
-            ]
-        },
-        "pot_type": {
-            "in": [(POT_TYPES["wta"], T("Winner takes all")), (POT_TYPES["ppsc"], T("Points per supply center"))]
-        },
-        "press_type": {
-            "in": [
-                (PRESS_TYPES["all"], T("Allow all")),
-                (PRESS_TYPES["global"], T("Global chat only")),
-                (PRESS_TYPES["none"], T("Disable in-game messaging")),
-            ]
-        },
-        "stage": {"in": list(STAGES.values())},
-        "starts_on": {
-            "in": [
-                (START_MODES["asap"], T("As soon as enough players joined the game")),
-                (START_MODES["on_time"], T("When the join period expired")),
-            ]
-        },
+        "access": {"in": Access.choices()},
+        "countries_assignment": {"in": Assignment.choices()},
+        "pot_type": {"in": PotType.choices()},
+        "press_type": {"in": Press.choices()},
+        "stage": {"in": Stage.choices()},
+        "starts_on": {"in": Start.choices()},
         "max_turns": {"gt": 0, "allow": "empty"},
         "target_sc": {"gt": 0, "allow": "empty"},
         "phase_time": {"in": {"range": (10, 60 * 24 * 10)}},
@@ -108,14 +113,14 @@ class Game(TSModel):
 
     default_values = {
         "bet": Decimal(1),
-        "pot_type": POT_TYPES["wta"],
-        "starts_on": START_MODES["asap"],
+        "pot_type": PotType.WTA,
+        "starts_on": Start.ASAP,
         "build_everywhere": False,
         "build_on_start": False,
         "anonymous": False,
-        "press_type": PRESS_TYPES["all"],
-        "access": ACCESS_MODES["free"],
-        "stage": STAGES["pregame"],
+        "press_type": Press.ALL,
+        "access": Access.FREE,
+        "stage": Stage.PREGAME,
         "phase_time": 60 * 24,
         "join_time": 60 * 24,
         "is_open": True,
@@ -175,23 +180,24 @@ class Game(TSModel):
     }
 
     repr_values = {
-        "lang": lambda value: repr_lang[value],
-        "pot_type": lambda value: repr_pot_type[value],
-        "starts_on": lambda value: repr_starts_on[value],
-        "press_type": lambda value: repr_press_type[value],
-        "countries_assignment": lambda value: repr_countries_assignment[value],
-        "access": lambda value: repr_access[value],
+        "lang": lambda value: LANGS[value],
+        "access": Access.repr(),
+        "countries_assignment": Assignment.repr(),
+        "pot_type": PotType.repr(),
+        "press_type": Press.repr(),
+        "stage": Stage.repr(),
+        "starts_on": Start.repr(),
     }
 
     indexes = {"stage": True, "is_open": True}
 
     @scope("in_stage")
     def filter_stage(self, stage):
-        return self.stage == self.STAGES[stage]
+        return self.stage == stage
 
     @after_insert
     def create_general_chatroom(self, fields, rid):
-        if fields.press_type != self.PRESS_TYPES["none"]:
+        if fields.press_type != self.Press.NONE:
             rid.chat_rooms.create(game=rid)
 
     @rowmethod("available_countries")
@@ -202,7 +208,7 @@ class Game(TSModel):
 
     def _add_player_to_dm_chat_rooms(self, game, player):
         for other_player in game.players.where(lambda m: m.id != player.id).select():
-            room = game.chat_rooms.create(name=f"{other_player.country} - {player.id.country}", type=10)
+            room = game.chat_rooms.create(name=f"{other_player.country} - {player.id.country}", type=ChatRoom.Type.DM)
             room.id.members.create(player=player.id)
             room.id.members.create(player=other_player.id)
 
@@ -216,11 +222,11 @@ class Game(TSModel):
         if player.id:
             #: take coins from player
             user.vault().transactions.create(value=-row.bet, description="Bet for game {}".format(row.name))
-            if row.press_type != self.PRESS_TYPES["none"]:
+            if row.press_type != self.Press.NONE:
                 #: add player to general chat room
-                room = row.chat_rooms.where(lambda m: m.type == 0).select(limitby=(0, 1)).first()
+                room = row.chat_rooms.where(lambda m: m.type == ChatRoom.Type.GENERAL).select(limitby=(0, 1)).first()
                 room.members.create(player=player.id)
-                if row.press_type == self.PRESS_TYPES["all"]:
+                if row.press_type == self.Press.ALL:
                     self._add_player_to_dm_chat_rooms(row, player)
         return player.id
 
@@ -260,16 +266,16 @@ class Game(TSModel):
         if game.build_on_start:
             phase_data.update(
                 year=game.map.year - 1,
-                type=GamePhase.TYPES["builds"],
-                season=GamePhase.SEASONS["autumn"],
+                type=GamePhase.Type.BUILDS,
+                season=GamePhase.Season.AUTUMN,
                 troops={country: {"armies": [], "fleets": []} for country in players.column("country")},
             )
             orders_builder = self._prepare_build_orders_for_start
         else:
             phase_data.update(
                 year=game.map.year,
-                type=GamePhase.TYPES["diplomacy"],
-                season=GamePhase.SEASONS["spring"],
+                type=GamePhase.Type.DIPLOMACY,
+                season=GamePhase.Season.SPRING,
                 troops={country: game.map.init["troops"][country] for country in players.column("country")},
             )
             orders_builder = self._prepare_hold_orders_for_start
@@ -282,13 +288,13 @@ class Game(TSModel):
         #: TODO chats
         #: next process cycle
         game.update_record(
-            stage=self.STAGES["game"], next_process_at=now() + timedelta(minutes=game.phase_time), is_ready=False
+            stage=self.Stage.GAME, next_process_at=now() + timedelta(minutes=game.phase_time), is_ready=False
         )
 
     @rowmethod("process")
     def process_game(self, game):
         #: lock game
-        game.update_record(stage=self.STAGES["processing"])
+        game.update_record(stage=self.Stage.PROCESSING)
         self.db.commit()
         try:
             with self.db.atomic():
@@ -297,7 +303,7 @@ class Game(TSModel):
                 #: update current phase
                 current_phase = game.active_phase()
                 current_phase.update_orders_stage_from_processor(updated_orders, successful_orders)
-                current_phase.update_record(stage=GamePhase.STAGES["closed"])
+                current_phase.update_record(stage=GamePhase.Stage.CLOSED)
                 #: check end
                 if outcome.winner:
                     winner = game.players.where(lambda p: p.country == outcome.winner).select().first()
@@ -337,22 +343,22 @@ class Game(TSModel):
                     game.players.where(lambda p: p.id.belongs(inactive_players)).update(is_active=False, is_ready=True)
 
         except Exception:
-            game.update_record(stage=self.STAGES["crash"])
+            game.update_record(stage=self.Stage.CRASH)
             self.db.commit()
             app.log.exception("OUCH")
             return
         #: update game
         game.update_record(
-            stage=self.STAGES["game"], next_process_at=now() + timedelta(minutes=game.phase_time), is_ready=False
+            stage=self.Stage.GAME, next_process_at=now() + timedelta(minutes=game.phase_time), is_ready=False
         )
         self.db.commit()
 
     @rowmethod("end")
     def end_game(self, game, winner, territories):
-        game.update_record(stage=self.STAGES["over"])
+        game.update_record(stage=self.Stage.OVER)
         #: give coins to player(s)
         total_pot = (game.bet * game.players_number - GAME_FEE * game.players_number) * (1 - WIN_FEE)
-        if game.pot_type == self.POT_TYPES["wta"]:
+        if game.pot_type == self.PotType.WTA:
             winner.user.vault().transactions.create(value=total_pot, description="Win for game {}".format(game.name))
             return
         supply_centers = set(game.map.supply_centers)
@@ -379,15 +385,15 @@ class Game(TSModel):
         rv = []
         for army_type in ["armies", "fleets"]:
             for territory in row.map.init["troops"][country][army_type]:
-                rv.append({"territory": territory, "type": Order.TYPES["hold"]})
+                rv.append({"territory": territory, "type": Order.Type.HOLD})
         return rv
 
     def _prepare_build_orders_for_start(self, row, country):
         rv = []
         for territory in row.map.init["troops"][country]["armies"]:
-            rv.append({"territory": territory, "type": Order.TYPES["build"], "data": {"troop": Troop.ARMY}})
+            rv.append({"territory": territory, "type": Order.Type.BUILD, "data": {"troop": Troop.ARMY}})
         for territory in row.map.init["troops"][country]["fleets"]:
-            order = {"territory": territory, "type": Order.TYPES["build"], "data": {"troop": Troop.FLEET}}
+            order = {"territory": territory, "type": Order.Type.BUILD, "data": {"troop": Troop.FLEET}}
             coast_position = row.map.init["coasts"].get(territory)
             if coast_position:
                 order["data"]["coast"] = coast_position
@@ -422,9 +428,13 @@ class GamePhase(TSModel):
     refers_to({"parent": "self"})
     has_many("orders")
 
-    SEASONS = {"spring": Season.SPRING, "autumn": Season.AUTUMN}
-    STAGES = {"open": 0, "ready": 1, "closed": 2}
-    TYPES = {"diplomacy": Phase.DIPLOMACY, "retreats": Phase.RETREATS, "builds": Phase.BUILDS}
+    Season = Season
+    Type = Phase
+
+    class Stage(Choice):
+        OPEN = 0, T("Open")
+        READY = 1, T("Ready")
+        CLOSED = 2, T("Closed")
 
     year = Field.int(notnull=True)
     season = Field.int(notnull=True)
@@ -436,20 +446,22 @@ class GamePhase(TSModel):
     dislodged = Field.json(notnull=True)
 
     validation = {
-        "season": {"in": list(SEASONS.values())},
-        "stage": {"in": list(STAGES.values())},
-        "type": {"in": list(TYPES.values())},
+        "season": {"in": list(Season)},
+        "stage": {"in": Stage.choices()},
+        "type": {"in": list(Type)},
         "coasts": {"presence": False},
         "dislodged": {"presence": False},
     }
 
     default_values = {
-        "stage": STAGES["open"],
+        "stage": Stage.OPEN,
         "territories": {},
         "troops": {"armies": [], "fleets": []},
         "coasts": {},
         "dislodged": {},
     }
+
+    repr_values = {"stage": Stage.repr()}
 
     indexes = {
         "game": True,
@@ -479,24 +491,19 @@ class GamePhase(TSModel):
     def _update_orders_from_processor(self, phase, orders, succeeded):
         for territory, data in orders.items():
             phase.orders.where(lambda o: (o.territory == territory) & (o.type != data["type"])).update(**data)
-        phase.orders.where(lambda o: o.territory.belongs(succeeded)).update(stage=Order.STAGES["successful"])
-        phase.orders.where(lambda o: o.stage == Order.STAGES["planned"]).update(stage=Order.STAGES["failed"])
+        phase.orders.where(lambda o: o.territory.belongs(succeeded)).update(stage=Order.Stage.SUCCESSFUL)
+        phase.orders.where(lambda o: o.stage == Order.Stage.PLANNED).update(stage=Order.Stage.FAILED)
 
 
 class Order(TSModel):
     belongs_to("game_role", "game_phase")
 
-    TYPES = {
-        "hold": OrderType.HOLD,
-        "move": OrderType.MOVE,
-        "support_hold": OrderType.SUPPORT_HOLD,
-        "support_move": OrderType.SUPPORT_MOVE,
-        "convoy": OrderType.CONVOY,
-        "retreat": OrderType.RETREAT,
-        "build": OrderType.BUILD,
-        "disband": OrderType.DISBAND,
-    }
-    STAGES = {"planned": 0, "successful": 1, "failed": 2}
+    Type = OrderType
+
+    class Stage(Choice):
+        PLANNED = 0, T("Planned")
+        SUCCESSFUL = 1, T("Successful")
+        FAILED = 2, T("Failed")
 
     territory = Field(notnull=True)
     type = Field.int(notnull=True)
@@ -504,37 +511,21 @@ class Order(TSModel):
     stage = Field.int(notnull=True)
 
     validation = {
-        "type": {"in": list(TYPES.values())},
-        "stage": {"in": list(STAGES.values())},
+        "type": {"in": list(Type)},
+        "stage": {"in": Stage.choices()},
         "data": {"presence": False},
     }
 
-    default_values = {"type": TYPES["hold"], "data": {}, "stage": STAGES["planned"]}
+    default_values = {"type": Type.HOLD, "data": {}, "stage": Stage.PLANNED}
+
+    repr_values = {"stage": Stage.repr()}
 
     indexes = {"uniq_orders": {"fields": ["game_role", "game_phase", "territory"], "unique": True}}
 
     @scope("in_stage")
     def filter_stage(self, stage):
-        return self.stage == self.STAGES[stage]
+        return self.stage == stage
 
     @scope("failed")
     def filter_failed(self):
-        return self.stage == self.STAGES["failed"]
-
-
-repr_lang = {"en": T("English"), "it": T("Italian")}
-repr_pot_type = {Game.POT_TYPES["wta"]: T("Winner takes all"), Game.POT_TYPES["ppsc"]: T("Points per supply center")}
-repr_starts_on = {
-    Game.START_MODES["asap"]: T("As soon as enough players joined the game"),
-    Game.START_MODES["on_time"]: T("When the join period expired"),
-}
-repr_press_type = {
-    Game.PRESS_TYPES["all"]: T("Allow all"),
-    Game.PRESS_TYPES["global"]: T("Global chat only"),
-    Game.PRESS_TYPES["none"]: T("Disable in-game messaging"),
-}
-repr_countries_assignment = {
-    Game.ASSIGNMENT_MODES["random"]: T("Random assignment"),
-    Game.ASSIGNMENT_MODES["choice"]: T("Players choice"),
-}
-repr_access = {Game.ACCESS_MODES["free"]: T("Free access"), Game.ACCESS_MODES["password"]: T("Password protected")}
+        return self.stage == self.Stage.FAILED

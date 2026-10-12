@@ -1,7 +1,9 @@
 from decimal import Decimal
 
+from emmett import T
 from emmett.orm import Field, after_insert, before_insert, belongs_to, has_many
 
+from ..helpers.choice import Choice
 from . import TSModel
 
 
@@ -28,25 +30,21 @@ class Vault(TSModel):
             welcome_amount = 100
         rid.transactions.create(value=welcome_amount, description="Welcome funds")
 
-    # @rowmethod
-    # def add_expense(self, row, **kwargs):
-    #     return row.transactions.create(direction=Transaction.DIRECTIONS['out'], **kwargs)
-
-    # @rowmethod
-    # def add_credit(self, row, **kwargs):
-    #     return row.transactions.create(direction=Transaction.DIRECTIONS['in'], **kwargs)
-
 
 class Transaction(TSModel):
     belongs_to("vault")
+
+    class Direction(Choice):
+        IN = 0, T("In")
+        OUT = 1, T("Out")
 
     value = Field.decimal(18, 6, notnull=True)
     direction = Field.int(notnull=True)
     description = Field(notnull=True)
 
-    DIRECTIONS = {"in": 0, "out": 1}
+    validation = {"direction": {"in": Direction.choices(), "allow": "empty"}}
 
-    validation = {"direction": {"in": list(DIRECTIONS.values()), "allow": "empty"}}
+    repr_values = {"direction": Direction.repr()}
 
     fields_rw = {"direction": False}
 
@@ -54,11 +52,10 @@ class Transaction(TSModel):
 
     @before_insert
     def set_direction(self, fields):
-        fields.direction = self.DIRECTIONS["in"] if fields.value >= 0 else self.DIRECTIONS["out"]
+        fields.direction = self.Direction.IN if fields.value >= 0 else self.Direction.OUT
 
     @after_insert
     def update_vault_balance(self, fields, rid):
-        # multiplier = -1 if fields.direction == self.DIRECTIONS['out'] else 1
         Vault.where(lambda m: m.id).update(balance=Vault.balance + fields.value)
 
 
