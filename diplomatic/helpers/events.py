@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Game events over redis pub/sub.
 
 Every event is one JSON frame `{"topic": ..., "data": ...}`; the game

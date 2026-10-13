@@ -1,23 +1,27 @@
-# -*- coding: utf-8 -*-
+from emmett import T
+from emmett.orm import Field, after_insert, belongs_to, has_many, refers_to, rowmethod, scope
 
-from emmett.orm import Field, Model, after_insert, belongs_to, has_many, refers_to, rowmethod, scope
-
+from ..helpers.choice import Choice
 from ..helpers.events import publish
-from . import TSModel
+from . import TSModel, UUIDModel
 
 
-class ChatRoom(TSModel):
+class ChatRoom(TSModel, UUIDModel):
     belongs_to("game")
     has_many({"members": "ChatMember.room"}, {"messages": "ChatMessage.room"}, {"readings": "ChatReading.room"})
 
-    TYPES = {"general": 0, "dm": 10}
+    class Type(Choice):
+        GENERAL = 0, T("General")
+        DM = 10, T("Direct")
 
     type = Field.int()
     name = Field()
 
-    validation = {"type": {"in": list(TYPES.values())}}
+    validation = {"type": {"in": Type.choices()}}
 
-    default_values = {"type": TYPES["general"], "name": "General"}
+    default_values = {"type": Type.GENERAL, "name": "General"}
+
+    repr_values = {"type": Type.repr()}
 
     indexes = {"game": True, "type": True}
 
@@ -28,7 +32,7 @@ class ChatRoom(TSModel):
         )
 
 
-class ChatMember(Model):
+class ChatMember(UUIDModel):
     belongs_to({"room": "ChatRoom"}, {"player": "GameRole"})
     has_many({"sent_messages": "ChatMessage.sender"}, {"readings": "ChatReading.member"})
 
@@ -39,7 +43,7 @@ class ChatMember(Model):
         rid.readings.create(room=fields.room)
 
 
-class ChatMessage(TSModel):
+class ChatMessage(TSModel, UUIDModel):
     belongs_to({"room": "ChatRoom"})
     refers_to({"sender": "ChatMember"})
     has_many({"readings": "ChatReading"})
@@ -61,7 +65,7 @@ class ChatMessage(TSModel):
             publish(pub_ctx, f"chat:{member.player}:messages", "chat", row)
 
 
-class ChatReading(TSModel):
+class ChatReading(TSModel, UUIDModel):
     belongs_to({"room": "ChatRoom"}, {"member": "ChatMember"})
     refers_to({"message": "ChatMessage"})
 

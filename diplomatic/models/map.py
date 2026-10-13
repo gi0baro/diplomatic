@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from emmett.orm import Field, has_many, scope
 
 from . import TSModel

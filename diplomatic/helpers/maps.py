@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Map SVG previews.
 
 Pure functions over a map row (an Emmett row or the dict built by

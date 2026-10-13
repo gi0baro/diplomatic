@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from emmett import response
 
 from .. import UserStats, app, cache, db

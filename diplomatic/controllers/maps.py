@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from emmett import abort, response
 
 # from diplomatic import app, auth, db, Map
@@ -78,7 +76,6 @@ def preview_svg(mid):
 
 
 # @maps.route("/edit/<int:mid>", template="new.haml")
-# @requires(lambda: auth.has_membership('admin'), url("main.index"))
 # def edit(mid):
 #     record = Map.get(mid)
 #     if not record:

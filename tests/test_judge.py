@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from diplomatico.constants import OrderType, Phase, Season
 
 from diplomatic.variants import load

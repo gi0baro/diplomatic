@@ -9,7 +9,7 @@ ENV NODE_ENV=production
 RUN deno run -A tailwindcss -i src/tailwind.css -c tailwind.config.js -o dist/main.css --minify
 
 
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS builder
+FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim AS builder
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl gcc git libc6-dev && \
@@ -23,7 +23,7 @@ COPY diplomatico diplomatico
 RUN uv sync --frozen --no-dev --no-editable --no-install-project
 
 
-FROM python:3.13-slim-bookworm AS base
+FROM python:3.14-slim-bookworm AS base
 
 # nodejs: emmett-assets compiles .coffee sources at request time through PyExecJS
 RUN apt-get update && \
@@ -44,16 +44,17 @@ FROM base AS web
 
 EXPOSE 8000
 
-ENTRYPOINT ["emmett", "-a", "diplomatic"]
+ENTRYPOINT ["emmett", "-a", "diplomatic.web"]
 CMD ["serve", "--no-access-log"]
 
 
 FROM base AS worker
 
 ENV C_FORCE_ROOT=yup
+ENV CELERY_WORKER_QUEUES=games,stats
 
 ENTRYPOINT ["celery", "-A", "diplomatic:celery"]
-CMD ["worker", "-Q", "games", "--loglevel=INFO", "--concurrency=1"]
+CMD ["worker", "--loglevel=INFO", "--concurrency=1"]
 
 
 FROM base AS scheduler

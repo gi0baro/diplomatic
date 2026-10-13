@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # from gravatar import Gravatar
 from emmett import T, url
 from emmett.pipeline import Injector

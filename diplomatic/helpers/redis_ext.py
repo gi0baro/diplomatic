@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from contextlib import asynccontextmanager
 
 from emmett.extensions import Extension

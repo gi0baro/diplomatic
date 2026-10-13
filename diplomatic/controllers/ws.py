@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from emmett import session, websocket
 from emmett.http import HTTPResponse
 
@@ -19,7 +17,7 @@ async def _player_role(gid):
     return role.id if role else None
 
 
-@ws.websocket("/game/<int:gid>")
+@ws.websocket("/game/<str:gid>")
 async def game(gid):
     #: frames are built by `helpers.events`; the socket relays them as they are
     role_id = await _player_role(gid)

@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-
 from emmett import abort, redirect, request, url
 from emmett.tools import requires
 
-from .. import Game, GameRole, Map, app, auth
+from .. import Game, GameRole, Map, Vault, app, auth
 from . import front
 
 
@@ -36,28 +34,25 @@ async def create():
         if form.params.players_number < variant.min_players or form.params.players_number > maxplayers:
             form.errors.players_number = "Invalid number of players"
             return
-        #: bet check
-        if auth.user.vault().balance < form.params.bet:
-            form.errors.bet = "You have not enough coins to set this bet"
+        vault = Vault.where(lambda m: m.user == auth.user.id).select(for_update=True).first()
+        if vault.balance < form.params.bet:
+            form.errors.bet = "You have not enough points to set this bet"
             return
         if form.params.bet > 1 and form.params.players_number == 2:
-            form.errors.bet = "Maximum bet for 2 players is 1 coin"
+            form.errors.bet = "Maximum bet for 2 players is 1 point"
         #: countries enabled check
         if (
             not form.params.countries
             or len([key for key, val in form.params.countries.items() if val]) < form.params.players_number
         ):
             form.params.countries = dict.fromkeys(variant.countries.keys(), True)
-        #: assign check
-        if form.params.countries_assignment == "choice":
-            #: validate user choice
-            if form.input_params.country_choice not in form.params.countries_enabled:
-                form.params.countries_assignment.error = "When players have to choose their countries, you must too."
+        if form.params.countries_assignment == Game.Assignment.CHOICE:
+            if not form.params.countries.get(form.input_params.country_choice):
+                form.errors.countries_assignment = "When players have to choose their countries, you must too."
                 return
-        #: access check
-        if form.params.access == "password":
+        if form.params.access == Game.Access.PASSWORD:
             if not form.params.password or len(form.params.password) < 4:
-                form.params.access.error = (
+                form.errors.password = (
                     "When you password-protect your game, the password must be at least 4 characters long"
                 )
                 return
@@ -75,7 +70,7 @@ async def create():
     return dict(form=form)
 
 
-@games.route("/play/<int:gid>", template="play.haml")
+@games.route("/play/<str:gid>", template="play.haml")
 def play(gid):
     game = Game.get(gid)
     if not game:
@@ -168,7 +163,7 @@ def play(gid):
     #: deadline: countdown (static for now), absolute time, share of the phase time left
     timer = game.timer()
     left = timer.d * 86400 + timer.h * 3600 + timer.m * 60 + timer.s
-    if not game.next_process_at or game.stage != Game.STAGES["game"]:
+    if not game.next_process_at or game.stage != Game.Stage.GAME:
         countdown, deadline, left_pct = "--:--:--", None, 0
     else:
         if timer.d:

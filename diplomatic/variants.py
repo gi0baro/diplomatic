@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import math
 import os
 import re
@@ -262,7 +260,7 @@ def _classes(element):
 def _is_number(value):
     try:
         float(value)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return False
     return True
 
