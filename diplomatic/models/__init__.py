@@ -17,3 +17,11 @@ class TSModel(Model):
 
 class UUIDModel(Model):
     id = Field.string(length=32, default=lambda: uuid.uuid7().hex)
+
+
+def wrap_in_atomic(f):
+    def wrapped(self, *args, **kwargs):
+        with self.db.atomic():
+            return f(self, *args, **kwargs)
+
+    return wrapped

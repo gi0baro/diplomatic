@@ -63,15 +63,7 @@ def start_game(game_id):
         if not game or game.stage != Game.Stage.PROCESSING:
             app.log.warning(f"start_game: game {game_id} not claimed, skipping")
             return
-        try:
-            with db.atomic():
-                game.start()
-        except Exception:
-            app.log.exception(f"start_game: game {game_id} crashed")
-            game.update_record(stage=Game.Stage.CRASH)
-            db.commit()
-            publish(redis, f"game:{game_id}:state", "state", "crashed")
-            return
+        game.start()
     publish(redis, f"game:{game_id}:state", "state", "started")
 
 
@@ -82,15 +74,7 @@ def cancel_game(game_id):
         if not game or game.stage != Game.Stage.PROCESSING:
             app.log.warning(f"cancel_game: game {game_id} not claimed, skipping")
             return
-        try:
-            with db.atomic():
-                game.cancel()
-        except Exception:
-            app.log.exception(f"cancel_game: game {game_id} crashed")
-            game.update_record(stage=Game.Stage.CRASH)
-            db.commit()
-            publish(redis, f"game:{game_id}:state", "state", "crashed")
-            return
+        game.cancel()
     publish(redis, f"game:{game_id}:state", "state", "over")
 
 
@@ -101,15 +85,10 @@ def process_game(game_id):
         if not game or game.stage != Game.Stage.PROCESSING:
             app.log.warning(f"process_game: game {game_id} not claimed, skipping")
             return
-        try:
-            with db.atomic():
-                game.process()
-        except Exception:
-            app.log.exception(f"process_game: game {game_id} crashed")
-            game.update_record(stage=Game.Stage.CRASH)
-            db.commit()
-            publish(redis, f"game:{game_id}:state", "state", "crashed")
-            return
+        crashed = not game.process()
+    if crashed:
+        publish(redis, f"game:{game_id}:state", "state", "crashed")
+        return
     publish(redis, f"game:{game_id}:state", "state", "over" if game.stage == Game.Stage.OVER else "processed")
 
 

@@ -29,7 +29,7 @@ from ..helpers.widgets import (
     games_players_number,
     games_skip_processing,
 )
-from . import TSModel, UUIDModel
+from . import TSModel, UUIDModel, wrap_in_atomic
 from .chat import ChatMessage, ChatRoom
 from .economy import Transaction, Vault
 from .stats import StatsEvent
@@ -255,6 +255,11 @@ class Game(TSModel, UUIDModel):
                     self._add_player_to_dm_chat_rooms(row, player)
         return player.id
 
+    @rowmethod("players_all_ready")
+    def _players_all_ready(self, row):
+        ready_flags = row.players.in_state(GameRole.State.PLAYING).active().select(GameRole.is_ready).column("is_ready")
+        return all(ready_flags)
+
     @rowmethod("player")
     def get_user(self, row, user):
         return row.players.where(lambda p: p.user == user.id).select().first()
@@ -274,8 +279,25 @@ class Game(TSModel, UUIDModel):
             return []
         return active_phase.orders.where(lambda m: m.game_role == player.id).select()
 
+    @rowmethod("close")
+    def _close(self, row):
+        return bool(
+            self.where(lambda g: (g.id == row.id) & (g.is_ready == False) & (g.is_open == True)).update(
+                is_ready=True, is_open=False
+            )
+        )
+
+    @rowmethod("set_ready")
+    def _set_ready(self, row):
+        return bool(
+            self.where(lambda g: (g.id == row.id) & (g.stage == self.Stage.GAME) & (g.is_ready == False)).update(
+                is_ready=True
+            )
+        )
+
     @rowmethod("cancel")
-    def cancel_game(self, game):
+    @wrap_in_atomic
+    def _cancel_game(self, game):
         for player in game.players():
             Vault.get(user=player.user).transactions.create(
                 type=Transaction.Type.CANCEL, credit=game.bet, description=f"Bet refund for game {game.name}"
@@ -283,36 +305,12 @@ class Game(TSModel, UUIDModel):
         game.delete_record()
 
     @rowmethod("claim")
-    def claim(self, game, stage):
-        return Game.where(lambda m: (m.id == game.id) & (m.stage == stage)).update(stage=self.Stage.PROCESSING) == 1
-
-    @rowmethod("all_ready")
-    def all_ready(self, game):
-        playing = game.players.playing()
-        return playing.where(lambda m: m.is_ready == True).count() == playing.count()
-
-    @rowmethod("centers")
-    def held_centers(self, game, territories):
-        map_centers = set(game.map.supply_centers)
-        return {country: len(map_centers & set(owned)) for country, owned in territories.items()}
-
-    @rowmethod("update_roles")
-    def update_roles(self, game, phase, defeats=False):
-        centers = game.centers(phase.territories)
-        active = set(phase.orders.select(Order.game_role).column("game_role"))
-        for role in game.players.current().select():
-            troops = phase.troops.get(role.country, {})
-            fields = {
-                "is_active": role.id in active,
-                "is_ready": False,
-                "supply_centers_owned": centers.get(role.country, 0),
-            }
-            if defeats and not fields["supply_centers_owned"] and not troops.get("armies") and not troops.get("fleets"):
-                fields["state"] = GameRole.State.DEFEATED
-            role.update_record(**fields)
+    def _claim(self, row, stage):
+        return bool(self.where(lambda g: (g.id == row.id) & (g.stage == stage)).update(stage=self.Stage.PROCESSING))
 
     @rowmethod("start")
-    def start_game(self, game):
+    @wrap_in_atomic
+    def _start_game(self, game):
         roles = game.players.current().select()
         countries = roles.column("country")
         phase_data = {
@@ -335,11 +333,9 @@ class Game(TSModel, UUIDModel):
                 troops={country: game.map.init["troops"][country] for country in countries},
             )
             orders_builder = self._prepare_hold_orders_for_start
-        phase = GamePhase.get(game.phases.create(**phase_data).id)
-        for role in roles:
-            for order in orders_builder(game, role.country):
-                phase.orders.create(game_role=role.id, **order)
-        game.update_roles(phase)
+        phase = game.phases.new(**phase_data)
+        phase.save()
+        phase.init_orders(roles, orders_builder(countries))
         StatsEvent.create(
             variant=game.map.name,
             kind=StatsEvent.Kind.GAME_STARTED,
@@ -360,36 +356,44 @@ class Game(TSModel, UUIDModel):
 
     @rowmethod("process")
     def process_game(self, game):
-        outcome, updated_orders, new_orders, successful_orders = process_game(game)
-        current_phase = game.active_phase()
-        current_phase.update_orders_stage_from_processor(updated_orders, successful_orders)
-        current_phase.update_record(stage=GamePhase.Stage.CLOSED)
-        if outcome.winner:
-            game.end(outcome.winner, outcome.territories)
-        else:
-            phase = GamePhase.get(
-                game.phases.create(
-                    parent=current_phase.id,
-                    year=outcome.year,
-                    season=outcome.season,
-                    type=outcome.phase,
-                    territories=outcome.territories,
-                    troops=outcome.positions,
-                    coasts=outcome.coast_positions,
-                    dislodged=outcome.dislodged,
-                ).id
+        try:
+            outcome, updated_orders, new_orders, successful_orders = process_game(game)
+        except Exception:
+            app.log.exception(f"Game {game.id} crashed on processing")
+            game.update_record(stage=self.Stage.CRASH)
+            self.db.commit()
+            return False
+
+        with self.db.atomic():
+            current_phase = game.active_phase()
+            current_phase.update_orders_stage_from_processor(updated_orders, successful_orders)
+            current_phase.stage = GamePhase.Stage.CLOSED
+            current_phase.save()
+            if outcome.winner:
+                game.end(outcome.winner, outcome.territories)
+                return True
+            phase = GamePhase.new(
+                parent=current_phase.id,
+                year=outcome.year,
+                season=outcome.season,
+                type=outcome.phase,
+                territories=outcome.territories,
+                troops=outcome.positions,
+                coasts=outcome.coast_positions,
+                dislodged=outcome.dislodged,
             )
-            roles = {role.country: role.id for role in game.players.current().select()}
-            for country, orders in new_orders.items():
-                for order in orders:
-                    phase.orders.create(game_role=roles[country], **order)
-            game.update_roles(phase, defeats=current_phase.season == GamePhase.Season.AUTUMN)
+            phase.save()
+            phase.init_orders(
+                game.players.current().select(), new_orders, defeats=current_phase.season == GamePhase.Season.AUTUMN
+            )
             game.update_record(
                 stage=self.Stage.GAME,
                 next_process_at=game.next_deadline(),
                 processed_at=now(),
                 is_ready=False,
             )
+        self.db.commit()
+        return True
 
     @rowmethod("next_deadline")
     def _next_deadline(self, game):
@@ -425,7 +429,8 @@ class Game(TSModel, UUIDModel):
     @rowmethod("end")
     def end_game(self, game, winner, territories):
         roles = game.players.current().select()
-        held = game.centers(territories)
+        map_centers = set(game.map.supply_centers)
+        held = {country: len(map_centers & set(owned)) for country, owned in territories.items()}
         centers = {role.country: held.get(role.country, 0) for role in roles}
         payouts = game.payouts(winner, centers)
         counters = {
@@ -436,12 +441,13 @@ class Game(TSModel, UUIDModel):
         }
         for role in roles:
             if role.country == winner:
-                state = GameRole.State.WON
+                role.state = GameRole.State.WON
             elif role.state == GameRole.State.DEFEATED or not centers[role.country]:
-                state = GameRole.State.DEFEATED
+                role.state = GameRole.State.DEFEATED
             else:
-                state = GameRole.State.SURVIVED
-            role.update_record(state=state, supply_centers_owned=centers[role.country])
+                role.state = GameRole.State.SURVIVED
+            role.supply_centers_owned = centers[role.country]
+            role.save()
             won = payouts[role.country]
             vault = Vault.get(user=role.user)
             supplement = vault.supplement(game.bet, won)
@@ -452,7 +458,7 @@ class Game(TSModel, UUIDModel):
                 vault.transactions.create(
                     type=Transaction.Type.SUPPLEMENT, credit=supplement, description=f"Supplement for game {game.name}"
                 )
-            counter = counters[state]
+            counter = counters[role.state]
             UserStats.where(lambda m: m.user == role.user).update(
                 played=UserStats.played + 1,
                 score=UserStats.score + won - game.bet,
@@ -528,23 +534,29 @@ class Game(TSModel, UUIDModel):
             timerdata.s = timeleft % 60
         return timerdata
 
-    def _prepare_hold_orders_for_start(self, row, country):
-        rv = []
-        for army_type in ["armies", "fleets"]:
-            for territory in row.map.init["troops"][country][army_type]:
-                rv.append({"territory": territory, "type": Order.Type.HOLD})
+    def _prepare_hold_orders_for_start(self, row, countries):
+        rv = {}
+        for country in countries:
+            items = []
+            for army_type in ["armies", "fleets"]:
+                for territory in row.map.init["troops"][country][army_type]:
+                    items.append({"territory": territory, "type": Order.Type.HOLD})
+            rv[country] = items
         return rv
 
-    def _prepare_build_orders_for_start(self, row, country):
-        rv = []
-        for territory in row.map.init["troops"][country]["armies"]:
-            rv.append({"territory": territory, "type": Order.Type.BUILD, "data": {"troop": Troop.ARMY}})
-        for territory in row.map.init["troops"][country]["fleets"]:
-            order = {"territory": territory, "type": Order.Type.BUILD, "data": {"troop": Troop.FLEET}}
-            coast_position = row.map.init["coasts"].get(territory)
-            if coast_position:
-                order["data"]["coast"] = coast_position
-            rv.append(order)
+    def _prepare_build_orders_for_start(self, row, countries):
+        rv = {}
+        for country in countries:
+            items = []
+            for territory in row.map.init["troops"][country]["armies"]:
+                items.append({"territory": territory, "type": Order.Type.BUILD, "data": {"troop": Troop.ARMY}})
+            for territory in row.map.init["troops"][country]["fleets"]:
+                order = {"territory": territory, "type": Order.Type.BUILD, "data": {"troop": Troop.FLEET}}
+                coast_position = row.map.init["coasts"].get(territory)
+                if coast_position:
+                    order["data"]["coast"] = coast_position
+                items.append(order)
+            rv[country] = items
         return rv
 
 
@@ -583,13 +595,21 @@ class GameRole(UUIDModel):
         "state": True,
     }
 
+    @scope("active")
+    def filter_active(self):
+        return self.is_active == True
+
+    @scope("in_state")
+    def filter_state(self, state):
+        return self.state == state
+
     @scope("current")
     def filter_current(self):
         return self.state != self.State.LEFT
 
-    @scope("playing")
-    def filter_playing(self):
-        return (self.is_active == True) & (self.state == self.State.PLAYING)
+    @scope("actionable")
+    def filter_actionable(self):
+        return (self.is_active == True) & (self.state.belongs([self.State.PLAYING, self.State.DISORDER]))
 
 
 class GamePhase(TSModel, UUIDModel):
@@ -637,6 +657,29 @@ class GamePhase(TSModel, UUIDModel):
         "stage": True,
         "unique_phase": {"fields": ["game", "year", "season", "type"], "unique": True},
     }
+
+    @rowmethod("supply_centers_no_grouped")
+    def _supply_centers_no_grouped(self, row):
+        map_centers = set(row.game.map.supply_centers)
+        return {country: len(map_centers & set(owned)) for country, owned in row.territories.items()}
+
+    @rowmethod("init_orders")
+    def _init_orders(self, row, roles, orders, defeats=False):
+        supply_centers_no = row.supply_centers_no_grouped()
+        for role in roles:
+            role_orders = orders.get(role.country, [])
+            for order in role_orders:
+                row.orders.create(game_role=role.id, **order)
+            troops = row.troops.get(role.country, {})
+            player_supply_centers_no = supply_centers_no.get(role.country, 0)
+            updates = {
+                "is_active": bool(role_orders),
+                "is_ready": False,
+                "supply_centers_owned": player_supply_centers_no,
+            }
+            if defeats and not player_supply_centers_no and not troops.get("armies") and not troops.get("fleets"):
+                updates["state"] = GameRole.State.DEFEATED
+            role.update_record(**updates)
 
     @rowmethod("orders_grouped")
     def _orders_grouped(self, phase):

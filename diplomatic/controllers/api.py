@@ -26,7 +26,9 @@ from .. import (
 # from diplomatic.helpers.mongo import longToObjid
 from ..diplomacy import process_order
 from ..helpers.events import publish
-from ..tasks import process_game, start_game
+
+
+# from ..tasks import process_game, start_game
 
 
 # from emmett.pipeline import Pipe
@@ -168,12 +170,9 @@ def game_phase_next(gid):
 @authorized.route("/game/<str:gid>/join", methods=["post"])
 async def game_join(gid):
     rv = sdict(status="error")
-    game = Game.where(lambda m: m.id == gid).select(for_update=True).first()
+    game = Game.in_stage(Game.Stage.PREGAME).where(lambda g: g.id == gid).select(for_update=True).first()
     if not game:
         rv.data = "no game found"
-        return rv
-    if game.stage != Game.Stage.PREGAME:
-        rv.data = "game already started"
         return rv
     params = await request.body_params
     if game.player_country(auth.user) is not None:
@@ -192,28 +191,27 @@ async def game_join(gid):
             return rv
     try:
         with db.atomic():
-            role_id = game.add_player(auth.user, params.country)
+            role = game.add_player(auth.user, params.country)
     except Exception as e:
         app.log.exception(e)
-        role_id = None
-    if not role_id:
+        role = None
+    if not role:
         rv.data = "Cannot join game"
         return rv
-    claimed = False
+    # claimed = False
     if game.players.count() == game.players_number:
-        game.update_record(is_ready=True, is_open=False)
-        if game.starts_on == Game.Start.ASAP:
-            claimed = game.claim(Game.Stage.PREGAME)
+        game.close()
+        # if game.close() and game.starts_on == Game.Start.ASAP:
+        #     claimed = game.claim(Game.Stage.PREGAME)
     db.commit()
-    role = GameRole.get(role_id)
     await publish(
         app.ext.Redis.client,
         f"game:{gid}:players",
         "players",
         {"country": role.country, "is_active": role.is_active, "is_ready": role.is_ready, "state": role.state},
     )
-    if claimed:
-        start_game.delay(game.id)
+    # if claimed:
+    #     start_game.delay(game.id)
     rv.status = "ok"
     rv.data = "joined successfully"
     return rv
@@ -265,6 +263,7 @@ async def order_save(order_id):
         response.status = 400
         rv.data = "Game doesn't allow orders"
         return rv
+    # TODO: DISORDER allowance + flip
     if not row.game_roles.is_active or row.game_roles.state != GameRole.State.PLAYING:
         response.status = 400
         rv.data = "Cannot update orders in this turn"
@@ -305,19 +304,21 @@ async def player_ready(gid):
         response.status = 422
         rv.data = "invalid ready status"
         return rv
-    roles = game.players.playing().where(lambda m: m.user == auth.user.id)
+    roles = game.players.actionable().where(lambda m: m.user == auth.user.id)
     country = None
     if roles.update(is_ready=status):
         country = roles.select(GameRole.country).first().country
     db.commit()
-    claimed = game.all_ready() and game.claim(Game.Stage.GAME)
-    if claimed:
-        game.update_record(is_ready=True)
+    # claimed = game.all_ready() and game.claim(Game.Stage.GAME)
+    # if claimed:
+    #     game.update_record(is_ready=True)
+    if game.players_all_ready():
+        game.set_ready()
     db.commit()
     if country:
         await publish(app.ext.Redis.client, f"game:{gid}:players", "players", {"country": country, "is_ready": status})
-    if claimed:
-        process_game.delay(game.id)
+    # if claimed:
+    #     process_game.delay(game.id)
     rv.data = status
     rv.status = "ok"
     return rv
