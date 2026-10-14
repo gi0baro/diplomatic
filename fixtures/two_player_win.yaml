@@ -1,0 +1,24 @@
+# England against France on a 5-centre target. France takes Spain in the spring and Portugal in
+# the autumn: 5 centres (BRE PAR MAR SPA POR) against England's 4 (LVP LON EDI NWY), the game ends
+# at the second processing. A finished game: history, results, the public chat snapshot.
+variant: classic
+name: "Two player win"
+players:
+  England: tester1
+  France: tester2
+settings:
+  target_sc: 5
+chat:
+  general:
+    - [England, "Five centres and it's over: let's keep it quick."]
+    - [France, "Agreed. Good luck!"]
+  direct:
+    - [England, France, "I'm going north, Norway is mine."]
+    - [France, England, "Fine by me, I'll look south."]
+phases:
+  # Spring 1901
+  - England: [LON-NTH]
+    France: [MAR-SPA, BRE-MAO]
+  # Autumn 1901: France wins
+  - England: [NTH-NWY]
+    France: [MAO-POR]

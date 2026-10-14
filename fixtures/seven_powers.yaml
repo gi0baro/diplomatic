@@ -1,0 +1,43 @@
+# All seven powers, every unit ordered in both 1901 phases (22 orders each: moves, supports, a
+# convoy, holds, bounces); stops on the open Winter 1901 builds, where every power builds.
+# Units after each phase in the comments (A army, F fleet), centres at the builds.
+variant: classic
+name: "Seven powers"
+players:
+  England: tester1
+  France: tester2
+  Germany: tester3
+  Italy: tester4
+  Austria: tester5
+  Russia: tester6
+  Turkey: tester7
+chat:
+  general: 30
+phases:
+  # 1. Spring 1901: Austria and Russia bounce in Galicia, Russia and Turkey in the Black Sea
+  - England: [LON-NTH, EDI-NWG, LVP-YOR]
+    France: [BRE-MAO, PAR-BUR, MAR S PAR-BUR]
+    Germany: [KIE-DEN, BER-KIE, MUN-RUH]
+    Italy: [NAP-ION, ROM-APU, VEN H]
+    Austria: [TRI-ALB, VIE-GAL, BUD-SER]
+    Russia: [STP-BOT, MOS-UKR, WAR-GAL, SEV-BLA]
+    Turkey: [ANK-BLA, CON-BUL, SMY-ARM]
+  # E: F NTH, F NWG, A YOR  F: F MAO, A BUR, A MAR  G: F DEN, A KIE, A RUH
+  # I: F ION, A APU, A VEN  A: F ALB, A VIE, A SER  R: F BOT, A UKR, A WAR, F SEV
+  # T: F ANK, A BUL, A ARM
+
+  # 2. Autumn 1901: England convoys to Norway; bounces in Sweden and Belgium; Austria takes Greece
+  # with support over Bulgaria's bid
+  - England: [YOR-NWY via, NTH C YOR-NWY, NWG S YOR-NWY]
+    France: [MAO-POR, MAR-SPA, BUR-BEL]
+    Germany: [DEN-SWE, KIE-HOL, RUH-BEL]
+    Italy: [ION-TUN, APU-NAP, VEN-PIE]
+    Austria: [ALB-GRE, SER S ALB-GRE, VIE-TRI]
+    Russia: [BOT-SWE, UKR-RUM, WAR H, SEV S UKR-RUM]
+    Turkey: [ANK-BLA, BUL-GRE, ARM H]
+  # E: A NWY, F NTH, F NWG  F: F POR, A SPA, A BUR  G: F DEN, A HOL, A RUH
+  # I: F TUN, A NAP, A PIE  A: F GRE, A TRI, A SER  R: F BOT, A RUM, A WAR, F SEV
+  # T: F BLA, A BUL, A ARM
+  # centres: E 4 +1, F 5 +2, G 5 +2, I 4 +1, A 5 +2, R 5 +1, T 4 +1
+
+# Winter 1901 builds open

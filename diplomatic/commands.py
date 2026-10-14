@@ -4,6 +4,7 @@ import os
 import click
 
 from . import Map, StatsCountries, StatsGames, User, app, db
+from .fixtures import load_scenario, play
 from .variants import load
 
 
@@ -38,3 +39,18 @@ def create_test_data():
             key = f"tester{idx}"
             User.create(email="{}@diplomatic.com".format(key), password="foobar", username=key)
         db.commit()
+
+
+@app.command()
+@click.argument("scenario")
+def fixture(scenario):
+    folder = os.path.join(app.root_path, "..", "fixtures")
+    path = scenario
+    if os.sep not in scenario and not scenario.endswith((".yaml", ".yml")):
+        path = os.path.join(folder, f"{scenario}.yaml")
+    if not os.path.isfile(path):
+        names = sorted(os.path.basename(name)[:-5] for name in glob.glob(os.path.join(folder, "*.yaml")))
+        raise click.ClickException(f"{scenario}: no such scenario (in fixtures/: {', '.join(names) or 'none'})")
+    scenario = load_scenario(path)
+    with db.connection():
+        play(scenario)

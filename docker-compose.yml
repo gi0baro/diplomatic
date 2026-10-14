@@ -30,6 +30,7 @@ services:
     volumes:
       - ./diplomatic:/app/diplomatic
       - ./variants:/app/variants
+      - ./fixtures:/app/fixtures
     depends_on:
       - db
       - redis

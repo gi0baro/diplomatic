@@ -1,0 +1,80 @@
+# Four powers, two scripted years: a convoy, bounces, a dislodgement with its retreat, builds and a
+# disband; stops on an open Spring 1903 with Germany ready. Units after each phase in the comments
+# (A army, F fleet), centres at each builds phase.
+variant: classic
+name: "Midgame"
+players:
+  England: tester1
+  France: tester2
+  Germany: tester3
+  Italy: tester4
+settings:
+  press_type: ALL
+chat:
+  general: 60
+  direct:
+    - [England, France, "The Channel stays empty this year, deal?"]
+    - [France, England, "Deal. Watch Germany though."]
+    - [Germany, Italy, "Keep out of Munich and Tyrolia is yours."]
+    - [Italy, Germany, "Agreed, I'm looking at Vienna anyway."]
+    - [England, Germany, "Denmark and Holland are yours; Norway and Sweden are mine."]
+phases:
+  # 1. Spring 1901
+  - England: [LON-NTH, EDI-NWG, LVP-YOR]
+    France: [BRE-MAO, PAR-BUR, MAR-SPA]
+    Germany: [KIE-DEN, BER-KIE, MUN-RUH]
+    Italy: [NAP-ION, ROM-APU, VEN-TYR]
+  # E: F NTH, F NWG, A YOR  F: F MAO, A BUR, A SPA  G: F DEN, A KIE, A RUH  I: F ION, A APU, A TYR
+
+  # 2. Autumn 1901: England convoys Yorkshire to Norway, France and Germany bounce in Belgium
+  - England: [YOR-NWY via, NTH C YOR-NWY]
+    France: [MAO-POR, BUR-BEL]
+    Germany: [KIE-HOL, RUH-BEL]
+    Italy: [ION-TUN, APU-VEN]
+  # E: A NWY, F NTH, F NWG  F: F POR, A SPA, A BUR  G: F DEN, A HOL, A RUH  I: F TUN, A VEN, A TYR
+  # centres: E 4 (LON EDI LVP NWY) +1, F 5 (BRE PAR MAR SPA POR) +2,
+  #          G 5 (BER KIE MUN DEN HOL) +2, I 4 (ROM NAP VEN TUN) +1
+
+  # 3. Winter 1901 builds (the other free home centres stay unbuilt)
+  - England: [LON B F]
+    France: [BRE B F, MAR B A]
+    Germany: [KIE B F, MUN B A]
+    Italy: [NAP B F]
+  # E: A NWY, F NTH, F NWG, F LON  F: F POR, A SPA, A BUR, F BRE, A MAR
+  # G: F DEN, A HOL, A RUH, F KIE, A MUN  I: F TUN, A VEN, A TYR, F NAP
+
+  # 4. Spring 1902: Germany dislodges the army in Burgundy; England wins the Channel with support,
+  # bounces in Sweden (NWY/DEN) and Piedmont (MAR/VEN)
+  - England: [LON-ENG, NTH S LON-ENG, NWG-BAR, NWY-SWE]
+    France: [BRE-ENG, POR-MAO, MAR-PIE]
+    Germany: [RUH-BUR, MUN S RUH-BUR, HOL-BEL, DEN-SWE]
+    Italy: [VEN-PIE, TYR-BOH, NAP-TYS]
+  # E: F ENG, F NTH, F BAR, A NWY  F: F BRE, F MAO, A SPA, A MAR, A BUR (dislodged)
+  # G: A BUR, A MUN, A BEL, F DEN, F KIE  I: F TUN, A VEN, A BOH, F TYS
+
+  # 5. Spring 1902 retreats: Gascony is free, not contested, not the attacker's origin
+  - France: [BUR R GAS]
+  # F: F BRE, F MAO, A SPA, A MAR, A GAS
+
+  # 6. Autumn 1902: England takes Holland and St. Petersburg (north coast), Germany Paris,
+  # Italy Vienna
+  - England: [NTH-HOL, BAR-STP/NC]
+    France: [BRE-PIC, MAO-WES, MAR S SPA]
+    Germany: [BUR-PAR]
+    Italy: [VEN-PIE, BOH-VIE, TYS-LYO]
+  # E: F HOL, F STP/NC, A NWY, F ENG  F: F PIC, F WES, A GAS, A SPA, A MAR
+  # G: A PAR, A BEL, A MUN, F DEN, F KIE  I: A PIE, A VIE, F LYO, F TUN
+  # centres: E 6 (LON EDI LVP NWY HOL STP) +2, F 4 (BRE MAR SPA POR) -1,
+  #          G 6 (BER KIE MUN DEN BEL PAR) +1, I 5 (ROM NAP VEN TUN VIE) +1
+
+  # 7. Winter 1902 builds and a disband
+  - England: [EDI B F, LVP B A]
+    France: [GAS D]
+    Germany: [BER B A]
+    Italy: [VEN B A]
+  # E: F HOL, F STP/NC, A NWY, F ENG, F EDI, A LVP  F: F PIC, F WES, A SPA, A MAR
+  # G: A PAR, A BEL, A MUN, F DEN, F KIE, A BER  I: A PIE, A VIE, F LYO, F TUN, A VEN
+
+# Spring 1903 diplomacy open
+stop:
+  ready: [Germany]
