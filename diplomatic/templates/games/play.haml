@@ -43,7 +43,7 @@
 
     .ml-1.pl-4.border-l.border-ink-700.flex.items-center.gap-3.shrink-0
         .h-8.rounded-sm.bg-ink-600.flex.flex-col.justify-end.overflow-hidden{class: "w-[3px]", title: "{{=left_pct}} % of the phase time left"}
-            .w-full.rounded-sm.bg-signal{class: "shadow-[0_0_8px_#9fe8ff]", style: "height: {{=left_pct}}%"}
+            #clock-bar.w-full.rounded-sm.bg-signal{class: "shadow-[0_0_8px_#9fe8ff]", style: "height: {{=left_pct}}%"}
         %div
             .flex.items-center.gap-2
                 %span#clock{class: "font-mono text-[18px] leading-none tabular-nums text-fog-200"}

@@ -102,6 +102,30 @@
     gapp.init(null, null, null, null, null);
     gapp.bindings(null, null, null, null, null, null, null, null, function () { go('last'); });
 
+    // ---- deadline: play() renders the countdown and the bar once; from the game's next_process_at they tick here,
+    // in the server's formats. At zero they stay there until the state frame reloads the page.
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+    function startClock(game) {
+      var clock = $('#clock');
+      var bar = $('#clock-bar');
+      if (!ACTIVE || !game || !game.next_process_at || !clock || !bar) return;
+      var deadline = new Date(game.next_process_at).getTime();
+      var span = Math.max(1, game.phase_time * 60);
+      var timer = null;
+      function tick() {
+        var left = Math.max(0, Math.floor((deadline - Date.now()) / 1000));
+        var d = Math.floor(left / 86400), h = Math.floor(left / 3600) % 24, m = Math.floor(left / 60) % 60;
+        clock.textContent = d ? d + 'd ' + pad(h) + ':' + pad(m) : pad(h) + ':' + pad(m) + ':' + pad(left % 60);
+        var pct = Math.max(0, Math.min(100, Math.round(100 * left / span)));
+        bar.style.height = pct + '%';
+        bar.parentNode.title = pct + ' % of the phase time left';
+        if (!left && timer) clearInterval(timer);
+      }
+      tick();
+      if (deadline > Date.now()) timer = setInterval(tick, 1000);
+    }
+
     function boot() {
       var mapData = null;
       var gameData = null;
@@ -109,6 +133,7 @@
         .then(function (res) {
           mapData = res[0];
           gameData = res[1];
+          startClock(gameData);
           var phases = (res[2] && res[2].data) || [];
           var withNext = FULL && phases.length > 0;
           steps = shaper.link(shaper.build(mapData, gameData, phases, PLAYER, withNext));

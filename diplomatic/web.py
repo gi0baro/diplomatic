@@ -1,7 +1,7 @@
 from emmett_assets import Assets
 from emmett_haml import Haml
 
-from . import app
+from . import app, db
 from .exts.bs3 import BS3
 
 

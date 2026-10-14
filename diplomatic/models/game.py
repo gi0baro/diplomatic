@@ -335,7 +335,7 @@ class Game(TSModel, UUIDModel):
             orders_builder = self._prepare_hold_orders_for_start
         phase = game.phases.new(**phase_data)
         phase.save()
-        phase.init_orders(roles, orders_builder(countries))
+        phase.init_orders(roles, orders_builder(game, countries))
         StatsEvent.create(
             variant=game.map.name,
             kind=StatsEvent.Kind.GAME_STARTED,
@@ -372,7 +372,7 @@ class Game(TSModel, UUIDModel):
             if outcome.winner:
                 game.end(outcome.winner, outcome.territories)
                 return True
-            phase = GamePhase.new(
+            phase = game.phases.new(
                 parent=current_phase.id,
                 year=outcome.year,
                 season=outcome.season,
