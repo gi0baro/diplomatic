@@ -10,7 +10,7 @@
 %script{src: "{{=url('static', 'js/board-ui.js')}}"}
 - assets 'js_game'
 %script{src: "{{=url('static', 'js/play.js')}}"}
-- if player_id
+- if game.press_type != 2
     %script{src: "{{=url('static', 'js/chat.js')}}", defer: None}
 - end
 
@@ -32,7 +32,8 @@
             .text-right
                 #phase-name{class: "font-display text-[20px] leading-none uppercase tracking-wider text-fog-200"} &nbsp;
                 #phase-type{class: "font-mono text-[10px] tracking-[.2em] uppercase text-signal/80"} &nbsp;
-            %span#badge-cur{class: "font-mono text-[10px] tracking-[.15em] px-2 py-1 rounded-sm bg-signal/10 text-signal border border-signal/30"} CURRENT
+            %span#badge-cur{class: "font-mono text-[10px] tracking-[.15em] px-2 py-1 rounded-sm bg-signal/10 text-signal border border-signal/30"}
+                = "FINAL" if game.stage == 5 else "CURRENT"
             %span#badge-next{class: "hidden font-mono text-[10px] tracking-[.15em] px-2 py-1 rounded-sm bg-ink-700 text-fog-200 border border-fog-200"} NEXT
             %span#badge-past{class: "hidden font-mono text-[10px] tracking-[.15em] px-2 py-1 rounded-sm bg-warn/10 text-warn border border-warn/40 inline-flex items-center gap-1.5 whitespace-nowrap"}
                 HISTORY ·
@@ -63,7 +64,7 @@
 
 #board.relative.flex-1.min-w-0.overflow-hidden.bg-ink-950.select-none
     = asis(board_svg)
-    - if player_id
+    - if game.press_type != 2
         - include 'games/_chat.haml'
 
     %div{"x-data": "alerts", class: "absolute left-3 top-3 z-20 flex flex-col gap-1.5 w-[340px] pointer-events-none"}
@@ -131,6 +132,7 @@
     gapp.net.route("map", "{{=url('api.map_get', game.map)}}");
     gapp.net.route("game", "{{=url('api.game_get', game.id)}}");
     gapp.net.route("phases", "{{=url('api.game_phases', game.id)}}");
+    gapp.net.route("history", "{{=url('api.game_history', game.id)}}");
     gapp.net.route("phase", "{{=url('api.game_phase', ':ID:')}}");
     gapp.net.route("phase_prev", "{{=url('api.game_phase_prev', game.id)}}");
     gapp.net.route("phase_next", "{{=url('api.game_phase_next', game.id)}}");

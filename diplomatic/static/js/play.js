@@ -129,11 +129,19 @@
     function boot() {
       var mapData = null;
       var gameData = null;
-      Promise.all([getJSON(routes.map), getJSON(routes.game), getJSON(routes.phases)])
+      // a finished game has no phase rows left: its steps come from the history snapshot
+      Promise.all([getJSON(routes.map), getJSON(routes.game), getJSON(OVER ? routes.history : routes.phases)])
         .then(function (res) {
           mapData = res[0];
           gameData = res[1];
           startClock(gameData);
+          if (OVER) {
+            // every step carries its orders; the final position is current and shown
+            steps = shaper.link(shaper.buildHistory(mapData, gameData, (res[2] && res[2].phases) || []));
+            current = steps.length - 1;
+            view = current;
+            return null;
+          }
           var phases = (res[2] && res[2].data) || [];
           var withNext = FULL && phases.length > 0;
           steps = shaper.link(shaper.build(mapData, gameData, phases, PLAYER, withNext));
@@ -143,6 +151,7 @@
           return shaper.ensureOrders(steps[current]);
         })
         .then(function () {
+          // no orders to fetch for spectators, before the game starts or once it is over
           if (PLAYER === null || !ACTIVE) return [];
           return getJSON(routes.orders).then(function (r) { return (r && r.data) || []; });
         })

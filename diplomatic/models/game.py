@@ -370,7 +370,17 @@ class Game(TSModel, UUIDModel):
             current_phase.stage = GamePhase.Stage.CLOSED
             current_phase.save()
             if outcome.winner:
-                game.end(outcome.winner, outcome.territories)
+                final = game.phases.new(
+                    year=outcome.year,
+                    season=outcome.season,
+                    type=outcome.phase,
+                    stage=GamePhase.Stage.CLOSED,
+                    territories=outcome.territories,
+                    troops=outcome.positions,
+                    coasts=outcome.coast_positions,
+                    dislodged=outcome.dislodged,
+                )
+                game.end(outcome.winner, final)
                 return True
             phase = game.phases.new(
                 parent=current_phase.id,
@@ -427,10 +437,9 @@ class Game(TSModel, UUIDModel):
         return rv
 
     @rowmethod("end")
-    def end_game(self, game, winner, territories):
+    def end_game(self, game, winner, final):
         roles = game.players.current().select()
-        map_centers = set(game.map.supply_centers)
-        held = {country: len(map_centers & set(owned)) for country, owned in territories.items()}
+        held = final.supply_centers_no_grouped()
         centers = {role.country: held.get(role.country, 0) for role in roles}
         payouts = game.payouts(winner, centers)
         counters = {
@@ -473,7 +482,7 @@ class Game(TSModel, UUIDModel):
                 "outcomes": {role.country: role.state for role in roles},
             },
         )
-        history, chat_history = game.snapshot()
+        history, chat_history = game.snapshot(final)
         game.update_record(
             stage=self.Stage.OVER,
             next_process_at=None,
@@ -485,7 +494,7 @@ class Game(TSModel, UUIDModel):
         game.chat_rooms.delete()
 
     @rowmethod("snapshot")
-    def snapshot(self, game):
+    def snapshot(self, game, final):
         phases = game.phases.select(orderby=GamePhase.created_at | GamePhase.id)
         orders = defaultdict(lambda: defaultdict(list))
         rows = (
@@ -497,29 +506,24 @@ class Game(TSModel, UUIDModel):
             orders[order.game_phase][order.game_role.country].append(
                 {"territory": order.territory, "type": order.type, "data": order.data, "stage": order.stage}
             )
-        history = [
-            {
+
+        def entry(phase, phase_orders):
+            return {
                 "year": phase.year,
                 "season": phase.season,
                 "type": phase.type,
                 "stage": phase.stage,
+                "created_at": phase.created_at,
                 "territories": phase.territories,
                 "troops": phase.troops,
                 "coasts": phase.coasts,
                 "dislodged": phase.dislodged,
-                "orders": dict(orders[phase.id]),
+                "orders": phase_orders,
             }
-            for phase in phases
-        ]
-        chat_history = []
-        room = game.chat_rooms.where(lambda m: m.type == ChatRoom.Type.GENERAL).select().first()
-        if room:
-            senders = {member.id: member.player.country for member in room.members.join("player").select()}
-            chat_history = [
-                {"sender": senders.get(message.sender), "text": message.text, "created_at": message.created_at}
-                for message in room.messages.select(orderby=ChatMessage.created_at | ChatMessage.id)
-            ]
-        return history, chat_history
+
+        history = [entry(phase, dict(orders[phase.id])) for phase in phases]
+        history.append(entry(final, {}))
+        return history, ChatMessage.public_for_game(game.id)
 
     @rowmethod("timer")
     def get_timer(self, game):

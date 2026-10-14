@@ -435,6 +435,9 @@ body.past #map * { animation: none !important; }
     @apply grid items-center gap-x-2 rounded-sm px-2 py-[3px];
     grid-template-columns: 14px 1fr 30px 38px 30px;
   }
+  .prow.over {
+    grid-template-columns: 14px 1fr 30px 38px 54px; /* the RESULT column of a finished game */
+  }
   .prow.me {
     background: color-mix(in srgb, var(--c) 10%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 28%, transparent);

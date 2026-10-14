@@ -4,6 +4,7 @@
 #:
 #:   shaper = new Steps(app, getJSON)       # getJSON(url) -> Promise of the parsed body
 #:   steps = shaper.build(mapData, gameData, phases, player, withNext)
+#:   steps = shaper.buildHistory(mapData, gameData, entries)   # a finished game, from Game.history
 #:   shaper.link(steps)
 #:   shaper.ensureOrders(step).then (step) -> ...
 class Steps
@@ -23,6 +24,22 @@ class Steps
             steps.push(@buildGameStep(mapData, phase, null, i is phases.length - 1))
         if withNext
             steps.push(@buildNextGameStep(player, steps[steps.length - 1]))
+        return steps
+
+    #: a finished game: pre-game, then one step per Game.history entry (the last is the final position).
+    #: The phase rows are gone, so the steps get client-side ids s0, s1, ... chained by `parent`; each
+    #: entry carries its own orders, so every step's orders (the previous entry's) are set here and
+    #: `ensureOrders` never fetches. No virtual next step.
+    buildHistory: (mapData, gameData, entries) ->
+        @players = gameData.players
+        steps = [@buildPreGameStep(mapData)]
+        for entry, i in entries
+            orders = Object.assign({}, if i > 0 then entries[i - 1].orders else {})
+            step = @buildGameStep(mapData, entry, orders, i is entries.length - 1)
+            step.id = "s#{i}"
+            #: the previous step's id: the pre-game step's (null) for the first phase
+            step.parent = steps[i].id
+            steps.push(step)
         return steps
 
     buildGameStep: (mapData, data, orders, isLast) ->

@@ -160,12 +160,13 @@
 
   function powers() {
     return {
-      players: [],          // {country, name, ready, active}
+      players: [],          // {country, name, ready, active, state}
       sc: {},
       troops: {},
       me: null,
       target: 0,
       isCurrent: true,
+      over: false,          // game over: each power's result (GameRole.State) in place of ready
 
       init: function () {
         var self = this;
@@ -180,8 +181,12 @@
       setup: function (d) {
         this.me = d.player || null;
         this.target = d.scsToWin || 0;
+        this.over = !!d.over;
         this.players = (d.players || []).map(function (p) {
-          return { country: p.country, name: p.name || null, ready: !!p.is_ready, active: !!p.is_active };
+          return {
+            country: p.country, name: p.name || null, ready: !!p.is_ready, active: !!p.is_active,
+            state: p.state === undefined ? null : p.state
+          };
         });
       },
 
@@ -195,7 +200,7 @@
         if (!d.country) return;
         var p = this.players.filter(function (x) { return x.country === d.country; })[0];
         if (!p) {
-          p = { country: d.country, name: null, ready: false, active: false };
+          p = { country: d.country, name: null, ready: false, active: false, state: null };
           this.players.push(p);
         }
         if (d.is_ready !== undefined) p.ready = !!d.is_ready;
@@ -215,6 +220,7 @@
             units: (t.armies || 0) + (t.fleets || 0),
             ready: p.ready,
             active: p.active,
+            state: p.state,
             me: p.country === self.me
           };
         }).sort(function (a, b) {

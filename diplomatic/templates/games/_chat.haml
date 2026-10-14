@@ -1,4 +1,5 @@
-%div#chat{"data-x-data": 'chat({gameId: "{{=game.id}}", playerId: "{{=player_id}}", playerCountry: "{{=player_country}}", rooms: "{{=url("api.authorized.chat_rooms", game.id)}}", readings: "{{=url("api.authorized.chat_readings", game.id)}}", messages: "{{=url("api.authorized.chat_messages", ":ID:")}}", send: "{{=url("api.authorized.new_chat_message", game.id)}}", read: "{{=url("api.authorized.chat_read_message", [game.id, ":ID:"])}}", game: "{{=url("api.game_get", game.id)}}"})', "x-cloak": None, "x-show": "!none", class: "absolute z-30 flex flex-col rounded-sm border border-ink-600 bg-ink-900/95 backdrop-blur shadow-2xl shadow-black/50", style: "left:12px;top:-999px;width:340px"}
+- spectator = not player_id or game.stage == 5
+%div#chat{"data-x-data": 'chat({{if spectator:}}{mode: "spectator", gameId: "{{=game.id}}", publicMessages: "{{=url("api.chat_public_messages", game.id)}}"}{{else:}}{mode: "player", gameId: "{{=game.id}}", playerId: "{{=player_id}}", playerCountry: "{{=player_country}}", rooms: "{{=url("api.authorized.chat_rooms", game.id)}}", readings: "{{=url("api.authorized.chat_readings", game.id)}}", messages: "{{=url("api.authorized.chat_messages", ":ID:")}}", send: "{{=url("api.authorized.new_chat_message", game.id)}}", read: "{{=url("api.authorized.chat_read_message", [game.id, ":ID:"])}}", game: "{{=url("api.game_get", game.id)}}"}{{pass}})', "x-cloak": None, "x-show": "!none", class: "absolute z-30 flex flex-col rounded-sm border border-ink-600 bg-ink-900/95 backdrop-blur shadow-2xl shadow-black/50", style: "left:12px;top:-999px;width:340px"}
     %div{"data-resize": "n", "x-show": "!collapsed", title: "Resize", class: "absolute z-[1] left-2 right-3.5 -top-[3px] h-1.5 cursor-ns-resize"}
     %div{"data-resize": "e", "x-show": "!collapsed", title: "Resize", class: "absolute z-[1] top-3.5 bottom-2 -right-[3px] w-1.5 cursor-ew-resize"}
     %div{"data-resize": "ne", "x-show": "!collapsed", title: "Resize", class: "group absolute z-[1] -top-[3px] -right-[3px] h-3.5 w-3.5 cursor-nesw-resize"}
@@ -39,8 +40,9 @@
                                 %span.text-fog-500{"x-show": 'kind(m) === "own"'} you
                             %div{"x-text": "m.text", class: "text-[12.5px] leading-snug text-fog-300 whitespace-pre-wrap break-words", ":class": '{"text-right": kind(m) === "own"}'}
 
-        %form{"@submit.prevent": "send()", autocomplete: "off", class: "shrink-0 border-t border-ink-600 px-2 py-2"}
-            %div{class: "flex items-end gap-2"}
-                %textarea.input{"x-ref": "composer", "x-model": "draft", rows: "1", ":placeholder": "placeholder()", ":disabled": "!room()", "@keydown.enter": "onEnter($event)", "@keydown.escape": "$el.blur()", "@input": "grow()", class: "flex-1 min-w-0 block resize-none max-h-24 overflow-y-auto"}
-                %button.btn.btn-primary{type: "submit", ":disabled": "sending || !room() || !draft.trim()", class: "h-7 shrink-0"} Send
-            %div{"x-show": "error", "x-text": "error", class: "pt-1.5 font-mono text-[9.5px] tracking-[.08em] text-alert"}
+        - if not spectator
+            %form{"@submit.prevent": "send()", autocomplete: "off", class: "shrink-0 border-t border-ink-600 px-2 py-2"}
+                %div{class: "flex items-end gap-2"}
+                    %textarea.input{"x-ref": "composer", "x-model": "draft", rows: "1", ":placeholder": "placeholder()", ":disabled": "!room()", "@keydown.enter": "onEnter($event)", "@keydown.escape": "$el.blur()", "@input": "grow()", class: "flex-1 min-w-0 block resize-none max-h-24 overflow-y-auto"}
+                    %button.btn.btn-primary{type: "submit", ":disabled": "sending || !room() || !draft.trim()", class: "h-7 shrink-0"} Send
+                %div{"x-show": "error", "x-text": "error", class: "pt-1.5 font-mono text-[9.5px] tracking-[.08em] text-alert"}

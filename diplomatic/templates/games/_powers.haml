@@ -4,17 +4,18 @@
         %div{class: "font-mono text-[9.5px] tracking-[.15em] text-fog-500 whitespace-nowrap"}
             %span{"x-text": "target"}
             TO WIN ·
-            %span{"x-show": "isCurrent", "x-text": "readyCaption"}
-            %span{"x-show": "!isCurrent"} HISTORY
+            %span{"x-show": "isCurrent && !over", "x-text": "readyCaption"}
+            %span{"x-show": "!isCurrent || over"} HISTORY
     %div{class: "px-2 pb-2 font-mono text-[11px]"}
-        %div{class: "prow pb-1 text-[9px] tracking-[.15em] text-fog-500"}
+        %div{class: "prow pb-1 text-[9px] tracking-[.15em] text-fog-500", ":class": "{over: over}"}
             %span
             %span
             %span.text-right SC
             %span.text-right UNITS
-            %span.text-right RDY
+            %span.text-right{"x-show": "!over"} RDY
+            %span.text-right{"x-show": "over"} RESULT
         %template{"x-for": "p in rows", ":key": "p.country"}
-            .prow{":class": "{me: p.me}", ":data-power": "p.key"}
+            .prow{":class": "{me: p.me, over: over}", ":data-power": "p.key"}
                 %span.sw
                 %span.min-w-0.truncate
                     %span{"x-text": "p.country", style: "color: var(--c)"}
@@ -23,4 +24,9 @@
                 %span{"x-text": "p.sc", ":class": 'target && p.sc >= target ? "text-ok" : "text-fog-200"', class: "text-right tabular-nums"}
                 %span{"x-text": "p.units", class: "text-right tabular-nums text-fog-400"}
                 %span.flex.justify-end
-                    %span{":class": 'p.ready ? "bg-ok shadow-[0_0_6px_#58d66d]" : (p.active ? "bg-ink-500" : "bg-transparent border border-ink-600")', ":title": 'p.ready ? "ready" : (p.active ? "not ready" : "not playing this phase")', class: "h-1.5 w-1.5 rounded-full"}
+                    %span{"x-show": "!over", ":class": 'p.ready ? "bg-ok shadow-[0_0_6px_#58d66d]" : (p.active ? "bg-ink-500" : "bg-transparent border border-ink-600")', ":title": 'p.ready ? "ready" : (p.active ? "not ready" : "not playing this phase")', class: "h-1.5 w-1.5 rounded-full"}
+                    %span{"x-show": "over", class: "text-[9px] tracking-[.12em]"}
+                        %span{"x-show": "p.state === 6", class: "text-ok"} WON
+                        %span{"x-show": "p.state === 5", class: "text-fog-200"} DRAWN
+                        %span{"x-show": "p.state === 4", class: "text-fog-400"} SURVIVED
+                        %span{"x-show": "p.state === 3", class: "text-fog-500"} DEFEATED

@@ -54,6 +54,32 @@ class ChatMessage(TSModel, UUIDModel):
 
     indexes = {"room": True, "sender": True}
 
+    @classmethod
+    def public_for_game(cls, game_id, page=None):
+        #: the game's general room in the public shape (the sender as its country), newest first as
+        #: api.chat_messages; page=None: all of it (the snapshot at game end), page=N: the N-th page of 25
+        roles = cls.db.GameRole  #: the table (game.py imports this module)
+        rows = cls.where(
+            lambda m: (m.room == ChatRoom.id) & (ChatRoom.game == game_id) & (ChatRoom.type == ChatRoom.Type.GENERAL)
+        ).select(
+            cls.id,
+            cls.text,
+            cls.created_at,
+            roles.country,
+            left=[ChatMember.table.on(ChatMember.id == cls.sender), roles.on(roles.id == ChatMember.player)],
+            orderby=~cls.created_at | ~cls.id,
+            paginate=(page, 25) if page is not None else None,
+        )
+        return [
+            {
+                "id": row.chat_messages.id,
+                "sender": row.game_roles.country,
+                "text": row.chat_messages.text,
+                "created_at": row.chat_messages.created_at,
+            }
+            for row in rows
+        ]
+
     @after_insert
     def update_readings(self, fields, rid):
         if fields.sender:

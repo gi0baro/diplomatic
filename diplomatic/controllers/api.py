@@ -46,6 +46,14 @@ def access_error():
     return {"error": {"message": "Not authorized"}}
 
 
+def query_page():
+    #: the ?page= query parameter: a positive int, 1 when missing or invalid
+    try:
+        return max(1, int(request.query_params.page or 1))
+    except ValueError:
+        return 1
+
+
 authorized = api.module(__name__, "authorized")
 authorized.pipeline = [RequirePipe(auth.is_logged, access_error)]
 
@@ -159,6 +167,15 @@ def game_phase_next(gid):
     rv = row.as_dict()
     rv["orders"] = orders
     return rv
+
+
+@api.route("/game/<str:gid>/history")
+def game_history(gid):
+    row = Game.where(lambda m: (m.id == gid) & (m.stage == Game.Stage.OVER)).select(Game.history).first()
+    if not row:
+        response.status = 404
+        return {"error": "not found"}
+    return {"phases": row.history}
 
 
 # @api.route("/game/<int:gid>/status")
@@ -536,9 +553,23 @@ def chat_messages(rid):
     room = ChatRoom.accessible_by_user(auth.user).where(lambda m: m.id == rid).select(ChatRoom.table.ALL).first()
     if not room:
         return {"data": []}
-    page = int(request.query_params.page or 1)
-    rows = room.messages(orderby=~ChatMessage.created_at, paginate=(page, 25))
+    page = query_page()
+    rows = room.messages(orderby=~ChatMessage.created_at | ~ChatMessage.id, paginate=(page, 25))
     return {"data": rows}
+
+
+@api.route("/game/<str:gid>/chat")
+def chat_public_messages(gid):
+    game = Game.where(lambda m: m.id == gid).select(Game.stage, Game.press_type, Game.chat_history).first()
+    if not game:
+        response.status = 404
+        return {"error": "not found"}
+    if game.press_type == Game.Press.NONE:
+        return {"data": []}
+    page = query_page()
+    if game.stage == Game.Stage.OVER:
+        return {"data": (game.chat_history or [])[(page - 1) * 25 : page * 25]}
+    return {"data": ChatMessage.public_for_game(gid, page)}
 
 
 @authorized.route("/game/<str:gid>/messages", methods=["post"])

@@ -6,6 +6,11 @@
  * header, resized from the top edge, the right edge and the top-right corner; position and size live in the
  * component's state for the session. `chat:toggle` on window collapses / expands it (the C key).
  *
+ * Two modes, from cfg.mode (_chat.haml): "player" (a player of a running game) is the above; "spectator" (no
+ * player, or the game is over) is the general room alone, built locally and read-only: its messages are paged from
+ * the public endpoint (api.chat_public_messages, the sender as a country or null), with no composer, no readings,
+ * no unread counts, no rooms refetch and no live messages (game:chat is not listened to).
+ *
  * Registration: Alpine (deferred, earlier in the head) starts in a microtask right after its own script runs, so by
  * the time this deferred script runs `alpine:init` has already fired and the initial tree walk is done. The markup
  * therefore carries the component in `data-x-data`, which Alpine ignores; once `chat` is registered here the
@@ -85,6 +90,7 @@
 
   function factory(cfg) {
     // per instance, not reactive
+    var spectator = cfg.mode === 'spectator';
     var playerId = cfg.playerId;
     var loads = {};        // room id -> in-flight page fetch
     var readBusy = {};     // room id -> a PUT reading is in flight
@@ -118,7 +124,7 @@
         var el = this.$root;
         var board = this.board();
 
-        this.listen(document, 'game:chat', function (e) { self.receive(e.detail); });
+        if (!spectator) this.listen(document, 'game:chat', function (e) { self.receive(e.detail); });
         this.listen(window, 'chat:toggle', function () { self.toggle(); });
         if (window.ResizeObserver && board) {
           observer = new ResizeObserver(function () { self.place(); });
@@ -158,6 +164,12 @@
 
       boot: function () {
         var self = this;
+        if (spectator) {
+          this.rooms = [this.normalize({ id: 'general', type: 0, members: [] })];   // ChatRoom.Type.GENERAL
+          this.ready = true;
+          this.open(this.rooms[0].id, false);
+          return;
+        }
         Promise.all([
           getJSON(cfg.game).catch(function () { return null; }),
           getJSON(cfg.rooms),
@@ -293,7 +305,8 @@
         if (!room) return Promise.resolve();
         var page = room.page + 1;
         room.loading = true;
-        loads[id] = request(cfg.messages.replace(':ID:', id) + '?page=' + page).then(function (res) {
+        var url = spectator ? cfg.publicMessages : cfg.messages.replace(':ID:', id);
+        loads[id] = request(url + '?page=' + page).then(function (res) {
           var r = self.findRoom(id);
           if (!r) return;
           if (!res.ok) throw new Error(res.status + ' room ' + id);
@@ -349,6 +362,7 @@
 
       // unread = messages after the reading's message (all of them when it is empty), not counting our own
       recount: function (room) {
+        if (spectator) return;
         var mark = this.mark(room.id);
         var me = room.me;
         room.unread = room.messages.filter(function (m) {
@@ -364,6 +378,7 @@
 
       // the room is being read: move the mark to its last message and tell the server
       markRead: function (id) {
+        if (spectator) return;
         var room = this.findRoom(id);
         if (!room) return;
         if (room.messages.length) {
@@ -586,7 +601,9 @@
         return room && room.me !== null && m.sender === room.me ? 'own' : 'other';
       },
 
+      // the sender's { country, name }: m.sender is a member id of the room in player mode, a country in spectator mode
       sender: function (m) {
+        if (spectator) return m.sender ? { country: m.sender, name: null } : null;
         var room = this.room();
         if (!room) return null;
         var member = room.members.filter(function (x) { return x.id === m.sender; })[0];
