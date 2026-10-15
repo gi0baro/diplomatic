@@ -368,6 +368,17 @@ def _compile(doc):
     def unique(items):
         return list(dict.fromkeys(items))
 
+    def reach(targets):
+        # target id -> the target's coasts this coast touches, None when the target has no coasts
+        out = {}
+        for target in targets:
+            tid, coast = ref(target)
+            if coast is None:
+                out[tid] = None
+            else:
+                out.setdefault(tid, []).append(coast)
+        return out
+
     row = {
         "name": doc["name"],
         "revision": doc["revision"],
@@ -410,8 +421,8 @@ def _compile(doc):
         if "coasts" in province:
             row["multi_coasts"].append(pid)
             row["coast_names"][pid] = [c["name"] for c in province["coasts"]]
-            row["links"]["multi_coasts"][pid] = [[ids[t] for t in c["links"]["fleet"]] for c in province["coasts"]]
-            row["links"]["fleets"][pid] = unique(t for reach in row["links"]["multi_coasts"][pid] for t in reach)
+            row["links"]["multi_coasts"][pid] = [reach(c["links"]["fleet"]) for c in province["coasts"]]
+            row["links"]["fleets"][pid] = unique(t for coast in row["links"]["multi_coasts"][pid] for t in coast)
     for country in doc["countries"]:
         name = country["name"]
         row["countries"][name] = {"r": country["color"][0], "g": country["color"][1], "b": country["color"][2]}

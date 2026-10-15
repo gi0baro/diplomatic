@@ -1,30 +1,81 @@
 """Trace a variant's PNG label map into an SVG draft with shared edges.
 
-Local dev tool, never run by the system. The PNG is a flat-colour label map:
-each province is one exact ``png`` colour from the variant YAML, separated
-from its neighbours by 1 px border lines ([4, 2, 4]) or wider pure black
-ones. The geometry is built TopoJSON-style so neighbours share their edges:
+Local dev tool, never run by the system. Inputs, all in the variant folder:
 
-1. Label image: every pixel gets a province. Province (and child) colours
-   keep their own label; border pixels (and any colour matching no province)
-   go to the nearest province pixel by iterative 4-neighbour dilation, ties
-   broken by neighbour order up, left, down, right.
+- ``<folder name>.yaml``: the variant (provinces, kinds, coasts, supply
+  centres). It carries no coordinates and no colours. Other YAML files in the
+  folder are ignored, except the sidecar.
+- ``trace.yaml``: the sidecar, what reading the PNG needs and the variant
+  does not carry (colours, hand-placed points), merged into the variant's
+  provinces by name.
+- ``map.png``: a flat-colour label map. Provinces are flat colours separated
+  by 1 px border lines ([4, 2, 4]) or wider pure black ones; any other colour
+  matching no province (and not the void) is treated as border too.
+
+Sidecar format::
+
+    void: [253, 253, 253]        # optional: background colour outside the map
+    provinces:
+      Warsaw:
+        position: [664, 539]     # the anchor; required for sea, coast, inland
+        center: [691, 534]       # optional, supply centres only
+      St. Petersburg:
+        position: [985, 192]
+        png: [0, 200, 0]         # optional: default is the PNG colour at position
+        coasts: {North: [843, 102], South: [764, 335]}  # one per YAML coast
+      Crete:
+        png: [240, 30, 255]      # required for neutral and child (no anchor)
+
+Every YAML province needs an entry. Unknown provinces or keys, missing or
+extra coasts, a ``center`` on a province that is not a supply centre, points
+outside the image, and a colour that is a border colour or the void colour
+(e.g. a sampled position sitting on a line) are errors: nothing is written.
+A neutral or child may carry a ``position`` too; it is only a seed for the
+shared-colour rule and is not emitted.
+
+The geometry is built TopoJSON-style so neighbours share their edges:
+
+1. Label image: every pixel gets a province.
+   - A colour claimed by one province: all its pixels are that province.
+   - A colour claimed by several (webDiplomacy seas share one colour): its
+     mask is split into 4-connected components and each claimant takes the
+     component holding its ``position`` (its seed). Components with no seed
+     (islets) are left to the border rule below. Two seeds in one component
+     (a missing border line) or a seed off its colour are anomalies.
+   - The ``void`` colour is background, not map: labelled like the image
+     outside (no path, empty in the SVG) and left out of the fidelity
+     measurement.
+   - Border pixels (and any colour matching no province) go to the nearest
+     province pixel by iterative 4-neighbour dilation, ties broken by
+     neighbour order up, left, down, right. The void does not grow, so an
+     outline between the void and the map goes to the provinces and their
+     edge lands where the void begins; border pixels no province reaches
+     (enclosed by the void) become void.
 2. Shared arcs: exact pixel-edge loops are traced per label; pixel corners
-   where 3+ labels meet (the image outside counts as one) or where two labels
-   touch diagonally (saddles) are nodes. Loops are cut at nodes into arcs; the
-   two sides of a border trace the same unit edges in opposite directions, so
-   each arc is stored once (canonical direction) and every province loop is a
-   sequence of (arc, direction). A loop with no node is one closed arc.
+   where 3+ labels meet (the image outside and the void count as one) or
+   where two labels touch diagonally (saddles) are nodes. Loops are cut at
+   nodes into arcs; the two sides of a border trace the same unit edges in
+   opposite directions, so each arc is stored once (canonical direction) and
+   every province loop is a sequence of (arc, direction). A loop with no node
+   is one closed arc. Arcs against the image edge or the void have one side.
 3. Each arc is simplified once with OpenCV approxPolyDP (endpoints kept) and
    province loops are rebuilt from the simplified arcs, so both sides of every
    border have identical coordinates. By default arcs are emitted as quadratic
-   B-splines through the simplified vertices (nodes stay exact).
+   B-splines through the simplified vertices (nodes stay exact); one-sided
+   arcs (image edge, void) stay straight polylines.
 
 ``map.svg`` follows the SVG contract in docs/board-redesign.md: one group per
 province with one ``fill-rule="evenodd"`` path holding all its loops (children
-as ``class="water"`` paths inside the parent group) and anchors from the
-YAML. Borders are drawn by stroking the province paths themselves: shared
+as ``class="water"`` paths inside the parent group), the anchors from the
+sidecar (``position``, one per coast) and a ``center`` marker for supply
+centres. Borders are drawn by stroking the province paths themselves: shared
 edges coincide exactly, so the two strokes of a border overlap.
+
+A supply centre without an explicit ``center`` gets a computed one: among the
+province's label pixels between R and 2R from its anchor (``--center-offset
+R``), the one deepest inside the province (distance transform), ties to the
+one closest to the anchor. A province too small for that ring gets its pixel
+farthest from the anchor and an anomaly asking for an explicit ``center``.
 Also writes ``report.txt`` (fidelity per province) and ``preview.html``
 (PNG under the inlined SVG, for eyeballing).
 
@@ -35,7 +86,8 @@ rendered mask is compared with its mask in the label image.
 
 Usage:
     uv run --with opencv-python-headless,numpy,pyyaml,cairosvg \
-        python tools/png_to_svg.py variants/classic [--epsilon 1.0] [--min-area 0] [--no-smoothing]
+        python tools/png_to_svg.py variants/classic [--epsilon 1.0] [--min-area 0] [--no-smoothing] \
+        [--center-offset 24]
 """
 
 from __future__ import annotations
@@ -56,8 +108,13 @@ import yaml
 
 MANY_SHAPES = 3
 IOU_THRESHOLD = 0.98
-BORDER_COLOURS = {(4, 2, 4), (0, 0, 0)}  # border line colours, absorbed into provinces
+# Border line colours, absorbed into provinces and refused as a sampled province colour:
+# classic's [4, 2, 4] and black, webDiplomacy's AncMed [3, 3, 3] and ColdWar [0, 2, 0].
+BORDER_COLOURS = {(4, 2, 4), (0, 0, 0), (3, 3, 3), (0, 2, 0)}
 GROWTH_WARN = 0.25  # flag provinces that absorbed more than this fraction of their own pixels
+ANCHORED = ("sea", "coast", "inland")  # kinds with anchors in the SVG
+TRACE_KEYS = ("png", "position", "center", "coasts")  # per-province keys of trace.yaml
+VOID = -2  # void pixels while assigning labels; they end up -1, like the image outside
 
 STYLE = """
 g[data-kind="sea"] path { fill: #a9cbe0; }
@@ -69,55 +126,247 @@ STROKE_STYLE = ".provinces path { stroke: #6b6b6b; stroke-width: 0.6; stroke-lin
 
 
 # --------------------------------------------------------------------------
+# 0. inputs: the variant YAML and its trace.yaml sidecar
+
+
+class SidecarError(ValueError):
+    """trace.yaml does not match the variant; the message lists every problem found."""
+
+
+def is_rgb(value: object) -> bool:
+    return isinstance(value, list) and len(value) == 3 and all(type(c) is int and 0 <= c <= 255 for c in value)
+
+
+def is_point(value: object, width: int, height: int) -> bool:
+    """[x, y] inside the image (numbers, booleans excluded)."""
+    return (
+        isinstance(value, list)
+        and len(value) == 2
+        and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in value)
+        and 0 <= value[0] < width
+        and 0 <= value[1] < height
+    )
+
+
+def pixel(point: list) -> tuple[int, int]:
+    """(x, y) of the pixel holding a point: pixel (x, y) is the square [x, x+1] x [y, y+1]."""
+    return int(point[0]), int(point[1])
+
+
+def merge_entry(p: dict, entry: object, img: np.ndarray, void: tuple | None) -> list[str]:
+    """Merge one trace.yaml entry into its (copied) province dict; returns the problems found."""
+    where = f"trace.yaml: {p['name']}"
+    if entry is None:
+        return [f"{where}: missing (every province of the variant needs an entry)"]
+    if not isinstance(entry, dict):
+        return [f"{where}: must be a mapping"]
+    height, width = img.shape[:2]
+    bad_point = f"must be [x, y] inside the {width}x{height} image"
+    errors = [f"{where}: unknown key '{key}'" for key in entry if key not in TRACE_KEYS]
+    anchored = p["kind"] in ANCHORED
+    if "position" in entry:
+        if is_point(entry["position"], width, height):
+            p["position"] = entry["position"]
+        else:
+            errors.append(f"{where}: 'position' {bad_point}")
+    elif anchored:
+        errors.append(f"{where}: 'position' is required for kind {p['kind']}")
+    sampled = False
+    if "png" in entry:
+        if is_rgb(entry["png"]):
+            p["png"] = entry["png"]
+        else:
+            errors.append(f"{where}: 'png' must be an RGB triple")
+    elif not anchored:
+        errors.append(f"{where}: 'png' is required for kind {p['kind']} (no anchor to sample it at)")
+    elif "position" in p:
+        x, y = pixel(p["position"])
+        p["png"] = [int(c) for c in img[y, x]]
+        sampled = True
+    colour = tuple(p.get("png", ()))
+    if colour in BORDER_COLOURS or colour == void:
+        what = "a border colour" if colour in BORDER_COLOURS else "the void colour"
+        how = f", sampled at position {p['position']}: move it off the line or set png" if sampled else ""
+        errors.append(f"{where}: png {list(colour)} is {what}{how}")
+    if "center" in entry:
+        if not (anchored and p.get("supply_center")):
+            errors.append(f"{where}: 'center' on a province that is not a supply centre")
+        elif is_point(entry["center"], width, height):
+            p["center"] = entry["center"]
+        else:
+            errors.append(f"{where}: 'center' {bad_point}")
+    given = entry.get("coasts") or {}
+    if not isinstance(given, dict):
+        errors.append(f"{where}: 'coasts' must map coast names to [x, y]")
+        given = {}
+    declared = [c["name"] for c in p.get("coasts") or []]
+    errors += [f"{where}: coast '{name}' is not declared in the variant" for name in given if name not in declared]
+    for coast in p.get("coasts") or []:
+        if coast["name"] not in given:
+            errors.append(f"{where}: missing coast '{coast['name']}'")
+        elif is_point(given[coast["name"]], width, height):
+            coast["position"] = given[coast["name"]]
+        else:
+            errors.append(f"{where}: coast '{coast['name']}' {bad_point}")
+    return errors
+
+
+def merge_trace(provinces: list[dict], trace: object, img: np.ndarray) -> tuple[list[dict], tuple | None]:
+    """The variant's provinces with trace.yaml merged in by name, and the void colour.
+
+    The merged keys are the ones the rest of the tool reads: ``png``,
+    ``position``, ``center`` and each coast's ``position``; the variant's own
+    dicts are left untouched. Raises SidecarError listing every problem.
+    """
+    if not isinstance(trace, dict) or not isinstance(trace.get("provinces"), dict):
+        raise SidecarError("trace.yaml: needs a 'provinces' mapping")
+    errors = [f"trace.yaml: unknown key '{key}'" for key in trace if key not in ("void", "provinces")]
+    void = trace.get("void")
+    if void is not None:
+        if not is_rgb(void):
+            errors.append("trace.yaml: 'void' must be an RGB triple")
+            void = None
+        else:
+            void = tuple(void)
+            if void in BORDER_COLOURS:
+                errors.append(f"trace.yaml: void {list(void)} is a border colour")
+    entries = trace["provinces"]
+    known = {p["name"] for p in provinces}
+    errors += [f"trace.yaml: unknown province '{name}'" for name in entries if name not in known]
+    merged = []
+    for p in provinces:
+        q = {**p, "coasts": [dict(c) for c in p["coasts"]]} if "coasts" in p else dict(p)
+        errors += merge_entry(q, entries.get(p["name"]), img, void)
+        merged.append(q)
+    if errors:
+        raise SidecarError("\n".join(errors))
+    return merged, void
+
+
+# --------------------------------------------------------------------------
 # 1. label image
 
 
 @dataclass
+class SharedColour:
+    colour: tuple[int, int, int]
+    owners: list[str]  # provinces claiming it, in YAML order
+    components: int  # 4-connected components of the colour
+    unseeded: int  # ... holding no seed, left to the border rule
+    unseeded_px: int
+
+
+@dataclass
 class LabelInfo:
-    raw: np.ndarray  # province index per pixel from the PNG colours, -1 elsewhere
-    labels: np.ndarray  # every pixel assigned (the partition)
+    raw: np.ndarray  # province index per pixel from the PNG colours (and seeds), -1 elsewhere
+    labels: np.ndarray  # every map pixel assigned (the partition); -1 on the void
     black: np.ndarray  # pure black pixels in the PNG
-    assigned: int  # pixels that had no province label
+    assigned: int  # pixels that had no province label, assigned to one
     assigned_thin: int  # ... of which [4, 2, 4]
     assigned_black: int  # ... of which [0, 0, 0]
     ties: int  # pixels whose 4-neighbour candidates disagreed
     rounds: int  # dilation rounds
     dropped: dict[str, int]  # pixels relabelled by --min-area, per province
+    own: list[int]  # pixels of each province before --min-area: its colour, or its seeded component
+    void: np.ndarray  # void pixels: the void colour plus border pixels enclosed by it
+    void_colour: int  # pixels of the void colour
+    shared: list[SharedColour]
+    anomalies: list[str]  # from the seed rule
 
 
-def assign_labels(img: np.ndarray, provinces: list[dict], min_area: int) -> LabelInfo:
+def province_masks(img: np.ndarray, provinces: list[dict]) -> tuple[list[np.ndarray], list[SharedColour], list[str]]:
+    """Each province's own pixels, before borders: its colour, or the seeded component of a shared one.
+
+    A colour claimed by several provinces cannot say which pixel is whose, so
+    it is split into 4-connected components (border lines are what separates
+    them) and each claimant takes the component under its ``position``.
+    Unseeded components get no label here and are absorbed by their
+    neighbours like border pixels. Returns the masks, the shared colours and
+    the seed anomalies.
+    """
+    claims: dict[tuple[int, int, int], list[int]] = {}
+    for i, p in enumerate(provinces):
+        claims.setdefault(tuple(int(c) for c in p["png"]), []).append(i)
+    masks: list[np.ndarray] = [np.zeros(img.shape[:2], bool)] * len(provinces)  # replaced, never mutated
+    shared: list[SharedColour] = []
+    anomalies: list[str] = []
+    for colour, owners in claims.items():
+        mask = np.all(img == colour, axis=-1)
+        if len(owners) == 1:
+            masks[owners[0]] = mask
+            continue
+        n, comp = cv2.connectedComponents(mask.astype(np.uint8), connectivity=4)
+        seeded: dict[int, str] = {}  # component -> province
+        for i in owners:
+            p = provinces[i]
+            if "position" not in p:
+                anomalies.append(f"{p['name']}: shares png colour {list(colour)} but has no position to seed it")
+                continue
+            x, y = pixel(p["position"])
+            c = int(comp[y, x])
+            if not c:
+                anomalies.append(
+                    f"{p['name']}: seed {p['position']} is in no component of its colour {list(colour)} "
+                    "(position on a line, or wrong colour)"
+                )
+            elif c in seeded:
+                anomalies.append(
+                    f"shared colour {list(colour)}: {seeded[c]} and {p['name']} in the same component "
+                    f"(missing border line?); {p['name']} gets no pixels"
+                )
+            else:
+                seeded[c] = p["name"]
+                masks[i] = comp == c
+        sizes = np.bincount(comp.ravel(), minlength=n)
+        free = [c for c in range(1, n) if c not in seeded]
+        names = [provinces[i]["name"] for i in owners]
+        shared.append(SharedColour(colour, names, n - 1, len(free), int(sizes[free].sum())))
+    return masks, shared, anomalies
+
+
+def assign_labels(img: np.ndarray, provinces: list[dict], min_area: int, void: tuple | None = None) -> LabelInfo:
     """Partition the image: province pixels keep their index, the rest go to the nearest one.
 
-    Iterative 4-neighbour dilation (city-block distance). In each round every
-    unassigned pixel with an assigned 4-neighbour takes it; if several are
-    assigned, the first in the order up, left, down, right wins. A 1 px border
-    thus always goes to the province above or to the left of it, i.e. shared
-    edges sit consistently on the bottom/right side of the border lines.
-    ``min_area`` relabels 4-connected components below that many pixels as
-    unassigned first, so their neighbours absorb them.
+    Province pixels come from ``province_masks`` (colour, or seeded component
+    of a shared colour). Iterative 4-neighbour dilation (city-block
+    distance). In each round every unassigned pixel with an assigned
+    4-neighbour takes it; if several are assigned, the first in the order up,
+    left, down, right wins. A 1 px border thus always goes to the province
+    above or to the left of it, i.e. shared edges sit consistently on the
+    bottom/right side of the border lines. ``min_area`` relabels 4-connected
+    components below that many pixels as unassigned first, so their
+    neighbours absorb them.
+
+    The ``void`` colour never grows: an outline between the void and the map
+    is absorbed by the provinces alone, so their edge lands on the void.
+    Pixels no province can reach (cut off by the void) become void. Void
+    pixels end up -1, the label of the image outside.
     """
     h, w = img.shape[:2]
+    masks, shared, anomalies = province_masks(img, provinces)
     raw = np.full((h, w), -1, np.int32)
     dropped: dict[str, int] = {}
-    for i, p in enumerate(provinces):
-        mask = np.all(img == tuple(int(c) for c in p["png"]), axis=-1)
-        if min_area > 0 and mask.any():
+    own: list[int] = []
+    for i, (p, mask) in enumerate(zip(provinces, masks)):
+        own.append(int(np.count_nonzero(mask)))
+        if min_area > 0 and own[-1]:
             n, comp, stats, _ = cv2.connectedComponentsWithStats(mask.astype(np.uint8), connectivity=4)
             small = np.flatnonzero(stats[:, cv2.CC_STAT_AREA] < min_area)
             small = small[small != 0]
             if len(small):
                 gone = np.isin(comp, small)
                 dropped[p["name"]] = int(np.count_nonzero(gone))
-                mask &= ~gone
+                mask = mask & ~gone
         raw[mask] = i
     black = np.all(img == 0, axis=-1)
     thin = np.all(img == (4, 2, 4), axis=-1)
-    todo0 = raw < 0
+    void_colour = np.all(img == void, axis=-1) if void is not None else np.zeros((h, w), bool)
     lab = raw.copy()
+    lab[void_colour] = VOID
     ties = rounds = 0
     big = np.iinfo(np.int32).max
     while True:
-        todo = lab < 0
+        todo = lab == -1
         if not todo.any():
             break
         pad = np.pad(lab, 1, constant_values=-1)
@@ -131,19 +380,30 @@ def assign_labels(img: np.ndarray, provinces: list[dict], min_area: int) -> Labe
         ties += int(np.count_nonzero(todo & valid.any(axis=0) & (lo != hi)))
         upd = todo & (new >= 0)
         if not upd.any():
-            raise RuntimeError("label assignment: no province pixel to grow from")
+            if not void_colour.any() or not (raw >= 0).any():
+                raise RuntimeError("label assignment: no province pixel to grow from")
+            lab[todo] = VOID  # cut off from every province by the void (e.g. a legend outside the map)
+            break
         lab[upd] = new[upd]
         rounds += 1
+    voided = lab == VOID
+    lab[voided] = -1
+    gained = (raw < 0) & ~voided
     return LabelInfo(
         raw=raw,
         labels=lab,
         black=black,
-        assigned=int(np.count_nonzero(todo0)),
-        assigned_thin=int(np.count_nonzero(todo0 & thin)),
-        assigned_black=int(np.count_nonzero(todo0 & black)),
+        assigned=int(np.count_nonzero(gained)),
+        assigned_thin=int(np.count_nonzero(gained & thin)),
+        assigned_black=int(np.count_nonzero(gained & black)),
         ties=ties,
         rounds=rounds,
         dropped=dropped,
+        own=own,
+        void=voided,
+        void_colour=int(np.count_nonzero(void_colour)),
+        shared=shared,
+        anomalies=anomalies,
     )
 
 
@@ -249,9 +509,10 @@ class Arc:
     sides: list[tuple[int, int]] = field(default_factory=list)  # (label, direction +1/-1)
     exact: bool = False  # simplification reverted to the exact trace
     simple: np.ndarray | None = None  # simplified vertices, canonical direction
+    frame: bool = False  # one-sided, along the image frame (one-sided and not frame: along the void)
 
     @property
-    def internal(self) -> bool:  # between two provinces (not against the image edge)
+    def internal(self) -> bool:  # between two provinces (not against the image edge or the void)
         return len(self.sides) == 2
 
 
@@ -291,10 +552,16 @@ def canonical_ring(ids: list[int]) -> tuple[tuple[int, ...], int]:
     return (fwd, 1) if fwd <= rev else (rev, -1)
 
 
-def build_topology(labels: np.ndarray, count: int) -> Topology:
-    """Cut every label's exact loops at nodes into shared arcs."""
+def build_topology(labels: np.ndarray, count: int, void: np.ndarray | None = None) -> Topology:
+    """Cut every label's exact loops at nodes into shared arcs.
+
+    ``void`` pixels are labelled -1 like the image outside, so arcs against
+    them are one-sided, like arcs against the image edge (and handled the
+    same way downstream); the mask only makes them legal here.
+    """
     h, w = labels.shape
     stride = w + 1
+    has_void = void is not None and bool(void.any())
     is_node, degree, saddle = node_grid(labels)
     arcs: list[Arc] = []
     index: dict[tuple, int] = {}
@@ -342,7 +609,8 @@ def build_topology(labels: np.ndarray, count: int) -> Topology:
         if len(arc.sides) == 1:
             x, y = arc.points[:, 0], arc.points[:, 1]
             on_edge = (x == 0) | (x == w) | (y == 0) | (y == h)
-            if not on_edge.all():
+            arc.frame = bool(on_edge.all())
+            if not arc.frame and not has_void:
                 raise RuntimeError(f"arc {i}: one-sided but not on the image edge")
         if len(arc.sides) not in (1, 2):
             raise RuntimeError(f"arc {i}: {len(arc.sides)} sides")
@@ -513,7 +781,9 @@ def ring_d(points: np.ndarray, smooth: bool) -> str:
 
 def loop_d(seq: list[tuple[int, int]], arcs: list[Arc], smooth: bool) -> str:
     """A province loop's subpath. Smooth applies to shared arcs only: arcs on the
-    image edge run along the frame and stay straight (smoothing would cut the corners)."""
+    image edge run along the frame and stay straight (smoothing would cut the corners).
+    Arcs along the void stay straight too: nothing on the other side shares the curve,
+    so a spline cutting a corner would leave a strip of the map uncovered."""
     if len(seq) == 1 and arcs[seq[0][0]].closed:
         arc = arcs[seq[0][0]]
         return ring_d(oriented(arc, seq[0][1]), smooth and arc.internal)
@@ -601,6 +871,108 @@ def arc_consistency(arcs: list[Arc], province_d: dict[str, str], smooth: bool) -
     bad = sum(1 for key, n in expected.items() if seen.get(key, 0) != n)
     bad += sum(1 for key in seen if key not in expected)
     return bad
+
+
+# --------------------------------------------------------------------------
+# supply-centre markers
+
+
+def default_center(mask: np.ndarray, anchor: list, offset: float) -> tuple[list[int], bool] | None:
+    """A computed centre marker for a province's label mask: (point, found in the ring).
+
+    Candidates are the mask pixels between ``offset`` and ``2 * offset`` from
+    the anchor, so the marker clears the unit drawn on the anchor without
+    drifting to the far end of the province. The one deepest inside the
+    province wins (distance transform; the image edge counts as an edge), so
+    the marker stays off borders and coastlines; ties go to the candidate
+    closest to the anchor, then to the first in row order. With no candidate
+    (a province too small for the ring): the mask pixel farthest from the
+    anchor. None for an empty mask. Points are pixel coordinates (x, y).
+    """
+    ys, xs = np.nonzero(mask)
+    if not len(ys):
+        return None
+    d = np.hypot(xs - float(anchor[0]), ys - float(anchor[1]))
+    ring = np.flatnonzero((d >= offset) & (d <= 2 * offset))
+    if not len(ring):
+        far = int(np.argmax(d))
+        return [int(xs[far]), int(ys[far])], False
+    oy, ox = int(ys.min()), int(xs.min())
+    crop = np.pad(mask[oy : ys.max() + 1, ox : xs.max() + 1], 1).astype(np.uint8)
+    depth = cv2.distanceTransform(crop, cv2.DIST_L2, cv2.DIST_MASK_PRECISE)[1:-1, 1:-1]
+    deep = depth[ys[ring] - oy, xs[ring] - ox]
+    best = ring[np.lexsort((d[ring], -deep))[0]]  # lexsort: last key first; stable, so row order breaks ties
+    return [int(xs[best]), int(ys[best])], True
+
+
+@dataclass
+class Centres:
+    explicit: list[str] = field(default_factory=list)  # from trace.yaml
+    computed: list[str] = field(default_factory=list)  # by default_center, in the ring
+    fallback: list[str] = field(default_factory=list)  # by default_center, no ring candidate
+
+
+def place_centers(provinces: list[dict], labels: np.ndarray, offset: float, anomalies: list[str]) -> Centres:
+    """Set ``center`` on every supply centre lacking one; an explicit value always wins."""
+    out = Centres()
+    for i, p in enumerate(provinces):
+        if p["kind"] not in ANCHORED or not p.get("supply_center"):
+            continue
+        if "center" in p:
+            out.explicit.append(p["name"])
+            continue
+        spot = default_center(labels == i, p["position"], offset)
+        if spot is None:  # no pixels at all (already an anomaly): keep the SVG valid
+            p["center"] = p["position"]
+            out.fallback.append(p["name"])
+            anomalies.append(f"{p['name']}: no pixels, center placed on the anchor, set center in trace.yaml")
+            continue
+        p["center"], in_ring = spot
+        if in_ring:
+            out.computed.append(p["name"])
+        else:
+            out.fallback.append(p["name"])
+            anomalies.append(f"{p['name']}: center placed at fallback, set center in trace.yaml")
+    return out
+
+
+def trace_notes(
+    img: np.ndarray, provinces: list[dict], info: LabelInfo, void: tuple | None, centres: Centres, offset: float
+) -> list[str]:
+    """Informative report lines about what the sidecar drove: void, shared colours, centres, anchors."""
+    total = img.shape[0] * img.shape[1]
+    if void is None:
+        notes = ["void             : none"]
+    else:
+        enclosed = int(np.count_nonzero(info.void)) - info.void_colour
+        notes = [
+            f"void             : {list(void)}, {pct(info.void_colour, total)} of the image, not traced; "
+            f"{enclosed} px more enclosed by it (no province to reach)"
+        ]
+    claimants = sum(len(s.owners) for s in info.shared)
+    notes.append(
+        f"shared colours   : {len(info.shared)}"
+        + (f" ({claimants} provinces, resolved by seed: their position's component)" if info.shared else "")
+    )
+    notes += [
+        f"                   {list(s.colour)}: {len(s.owners)} provinces, {s.components} components, "
+        f"{s.components - s.unseeded} seeded, {s.unseeded} unseeded ({s.unseeded_px} px, absorbed as border)"
+        for s in info.shared
+    ]
+    notes.append(
+        f"centres          : {len(centres.explicit)} explicit, {len(centres.computed) + len(centres.fallback)} "
+        f"computed (offset {offset:g} px)" + (f"; fallback: {', '.join(centres.fallback)}" if centres.fallback else "")
+    )
+    off = []
+    for p in provinces:
+        if "position" in p:
+            x, y = pixel(p["position"])
+            if [int(c) for c in img[y, x]] != [int(c) for c in p["png"]]:
+                off.append(p["name"])
+    notes.append(
+        f"anchors          : {len(off)} positions not on their own png colour" + (f" ({', '.join(off)})" if off else "")
+    )
+    return notes
 
 
 # --------------------------------------------------------------------------
@@ -719,8 +1091,8 @@ def build_svg(
                 out.append("      " + circle("anchor", p["position"]))
             for coast in p.get("coasts") or []:
                 out.append("      " + circle("anchor", coast["position"], coast["name"]))
-            if "supply_center" in p:
-                out.append("      " + circle("center", p["supply_center"]))
+            if p.get("supply_center"):
+                out.append("      " + circle("center", p["center"]))
         out.append("    </g>")
     out.append("  </g>")
     out += ["</svg>", ""]
@@ -729,7 +1101,7 @@ def build_svg(
 
 @dataclass
 class RenderStats:
-    total: int  # pixels in the image
+    total: int  # pixels in the image, void excluded (every count below excludes the void too)
     unmatched: int  # measurement render: pixels matching no index colour
     unmatched_empty: int  # ... of which fully transparent (no fill at all)
     background: int  # map.svg render without strokes: fully transparent pixels
@@ -749,6 +1121,7 @@ class TopoStats:
     internal: int
     edge_arcs: int
     closed: int
+    void_arcs: int  # one-sided arcs along the void
     exact: int  # arcs reverted to the exact trace
     nodes: int
     border_nodes: int
@@ -770,7 +1143,9 @@ def build_report(
     smooth: bool,
     stats: RenderStats,
     topo: TopoStats,
+    notes: list[str],
 ) -> str:
+    """The report text; ``notes`` are informative Totals lines (void, shared colours, centres)."""
     rows = sorted(traced.values(), key=lambda t: (t.iou, t.name))
     name_w = max(len(t.name) for t in rows) + 2
     lab = topo.labels
@@ -806,12 +1181,14 @@ def build_report(
         f"total vertices   : {sum(t.vertices for t in rows)} in province paths",
         f"total shapes     : {sum(t.outers for t in rows)} outer loops (+ {sum(t.holes for t in rows)} hole loops)",
         f"total dropped    : {sum(t.dropped for t in rows)} px",
+        *notes,
         f"border pixels    : {pct(lab.assigned, stats.total)} assigned to a province "
         f"({lab.assigned_thin} [4,2,4], {lab.assigned_black} black, "
         f"{lab.assigned - lab.assigned_thin - lab.assigned_black} other) in {lab.rounds} rounds; "
         f"{lab.ties} px tied (2+ different 4-neighbours, first of up/left/down/right wins)",
         f"arcs             : {topo.arcs} ({topo.internal} shared, {topo.edge_arcs} on the image "
-        f"edge; {topo.closed} closed node-less; {topo.exact} kept exact by the collapse guard)",
+        f"edge{f', {topo.void_arcs} along the void' if topo.void_arcs else ''}; {topo.closed} closed "
+        f"node-less; {topo.exact} kept exact by the collapse guard)",
         f"nodes            : {topo.nodes} ({degrees}; {topo.saddles} two-label saddles; "
         f"{topo.border_nodes} on the image edge)",
         f"arc consistency  : {topo.mismatches} mismatches (each arc parsed back from every "
@@ -961,8 +1338,15 @@ PREVIEW = """<!DOCTYPE html>
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("variant", type=Path, help="variant folder (contains <name>.yaml and map.png)")
+    parser = argparse.ArgumentParser(
+        description=__doc__.split("\n\n")[0],
+        epilog="Reads <variant>/<folder name>.yaml, <variant>/trace.yaml (colours, anchors, centres, void) "
+        "and <variant>/map.png; writes map.svg, report.txt and preview.html next to them. The trace.yaml "
+        "format, the shared-colour seed rule and the void are described in the module docstring.",
+    )
+    parser.add_argument(
+        "variant", type=Path, help="variant folder (contains <folder name>.yaml, trace.yaml and map.png)"
+    )
     parser.add_argument("--epsilon", type=float, default=1.0, help="approxPolyDP epsilon (px), per arc")
     parser.add_argument(
         "--min-area",
@@ -977,38 +1361,52 @@ def main() -> int:
         action="store_false",
         help="emit arcs as straight polylines instead of quadratic B-splines through the simplified vertices",
     )
+    parser.add_argument(
+        "--center-offset",
+        type=float,
+        default=24.0,
+        metavar="R",
+        help="supply centres without a center in trace.yaml get one computed between R and 2R px from "
+        "their anchor, as deep inside the province as possible (default 24)",
+    )
     args = parser.parse_args()
 
     folder: Path = args.variant
-    yaml_files = sorted(folder.glob("*.yaml"))
-    if len(yaml_files) != 1:
-        parser.error(f"expected exactly one .yaml in {folder}, found {len(yaml_files)}")
-    doc = yaml.safe_load(yaml_files[0].read_text())
+    variant_file = folder / f"{folder.resolve().name}.yaml"
+    trace_file = folder / "trace.yaml"
+    for path in (variant_file, trace_file):
+        if not path.is_file():
+            parser.error(f"missing {path}")
+    doc = yaml.safe_load(variant_file.read_text())
     img_bgr = cv2.imread(str(folder / "map.png"), cv2.IMREAD_COLOR)
     if img_bgr is None:
         parser.error(f"cannot read {folder / 'map.png'}")
     img = np.ascontiguousarray(img_bgr[:, :, ::-1])
     height, width = img.shape[:2]
-    provinces: list[dict] = doc["provinces"]
+    try:
+        provinces, void = merge_trace(doc["provinces"], yaml.safe_load(trace_file.read_text()), img)
+    except SidecarError as e:
+        print(e, file=sys.stderr)
+        return 2
     names = {p["name"] for p in provinces}
 
     # 1. label image
-    info = assign_labels(img, provinces, args.min_area)
+    info = assign_labels(img, provinces, args.min_area, void)
     labels = info.labels
 
     # 2.-3. shared arcs, simplification
-    topo = build_topology(labels, len(provinces))
+    topo = build_topology(labels, len(provinces), info.void)
     simplify_all(topo, args.epsilon)
     arcs = topo.arcs
 
-    anomalies: list[str] = []
+    anomalies: list[str] = list(info.anomalies)
     traced: dict[str, Traced] = {}
-    by_colour: dict[tuple, list[str]] = {}
+    province_colours: set[tuple] = set()
     province_d: dict[str, str] = {}
     for i, p in enumerate(provinces):
         colour = tuple(int(c) for c in p["png"])
-        by_colour.setdefault(colour, []).append(p["name"])
-        png_pixels = int(np.count_nonzero(np.all(img == colour, axis=-1)))
+        province_colours.add(colour)
+        png_pixels = info.own[i]  # its colour, or its seeded component of a shared colour
         seqs = topo.loops.get(i, [])
         t = Traced(
             p["name"],
@@ -1024,9 +1422,9 @@ def main() -> int:
         )
         traced[p["name"]] = t
         province_d[p["name"]] = " ".join(loop_d(s, arcs, args.smooth) for s in seqs)
-        if not png_pixels:
+        if not np.all(img == colour, axis=-1).any():
             anomalies.append(f"{p['name']}: png colour {list(colour)} matches zero pixels")
-        elif not seqs:
+        elif not seqs and t.dropped:  # no seeded pixels at all is already a seed anomaly
             anomalies.append(f"{p['name']}: {png_pixels} px but no component survived min-area")
         if t.outers > MANY_SHAPES:
             anomalies.append(f"{p['name']}: {t.outers} shapes (> {MANY_SHAPES})")
@@ -1045,34 +1443,34 @@ def main() -> int:
             anomalies.append(
                 f'{p["name"]}: water: true on kind {p["kind"]} (not a child); own paths emitted with class="water"'
             )
-        if p["kind"] in ("sea", "coast", "inland") and "position" not in p:
-            anomalies.append(f"{p['name']}: kind {p['kind']} without position")
-
-    for colour, owners in by_colour.items():
-        if len(owners) > 1:
-            anomalies.append(f"png colour {list(colour)} shared by {', '.join(owners)}")
 
     colours, counts = np.unique(img.reshape(-1, 3), axis=0, return_counts=True)
     for colour, count in zip(colours.tolist(), counts.tolist()):
-        if tuple(colour) in BORDER_COLOURS or tuple(colour) in by_colour:
+        if tuple(colour) in BORDER_COLOURS or tuple(colour) in province_colours or tuple(colour) == void:
             continue
         anomalies.append(f"PNG colour {colour} ({count} px) matches no province; assigned as border")
+
+    centres = place_centers(provinces, labels, args.center_offset, anomalies)
+    notes = trace_notes(img, provinces, info, void, centres, args.center_offset)
 
     svg = build_svg(provinces, province_d, width, height)
     svg_bytes = len(svg.encode())
     mismatches = arc_consistency(arcs, province_d, args.smooth)
 
     # fidelity: measurement render, one index colour per province / child, vs the label image
+    # (the void is not map: IoU and the coverage counts leave it out; "outside" keeps it, since a
+    # province spilling into the void is rendered where it should not be, like into a neighbour)
     fills = {p["name"]: index_colour(i) for i, p in enumerate(provinces)}
     measure = render(build_svg(provinces, province_d, width, height, fills), width, height)
     decoded = decode_labels(measure, len(provinces))
+    keep = ~info.void
     outside: dict[str, int] = {}
     for i, p in enumerate(provinces):
         t = traced[p["name"]]
         mask = labels == i
         outside[p["name"]] = int(np.count_nonzero((decoded == i) & ~mask))
         if t.pixels:
-            t.iou = iou(decoded == i, mask)
+            t.iou = iou((decoded == i) & keep, mask)
 
     # gaps: the real document as displayed, fills only (no stroke to mask gaps)
     real = render(build_svg(provinces, province_d, width, height, strokes=False), width, height)
@@ -1081,24 +1479,26 @@ def main() -> int:
     province_px = info.raw >= 0
     m_alpha = measure[:, :, 3]
     stats = RenderStats(
-        total=width * height,
-        unmatched=int(np.count_nonzero(decoded == -1)),
-        unmatched_empty=int(np.count_nonzero(m_alpha == 0)),
-        background=int(np.count_nonzero(empty)),
+        total=int(np.count_nonzero(keep)),
+        unmatched=int(np.count_nonzero((decoded == -1) & keep)),
+        unmatched_empty=int(np.count_nonzero((m_alpha == 0) & keep)),
+        background=int(np.count_nonzero(empty & keep)),
         background_on_province=int(np.count_nonzero(empty & province_px)),
-        background_on_black=int(np.count_nonzero(empty & info.black)),
-        partial=int(np.count_nonzero((alpha > 0) & (alpha < 255))),
+        background_on_black=int(np.count_nonzero(empty & info.black & keep)),
+        partial=int(np.count_nonzero((alpha > 0) & (alpha < 255) & keep)),
         outside=sum(outside.values()),
         outside_worst=max(outside.items(), key=lambda kv: kv[1]),
-        uncovered=int(np.count_nonzero(m_alpha == 0)),
-        uncovered_partial=int(np.count_nonzero((m_alpha > 0) & (m_alpha < 255))),
+        uncovered=int(np.count_nonzero((m_alpha == 0) & keep)),
+        uncovered_partial=int(np.count_nonzero((m_alpha > 0) & (m_alpha < 255) & keep)),
     )
     internal = [a for a in arcs if a.internal]
+    frame = [a for a in arcs if a.frame]
     tstats = TopoStats(
         labels=info,
         arcs=len(arcs),
         internal=len(internal),
-        edge_arcs=len(arcs) - len(internal),
+        edge_arcs=len(frame),
+        void_arcs=len(arcs) - len(internal) - len(frame),
         closed=sum(a.closed for a in arcs),
         exact=sum(a.exact for a in arcs),
         nodes=len(topo.nodes),
@@ -1107,7 +1507,7 @@ def main() -> int:
         degree=topo.degree,
         mismatches=mismatches,
     )
-    report = build_report(traced, anomalies, svg_bytes, args.epsilon, args.min_area, args.smooth, stats, tstats)
+    report = build_report(traced, anomalies, svg_bytes, args.epsilon, args.min_area, args.smooth, stats, tstats, notes)
 
     (folder / "map.svg").write_text(svg)
     (folder / "report.txt").write_text(report)

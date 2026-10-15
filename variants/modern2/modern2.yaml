@@ -1,0 +1,942 @@
+name: Modern Diplomacy II
+revision: 1
+year: 1994
+centers_to_win: 33
+min_players: 2
+provinces:
+  - name: Adana
+    code: ADA
+    kind: coast
+    supply_center: true
+    links:
+      army: [Anatolia, Ankara, Armenia, Iran, Iraq, Syria]
+      fleet: [Anatolia, Eastern Mediterranean, Syria]
+  - name: Adriatic Sea
+    code: ADR
+    kind: sea
+    links:
+      fleet: [Albania, Apulia, Croatia, Ionian Sea, Serbia, Venice]
+  - name: Aegean Sea
+    code: AEG
+    kind: sea
+    links:
+      fleet: [Eastern Mediterranean, Greece, Ionian Sea, Istanbul, Izmir]
+  - name: Albania
+    code: ALB
+    kind: coast
+    links:
+      army: [Greece, Macedonia, Serbia]
+      fleet: [Adriatic Sea, Greece, Ionian Sea, Serbia]
+  - name: Alexandria
+    code: ALE
+    kind: coast
+    supply_center: true
+    links:
+      army: [Aswan, Cairo, Eastern Sahara]
+      fleet: [Cairo, Eastern Mediterranean, Eastern Sahara, Libyan Sea]
+  - name: Algeria
+    code: ALG
+    kind: coast
+    links:
+      army: [Libya, Morocco, Tunisia, Western Sahara]
+      fleet: [Morocco, Sea of Gibraltar, Tunisia, Western Mediterranean]
+  - name: Alsace
+    code: ALS
+    kind: inland
+    links:
+      army: [Belgium, Lyon, Munich, Paris, Picardy, Ruhr, Switzerland]
+  - name: Anatolia
+    code: ANA
+    kind: coast
+    links:
+      army: [Adana, Ankara, Izmir]
+      fleet: [Adana, Eastern Mediterranean, Izmir]
+  - name: Andalucia
+    code: AND
+    kind: coast
+    links:
+      army: [Barcelona, Gibraltar, Madrid, Seville]
+      fleet: [Barcelona, Gibraltar, Sea of Gibraltar, Western Mediterranean]
+  - name: Ankara
+    code: ANK
+    kind: coast
+    supply_center: true
+    links:
+      army: [Adana, Anatolia, Armenia, Georgia, Istanbul, Izmir]
+      fleet: [Eastern Black Sea, Georgia, Istanbul, Western Black Sea]
+  - name: Apulia
+    code: APU
+    kind: coast
+    links:
+      army: [Naples, Rome, Venice]
+      fleet: [Adriatic Sea, Ionian Sea, Naples, Venice]
+  - name: Arabian Sea
+    code: ARA
+    kind: sea
+    links:
+      fleet: [Iran/South, Persian Gulf, Red Sea, Saudi Arabia]
+  - name: Arctic Ocean
+    code: ARC
+    kind: sea
+    links:
+      fleet: [Barents Sea, Iceland, North Atlantic Ocean, Norwegian Sea]
+  - name: Armenia
+    code: ARM
+    kind: inland
+    links:
+      army: [Adana, Ankara, Azerbaijan, Georgia, Iran]
+  - name: Aswan
+    code: ASW
+    kind: coast
+    supply_center: true
+    links:
+      army: [Alexandria, Cairo, Eastern Sahara]
+      fleet: [Cairo, Red Sea]
+  - name: Austria
+    code: AUS
+    kind: inland
+    supply_center: true
+    links:
+      army: [Croatia, Czech Republic, Hungary, Milan, Munich, Saxony, Slovakia, Switzerland, Venice]
+  - name: Auvergne
+    code: AUV
+    kind: coast
+    links:
+      army: [Barcelona, Bordeaux, Lyon, Marseilles, Navarra, Paris]
+      fleet: [Barcelona, Gulf of Lyon, Marseilles]
+  - name: Azerbaijan
+    code: AZE
+    kind: coast
+    links:
+      army: [Armenia, Caucasus, Georgia, Iran]
+      fleet: [Caspian Sea, Caucasus, Iran/North]
+  - name: Baltic Sea
+    code: BAL
+    kind: sea
+    links:
+      fleet: [Bhm. Sea, Gdansk, Gulf of Bothnia, Latvia, Lithuania, Prussia, Sweden]
+  - name: Barcelona
+    code: BCN
+    kind: coast
+    supply_center: true
+    links:
+      army: [Andalucia, Auvergne, Madrid, Navarra]
+      fleet: [Andalucia, Auvergne, Gulf of Lyon, Western Mediterranean]
+  - name: Barents Sea
+    code: BAR
+    kind: sea
+    links:
+      fleet: [Arctic Ocean, Lapland, Murmansk, Norwegian Sea, Urals, White Sea]
+  - name: Bay of Biscay
+    code: BIS
+    kind: sea
+    links:
+      fleet: [Bordeaux, Brittany, English Channel, Mid-Atlantic Ocean, Navarra]
+  - name: Belgium
+    code: BEL
+    kind: coast
+    supply_center: true
+    links:
+      army: [Alsace, Holland, Picardy, Ruhr]
+      fleet: [English Channel, Holland, North Sea, Picardy]
+  - name: Berlin
+    code: BER
+    kind: coast
+    supply_center: true
+    links:
+      army: [Frankfurt, Hamburg, Prussia, Saxony, Silecia]
+      fleet: [Bhm. Sea, Hamburg, Prussia]
+  - name: Bhm. Sea
+    code: BHM
+    kind: sea
+    links:
+      fleet: [Baltic Sea, Berlin, Denmark, Hamburg, Prussia, Sweden]
+  - name: Bielorussia
+    code: BIE
+    kind: inland
+    supply_center: true
+    links:
+      army: [Central Russian Plateau, Kiev, Krakow, Latvia, Lithuania, Moscow, Podolia, Warsaw]
+  - name: Bordeaux
+    code: BOR
+    kind: coast
+    supply_center: true
+    links:
+      army: [Auvergne, Brittany, Navarra, Paris]
+      fleet: [Bay of Biscay, Brittany, Navarra]
+  - name: Bosnia
+    code: BOS
+    kind: inland
+    links:
+      army: [Croatia, Serbia]
+  - name: Brittany
+    code: BRI
+    kind: coast
+    links:
+      army: [Bordeaux, Paris, Picardy]
+      fleet: [Bay of Biscay, Bordeaux, English Channel, Picardy]
+  - name: Bulgaria
+    code: BUL
+    kind: coast
+    supply_center: true
+    links:
+      army: [Greece, Istanbul, Macedonia, Rumania, Serbia]
+      fleet: [Istanbul, Rumania, Western Black Sea]
+  - name: Cairo
+    code: CAI
+    kind: coast
+    supply_center: true
+    links:
+      army: [Alexandria, Aswan, Israel, Sinai Peninsula]
+      fleet: [Alexandria, Aswan, Eastern Mediterranean, Israel, Red Sea, Sinai Peninsula]
+  - name: Caspian Sea
+    code: CAS
+    kind: sea
+    links:
+      fleet: [Azerbaijan, Caucasus, Iran/North, Kazakhstan, Volga]
+  - name: Caucasus
+    code: CAU
+    kind: coast
+    links:
+      army: [Azerbaijan, Georgia, Rostov, Volga]
+      fleet: [Azerbaijan, Caspian Sea, Volga]
+  - name: Central Russian Plateau
+    code: CRP
+    kind: inland
+    links:
+      army: [Bielorussia, Kharkov, Kiev, Moscow, Volga]
+  - name: Clyde
+    code: CLY
+    kind: coast
+    links:
+      army: [Edinburgh, Liverpool]
+      fleet: [Edinburgh, Liverpool, North Atlantic Ocean, Norwegian Sea]
+  - name: Croatia
+    code: CRO
+    kind: coast
+    supply_center: true
+    links:
+      army: [Austria, Bosnia, Hungary, Serbia, Venice]
+      fleet: [Adriatic Sea, Serbia, Venice]
+  - name: Czech Republic
+    code: CZE
+    kind: inland
+    supply_center: true
+    links:
+      army: [Austria, Krakow, Saxony, Silecia, Slovakia]
+  - name: Denmark
+    code: DEN
+    kind: coast
+    supply_center: true
+    links:
+      army: [Hamburg, Sweden]
+      fleet: [Bhm. Sea, Hamburg, Heligoland Bight, North Sea, Skagerrak, Sweden]
+  - name: Donetsk
+    code: DON
+    kind: coast
+    links:
+      army: [Kharkov, Kiev, Rostov, Sevastopol, Volga]
+      fleet: [Eastern Black Sea, Rostov, Sevastopol]
+  - name: Eastern Black Sea
+    code: EBS
+    kind: sea
+    links:
+      fleet: [Ankara, Donetsk, Georgia, Rostov, Sevastopol, Western Black Sea]
+  - name: Eastern Mediterranean
+    code: EAS
+    kind: sea
+    links:
+      fleet: [Adana, Aegean Sea, Alexandria, Anatolia, Cairo, Ionian Sea, Israel, Izmir, Libyan Sea, Syria]
+  - name: Eastern Sahara
+    code: ESA
+    kind: coast
+    links:
+      army: [Alexandria, Aswan, Libya]
+      fleet: [Alexandria, Libya, Libyan Sea]
+  - name: Edinburgh
+    code: EDI
+    kind: coast
+    supply_center: true
+    links:
+      army: [Clyde, Liverpool, Yorkshire]
+      fleet: [Clyde, North Sea, Norwegian Sea, Yorkshire]
+  - name: English Channel
+    code: ENG
+    kind: sea
+    links:
+      fleet: [Bay of Biscay, Belgium, Brittany, Irish Sea, London, Mid-Atlantic Ocean, North Sea, Picardy, Wales]
+  - name: Estonia
+    code: EST
+    kind: coast
+    links:
+      army: [Latvia, St. Petersburg]
+      fleet: [Gulf of Bothnia, Latvia, St. Petersburg]
+  - name: Finland
+    code: FIN
+    kind: coast
+    links:
+      army: [Lapland, Murmansk, St. Petersburg, Sweden]
+      fleet: [Gulf of Bothnia, St. Petersburg, Sweden]
+  - name: Frankfurt
+    code: FRA
+    kind: inland
+    supply_center: true
+    links:
+      army: [Berlin, Hamburg, Munich, Ruhr, Saxony]
+  - name: Gdansk
+    code: GDA
+    kind: coast
+    supply_center: true
+    links:
+      army: [Lithuania, Prussia, Warsaw]
+      fleet: [Baltic Sea, Lithuania, Prussia]
+  - name: Georgia
+    code: GEO
+    kind: coast
+    supply_center: true
+    links:
+      army: [Ankara, Armenia, Azerbaijan, Caucasus, Rostov]
+      fleet: [Ankara, Eastern Black Sea, Rostov]
+  - name: Gibraltar
+    code: GIB
+    kind: coast
+    supply_center: true
+    links:
+      army: [Andalucia, Seville]
+      fleet: [Andalucia, Sea of Gibraltar, Seville, South Atlantic Ocean]
+  - name: Gorky
+    code: GOR
+    kind: inland
+    supply_center: true
+    links:
+      army: [Moscow, Murmansk, St. Petersburg, Urals, Volga]
+  - name: Greece
+    code: GRE
+    kind: coast
+    supply_center: true
+    links:
+      army: [Albania, Bulgaria, Istanbul, Macedonia]
+      fleet: [Aegean Sea, Albania, Ionian Sea, Istanbul]
+  - name: Gulf of Bothnia
+    code: BOT
+    kind: sea
+    links:
+      fleet: [Baltic Sea, Estonia, Finland, Latvia, St. Petersburg, Sweden]
+  - name: Gulf of Lyon
+    code: LYO
+    kind: sea
+    links:
+      fleet: [Auvergne, Barcelona, Ligurian Sea, Marseilles, Tyrrhenian Sea, Western Mediterranean]
+  - name: Hamburg
+    code: HAM
+    kind: coast
+    supply_center: true
+    links:
+      army: [Berlin, Denmark, Frankfurt, Holland, Ruhr]
+      fleet: [Berlin, Bhm. Sea, Denmark, Heligoland Bight, Holland]
+  - name: Heligoland Bight
+    code: HEL
+    kind: sea
+    links:
+      fleet: [Denmark, Hamburg, Holland, North Sea]
+  - name: Holland
+    code: HOL
+    kind: coast
+    supply_center: true
+    links:
+      army: [Belgium, Hamburg, Ruhr]
+      fleet: [Belgium, Hamburg, Heligoland Bight, North Sea]
+  - name: Hungary
+    code: HUN
+    kind: inland
+    supply_center: true
+    links:
+      army: [Austria, Croatia, Podolia, Rumania, Serbia, Slovakia]
+  - name: Iceland
+    code: ICE
+    kind: coast
+    links:
+      fleet: [Arctic Ocean, North Atlantic Ocean, Norwegian Sea]
+  - name: Ionian Sea
+    code: ION
+    kind: sea
+    links:
+      fleet: [Adriatic Sea, Aegean Sea, Albania, Apulia, Eastern Mediterranean, Greece, Libyan Sea, Maltese Sea, Naples]
+  - name: Iran
+    code: IRN
+    kind: coast
+    supply_center: true
+    coasts:
+      - name: North
+        links: {fleet: [Azerbaijan, Caspian Sea, Kazakhstan]}
+      - name: South
+        links: {fleet: [Arabian Sea, Iraq, Persian Gulf]}
+    links:
+      army: [Adana, Armenia, Azerbaijan, Iraq, Kazakhstan]
+  - name: Iraq
+    code: IRQ
+    kind: coast
+    links:
+      army: [Adana, Iran, Jordan, Saudi Arabia, Syria]
+      fleet: [Iran/South, Persian Gulf, Saudi Arabia]
+  - name: Ireland
+    code: IRE
+    kind: coast
+    supply_center: true
+    links:
+      fleet: [Irish Sea, North Atlantic Ocean]
+  - name: Irish Sea
+    code: IRI
+    kind: sea
+    links:
+      fleet: [English Channel, Ireland, Liverpool, Mid-Atlantic Ocean, North Atlantic Ocean, Wales]
+  - name: Israel
+    code: ISR
+    kind: coast
+    supply_center: true
+    links:
+      army: [Cairo, Jordan, Sinai Peninsula, Syria]
+      fleet: [Cairo, Eastern Mediterranean, Syria]
+  - name: Istanbul
+    code: IST
+    kind: coast
+    supply_center: true
+    links:
+      army: [Ankara, Bulgaria, Greece, Izmir]
+      fleet: [Aegean Sea, Ankara, Bulgaria, Greece, Izmir, Western Black Sea]
+  - name: Izmir
+    code: IZM
+    kind: coast
+    supply_center: true
+    links:
+      army: [Anatolia, Ankara, Istanbul]
+      fleet: [Aegean Sea, Anatolia, Eastern Mediterranean, Istanbul]
+  - name: Jordan
+    code: JOR
+    kind: coast
+    links:
+      army: [Iraq, Israel, Saudi Arabia, Sinai Peninsula, Syria]
+      fleet: [Red Sea, Saudi Arabia, Sinai Peninsula]
+  - name: Kazakhstan
+    code: KAZ
+    kind: coast
+    links:
+      army: [Iran, Siberia, Volga]
+      fleet: [Caspian Sea, Iran/North, Volga]
+  - name: Kharkov
+    code: KHA
+    kind: inland
+    supply_center: true
+    links:
+      army: [Central Russian Plateau, Donetsk, Kiev, Volga]
+  - name: Kiev
+    code: KIE
+    kind: inland
+    supply_center: true
+    links:
+      army: [Bielorussia, Central Russian Plateau, Donetsk, Kharkov, Odessa, Podolia, Sevastopol]
+  - name: Krakow
+    code: KRA
+    kind: inland
+    supply_center: true
+    links:
+      army: [Bielorussia, Czech Republic, Podolia, Silecia, Slovakia, Warsaw]
+  - name: Lapland
+    code: LAP
+    kind: coast
+    links:
+      army: [Finland, Murmansk, Norway, Sweden]
+      fleet: [Barents Sea, Murmansk, Norway, Norwegian Sea]
+  - name: Latvia
+    code: LAT
+    kind: coast
+    links:
+      army: [Bielorussia, Estonia, Lithuania, Moscow, St. Petersburg]
+      fleet: [Baltic Sea, Estonia, Gulf of Bothnia, Lithuania]
+  - name: Libya
+    code: LIB
+    kind: coast
+    supply_center: true
+    links:
+      army: [Algeria, Eastern Sahara, Tunisia, Western Sahara]
+      fleet: [Eastern Sahara, Libyan Sea, Maltese Sea, Tunisia]
+  - name: Libyan Sea
+    code: LBS
+    kind: sea
+    links:
+      fleet: [Alexandria, Eastern Mediterranean, Eastern Sahara, Ionian Sea, Libya, Maltese Sea]
+  - name: Ligurian Sea
+    code: LIG
+    kind: sea
+    links:
+      fleet: [Gulf of Lyon, Marseilles, Monaco, Piedmont, Rome, Tuscany, Tyrrhenian Sea]
+  - name: Lithuania
+    code: LIT
+    kind: coast
+    supply_center: true
+    links:
+      army: [Bielorussia, Gdansk, Latvia, Warsaw]
+      fleet: [Baltic Sea, Gdansk, Latvia]
+  - name: Liverpool
+    code: LVP
+    kind: coast
+    supply_center: true
+    links:
+      army: [Clyde, Edinburgh, Wales, Yorkshire]
+      fleet: [Clyde, Irish Sea, North Atlantic Ocean, Wales]
+  - name: London
+    code: LON
+    kind: coast
+    supply_center: true
+    links:
+      army: [Wales, Yorkshire]
+      fleet: [English Channel, North Sea, Wales, Yorkshire]
+  - name: Lyon
+    code: LYN
+    kind: inland
+    supply_center: true
+    links:
+      army: [Alsace, Auvergne, Marseilles, Paris, Switzerland]
+  - name: Macedonia
+    code: MAC
+    kind: inland
+    links:
+      army: [Albania, Bulgaria, Greece, Serbia]
+  - name: Madrid
+    code: MAD
+    kind: inland
+    supply_center: true
+    links:
+      army: [Andalucia, Barcelona, Navarra, Portugal, Seville]
+  - name: Maltese Sea
+    code: MAL
+    kind: sea
+    links:
+      fleet: [Ionian Sea, Libya, Libyan Sea, Naples, Tunisia, Tyrrhenian Sea]
+  - name: Marseilles
+    code: MAR
+    kind: coast
+    supply_center: true
+    links:
+      army: [Auvergne, Lyon, Monaco, Piedmont, Switzerland]
+      fleet: [Auvergne, Gulf of Lyon, Ligurian Sea, Monaco]
+  - name: Mid-Atlantic Ocean
+    code: MAO
+    kind: sea
+    links:
+      fleet: [Bay of Biscay, English Channel, Irish Sea, Navarra, North Atlantic Ocean, Portugal, South Atlantic Ocean]
+  - name: Milan
+    code: MIL
+    kind: inland
+    supply_center: true
+    links:
+      army: [Austria, Piedmont, Switzerland, Tuscany, Venice]
+  - name: Moldavia
+    code: MOL
+    kind: inland
+    links:
+      army: [Odessa, Podolia, Rumania]
+  - name: Monaco
+    code: MON
+    kind: coast
+    supply_center: true
+    links:
+      army: [Marseilles, Piedmont]
+      fleet: [Ligurian Sea, Marseilles, Piedmont]
+  - name: Morocco
+    code: MOR
+    kind: coast
+    supply_center: true
+    links:
+      army: [Algeria, Western Sahara]
+      fleet: [Algeria, Sea of Gibraltar, South Atlantic Ocean]
+  - name: Moscow
+    code: MOS
+    kind: inland
+    supply_center: true
+    links:
+      army: [Bielorussia, Central Russian Plateau, Gorky, Latvia, St. Petersburg, Volga]
+  - name: Munich
+    code: MUN
+    kind: inland
+    supply_center: true
+    links:
+      army: [Alsace, Austria, Frankfurt, Ruhr, Saxony, Switzerland]
+  - name: Murmansk
+    code: MUR
+    kind: coast
+    supply_center: true
+    links:
+      army: [Finland, Gorky, Lapland, St. Petersburg, Urals]
+      fleet: [Barents Sea, Lapland, Urals, White Sea]
+  - name: Naples
+    code: NAP
+    kind: coast
+    supply_center: true
+    links:
+      army: [Apulia, Rome]
+      fleet: [Apulia, Ionian Sea, Maltese Sea, Rome, Tyrrhenian Sea]
+  - name: Navarra
+    code: NAV
+    kind: coast
+    links:
+      army: [Auvergne, Barcelona, Bordeaux, Madrid, Portugal]
+      fleet: [Bay of Biscay, Bordeaux, Mid-Atlantic Ocean, Portugal]
+  - name: North Atlantic Ocean
+    code: NAO
+    kind: sea
+    links:
+      fleet: [Arctic Ocean, Clyde, Iceland, Ireland, Irish Sea, Liverpool, Mid-Atlantic Ocean, Norwegian Sea]
+  - name: North Sea
+    code: NTH
+    kind: sea
+    links:
+      fleet: [Belgium, Denmark, Edinburgh, English Channel, Heligoland Bight, Holland, London, Norway, Norwegian Sea, Skagerrak, Yorkshire]
+  - name: Norway
+    code: NWY
+    kind: coast
+    supply_center: true
+    links:
+      army: [Lapland, Sweden]
+      fleet: [Lapland, North Sea, Norwegian Sea, Skagerrak, Sweden]
+  - name: Norwegian Sea
+    code: NWG
+    kind: sea
+    links:
+      fleet: [Arctic Ocean, Barents Sea, Clyde, Edinburgh, Iceland, Lapland, North Atlantic Ocean, North Sea, Norway]
+  - name: Odessa
+    code: ODE
+    kind: coast
+    supply_center: true
+    links:
+      army: [Kiev, Moldavia, Podolia, Rumania, Sevastopol]
+      fleet: [Rumania, Sevastopol, Western Black Sea]
+  - name: Paris
+    code: PAR
+    kind: inland
+    supply_center: true
+    links:
+      army: [Alsace, Auvergne, Bordeaux, Brittany, Lyon, Picardy]
+  - name: Persian Gulf
+    code: PER
+    kind: sea
+    links:
+      fleet: [Arabian Sea, Iran/South, Iraq, Saudi Arabia]
+  - name: Picardy
+    code: PIC
+    kind: coast
+    links:
+      army: [Alsace, Belgium, Brittany, Paris]
+      fleet: [Belgium, Brittany, English Channel]
+  - name: Piedmont
+    code: PIE
+    kind: coast
+    links:
+      army: [Marseilles, Milan, Monaco, Switzerland, Tuscany]
+      fleet: [Ligurian Sea, Monaco, Tuscany]
+  - name: Podolia
+    code: POD
+    kind: inland
+    links:
+      army: [Bielorussia, Hungary, Kiev, Krakow, Moldavia, Odessa, Rumania, Slovakia]
+  - name: Portugal
+    code: POR
+    kind: coast
+    supply_center: true
+    links:
+      army: [Madrid, Navarra, Seville]
+      fleet: [Mid-Atlantic Ocean, Navarra, Seville, South Atlantic Ocean]
+  - name: Prussia
+    code: PRU
+    kind: coast
+    links:
+      army: [Berlin, Gdansk, Silecia, Warsaw]
+      fleet: [Baltic Sea, Berlin, Bhm. Sea, Gdansk]
+  - name: Red Sea
+    code: RED
+    kind: sea
+    links:
+      fleet: [Arabian Sea, Aswan, Cairo, Jordan, Saudi Arabia, Sinai Peninsula]
+  - name: Rome
+    code: ROM
+    kind: coast
+    supply_center: true
+    links:
+      army: [Apulia, Naples, Tuscany, Venice]
+      fleet: [Ligurian Sea, Naples, Tuscany, Tyrrhenian Sea]
+  - name: Rostov
+    code: ROS
+    kind: coast
+    supply_center: true
+    links:
+      army: [Caucasus, Donetsk, Georgia, Volga]
+      fleet: [Donetsk, Eastern Black Sea, Georgia, Volga]
+  - name: Ruhr
+    code: RUH
+    kind: inland
+    links:
+      army: [Alsace, Belgium, Frankfurt, Hamburg, Holland, Munich]
+  - name: Rumania
+    code: RUM
+    kind: coast
+    supply_center: true
+    links:
+      army: [Bulgaria, Hungary, Moldavia, Odessa, Podolia, Serbia]
+      fleet: [Bulgaria, Odessa, Western Black Sea]
+  - name: Saudi Arabia
+    code: SAU
+    kind: coast
+    supply_center: true
+    links:
+      army: [Iraq, Jordan]
+      fleet: [Arabian Sea, Iraq, Jordan, Persian Gulf, Red Sea]
+  - name: Saxony
+    code: SAX
+    kind: inland
+    links:
+      army: [Austria, Berlin, Czech Republic, Frankfurt, Munich, Silecia]
+  - name: Sea of Gibraltar
+    code: SOG
+    kind: sea
+    links:
+      fleet: [Algeria, Andalucia, Gibraltar, Morocco, South Atlantic Ocean, Western Mediterranean]
+  - name: Serbia
+    code: SER
+    kind: coast
+    supply_center: true
+    links:
+      army: [Albania, Bosnia, Bulgaria, Croatia, Hungary, Macedonia, Rumania]
+      fleet: [Adriatic Sea, Albania, Croatia]
+  - name: Sevastopol
+    code: SEV
+    kind: coast
+    supply_center: true
+    links:
+      army: [Donetsk, Kiev, Odessa]
+      fleet: [Donetsk, Eastern Black Sea, Odessa, Western Black Sea]
+  - name: Seville
+    code: SVL
+    kind: coast
+    supply_center: true
+    links:
+      army: [Andalucia, Gibraltar, Madrid, Portugal]
+      fleet: [Gibraltar, Portugal, South Atlantic Ocean]
+  - name: Siberia
+    code: SIB
+    kind: inland
+    links:
+      army: [Kazakhstan, Urals, Volga]
+  - name: Silecia
+    code: SIL
+    kind: inland
+    links:
+      army: [Berlin, Czech Republic, Krakow, Prussia, Saxony, Warsaw]
+  - name: Sinai Peninsula
+    code: SIN
+    kind: coast
+    links:
+      army: [Cairo, Israel, Jordan]
+      fleet: [Cairo, Jordan, Red Sea]
+  - name: Skagerrak
+    code: SKA
+    kind: sea
+    links:
+      fleet: [Denmark, North Sea, Norway, Sweden]
+  - name: Slovakia
+    code: SLO
+    kind: inland
+    links:
+      army: [Austria, Czech Republic, Hungary, Krakow, Podolia]
+  - name: South Atlantic Ocean
+    code: SAO
+    kind: sea
+    links:
+      fleet: [Gibraltar, Mid-Atlantic Ocean, Morocco, Portugal, Sea of Gibraltar, Seville]
+  - name: St. Petersburg
+    code: STP
+    kind: coast
+    supply_center: true
+    links:
+      army: [Estonia, Finland, Gorky, Latvia, Moscow, Murmansk]
+      fleet: [Estonia, Finland, Gulf of Bothnia]
+  - name: Sweden
+    code: SWE
+    kind: coast
+    supply_center: true
+    links:
+      army: [Denmark, Finland, Lapland, Norway]
+      fleet: [Baltic Sea, Bhm. Sea, Denmark, Finland, Gulf of Bothnia, Norway, Skagerrak]
+  - name: Switzerland
+    code: SWI
+    kind: inland
+    supply_center: true
+    links:
+      army: [Alsace, Austria, Lyon, Marseilles, Milan, Munich, Piedmont]
+  - name: Syria
+    code: SYR
+    kind: coast
+    links:
+      army: [Adana, Iraq, Israel, Jordan]
+      fleet: [Adana, Eastern Mediterranean, Israel]
+  - name: Tunisia
+    code: TUN
+    kind: coast
+    supply_center: true
+    links:
+      army: [Algeria, Libya]
+      fleet: [Algeria, Libya, Maltese Sea, Tyrrhenian Sea, Western Mediterranean]
+  - name: Tuscany
+    code: TUS
+    kind: coast
+    links:
+      army: [Milan, Piedmont, Rome, Venice]
+      fleet: [Ligurian Sea, Piedmont, Rome]
+  - name: Tyrrhenian Sea
+    code: TYS
+    kind: sea
+    links:
+      fleet: [Gulf of Lyon, Ligurian Sea, Maltese Sea, Naples, Rome, Tunisia, Western Mediterranean]
+  - name: Urals
+    code: URA
+    kind: coast
+    links:
+      army: [Gorky, Murmansk, Siberia, Volga]
+      fleet: [Barents Sea, Murmansk, White Sea]
+  - name: Venice
+    code: VEN
+    kind: coast
+    supply_center: true
+    links:
+      army: [Apulia, Austria, Croatia, Milan, Rome, Tuscany]
+      fleet: [Adriatic Sea, Apulia, Croatia]
+  - name: Volga
+    code: VOL
+    kind: coast
+    links:
+      army: [Caucasus, Central Russian Plateau, Donetsk, Gorky, Kazakhstan, Kharkov, Moscow, Rostov, Siberia, Urals]
+      fleet: [Caspian Sea, Caucasus, Kazakhstan, Rostov]
+  - name: Wales
+    code: WAL
+    kind: coast
+    links:
+      army: [Liverpool, London, Yorkshire]
+      fleet: [English Channel, Irish Sea, Liverpool, London]
+  - name: Warsaw
+    code: WAR
+    kind: inland
+    supply_center: true
+    links:
+      army: [Bielorussia, Gdansk, Krakow, Lithuania, Prussia, Silecia]
+  - name: Western Black Sea
+    code: WBS
+    kind: sea
+    links:
+      fleet: [Ankara, Bulgaria, Eastern Black Sea, Istanbul, Odessa, Rumania, Sevastopol]
+  - name: Western Mediterranean
+    code: WES
+    kind: sea
+    links:
+      fleet: [Algeria, Andalucia, Barcelona, Gulf of Lyon, Sea of Gibraltar, Tunisia, Tyrrhenian Sea]
+  - name: Western Sahara
+    code: WSA
+    kind: inland
+    links:
+      army: [Algeria, Libya, Morocco]
+  - name: White Sea
+    code: WHI
+    kind: sea
+    links:
+      fleet: [Barents Sea, Murmansk, Urals]
+  - name: Yorkshire
+    code: YOR
+    kind: coast
+    links:
+      army: [Edinburgh, Liverpool, London, Wales]
+      fleet: [Edinburgh, London, North Sea]
+  - name: Sahara
+    code: SAH
+    kind: neutral
+  # Painted water crosses Rostov and Volga; it cannot be a child of either.
+  - name: Volga-Don Canal
+    code: VDC
+    kind: neutral
+    water: true
+  - name: Kazakhstan (waters)
+    kind: child
+    parent: Kazakhstan
+    water: true
+  - name: Siberia (waters)
+    kind: child
+    parent: Siberia
+    water: true
+  - name: St. Petersburg (waters)
+    kind: child
+    parent: St. Petersburg
+    water: true
+  - name: Denmark (waters)
+    kind: child
+    parent: Denmark
+    water: true
+  - name: Istanbul (waters)
+    kind: child
+    parent: Istanbul
+    water: true
+  - name: Cairo (canal)
+    kind: child
+    parent: Cairo
+    water: true
+  - name: Hamburg (canal)
+    kind: child
+    parent: Hamburg
+    water: true
+countries:
+  - name: Britain
+    color: [239, 196, 228]
+    home_centers: [Edinburgh, Gibraltar, Liverpool, London]
+    provinces: [Clyde, Edinburgh, Gibraltar, Liverpool, London, Wales, Yorkshire]
+    units: {Edinburgh: fleet, London: fleet, Liverpool: fleet, Gibraltar: fleet}
+  - name: Egypt
+    color: [114, 146, 103]
+    home_centers: [Alexandria, Aswan, Cairo]
+    provinces: [Alexandria, Aswan, Cairo, Eastern Sahara, Sinai Peninsula]
+    units: {Alexandria: fleet, Cairo: fleet, Aswan: army}
+  - name: France
+    color: [121, 175, 198]
+    home_centers: [Bordeaux, Lyon, Marseilles, Paris]
+    provinces: [Alsace, Auvergne, Bordeaux, Brittany, Lyon, Marseilles, Paris, Picardy]
+    units: {Marseilles: army, Paris: army, Bordeaux: fleet, Lyon: army}
+  - name: Germany
+    color: [160, 138, 117]
+    home_centers: [Berlin, Frankfurt, Hamburg, Munich]
+    provinces: [Berlin, Frankfurt, Hamburg, Munich, Ruhr, Saxony]
+    units: {Hamburg: fleet, Berlin: fleet, Munich: army, Frankfurt: army}
+  - name: Italy
+    color: [164, 196, 153]
+    home_centers: [Milan, Naples, Rome, Venice]
+    provinces: [Apulia, Milan, Naples, Piedmont, Rome, Tuscany, Venice]
+    units: {Milan: army, Rome: army, Naples: fleet, Venice: fleet}
+  - name: Poland
+    color: [196, 143, 133]
+    home_centers: [Gdansk, Krakow, Warsaw]
+    provinces: [Gdansk, Krakow, Prussia, Silecia, Warsaw]
+    units: {Warsaw: army, Krakow: army, Gdansk: fleet}
+  - name: Russia
+    color: [168, 126, 159]
+    home_centers: [Gorky, Moscow, Murmansk, Rostov, St. Petersburg]
+    provinces: [Caucasus, Central Russian Plateau, Gorky, Moscow, Murmansk, Rostov, Siberia, St. Petersburg, Urals, Volga]
+    units: {Moscow: army, Gorky: army, Murmansk: fleet, Rostov: fleet, St. Petersburg: fleet}
+  - name: Spain
+    color: [206, 154, 101]
+    home_centers: [Barcelona, Madrid, Seville]
+    provinces: [Andalucia, Barcelona, Madrid, Navarra, Seville]
+    units: {Barcelona: fleet, Madrid: army, Seville: army}
+  - name: Turkey
+    color: [234, 234, 175]
+    home_centers: [Adana, Ankara, Istanbul, Izmir]
+    provinces: [Adana, Anatolia, Ankara, Istanbul, Izmir]
+    units: {Istanbul: army, Ankara: fleet, Izmir: fleet, Adana: army}
+  - name: Ukraine
+    color: [120, 117, 122]
+    home_centers: [Kharkov, Kiev, Odessa, Sevastopol]
+    provinces: [Donetsk, Kharkov, Kiev, Odessa, Podolia, Sevastopol]
+    units: {Sevastopol: fleet, Kiev: army, Odessa: army, Kharkov: army}

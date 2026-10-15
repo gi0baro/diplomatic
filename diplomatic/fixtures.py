@@ -383,7 +383,7 @@ def parse_order(text, variant, phase, country):
     if match["move"] or match["retreat"]:
         dst, coast = province(match["move"] or match["retreat"])
         kind = OrderType.MOVE if match["move"] else OrderType.RETREAT
-        return unit, kind, _step(variant, unit, dst, coast, fleet)
+        return unit, kind, _step(variant, unit, phase.coasts.get(unit), dst, coast, fleet)
     if match["convoyed"]:
         src, _ = province(match["convoyed"])
         dst, _ = province(match["convoy_dst"])
@@ -406,11 +406,16 @@ def _coast(variant, territory, abbreviation):
     return names.index(COASTS[abbreviation])
 
 
-def _step(variant, unit, dst, coast, fleet):
-    #: a fleet reaching one coast only of a multi-coast province gets it, as in the client
+def _step(variant, unit, unit_coast, dst, coast, fleet):
+    #: a fleet reaching one coast only of a multi-coast province gets it, as in the client;
+    #: from a multi-coast province, only the coasts paired with the one the fleet is on count
     data = {"dst": dst}
     if dst in variant["multi_coasts"] and coast is None and fleet:
-        reach = [idx for idx, links in enumerate(variant["links"]["multi_coasts"][dst]) if unit in links]
+        reach = [
+            idx
+            for idx, links in enumerate(variant["links"]["multi_coasts"][dst])
+            if unit in links and (links[unit] is None or unit_coast in links[unit])
+        ]
         if len(reach) > 1:
             names = ", ".join(f"/{key}" for key, name in COASTS.items() if name in variant["coast_names"][dst])
             raise OrderError(f"{variant['codes'][dst]} needs a coast ({names})")

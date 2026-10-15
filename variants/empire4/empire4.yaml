@@ -1,0 +1,1105 @@
+name: "Fall of the American Empire IV"
+revision: 1
+year: 1999
+centers_to_win: 34
+min_players: 2
+provinces:
+  - name: "Anchorage"
+    code: ANC
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Yukon", "Vancouver", "Bering Sea", "Arctic Ocean", "Beaufort Sea", "Gulf of Alaska", "Queen Charlotte Sound"]
+      army: ["Yukon", "Northern BC", "Vancouver"]
+  - name: "Yukon"
+    code: YUK
+    kind: coast
+    links:
+      fleet: ["Anchorage", "North West Territories", "Beaufort Sea"]
+      army: ["Anchorage", "Northern BC", "North West Territories"]
+  - name: "Calgary"
+    code: CAL
+    kind: inland
+    supply_center: true
+    links:
+      army: ["Northern BC", "Vancouver", "North West Territories", "Saskatchewan", "Montana"]
+  - name: "Northern BC"
+    code: NBC
+    kind: inland
+    links:
+      army: ["Anchorage", "Yukon", "Calgary", "Vancouver", "North West Territories"]
+  - name: "Vancouver"
+    code: VAN
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Anchorage", "Washington", "Queen Charlotte Sound", "Straits of Juan de Fuca"]
+      army: ["Anchorage", "Calgary", "Northern BC", "Washington", "Idaho", "Montana"]
+  - name: "Abitibi"
+    code: ABI
+    kind: coast
+    links:
+      fleet: ["Ungava", "Northern Ontario", "Hudson Bay"]
+      army: ["Ungava", "Quebec", "Montreal", "Northern Ontario"]
+  - name: "Ungava"
+    code: UNG
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Abitibi", "Nunavut", "Labrador", "Hudson Bay", "Sea of Labrador"]
+      army: ["Abitibi", "Cote-Nord", "Quebec", "Nunavut", "Labrador"]
+  - name: "Cote-Nord"
+    code: CNO
+    kind: coast
+    links:
+      army: ["Ungava", "Quebec", "Labrador"]
+      fleet: ["Quebec", "Labrador", "Gulf of St-Lawrence"]
+  - name: "Quebec"
+    code: QUE
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Abitibi", "Ungava", "Cote-Nord", "Montreal", "Beauce", "Gaspesie"]
+      fleet: ["Cote-Nord", "Montreal", "Beauce", "Gaspesie", "Gulf of St-Lawrence"]
+  - name: "Montreal"
+    code: MTL
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Abitibi", "Quebec", "Beauce", "Northern Ontario", "Ontario"]
+      fleet: ["Quebec", "Beauce", "Ontario"]
+  - name: "Beauce"
+    code: BEA
+    kind: coast
+    links:
+      fleet: ["Quebec", "Montreal", "Gaspesie", "New York State", "Ontario"]
+      army: ["Quebec", "Montreal", "Gaspesie", "New York State", "Ontario", "Maine", "Vermont"]
+  - name: "Gaspesie"
+    code: GAS
+    kind: coast
+    links:
+      fleet: ["Quebec", "Beauce", "Gulf of St-Lawrence", "New Brunswick/North"]
+      army: ["Quebec", "Beauce", "Maine", "New Brunswick"]
+  - name: "San Francisco"
+    code: SFO
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Los Angeles", "Oregon", "West Coast"]
+      army: ["Los Angeles", "Oregon", "Nevada"]
+  - name: "Los Angeles"
+    code: LAX
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["San Francisco", "San Diego", "West Coast", "Gulf of Santa Catalina"]
+      army: ["San Francisco", "San Diego", "Nevada"]
+  - name: "San Diego"
+    code: SDC
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Los Angeles", "Baja California", "Gulf of Santa Catalina"]
+      army: ["Los Angeles", "Arizona", "Nevada", "Baja California"]
+  - name: "Dallas"
+    code: DAL
+    kind: inland
+    supply_center: true
+    links:
+      army: ["Houston", "San Antonio", "West Texas", "New Mexico", "Oklahoma", "Arkansas", "Louisiana"]
+  - name: "Houston"
+    code: HOU
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Dallas", "San Antonio", "Louisiana"]
+      fleet: ["San Antonio", "Louisiana", "Gulf of Mexico"]
+  - name: "San Antonio"
+    code: SAT
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Dallas", "Houston", "West Texas", "Coahuila", "Nuevo Leon"]
+      fleet: ["Houston", "Nuevo Leon", "Gulf of Mexico"]
+  - name: "West Texas"
+    code: WTX
+    kind: inland
+    links:
+      army: ["Dallas", "San Antonio", "New Mexico", "Chihuahua", "Coahuila"]
+  - name: "Minneapolis"
+    code: MIN
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Iowa", "Milwaukee", "Manitoba", "Western Ontario", "Dakotas"]
+      fleet: ["Milwaukee/North", "Western Ontario", "Lake Superior"]
+  - name: "Iowa"
+    code: IOW
+    kind: inland
+    links:
+      army: ["Minneapolis", "Chicago", "Milwaukee", "Nebraska", "Dakotas", "Missouri"]
+  - name: "Indiana"
+    code: IND
+    kind: coast
+    links:
+      fleet: ["Chicago", "Michigan", "Lake Michigan"]
+      army: ["Chicago", "Michigan", "Ohio", "Kentucky"]
+  - name: "Chicago"
+    code: CHI
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Iowa", "Indiana", "Milwaukee", "Missouri", "Kentucky"]
+      fleet: ["Indiana", "Milwaukee/East", "Missouri", "Lake Michigan", "Kentucky"]
+  - name: "Milwaukee"
+    code: MIL
+    kind: coast
+    supply_center: true
+    coasts:
+      - name: "North"
+        links:
+          fleet: ["Minneapolis", "Upper Peninsula", "Lake Superior"]
+      - name: "East"
+        links:
+          fleet: ["Chicago", "Upper Peninsula", "Lake Michigan"]
+    links:
+      army: ["Minneapolis", "Iowa", "Chicago", "Upper Peninsula"]
+  - name: "West Pennsylvania"
+    code: WPA
+    kind: coast
+    links:
+      fleet: ["New York State", "Lake Erie", "Ohio"]
+      army: ["New York State", "Philadelphia", "Ohio", "Washington DC", "West Virginia"]
+  - name: "New York State"
+    code: NYS
+    kind: coast
+    links:
+      fleet: ["Beauce", "West Pennsylvania", "New York City", "Ontario", "Lake Ontario", "Lake Erie"]
+      army: ["Beauce", "West Pennsylvania", "New York City", "Philadelphia", "Ontario", "Vermont", "Massachusetts"]
+  - name: "New York City"
+    code: NYC
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["New York State", "New Jersey", "Massachusetts", "Cape May"]
+      army: ["New York State", "New Jersey", "Philadelphia", "Massachusetts"]
+  - name: "New Jersey"
+    code: NJE
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["New York City", "Washington DC", "Cape May"]
+      army: ["New York City", "Philadelphia", "Washington DC"]
+  - name: "Philadelphia"
+    code: PHI
+    kind: inland
+    supply_center: true
+    links:
+      army: ["West Pennsylvania", "New York State", "New York City", "New Jersey", "Washington DC"]
+  - name: "Florida Panhandle"
+    code: FPH
+    kind: coast
+    links:
+      army: ["Jacksonville", "Tampa", "Deep South", "Georgia"]
+      fleet: ["Tampa", "Deep South", "Apalachee Bay"]
+  - name: "Jacksonville"
+    code: JAC
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Florida Panhandle", "Miami", "Tampa", "Georgia"]
+      fleet: ["Miami", "Georgia", "East Coast"]
+  - name: "Miami"
+    code: MIA
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Jacksonville", "Tampa", "East Coast", "Straits of Florida", "Apalachee Bay"]
+      army: ["Jacksonville", "Tampa"]
+  - name: "Tampa"
+    code: TAM
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Florida Panhandle", "Miami", "Apalachee Bay"]
+      army: ["Florida Panhandle", "Jacksonville", "Miami"]
+  - name: "Havana"
+    code: HAV
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Camaguey"]
+      fleet: ["Camaguey/North", "Camaguey/South", "Straits of Florida", "Straits of Yucatan", "West Caribbean Sea"]
+  - name: "Holguin"
+    code: HOL
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Camaguey"]
+      fleet: ["Camaguey/North", "Camaguey/South", "Bermuda Triangle", "Cayman Trench"]
+  - name: "Kingston"
+    code: KIN
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["East Caribbean Sea", "Cayman Trench", "West Caribbean Sea"]
+  - name: "Camaguey"
+    code: CAM
+    kind: coast
+    coasts:
+      - name: "North"
+        links:
+          fleet: ["Havana", "Holguin", "Bermuda Triangle", "Straits of Florida"]
+      - name: "South"
+        links:
+          fleet: ["Havana", "Holguin", "Cayman Trench", "West Caribbean Sea"]
+    links:
+      army: ["Havana", "Holguin"]
+  - name: "Guadalajara"
+    code: GUA
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Potosi", "Mexico", "Guerrero", "Durango"]
+      fleet: ["Guerrero", "Durango", "Coast of Mexico", "Gulf of California"]
+  - name: "Potosi"
+    code: PTS
+    kind: coast
+    links:
+      army: ["Guadalajara", "Veracruz", "Mexico", "Coahuila", "Nuevo Leon", "Durango"]
+      fleet: ["Veracruz", "Nuevo Leon", "Gulf of Campeche"]
+  - name: "Veracruz"
+    code: VER
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Potosi", "Tabasco", "Gulf of Campeche"]
+      army: ["Potosi", "Mexico", "Oaxaca", "Chiapas", "Tabasco"]
+  - name: "Mexico"
+    code: MEX
+    kind: inland
+    supply_center: true
+    links:
+      army: ["Guadalajara", "Potosi", "Veracruz", "Guerrero", "Oaxaca"]
+  - name: "Guerrero"
+    code: GUE
+    kind: coast
+    links:
+      fleet: ["Guadalajara", "Oaxaca", "Coast of Mexico"]
+      army: ["Guadalajara", "Mexico", "Oaxaca"]
+  - name: "Oaxaca"
+    code: OAX
+    kind: coast
+    links:
+      army: ["Veracruz", "Mexico", "Guerrero", "Chiapas"]
+      fleet: ["Guerrero", "Chiapas", "Coast of Mexico", "Gulf of Tehuantepec"]
+  - name: "Antioquia"
+    code: ANT
+    kind: coast
+    links:
+      fleet: ["Guajira", "Cali/North", "South Caribbean Sea"]
+      army: ["Guajira", "Vichada", "Bogota", "Cali"]
+  - name: "Guajira"
+    code: GJR
+    kind: coast
+    links:
+      fleet: ["Antioquia", "Venezuela", "South Caribbean Sea"]
+      army: ["Antioquia", "Vichada", "Venezuela"]
+  - name: "Vichada"
+    code: VIC
+    kind: inland
+    links:
+      army: ["Antioquia", "Guajira", "Bogota", "Venezuela"]
+  - name: "Bogota"
+    code: BOG
+    kind: inland
+    supply_center: true
+    links:
+      army: ["Antioquia", "Vichada", "Lima", "Ecuador", "Cali"]
+  - name: "Lima"
+    code: LIM
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Bogota", "Ecuador"]
+      fleet: ["Ecuador", "Galapagos", "Gulf of Guayaquil"]
+  - name: "Ecuador"
+    code: ECU
+    kind: coast
+    links:
+      army: ["Bogota", "Lima", "Cali"]
+      fleet: ["Lima", "Cali/South", "Gulf of Guayaquil"]
+  - name: "Cali"
+    code: CLI
+    kind: coast
+    supply_center: true
+    coasts:
+      - name: "North"
+        links:
+          fleet: ["Antioquia", "Panama", "South Caribbean Sea"]
+      - name: "South"
+        links:
+          fleet: ["Ecuador", "Panama", "Gulf of Guayaquil", "Gulf of Panama"]
+    links:
+      army: ["Antioquia", "Bogota", "Ecuador", "Panama"]
+  - name: "North West Territories"
+    code: NWT
+    kind: coast
+    links:
+      fleet: ["Yukon", "Nunavut", "Arctic Ocean", "Beaufort Sea"]
+      army: ["Yukon", "Calgary", "Northern BC", "Nunavut", "Saskatchewan"]
+  - name: "Nunavut"
+    code: NUN
+    kind: coast
+    links:
+      fleet: ["Ungava", "North West Territories", "Manitoba", "Arctic Ocean", "Beaufort Sea", "Hudson Bay", "Baffin Bay", "Sea of Labrador"]
+      army: ["Ungava", "North West Territories", "Manitoba", "Saskatchewan"]
+  - name: "Manitoba"
+    code: MAN
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Minneapolis", "Nunavut", "Saskatchewan", "Northern Ontario", "Western Ontario", "Dakotas"]
+      fleet: ["Nunavut", "Northern Ontario", "Hudson Bay"]
+  - name: "Saskatchewan"
+    code: SAS
+    kind: inland
+    links:
+      army: ["Calgary", "North West Territories", "Nunavut", "Manitoba", "Montana", "Dakotas"]
+  - name: "Northern Ontario"
+    code: NON
+    kind: coast
+    links:
+      fleet: ["Abitibi", "Manitoba", "Hudson Bay"]
+      army: ["Abitibi", "Montreal", "Manitoba", "Western Ontario", "Ontario"]
+  - name: "Western Ontario"
+    code: WON
+    kind: coast
+    links:
+      fleet: ["Minneapolis", "Ontario", "Lake Superior"]
+      army: ["Minneapolis", "Manitoba", "Northern Ontario", "Ontario"]
+  - name: "Ontario"
+    code: ONT
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Montreal", "Beauce", "New York State", "Western Ontario", "Lake Ontario", "Upper Peninsula", "Michigan", "Lake Superior", "Lake Huron", "Lake Erie"]
+      army: ["Montreal", "Beauce", "New York State", "Northern Ontario", "Western Ontario", "Upper Peninsula", "Michigan"]
+  - name: "Labrador"
+    code: LAB
+    kind: coast
+    links:
+      fleet: ["Ungava", "Cote-Nord", "Sea of Labrador", "Gulf of St-Lawrence"]
+      army: ["Ungava", "Cote-Nord"]
+  - name: "Nova Scotia"
+    code: NSC
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["North Atlantic Ocean", "Gulf of St-Lawrence", "Massachusetts Bay", "New Brunswick/North", "New Brunswick/South"]
+      army: ["New Brunswick"]
+  - name: "Newfoundland"
+    code: NFL
+    kind: coast
+    links:
+      fleet: ["Sea of Labrador", "North Atlantic Ocean", "Gulf of St-Lawrence"]
+  - name: "Washington"
+    code: WAS
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Vancouver", "Oregon", "Straits of Juan de Fuca"]
+      army: ["Vancouver", "Oregon", "Idaho"]
+  - name: "Oregon"
+    code: ORE
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["San Francisco", "Washington", "Straits of Juan de Fuca", "West Coast"]
+      army: ["San Francisco", "Washington", "Idaho", "Nevada"]
+  - name: "Idaho"
+    code: IDA
+    kind: inland
+    links:
+      army: ["Vancouver", "Washington", "Oregon", "Utah", "Nevada", "Wyoming", "Montana"]
+  - name: "Arizona"
+    code: ARI
+    kind: inland
+    supply_center: true
+    links:
+      army: ["San Diego", "Utah", "Nevada", "New Mexico", "Colorado", "Baja California", "Chihuahua"]
+  - name: "Utah"
+    code: UTA
+    kind: inland
+    links:
+      army: ["Idaho", "Arizona", "Nevada", "Colorado", "Wyoming"]
+  - name: "Nevada"
+    code: NEV
+    kind: inland
+    links:
+      army: ["San Francisco", "Los Angeles", "San Diego", "Oregon", "Idaho", "Arizona", "Utah"]
+  - name: "New Mexico"
+    code: NME
+    kind: inland
+    links:
+      army: ["Dallas", "West Texas", "Arizona", "Colorado", "Oklahoma", "Chihuahua"]
+  - name: "Colorado"
+    code: COL
+    kind: inland
+    supply_center: true
+    links:
+      army: ["Arizona", "Utah", "New Mexico", "Wyoming", "Oklahoma", "Kansas", "Nebraska"]
+  - name: "Wyoming"
+    code: WYO
+    kind: inland
+    links:
+      army: ["Idaho", "Utah", "Colorado", "Montana", "Nebraska", "Dakotas"]
+  - name: "Montana"
+    code: MON
+    kind: inland
+    links:
+      army: ["Calgary", "Vancouver", "Saskatchewan", "Idaho", "Wyoming", "Dakotas"]
+  - name: "Oklahoma"
+    code: OKL
+    kind: inland
+    links:
+      army: ["Dallas", "New Mexico", "Colorado", "Kansas", "Missouri", "Arkansas"]
+  - name: "Kansas"
+    code: KAN
+    kind: inland
+    supply_center: true
+    links:
+      army: ["Colorado", "Oklahoma", "Nebraska", "Missouri"]
+  - name: "Nebraska"
+    code: NEB
+    kind: inland
+    links:
+      army: ["Iowa", "Colorado", "Wyoming", "Kansas", "Dakotas", "Missouri"]
+  - name: "Dakotas"
+    code: DAK
+    kind: inland
+    links:
+      army: ["Minneapolis", "Iowa", "Manitoba", "Saskatchewan", "Wyoming", "Montana", "Nebraska"]
+  - name: "Missouri"
+    code: MIS
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Iowa", "Chicago", "Oklahoma", "Kansas", "Nebraska", "Arkansas", "Kentucky", "Tennessee"]
+      fleet: ["Chicago", "Arkansas", "Kentucky", "Tennessee"]
+  - name: "Arkansas"
+    code: ARK
+    kind: coast
+    links:
+      army: ["Dallas", "Oklahoma", "Missouri", "Louisiana", "Tennessee", "Deep South"]
+      fleet: ["Missouri", "Louisiana", "Tennessee", "Deep South"]
+  - name: "Louisiana"
+    code: LOU
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Dallas", "Houston", "Arkansas", "Deep South"]
+      fleet: ["Houston", "Arkansas", "Deep South", "Apalachee Bay", "Gulf of Mexico"]
+  - name: "Lake Ontario"
+    code: LON
+    kind: sea
+    links:
+      fleet: ["New York State", "Ontario"]
+  - name: "Upper Peninsula"
+    code: UPP
+    kind: coast
+    links:
+      army: ["Milwaukee", "Ontario", "Michigan"]
+      fleet: ["Milwaukee/North", "Milwaukee/East", "Ontario", "Michigan", "Lake Michigan", "Lake Superior", "Lake Huron"]
+  - name: "Michigan"
+    code: MIC
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Indiana", "Ontario", "Upper Peninsula", "Lake Michigan", "Lake Huron", "Lake Erie", "Ohio"]
+      army: ["Indiana", "Ontario", "Upper Peninsula", "Ohio"]
+  - name: "Lake Michigan"
+    code: LMI
+    kind: sea
+    links:
+      fleet: ["Indiana", "Chicago", "Milwaukee/East", "Upper Peninsula", "Michigan", "Lake Huron"]
+  - name: "Lake Superior"
+    code: LSU
+    kind: sea
+    links:
+      fleet: ["Minneapolis", "Milwaukee/North", "Western Ontario", "Ontario", "Upper Peninsula"]
+  - name: "Lake Huron"
+    code: LHU
+    kind: sea
+    links:
+      fleet: ["Ontario", "Upper Peninsula", "Michigan", "Lake Michigan"]
+  - name: "Lake Erie"
+    code: LER
+    kind: sea
+    links:
+      fleet: ["West Pennsylvania", "New York State", "Ontario", "Michigan", "Ohio"]
+  - name: "Ohio"
+    code: OHI
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Indiana", "West Pennsylvania", "Michigan", "West Virginia", "Kentucky"]
+      fleet: ["West Pennsylvania", "Michigan", "Lake Erie"]
+  - name: "Maine"
+    code: MAI
+    kind: coast
+    links:
+      army: ["Beauce", "Gaspesie", "Vermont", "New Brunswick"]
+      fleet: ["Vermont", "Massachusetts Bay", "New Brunswick/South"]
+  - name: "Vermont"
+    code: VMT
+    kind: coast
+    links:
+      army: ["Beauce", "New York State", "Maine", "Massachusetts"]
+      fleet: ["Maine", "Massachusetts", "Massachusetts Bay"]
+  - name: "Massachusetts"
+    code: MAS
+    kind: coast
+    supply_center: true
+    links:
+      army: ["New York State", "New York City", "Vermont"]
+      fleet: ["New York City", "Vermont", "Massachusetts Bay", "Cape May"]
+  - name: "Washington DC"
+    code: WDC
+    kind: coast
+    supply_center: true
+    links:
+      army: ["West Pennsylvania", "New Jersey", "Philadelphia", "Virginia", "West Virginia"]
+      fleet: ["New Jersey", "Virginia", "Chesapeake Bay", "Cape May"]
+  - name: "Virginia"
+    code: VIR
+    kind: coast
+    links:
+      fleet: ["Washington DC", "North Carolina", "Chesapeake Bay"]
+      army: ["Washington DC", "West Virginia", "Kentucky", "Tennessee", "North Carolina"]
+  - name: "West Virginia"
+    code: WVI
+    kind: inland
+    links:
+      army: ["West Pennsylvania", "Ohio", "Washington DC", "Virginia", "Kentucky"]
+  - name: "Kentucky"
+    code: KEN
+    kind: coast
+    links:
+      army: ["Indiana", "Chicago", "Missouri", "Ohio", "Virginia", "West Virginia", "Tennessee"]
+      fleet: ["Chicago", "Missouri", "Tennessee"]
+  - name: "Tennessee"
+    code: TEN
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Missouri", "Arkansas", "Kentucky", "Deep South"]
+      army: ["Missouri", "Arkansas", "Virginia", "Kentucky", "Deep South", "Georgia", "North Carolina"]
+  - name: "Deep South"
+    code: DSO
+    kind: coast
+    links:
+      fleet: ["Florida Panhandle", "Arkansas", "Louisiana", "Tennessee", "Apalachee Bay"]
+      army: ["Florida Panhandle", "Arkansas", "Louisiana", "Tennessee", "Georgia"]
+  - name: "Georgia"
+    code: GEO
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Florida Panhandle", "Jacksonville", "Tennessee", "Deep South", "South Carolina", "North Carolina"]
+      fleet: ["Jacksonville", "South Carolina", "East Coast"]
+  - name: "South Carolina"
+    code: SCA
+    kind: coast
+    links:
+      fleet: ["Georgia", "North Carolina", "East Coast"]
+      army: ["Georgia", "North Carolina"]
+  - name: "North Carolina"
+    code: NCA
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Virginia", "South Carolina", "Chesapeake Bay", "East Coast"]
+      army: ["Virginia", "Tennessee", "Georgia", "South Carolina"]
+  - name: "Haiti"
+    code: HAI
+    kind: coast
+    links:
+      fleet: ["Dominican Republic", "Bermuda Triangle", "East Caribbean Sea", "Cayman Trench"]
+      army: ["Dominican Republic"]
+  - name: "Dominican Republic"
+    code: DRE
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Haiti", "Sea of Sargasso", "Bermuda Triangle", "East Caribbean Sea", "Lesser Antilles"]
+      army: ["Haiti"]
+  - name: "Baja California"
+    code: BCA
+    kind: coast
+    links:
+      fleet: ["San Diego", "Chihuahua", "North Pacific Ocean", "Mid Pacific Ocean", "Gulf of Santa Catalina", "Gulf of California"]
+      army: ["San Diego", "Arizona", "Chihuahua"]
+  - name: "Chihuahua"
+    code: CHH
+    kind: coast
+    supply_center: true
+    links:
+      army: ["West Texas", "Arizona", "New Mexico", "Baja California", "Coahuila", "Durango"]
+      fleet: ["Baja California", "Durango", "Gulf of California"]
+  - name: "Coahuila"
+    code: COA
+    kind: inland
+    links:
+      army: ["San Antonio", "West Texas", "Potosi", "Chihuahua", "Nuevo Leon", "Durango"]
+  - name: "Nuevo Leon"
+    code: NLE
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["San Antonio", "Potosi", "Gulf of Mexico", "Gulf of Campeche"]
+      army: ["San Antonio", "Potosi", "Coahuila"]
+  - name: "Durango"
+    code: DUR
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Guadalajara", "Chihuahua", "Gulf of California"]
+      army: ["Guadalajara", "Potosi", "Chihuahua", "Coahuila"]
+  - name: "Chiapas"
+    code: CHP
+    kind: coast
+    links:
+      army: ["Veracruz", "Oaxaca", "Tabasco", "Guatemala"]
+      fleet: ["Oaxaca", "Gulf of Tehuantepec", "Guatemala/South"]
+  - name: "Tabasco"
+    code: TAB
+    kind: coast
+    links:
+      fleet: ["Veracruz", "Yucatan", "Gulf of Campeche"]
+      army: ["Veracruz", "Chiapas", "Yucatan", "Guatemala"]
+  - name: "Yucatan"
+    code: YUC
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Tabasco", "Gulf of Mexico", "Gulf of Campeche", "Straits of Yucatan", "Gulf of Honduras", "Guatemala/East"]
+      army: ["Tabasco", "Guatemala"]
+  - name: "El Salvador"
+    code: ELS
+    kind: coast
+    links:
+      fleet: ["Coast of Mexico", "Gulf of Fonseca", "Honduras/South", "Guatemala/South"]
+      army: ["Honduras", "Guatemala"]
+  - name: "Panama"
+    code: PAN
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Cali", "Costa Rica"]
+      fleet: ["Cali/North", "Cali/South", "South Caribbean Sea", "Gulf of Mosquitos", "Gulf of Panama", "Coronado Bay", "Costa Rica/North", "Costa Rica/South"]
+  - name: "Venezuela"
+    code: VEN
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Guajira", "East Caribbean Sea", "Lesser Antilles", "South Caribbean Sea"]
+      army: ["Guajira", "Vichada"]
+  - name: "Hawaii"
+    code: HAW
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["North Pacific Ocean", "Mid Pacific Ocean", "South West Pacific Ocean", "South Pacific Ocean"]
+  - name: "Greenland"
+    code: GRN
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Arctic Ocean", "Baffin Bay", "Sea of Labrador", "North Atlantic Ocean"]
+  - name: "Bering Sea"
+    code: BER
+    kind: sea
+    links:
+      fleet: ["Anchorage", "Arctic Ocean", "Gulf of Alaska"]
+  - name: "Arctic Ocean"
+    code: ARO
+    kind: sea
+    links:
+      fleet: ["Anchorage", "North West Territories", "Nunavut", "Greenland", "Bering Sea", "Beaufort Sea", "Baffin Bay"]
+  - name: "Beaufort Sea"
+    code: BFS
+    kind: sea
+    links:
+      fleet: ["Anchorage", "Yukon", "North West Territories", "Nunavut", "Arctic Ocean"]
+  - name: "Hudson Bay"
+    code: HUB
+    kind: sea
+    links:
+      fleet: ["Abitibi", "Ungava", "Nunavut", "Manitoba", "Northern Ontario", "Sea of Labrador"]
+  - name: "Baffin Bay"
+    code: BFB
+    kind: sea
+    links:
+      fleet: ["Nunavut", "Greenland", "Arctic Ocean", "Sea of Labrador"]
+  - name: "Sea of Labrador"
+    code: SLA
+    kind: sea
+    links:
+      fleet: ["Ungava", "Nunavut", "Labrador", "Newfoundland", "Greenland", "Hudson Bay", "Baffin Bay", "North Atlantic Ocean", "Gulf of St-Lawrence"]
+  - name: "North Atlantic Ocean"
+    code: NAO
+    kind: sea
+    links:
+      fleet: ["Nova Scotia", "Newfoundland", "Greenland", "Sea of Labrador", "Gulf of St-Lawrence", "Massachusetts Bay", "Mid Atlantic Ocean"]
+  - name: "Gulf of St-Lawrence"
+    code: GSL
+    kind: sea
+    links:
+      fleet: ["Cote-Nord", "Quebec", "Gaspesie", "Labrador", "Nova Scotia", "Newfoundland", "Sea of Labrador", "North Atlantic Ocean", "New Brunswick/North"]
+  - name: "Massachusetts Bay"
+    code: MAB
+    kind: sea
+    links:
+      fleet: ["Nova Scotia", "Maine", "Vermont", "Massachusetts", "North Atlantic Ocean", "Mid Atlantic Ocean", "Cape May", "New Brunswick/South"]
+  - name: "Mid Atlantic Ocean"
+    code: MAO
+    kind: sea
+    links:
+      fleet: ["North Atlantic Ocean", "Massachusetts Bay", "Cape May", "Sea of Sargasso", "Bermuda Triangle"]
+  - name: "Chesapeake Bay"
+    code: CHB
+    kind: sea
+    links:
+      fleet: ["Washington DC", "Virginia", "North Carolina", "Cape May", "East Coast"]
+  - name: "Cape May"
+    code: CPM
+    kind: sea
+    links:
+      fleet: ["New York City", "New Jersey", "Massachusetts", "Washington DC", "Massachusetts Bay", "Mid Atlantic Ocean", "Chesapeake Bay", "Bermuda Triangle", "East Coast"]
+  - name: "Sea of Sargasso"
+    code: SOS
+    kind: sea
+    links:
+      fleet: ["Dominican Republic", "Mid Atlantic Ocean", "Bermuda Triangle", "Lesser Antilles"]
+  - name: "Bermuda Triangle"
+    code: BTR
+    kind: sea
+    links:
+      fleet: ["Holguin", "Camaguey/North", "Haiti", "Dominican Republic", "Mid Atlantic Ocean", "Cape May", "Sea of Sargasso", "East Coast", "Straits of Florida", "Cayman Trench"]
+  - name: "East Coast"
+    code: ECO
+    kind: sea
+    links:
+      fleet: ["Jacksonville", "Miami", "Georgia", "South Carolina", "North Carolina", "Chesapeake Bay", "Cape May", "Bermuda Triangle", "Straits of Florida"]
+  - name: "Straits of Florida"
+    code: SFL
+    kind: sea
+    links:
+      fleet: ["Miami", "Havana", "Camaguey/North", "Bermuda Triangle", "East Coast", "Apalachee Bay", "Gulf of Mexico", "Straits of Yucatan"]
+  - name: "East Caribbean Sea"
+    code: ECA
+    kind: sea
+    links:
+      fleet: ["Kingston", "Haiti", "Dominican Republic", "Venezuela", "Lesser Antilles", "Cayman Trench", "West Caribbean Sea", "South Caribbean Sea"]
+  - name: "Lesser Antilles"
+    code: LAN
+    kind: sea
+    links:
+      fleet: ["Dominican Republic", "Venezuela", "Sea of Sargasso", "East Caribbean Sea"]
+  - name: "Apalachee Bay"
+    code: APB
+    kind: sea
+    links:
+      fleet: ["Florida Panhandle", "Miami", "Tampa", "Louisiana", "Deep South", "Straits of Florida", "Gulf of Mexico"]
+  - name: "Gulf of Mexico"
+    code: GMO
+    kind: sea
+    links:
+      fleet: ["Houston", "San Antonio", "Louisiana", "Nuevo Leon", "Yucatan", "Straits of Florida", "Apalachee Bay", "Gulf of Campeche", "Straits of Yucatan"]
+  - name: "Gulf of Campeche"
+    code: GCA
+    kind: sea
+    links:
+      fleet: ["Potosi", "Veracruz", "Nuevo Leon", "Tabasco", "Yucatan", "Gulf of Mexico"]
+  - name: "Straits of Yucatan"
+    code: SYU
+    kind: sea
+    links:
+      fleet: ["Havana", "Yucatan", "Straits of Florida", "Gulf of Mexico", "Gulf of Honduras", "West Caribbean Sea"]
+  - name: "Gulf of Honduras"
+    code: GHO
+    kind: sea
+    links:
+      fleet: ["Yucatan", "Straits of Yucatan", "West Caribbean Sea", "Honduras/North", "Guatemala/East"]
+  - name: "Cayman Trench"
+    code: CAY
+    kind: sea
+    links:
+      fleet: ["Holguin", "Kingston", "Camaguey/South", "Haiti", "Bermuda Triangle", "East Caribbean Sea", "West Caribbean Sea"]
+  - name: "West Caribbean Sea"
+    code: WCA
+    kind: sea
+    links:
+      fleet: ["Havana", "Kingston", "Camaguey/South", "East Caribbean Sea", "Straits of Yucatan", "Gulf of Honduras", "Cayman Trench", "South Caribbean Sea", "Gulf of Mosquitos", "Honduras/North", "Nicaragua/East"]
+  - name: "South Caribbean Sea"
+    code: SCS
+    kind: sea
+    links:
+      fleet: ["Antioquia", "Guajira", "Cali/North", "Panama", "Venezuela", "East Caribbean Sea", "West Caribbean Sea", "Gulf of Mosquitos"]
+  - name: "Gulf of Mosquitos"
+    code: GMS
+    kind: sea
+    links:
+      fleet: ["Panama", "West Caribbean Sea", "South Caribbean Sea", "Nicaragua/East", "Costa Rica/North"]
+  - name: "North Pacific Ocean"
+    code: NPO
+    kind: sea
+    links:
+      fleet: ["Baja California", "Hawaii", "Gulf of Alaska", "West Coast", "Mid Pacific Ocean", "Gulf of Santa Catalina", "South West Pacific Ocean"]
+  - name: "Gulf of Alaska"
+    code: GAL
+    kind: sea
+    links:
+      fleet: ["Anchorage", "Bering Sea", "North Pacific Ocean", "Queen Charlotte Sound", "Straits of Juan de Fuca", "West Coast"]
+  - name: "Queen Charlotte Sound"
+    code: QCS
+    kind: sea
+    links:
+      fleet: ["Anchorage", "Vancouver", "Gulf of Alaska", "Straits of Juan de Fuca"]
+  - name: "Straits of Juan de Fuca"
+    code: SJF
+    kind: sea
+    links:
+      fleet: ["Vancouver", "Washington", "Oregon", "Gulf of Alaska", "Queen Charlotte Sound", "West Coast"]
+  - name: "West Coast"
+    code: WCO
+    kind: sea
+    links:
+      fleet: ["San Francisco", "Los Angeles", "Oregon", "North Pacific Ocean", "Gulf of Alaska", "Straits of Juan de Fuca", "Gulf of Santa Catalina"]
+  - name: "Mid Pacific Ocean"
+    code: MPO
+    kind: sea
+    links:
+      fleet: ["Baja California", "Hawaii", "North Pacific Ocean", "Coast of Mexico", "Gulf of California", "South Pacific Ocean"]
+  - name: "Gulf of Santa Catalina"
+    code: GSC
+    kind: sea
+    links:
+      fleet: ["Los Angeles", "San Diego", "Baja California", "North Pacific Ocean", "West Coast"]
+  - name: "South West Pacific Ocean"
+    code: SWP
+    kind: sea
+    links:
+      fleet: ["Hawaii", "North Pacific Ocean", "South Pacific Ocean"]
+  - name: "Coast of Mexico"
+    code: COM
+    kind: sea
+    links:
+      fleet: ["Guadalajara", "Guerrero", "Oaxaca", "El Salvador", "Mid Pacific Ocean", "Gulf of California", "Gulf of Tehuantepec", "South Pacific Ocean", "Galapagos", "Gulf of Fonseca", "Guatemala/South"]
+  - name: "Gulf of California"
+    code: GCL
+    kind: sea
+    links:
+      fleet: ["Guadalajara", "Baja California", "Chihuahua", "Durango", "Mid Pacific Ocean", "Coast of Mexico"]
+  - name: "Gulf of Tehuantepec"
+    code: GTE
+    kind: sea
+    links:
+      fleet: ["Oaxaca", "Chiapas", "Coast of Mexico", "Guatemala/South"]
+  - name: "South Pacific Ocean"
+    code: SPO
+    kind: sea
+    links:
+      fleet: ["Hawaii", "Mid Pacific Ocean", "South West Pacific Ocean", "Coast of Mexico", "Galapagos"]
+  - name: "Galapagos"
+    code: GAP
+    kind: sea
+    links:
+      fleet: ["Lima", "Coast of Mexico", "South Pacific Ocean", "Gulf of Guayaquil", "Gulf of Fonseca"]
+  - name: "Gulf of Guayaquil"
+    code: GGU
+    kind: sea
+    links:
+      fleet: ["Lima", "Ecuador", "Cali/South", "Galapagos", "Gulf of Panama", "Coronado Bay", "Gulf of Fonseca"]
+  - name: "Gulf of Panama"
+    code: GPA
+    kind: sea
+    links:
+      fleet: ["Cali/South", "Panama", "Gulf of Guayaquil", "Coronado Bay"]
+  - name: "Coronado Bay"
+    code: CRB
+    kind: sea
+    links:
+      fleet: ["Panama", "Gulf of Guayaquil", "Gulf of Panama", "Gulf of Fonseca", "Nicaragua/West", "Costa Rica/South"]
+  - name: "Gulf of Fonseca"
+    code: GFO
+    kind: sea
+    links:
+      fleet: ["El Salvador", "Coast of Mexico", "Galapagos", "Gulf of Guayaquil", "Coronado Bay", "Honduras/South", "Nicaragua/West"]
+  - name: "New Brunswick"
+    code: NBR
+    kind: coast
+    coasts:
+      - name: "North"
+        links:
+          fleet: ["Gaspesie", "Nova Scotia", "Gulf of St-Lawrence"]
+      - name: "South"
+        links:
+          fleet: ["Nova Scotia", "Maine", "Massachusetts Bay"]
+    links:
+      army: ["Gaspesie", "Nova Scotia", "Maine"]
+  - name: "Honduras"
+    code: HON
+    kind: coast
+    coasts:
+      - name: "North"
+        links:
+          fleet: ["Gulf of Honduras", "West Caribbean Sea", "Nicaragua/East", "Guatemala/East"]
+      - name: "South"
+        links:
+          fleet: ["El Salvador", "Gulf of Fonseca", "Nicaragua/West"]
+    links:
+      army: ["El Salvador", "Nicaragua", "Guatemala"]
+  - name: "Nicaragua"
+    code: NIC
+    kind: coast
+    supply_center: true
+    coasts:
+      - name: "East"
+        links:
+          fleet: ["West Caribbean Sea", "Gulf of Mosquitos", "Honduras/North", "Costa Rica/North"]
+      - name: "West"
+        links:
+          fleet: ["Coronado Bay", "Gulf of Fonseca", "Honduras/South", "Costa Rica/South"]
+    links:
+      army: ["Honduras", "Costa Rica"]
+  - name: "Costa Rica"
+    code: CRC
+    kind: coast
+    coasts:
+      - name: "North"
+        links:
+          fleet: ["Panama", "Gulf of Mosquitos", "Nicaragua/East"]
+      - name: "South"
+        links:
+          fleet: ["Panama", "Coronado Bay", "Nicaragua/West"]
+    links:
+      army: ["Panama", "Nicaragua"]
+  - name: "Guatemala"
+    code: GTM
+    kind: coast
+    supply_center: true
+    coasts:
+      - name: "South"
+        links:
+          fleet: ["Chiapas", "El Salvador", "Coast of Mexico", "Gulf of Tehuantepec"]
+      - name: "East"
+        links:
+          fleet: ["Yucatan", "Gulf of Honduras", "Honduras/North"]
+    links:
+      army: ["Chiapas", "Tabasco", "Yucatan", "El Salvador", "Honduras"]
+  - name: "Islands"
+    code: ISL
+    kind: neutral
+  # The St-Lawrence stretch between Lake Ontario and the Gulf, along Montreal
+  # and Beauce: drawn as water, belongs to no sea (fleets use the waterway links).
+  - name: "St-Lawrence River"
+    code: SLR
+    kind: neutral
+    water: true
+  # The canal is not drawn in the source (Panama is a Kiel-type province); a
+  # strip was painted across the isthmus so the board shows it.
+  - name: "Panama (canal)"
+    kind: child
+    parent: "Panama"
+    water: true
+  - name: "Hawaii (waters)"
+    kind: child
+    parent: Hawaii
+    water: true
+  - name: "Nunavut (waters)"
+    kind: child
+    parent: Nunavut
+    water: true
+countries:
+  - name: "British-Columbia"
+    color: [234, 234, 175]
+    home_centers: ["Anchorage", "Calgary", "Vancouver"]
+    provinces: ["Anchorage", "Yukon", "Calgary", "Northern BC", "Vancouver"]
+    units:
+      "Anchorage": fleet
+      "Calgary": army
+      "Vancouver": army
+  - name: "California"
+    color: [196, 143, 133]
+    home_centers: ["San Francisco", "Los Angeles", "San Diego"]
+    provinces: ["San Francisco", "Los Angeles", "San Diego"]
+    units:
+      "San Diego": fleet
+      "Los Angeles": army
+      "San Francisco": army
+  - name: "Florida"
+    color: [207, 153, 101]
+    home_centers: ["Jacksonville", "Miami", "Tampa"]
+    provinces: ["Florida Panhandle", "Jacksonville", "Miami", "Tampa"]
+    units:
+      "Miami": fleet
+      "Tampa": army
+      "Jacksonville": army
+  - name: "Heartland"
+    color: [66, 119, 129]
+    home_centers: ["Minneapolis", "Chicago", "Milwaukee"]
+    provinces: ["Minneapolis", "Iowa", "Indiana", "Chicago", "Milwaukee"]
+    units:
+      "Chicago": army
+      "Milwaukee": army
+      "Minneapolis": army
+  - name: "Mexico"
+    color: [164, 196, 153]
+    home_centers: ["Guadalajara", "Veracruz", "Mexico"]
+    provinces: ["Guadalajara", "Potosi", "Veracruz", "Mexico", "Guerrero", "Oaxaca"]
+    units:
+      "Veracruz": army
+      "Mexico": army
+      "Guadalajara": fleet
+  - name: "New-York"
+    color: [168, 126, 159]
+    home_centers: ["New York City", "New Jersey", "Philadelphia"]
+    provinces: ["West Pennsylvania", "New York State", "New York City", "New Jersey", "Philadelphia"]
+    units:
+      "New Jersey": army
+      "Philadelphia": army
+      "New York City": fleet
+  - name: "Peru"
+    color: [239, 196, 228]
+    home_centers: ["Bogota", "Lima", "Cali"]
+    provinces: ["Antioquia", "Guajira", "Vichada", "Bogota", "Lima", "Ecuador", "Cali"]
+    units:
+      "Bogota": army
+      "Lima": fleet
+      "Cali/North": fleet
+  - name: "Quebec"
+    color: [114, 146, 103]
+    home_centers: ["Ungava", "Quebec", "Montreal"]
+    provinces: ["Abitibi", "Ungava", "Cote-Nord", "Quebec", "Montreal", "Beauce", "Gaspesie"]
+    units:
+      "Montreal": army
+      "Quebec": fleet
+      "Ungava": fleet
+  - name: "Texas"
+    color: [132, 130, 132]
+    home_centers: ["Dallas", "Houston", "San Antonio"]
+    provinces: ["Dallas", "Houston", "San Antonio", "West Texas"]
+    units:
+      "Dallas": army
+      "Houston": fleet
+      "San Antonio": army
+  - name: "Cuba"
+    color: [121, 175, 198]
+    home_centers: ["Havana", "Holguin", "Kingston"]
+    provinces: ["Havana", "Holguin", "Kingston", "Camaguey"]
+    units:
+      "Havana": fleet
+      "Holguin": army
+      "Kingston": fleet

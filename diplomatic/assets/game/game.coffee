@@ -10,7 +10,6 @@ class Game
             isLast: false
         @moves = {}
         @builds = {}
-        @moves_mc = {}
         @moves_queue = []
         @orders = {}
         # useless?
@@ -257,7 +256,6 @@ class Game
                 order.data.through = data.through
                 order.data.routes = [data.croute]
             if @app.env.isMCoast(data.dst) and data.coast?
-                #@orders[territory]["mc"] = @moves_mc[territory]
                 order.data.coast = data.coast
         else if data.type in ['support_move', 'convoy']
             order.data.src = data.src

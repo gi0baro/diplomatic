@@ -1,0 +1,659 @@
+name: Cold War
+revision: 1
+year: 1960
+centers_to_win: 17
+min_players: 2
+provinces:
+  - name: West Pacific
+    code: WPA
+    kind: sea
+    links:
+      fleet: [East Pacific, Bering Sea, Japan, Philippines, Indonesia, Yellow Sea, Australia]
+  - name: East Pacific
+    code: EPA
+    kind: sea
+    links:
+      fleet: [West Pacific, Bering Sea, Los Angeles, Panama, Central America/West, Mexico/West, Colombia/West, Gulf of Alaska]
+  - name: Bering Sea
+    code: BER
+    kind: sea
+    links:
+      fleet: [West Pacific, East Pacific, Japan, Alaska, Kamchatka, Vladivostok, Arctic Ocean, Sea of Japan, Gulf of Alaska]
+  - name: Japan
+    code: JAP
+    kind: coast
+    supply_center: true
+    links:
+      fleet: [West Pacific, Bering Sea, Yellow Sea, Sea of Japan]
+  - name: Philippines
+    code: PHI
+    kind: coast
+    links:
+      army: [Indonesia]
+      fleet: [West Pacific, Indonesia, Yellow Sea, South China Sea]
+  - name: Indonesia
+    code: IDN
+    kind: coast
+    supply_center: true
+    links:
+      army: [Philippines, Australia]
+      fleet: [West Pacific, Philippines, South China Sea, Bay of Bengal, Indian Ocean, Australia]
+  - name: Alaska
+    code: ALA
+    kind: coast
+    supply_center: true
+    links:
+      army: [West Canada]
+      fleet: [Bering Sea, Arctic Ocean, West Canada/West, West Canada/North, Gulf of Alaska]
+  - name: Kamchatka
+    code: KAM
+    kind: coast
+    links:
+      army: [Vladivostok, Siberia]
+      fleet: [Bering Sea, Vladivostok, Siberia, Arctic Ocean]
+  - name: West Canada
+    code: WCA
+    kind: coast
+    coasts:
+      - name: West
+        links:
+          fleet: [Alaska, Los Angeles, Gulf of Alaska]
+      - name: North
+        links:
+          fleet: [Alaska, Arctic Ocean, Toronto, Hudson Bay]
+    links:
+      army: [Alaska, Los Angeles, Midwest, Toronto]
+  - name: Vladivostok
+    code: VLA
+    kind: coast
+    supply_center: true
+    links:
+      army: [Kamchatka, Manchuria, Siberia, North Korea]
+      fleet: [Bering Sea, Kamchatka, North Korea/East, Sea of Japan]
+  - name: Manchuria
+    code: MAN
+    kind: coast
+    links:
+      army: [Vladivostok, Shanghai, Siberia, Mongolia, North Korea]
+      fleet: [Shanghai, Yellow Sea, North Korea/West]
+  - name: Seoul
+    code: SEO
+    kind: coast
+    supply_center: true
+    links:
+      army: [North Korea]
+      fleet: [Yellow Sea, North Korea/East, North Korea/West, Sea of Japan]
+  - name: Shanghai
+    code: SHA
+    kind: coast
+    supply_center: true
+    links:
+      army: [Manchuria, North Vietnam, South East Asia, Bangladesh, Mongolia, West China]
+      fleet: [Manchuria, North Vietnam, Yellow Sea, South China Sea]
+  - name: North Vietnam
+    code: NVI
+    kind: coast
+    links:
+      army: [Shanghai, South East Asia, Saigon]
+      fleet: [Shanghai, South China Sea, Saigon]
+  - name: South East Asia
+    code: SEA
+    kind: coast
+    links:
+      army: [Shanghai, North Vietnam, Bangladesh, Saigon]
+      fleet: [Bangladesh, South China Sea, Bay of Bengal, Saigon]
+  - name: Bangladesh
+    code: BAN
+    kind: coast
+    links:
+      army: [Shanghai, South East Asia, India, West China]
+      fleet: [South East Asia, India, Bay of Bengal]
+  - name: India
+    code: IND
+    kind: coast
+    supply_center: true
+    links:
+      army: [Bangladesh, Pakistan]
+      fleet: [Bangladesh, Bay of Bengal, Indian Ocean, Pakistan, Arabian Sea]
+  - name: Siberia
+    code: SIB
+    kind: coast
+    links:
+      army: [Kamchatka, Vladivostok, Manchuria, Urals, Mongolia, West China]
+      fleet: [Kamchatka, Urals, Arctic Ocean]
+  - name: Urals
+    code: URA
+    kind: coast
+    links:
+      army: [Siberia, West China, Pakistan, Afghanistan, Iran, Caucasus, Moscow, Leningrad]
+      fleet: [Siberia, Arctic Ocean, Norwegian Sea, Leningrad/North]
+  - name: Mongolia
+    code: MON
+    kind: inland
+    links:
+      army: [Manchuria, Shanghai, Siberia, West China]
+  - name: Yellow Sea
+    code: YEL
+    kind: sea
+    links:
+      fleet: [West Pacific, Japan, Philippines, Manchuria, Seoul, Shanghai, South China Sea, North Korea/West, Sea of Japan]
+  - name: South China Sea
+    code: SCS
+    kind: sea
+    links:
+      fleet: [Philippines, Indonesia, Shanghai, North Vietnam, South East Asia, Yellow Sea, Bay of Bengal, Saigon]
+  - name: Bay of Bengal
+    code: BOB
+    kind: sea
+    links:
+      fleet: [Indonesia, South East Asia, Bangladesh, India, South China Sea, Indian Ocean]
+  - name: Indian Ocean
+    code: IOC
+    kind: sea
+    links:
+      fleet: [Indonesia, India, Bay of Bengal, East Africa, Arabian Sea, Red Sea, Australia]
+  - name: Arctic Ocean
+    code: ARC
+    kind: sea
+    links:
+      fleet: [Bering Sea, Alaska, Kamchatka, Siberia, Urals, Greenland, Norwegian Sea, West Atlantic, West Canada/North, Hudson Bay]
+  - name: Greenland
+    code: GRL
+    kind: coast
+    links:
+      fleet: [Arctic Ocean, Norwegian Sea, West Atlantic]
+  - name: Norwegian Sea
+    code: NWG
+    kind: sea
+    links:
+      fleet: [Urals, Arctic Ocean, Greenland, West Atlantic, East Atlantic, London, Norway, North Sea, Leningrad/North]
+  - name: West China
+    code: WCH
+    kind: inland
+    links:
+      army: [Shanghai, Bangladesh, Siberia, Urals, Mongolia, Pakistan]
+  - name: Los Angeles
+    code: LOS
+    kind: coast
+    supply_center: true
+    links:
+      army: [West Canada, Midwest, Southwest, Mexico]
+      fleet: [East Pacific, Mexico/West, West Canada/West, Gulf of Alaska]
+  - name: Midwest
+    code: MID
+    kind: inland
+    links:
+      army: [West Canada, Los Angeles, Southwest, Florida, Toronto, New York]
+  - name: Southwest
+    code: SOU
+    kind: coast
+    links:
+      army: [Los Angeles, Midwest, Florida, Mexico]
+      fleet: [Florida, Gulf of Mexico, Mexico/East]
+  - name: Florida
+    code: FLO
+    kind: coast
+    links:
+      army: [Midwest, Southwest, New York]
+      fleet: [Southwest, New York, West Atlantic, Gulf of Mexico, Caribbean Sea]
+  - name: Toronto
+    code: TOR
+    kind: coast
+    supply_center: true
+    links:
+      army: [West Canada, Midwest, Quebec]
+      fleet: [Quebec, West Canada/North, Hudson Bay]
+  - name: New York
+    code: NYK
+    kind: coast
+    supply_center: true
+    links:
+      army: [Midwest, Florida, Quebec]
+      fleet: [Florida, Quebec, West Atlantic]
+  - name: Quebec
+    code: QUE
+    kind: coast
+    links:
+      army: [Toronto, New York]
+      fleet: [Toronto, New York, West Atlantic, Hudson Bay]
+  - name: Mexico
+    code: MEX
+    kind: coast
+    coasts:
+      - name: West
+        links:
+          fleet: [East Pacific, Los Angeles, Central America/West]
+      - name: East
+        links:
+          fleet: [Southwest, Gulf of Mexico, Caribbean Sea, Central America/East]
+    links:
+      army: [Los Angeles, Southwest, Central America]
+  - name: West Atlantic
+    code: WAT
+    kind: sea
+    links:
+      fleet: [Arctic Ocean, Greenland, Norwegian Sea, Florida, New York, Quebec, East Atlantic, Brazil, Venezuela, Caribbean Sea,
+        Hudson Bay]
+  - name: East Atlantic
+    code: EAT
+    kind: sea
+    links:
+      fleet: [Norwegian Sea, West Atlantic, Spain, London, North Africa, North Sea, West Mediterranean, Paris/North]
+  - name: Panama
+    code: PAN
+    kind: coast
+    supply_center: true
+    links:
+      army: [Colombia, Central America]
+      fleet: [East Pacific, Caribbean Sea, Central America/West, Central America/East, Colombia/North, Colombia/West]
+  - name: Brazil
+    code: BRA
+    kind: coast
+    supply_center: true
+    links:
+      army: [Colombia, Venezuela]
+      fleet: [West Atlantic, Venezuela]
+  - name: Spain
+    code: SPA
+    kind: coast
+    links:
+      army: [Paris]
+      fleet: [East Atlantic, West Mediterranean, Paris/North, Paris/South]
+  - name: East Africa
+    code: EAF
+    kind: coast
+    links:
+      army: [Egypt, Libya]
+      fleet: [Indian Ocean, Egypt, Red Sea]
+  - name: Egypt
+    code: EGY
+    kind: coast
+    supply_center: true
+    links:
+      army: [East Africa, Libya, Arabia, Levant]
+      fleet: [East Africa, Libya, Arabia, Levant, Red Sea, East Mediterranean]
+  - name: Paris
+    code: PAR
+    kind: coast
+    supply_center: true
+    coasts:
+      - name: North
+        links:
+          fleet: [East Atlantic, Spain, West Germany, North Sea]
+      - name: South
+        links:
+          fleet: [Spain, Italy, West Mediterranean]
+    links:
+      army: [Spain, Italy, West Germany]
+  - name: London
+    code: LON
+    kind: coast
+    supply_center: true
+    links:
+      fleet: [Norwegian Sea, East Atlantic, North Sea]
+  - name: North Africa
+    code: NAF
+    kind: coast
+    links:
+      army: [Libya, Tunis]
+      fleet: [East Atlantic, Tunis, West Mediterranean]
+  - name: Colombia
+    code: COL
+    kind: coast
+    coasts:
+      - name: North
+        links:
+          fleet: [Panama, Venezuela, Caribbean Sea]
+      - name: West
+        links:
+          fleet: [East Pacific, Panama]
+    links:
+      army: [Panama, Brazil, Venezuela]
+  - name: Libya
+    code: LIB
+    kind: coast
+    links:
+      army: [East Africa, Egypt, North Africa, Tunis]
+      fleet: [Egypt, Tunis, East Mediterranean, Ionian Sea]
+  - name: Tunis
+    code: TUN
+    kind: coast
+    supply_center: true
+    links:
+      army: [North Africa, Libya]
+      fleet: [North Africa, Libya, Ionian Sea, West Mediterranean]
+  - name: Italy
+    code: ITA
+    kind: coast
+    links:
+      army: [Paris, Yugoslavia]
+      fleet: [Yugoslavia, Ionian Sea, West Mediterranean, Paris/South]
+  - name: Arabia
+    code: ARA
+    kind: coast
+    links:
+      army: [Egypt, Iraq, Levant]
+      fleet: [Egypt, Iraq, Arabian Sea, Red Sea]
+  - name: Pakistan
+    code: PAK
+    kind: coast
+    links:
+      army: [India, Urals, West China, Afghanistan, Iran]
+      fleet: [India, Iran, Arabian Sea]
+  - name: Afghanistan
+    code: AFG
+    kind: inland
+    links:
+      army: [Urals, Pakistan, Iran]
+  - name: Iran
+    code: IRN
+    kind: coast
+    supply_center: true
+    links:
+      army: [Urals, Pakistan, Afghanistan, Caucasus, Iraq, Armenia]
+      fleet: [Pakistan, Iraq, Arabian Sea]
+  - name: Caucasus
+    code: CAU
+    kind: coast
+    links:
+      army: [Urals, Iran, Moscow, Ukraine, Armenia]
+      fleet: [Ukraine, Armenia, Black Sea]
+  - name: Moscow
+    code: MOS
+    kind: inland
+    supply_center: true
+    links:
+      army: [Urals, Caucasus, Leningrad, Ukraine, East Germany]
+  - name: Leningrad
+    code: LEN
+    kind: coast
+    supply_center: true
+    coasts:
+      - name: North
+        links:
+          fleet: [Urals, Norwegian Sea, Norway]
+      - name: South
+        links:
+          fleet: [East Germany, Baltic Sea, Finland]
+    links:
+      army: [Urals, Moscow, Norway, East Germany, Finland]
+  - name: Sweden
+    code: SWE
+    kind: coast
+    supply_center: true
+    links:
+      army: [Norway, Denmark, Finland]
+      fleet: [Norway, Denmark, Baltic Sea, North Sea, Finland]
+  - name: Norway
+    code: NOR
+    kind: coast
+    links:
+      army: [Leningrad, Sweden, Finland]
+      fleet: [Norwegian Sea, Sweden, North Sea, Leningrad/North]
+  - name: Ukraine
+    code: UKR
+    kind: coast
+    links:
+      army: [Caucasus, Moscow, Yugoslavia, Greece, Istanbul, East Germany]
+      fleet: [Caucasus, Istanbul, Black Sea]
+  - name: Yugoslavia
+    code: YUG
+    kind: coast
+    links:
+      army: [Italy, Ukraine, Greece, Albania, East Germany, West Germany]
+      fleet: [Italy, Albania, Ionian Sea]
+  - name: Greece
+    code: GRE
+    kind: coast
+    links:
+      army: [Ukraine, Yugoslavia, Albania, Istanbul]
+      fleet: [Albania, Istanbul, East Mediterranean, Ionian Sea]
+  - name: Albania
+    code: ALB
+    kind: coast
+    supply_center: true
+    links:
+      army: [Yugoslavia, Greece]
+      fleet: [Yugoslavia, Greece, Ionian Sea]
+  - name: Iraq
+    code: IRQ
+    kind: coast
+    links:
+      army: [Arabia, Iran, Armenia, Levant]
+      fleet: [Arabia, Iran, Arabian Sea]
+  - name: Istanbul
+    code: IST
+    kind: coast
+    supply_center: true
+    links:
+      army: [Ukraine, Greece, Armenia, Levant]
+      fleet: [Ukraine, Greece, Armenia, Levant, Black Sea, East Mediterranean]
+  - name: Armenia
+    code: ARM
+    kind: coast
+    links:
+      army: [Iran, Caucasus, Iraq, Istanbul, Levant]
+      fleet: [Caucasus, Istanbul, Black Sea]
+  - name: Levant
+    code: LEV
+    kind: coast
+    links:
+      army: [Egypt, Arabia, Iraq, Istanbul, Armenia]
+      fleet: [Egypt, Istanbul, East Mediterranean]
+  - name: East Germany
+    code: EGR
+    kind: coast
+    supply_center: true
+    links:
+      army: [Moscow, Leningrad, Ukraine, Yugoslavia, West Germany, Denmark]
+      fleet: [Denmark, Baltic Sea, Leningrad/South]
+  - name: West Germany
+    code: WGR
+    kind: coast
+    supply_center: true
+    links:
+      army: [Paris, Yugoslavia, East Germany, Denmark]
+      fleet: [Denmark, North Sea, Paris/North]
+  - name: Denmark
+    code: DEN
+    kind: coast
+    links:
+      army: [Sweden, East Germany, West Germany]
+      fleet: [Sweden, East Germany, West Germany, Baltic Sea, North Sea]
+  - name: Venezuela
+    code: VEN
+    kind: coast
+    links:
+      army: [Brazil, Colombia]
+      fleet: [West Atlantic, Brazil, Caribbean Sea, Colombia/North]
+  - name: Central America
+    code: CEN
+    kind: coast
+    coasts:
+      - name: West
+        links:
+          fleet: [East Pacific, Panama, Mexico/West]
+      - name: East
+        links:
+          fleet: [Panama, Caribbean Sea, Mexico/East]
+    links:
+      army: [Mexico, Panama]
+  - name: Havana
+    code: HAV
+    kind: coast
+    supply_center: true
+    links:
+      fleet: [Gulf of Mexico, Caribbean Sea]
+  - name: Saigon
+    code: SAI
+    kind: coast
+    supply_center: true
+    links:
+      army: [North Vietnam, South East Asia]
+      fleet: [North Vietnam, South East Asia, South China Sea]
+  - name: Gulf of Mexico
+    code: GOM
+    kind: sea
+    links:
+      fleet: [Southwest, Florida, Havana, Caribbean Sea, Mexico/East]
+  - name: Caribbean Sea
+    code: CAR
+    kind: sea
+    links:
+      fleet: [Florida, West Atlantic, Panama, Venezuela, Havana, Gulf of Mexico, Central America/East, Mexico/East, Colombia/North]
+  - name: Arabian Sea
+    code: ARS
+    kind: sea
+    links:
+      fleet: [India, Indian Ocean, Arabia, Pakistan, Iran, Iraq, Red Sea]
+  - name: Red Sea
+    code: RED
+    kind: sea
+    links:
+      fleet: [Indian Ocean, East Africa, Egypt, Arabia, Arabian Sea]
+  - name: Black Sea
+    code: BLA
+    kind: sea
+    links:
+      fleet: [Caucasus, Ukraine, Istanbul, Armenia]
+  - name: East Mediterranean
+    code: EME
+    kind: sea
+    links:
+      fleet: [Egypt, Libya, Greece, Istanbul, Levant, Ionian Sea]
+  - name: Baltic Sea
+    code: BAL
+    kind: sea
+    links:
+      fleet: [Sweden, East Germany, Denmark, Finland, Leningrad/South]
+  - name: North Sea
+    code: NTH
+    kind: sea
+    links:
+      fleet: [Norwegian Sea, East Atlantic, London, Sweden, Norway, West Germany, Denmark, Paris/North]
+  - name: Ionian Sea
+    code: ION
+    kind: sea
+    links:
+      fleet: [Libya, Tunis, Italy, Yugoslavia, Greece, Albania, East Mediterranean, West Mediterranean]
+  - name: West Mediterranean
+    code: WME
+    kind: sea
+    links:
+      fleet: [East Atlantic, Spain, North Africa, Tunis, Italy, Ionian Sea, Paris/South]
+  - name: Finland
+    code: FIN
+    kind: coast
+    links:
+      army: [Leningrad, Sweden, Norway]
+      fleet: [Sweden, Baltic Sea, Leningrad/South]
+  - name: North Korea
+    code: NKO
+    kind: coast
+    coasts:
+      - name: East
+        links:
+          fleet: [Vladivostok, Seoul, Sea of Japan]
+      - name: West
+        links:
+          fleet: [Manchuria, Seoul, Yellow Sea]
+    links:
+      army: [Vladivostok, Manchuria, Seoul]
+  - name: Hudson Bay
+    code: HUD
+    kind: sea
+    links:
+      fleet: [Arctic Ocean, Toronto, Quebec, West Atlantic, West Canada/North]
+  - name: Sea of Japan
+    code: SOJ
+    kind: sea
+    links:
+      fleet: [Bering Sea, Japan, Vladivostok, Seoul, Yellow Sea, North Korea/East]
+  - name: Gulf of Alaska
+    code: GOA
+    kind: sea
+    links:
+      fleet: [East Pacific, Bering Sea, Alaska, Los Angeles, West Canada/West]
+  - name: Australia
+    code: AUS
+    kind: coast
+    supply_center: true
+    links:
+      army: [Indonesia]
+      fleet: [West Pacific, Indonesia, Indian Ocean]
+  # Not webDiplomacy territories: unseeded water touching several provinces,
+  # painted as water and impassable (like classic's Caspian Sea).
+  - name: Caspian Sea
+    code: CAS
+    kind: neutral
+    water: true
+  - name: Great Lakes
+    code: GLK
+    kind: neutral
+    water: true
+  # Not webDiplomacy territories: impassable mountains and islands, originally
+  # filled with the border colour (the western part of Hispaniola stays Havana).
+  - name: Himalaya
+    code: HIM
+    kind: neutral
+  - name: Iceland
+    code: ICE
+    kind: neutral
+  - name: Dominican Republic
+    code: DOM
+    kind: neutral
+  - name: Alps
+    code: ALP
+    kind: neutral
+  - name: New Guinea
+    code: NGU
+    kind: neutral
+  - name: Jamaica
+    code: JAM
+    kind: neutral
+  - name: Puerto Rico
+    code: PRI
+    kind: neutral
+  - name: Halmahera
+    code: HAL
+    kind: neutral
+  # Not webDiplomacy territories: the water the map encloses in the outlines drawn
+  # around the Japanese, Philippine and Indonesian archipelagos (uncoloured in
+  # webDiplomacy, part of the parent's outline here, painted as water).
+  - name: Japan (waters)
+    kind: child
+    parent: Japan
+    water: true
+  - name: Philippines (waters)
+    kind: child
+    parent: Philippines
+    water: true
+  - name: Indonesia (waters)
+    kind: child
+    parent: Indonesia
+    water: true
+countries:
+  - name: USSR
+    color: [224, 1, 43]
+    home_centers: [Vladivostok, Shanghai, Moscow, Leningrad, Albania, Havana]
+    provinces: [Kamchatka, Vladivostok, Manchuria, Shanghai, North Vietnam, Siberia, Urals, Mongolia, West China, Caucasus,
+      Moscow, Leningrad, Ukraine, Albania, Havana]
+    units:
+      Moscow: army
+      Leningrad/South: fleet
+      Albania: fleet
+      Havana: fleet
+      Shanghai: army
+      Vladivostok: army
+  - name: NATO
+    color: [1, 118, 172]
+    home_centers: [Los Angeles, New York, Paris, London, Istanbul, Australia]
+    provinces: [Philippines, West Canada, Greenland, Los Angeles, Midwest, Southwest, Florida, New York, Quebec, Spain, Paris,
+      London, Italy, Pakistan, Norway, Greece, Iraq, Istanbul, Armenia, Denmark, Australia]
+    units:
+      New York: army
+      Los Angeles: army
+      Paris: army
+      London: fleet
+      Istanbul: fleet
+      Australia: fleet
