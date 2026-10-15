@@ -69,9 +69,14 @@
 
     %div{"x-data": "alerts", class: "absolute left-3 top-3 z-20 flex flex-col gap-1.5 w-[340px] pointer-events-none"}
         %template{"x-for": "a in items", ":key": "a.id"}
-            .toast.pointer-events-auto.shadow-glow{class: "border-signal/40"}
-                %span.toast-dot
-                %div{"x-text": "a.message", class: "flex-1 text-[12px] text-fog-300 leading-snug"}
+            .toast.pointer-events-auto{":class": 'a.kind === "ready" ? "items-center py-1.5" : "shadow-glow border-signal/40"', ":data-power": "a.power"}
+                %span.toast-dot{"x-show": 'a.kind !== "ready"'}
+                %span.sw.h-2.w-2{"x-show": 'a.kind === "ready"'}
+                %div{"x-show": 'a.kind !== "ready"', "x-text": "a.message", class: "flex-1 text-[12px] text-fog-300 leading-snug"}
+                %div{"x-show": 'a.kind === "ready"', class: "flex-1 text-[12px] text-fog-400"}
+                    %span{"x-text": "a.country", style: "color: var(--c)"}
+                    is ready ·
+                    %span{"x-text": "a.count"}
                 %button.toast-close{type: "button", "x-show": "a.dismissable", "@click": "dismiss(a.id)", title: "Dismiss"} ×
 
     - include 'games/_popover.haml'

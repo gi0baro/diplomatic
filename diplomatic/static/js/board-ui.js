@@ -387,15 +387,24 @@
       init: function () {
         var self = this;
         on('board:alert', function (d) { self.push(d || {}); });
+        // the engine's own game:players listener runs first (registered at load): its players are up to date here
+        on('game:players', function (d) { self.ready(d || {}); });
       },
-      // autoDismiss: seconds; the same message again restarts its timer instead of stacking
+      // autoDismiss: seconds; the same key (default: the message) again updates the item and restarts its timer
+      // instead of stacking
       push: function (d) {
-        var self = this, item = null;
-        this.items.forEach(function (i) { if (i.message === d.message) item = i; });
-        if (!item) {
-          item = { id: ++this.seq, message: d.message, dismissable: d.dismissable !== false, timer: null };
-          this.items.push(item);
+        var self = this, item = null, key = d.key || d.message;
+        var fields = {
+          kind: d.kind || 'alert', message: d.message, country: d.country || null, power: d.power || null,
+          count: d.count || ''
+        };
+        this.items.forEach(function (i) { if (i.key === key) item = i; });
+        if (item) {
+          Object.assign(item, fields);
+        } else {
+          this.items.push(Object.assign({ id: ++this.seq, key: key, dismissable: d.dismissable !== false, timer: null }, fields));
           if (this.items.length > 5) this.items.shift();
+          item = this.items[this.items.length - 1];
         }
         if (item.timer) clearTimeout(item.timer);
         if (d.autoDismiss) {
@@ -405,6 +414,20 @@
       },
       dismiss: function (id) {
         this.items = this.items.filter(function (i) { return i.id !== id; });
+      },
+      // another power just got ready: "X is ready · n of m ready", counted as the powers header does (the powers
+      // playing this phase); the player's own ready and un-readies are not announced
+      ready: function (d) {
+        var g = app();
+        if (d.is_ready !== true || !d.country || !g || !g.game || d.country === g.game.country) return;
+        var players = g.game.players || [];
+        var active = players.filter(function (p) { return p.is_active; });
+        var base = active.length ? active : players;
+        var n = base.filter(function (p) { return p.is_ready; }).length;
+        this.push({
+          kind: 'ready', key: 'ready:' + d.country, message: d.country + ' is ready', country: d.country,
+          power: g.env.countryKey(d.country), count: n + ' of ' + base.length + ' ready', autoDismiss: 4
+        });
       }
     };
   }
