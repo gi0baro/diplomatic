@@ -39,11 +39,21 @@
     var busy = false;
 
     // ---- phase bar ----
-    function label(step) {
-      var d = step.data || {};
-      if (step.type === 'pre') return { name: String(d.year || ''), type: T.get('phase_type.pregame'), kind: 'pre' };
+    // a step draws the orders of the phase before it, so it is named after that phase; the pre-game step is the
+    // page's own (no year), the first phase has none before it (its own season and year, as pre-game), "next" is
+    // the open phase itself
+    function phaseName(d) {
       var season = d.type === PHASE_TYPES.builds ? T.get('season.winter') : SEASONS.translate(d.season);
-      return { name: season + ' ' + d.year, type: PHASE_TYPES.translate(d.type), kind: TYPES[d.type] };
+      return season + ' ' + d.year;
+    }
+
+    function label(step) {
+      var pregame = T.get('phase_type.pregame');
+      if (step.type === 'pre') return { name: '\u2014', type: pregame, kind: 'pre' };
+      var prev = step.type === 'next' ? null : step.prev();
+      if (prev && prev.type === 'pre') return { name: phaseName(step.data || {}), type: pregame, kind: 'pre' };
+      var d = (prev || step).data || {};
+      return { name: phaseName(d), type: PHASE_TYPES.translate(d.type), kind: TYPES[d.type] };
     }
 
     function renderBar() {
