@@ -1,0 +1,515 @@
+name: The Ancient Mediterranean
+revision: 1
+year: 1
+centers_to_win: 18
+min_players: 2
+provinces:
+  - name: Lusitania
+    code: LUS
+    kind: inland
+    links:
+      army: ["Tarraconensis", "Saguntum", "Gaul"]
+  - name: Tarraconensis
+    code: TAR
+    kind: coast
+    links:
+      army: ["Lusitania", "Saguntum", "Gaul", "Massilia"]
+      fleet: ["Saguntum", "Massilia", "Baleares", "Ligurian Sea"]
+  - name: Saguntum
+    code: SAG
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Lusitania", "Tarraconensis", "Mauretania"]
+      fleet: ["Tarraconensis", "Mauretania", "Baleares", "Iberian Sea", "Berber Sea"]
+  - name: Gaul
+    code: GAU
+    kind: inland
+    links:
+      army: ["Lusitania", "Tarraconensis", "Massilia", "Rhaetia"]
+  - name: Massilia
+    code: MAS
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Tarraconensis", "Gaul", "Rhaetia", "Etruria"]
+      fleet: ["Tarraconensis", "Etruria", "Ligurian Sea"]
+  - name: Rhaetia
+    code: RHA
+    kind: inland
+    links:
+      army: ["Gaul", "Massilia", "Etruria", "Venetia", "Vindobona", "Sarmatia"]
+  - name: Etruria
+    code: ETR
+    kind: coast
+    links:
+      army: ["Massilia", "Rhaetia", "Venetia", "Roma", "Ravenna"]
+      fleet: ["Massilia", "Roma", "Ligurian Sea"]
+  - name: Venetia
+    code: VEN
+    kind: coast
+    links:
+      army: ["Rhaetia", "Etruria", "Ravenna", "Vindobona", "Dalmatia"]
+      fleet: ["Ravenna", "Dalmatia", "Adriatic Sea"]
+  - name: Roma
+    code: ROM
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Etruria", "Ravenna", "Neapolis", "Apulia"]
+      fleet: ["Etruria", "Neapolis", "Ligurian Sea", "Tyrrhenean Sea"]
+  - name: Ravenna
+    code: RAV
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Etruria", "Venetia", "Roma", "Apulia"]
+      fleet: ["Venetia", "Apulia", "Adriatic Sea"]
+  - name: Neapolis
+    code: NEA
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Roma", "Apulia", "Sicilia"]
+      fleet: ["Roma", "Apulia", "Sicilia", "Tyrrhenean Sea", "Ausonian Sea", "Ionian Sea"]
+  - name: Apulia
+    code: APU
+    kind: coast
+    links:
+      army: ["Roma", "Ravenna", "Neapolis"]
+      fleet: ["Ravenna", "Neapolis", "Adriatic Sea", "Ionian Sea"]
+  - name: Vindobona
+    code: VIN
+    kind: inland
+    supply_center: true
+    links:
+      army: ["Rhaetia", "Venetia", "Dalmatia", "Illyria", "Sarmatia"]
+  - name: Dalmatia
+    code: DAL
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Venetia", "Vindobona", "Illyria", "Epirus"]
+      fleet: ["Venetia", "Epirus", "Adriatic Sea"]
+  - name: Illyria
+    code: ILL
+    kind: inland
+    links:
+      army: ["Vindobona", "Dalmatia", "Sarmatia", "Dacia", "Epirus", "Macedonia"]
+  - name: Sarmatia
+    code: SAM
+    kind: inland
+    links:
+      army: ["Rhaetia", "Vindobona", "Illyria", "Dacia", "Chersonesus"]
+  - name: Dacia
+    code: DAC
+    kind: coast
+    links:
+      army: ["Illyria", "Sarmatia", "Chersonesus", "Macedonia", "Byzantium"]
+      fleet: ["Chersonesus", "Byzantium", "Black Sea"]
+  - name: Chersonesus
+    code: CHE
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Sarmatia", "Dacia", "Sinope", "Armenia"]
+      fleet: ["Dacia", "Sinope", "Black Sea"]
+  - name: Epirus
+    code: EPI
+    kind: coast
+    links:
+      army: ["Dalmatia", "Illyria", "Macedonia", "Athens"]
+      fleet: ["Dalmatia", "Athens", "Adriatic Sea", "Ionian Sea"]
+  - name: Macedonia
+    code: MAC
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Illyria", "Dacia", "Epirus", "Athens", "Byzantium"]
+      fleet: ["Athens", "Byzantium", "Aegean Sea"]
+  - name: Athens
+    code: ATH
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Epirus", "Macedonia", "Sparta"]
+      fleet: ["Epirus", "Macedonia", "Sparta", "Ionian Sea", "Aegean Sea"]
+  - name: Sparta
+    code: SPA
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Athens"]
+      fleet: ["Athens", "Ionian Sea", "Messenian Sea", "Aegean Sea"]
+  - name: Byzantium
+    code: BYZ
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Dacia", "Macedonia", "Bithynia", "Miletus", "Galatia"]
+      fleet: ["Dacia", "Macedonia", "Bithynia", "Miletus", "Aegean Sea", "Black Sea"]
+  - name: Bithynia
+    code: BIT
+    kind: coast
+    links:
+      army: ["Byzantium", "Sinope", "Galatia"]
+      fleet: ["Byzantium", "Sinope", "Black Sea"]
+  - name: Sinope
+    code: SNP
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Chersonesus", "Bithynia", "Galatia", "Cappadocia", "Armenia"]
+      fleet: ["Chersonesus", "Bithynia", "Black Sea"]
+  - name: Miletus
+    code: MIL
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Byzantium", "Galatia", "Isauria"]
+      fleet: ["Byzantium", "Isauria", "Aegean Sea", "Minoan Sea", "Cilician Strait"]
+  - name: Galatia
+    code: GAL
+    kind: inland
+    links:
+      army: ["Byzantium", "Bithynia", "Sinope", "Miletus", "Isauria", "Cappadocia"]
+  - name: Isauria
+    code: ISA
+    kind: coast
+    links:
+      army: ["Miletus", "Galatia", "Cappadocia"]
+      fleet: ["Miletus", "Cappadocia", "Cilician Strait"]
+  - name: Cappadocia
+    code: CAP
+    kind: coast
+    links:
+      army: ["Sinope", "Galatia", "Isauria", "Armenia", "Antioch", "Damascus"]
+      fleet: ["Isauria", "Antioch", "Cilician Strait"]
+  - name: Armenia
+    code: ARM
+    kind: inland
+    links:
+      army: ["Chersonesus", "Sinope", "Cappadocia", "Damascus"]
+  - name: Antioch
+    code: ANT
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Cappadocia", "Damascus", "Sidon"]
+      fleet: ["Cappadocia", "Sidon", "Cilician Strait"]
+  - name: Damascus
+    code: DAM
+    kind: inland
+    supply_center: true
+    links:
+      army: ["Cappadocia", "Armenia", "Antioch", "Sidon", "Arabia"]
+  - name: Sidon
+    code: SID
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Antioch", "Damascus", "Tyre", "Arabia"]
+      fleet: ["Antioch", "Tyre", "Cilician Strait", "Syrian Sea"]
+  - name: Tyre
+    code: TYE
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Sidon", "Arabia", "Jerusalem"]
+      fleet: ["Sidon", "Jerusalem", "Syrian Sea"]
+  - name: Arabia
+    code: ARA
+    kind: inland
+    links:
+      army: ["Damascus", "Sidon", "Tyre", "Jerusalem", "Nabatea"]
+  - name: Jerusalem
+    code: JER
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Tyre", "Arabia", "Petra", "Nabatea", "Sinai"]
+      fleet: ["Tyre", "Sinai", "Syrian Sea", "Gulf of Pelusium"]
+  - name: Petra
+    code: PET
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Jerusalem", "Nabatea", "Sinai"]
+      fleet: ["Nabatea", "Sinai", "Red Sea"]
+  - name: Nabatea
+    code: NAB
+    kind: coast
+    links:
+      army: ["Arabia", "Jerusalem", "Petra"]
+      fleet: ["Petra", "Red Sea"]
+  - name: Sinai
+    code: SIN
+    kind: coast
+    links:
+      army: ["Jerusalem", "Petra", "Thebes", "Alexandria"]
+      fleet: ["Jerusalem", "Petra", "Thebes", "Alexandria", "Gulf of Pelusium", "Red Sea"]
+  - name: Thebes
+    code: THE
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Sinai", "Bayuda", "Memphis", "Alexandria"]
+      fleet: ["Sinai", "Bayuda", "Memphis", "Alexandria", "Gulf of Pelusium", "Red Sea"]
+  - name: Bayuda
+    code: BAY
+    kind: coast
+    links:
+      army: ["Thebes", "Memphis", "Marmarica", "Phazania", "Sahara"]
+      fleet: ["Thebes", "Memphis"]
+  - name: Memphis
+    code: MEM
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Thebes", "Bayuda", "Alexandria", "Cyrene", "Marmarica"]
+      fleet: ["Thebes", "Bayuda", "Alexandria"]
+  - name: Alexandria
+    code: ALE
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Sinai", "Thebes", "Memphis", "Cyrene"]
+      fleet: ["Sinai", "Thebes", "Memphis", "Cyrene", "Libyan Sea", "Egyptian Sea", "Gulf of Pelusium"]
+  - name: Cyrene
+    code: CYR
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Memphis", "Alexandria", "Marmarica", "Leptis"]
+      fleet: ["Alexandria", "Leptis", "Libyan Sea", "Gulf of Syrtis"]
+  - name: Marmarica
+    code: MAR
+    kind: inland
+    links:
+      army: ["Bayuda", "Memphis", "Cyrene", "Leptis", "Phazania"]
+  - name: Leptis
+    code: LEP
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Cyrene", "Marmarica", "Phazania", "Numidia"]
+      fleet: ["Cyrene", "Numidia", "Gulf of Tacape", "Gulf of Syrtis"]
+  - name: Phazania
+    code: PHA
+    kind: inland
+    links:
+      army: ["Bayuda", "Marmarica", "Leptis", "Sahara", "Numidia", "Cirta"]
+  - name: Sahara
+    code: SAH
+    kind: inland
+    links:
+      army: ["Bayuda", "Phazania", "Cirta", "Mauretania"]
+  - name: Numidia
+    code: NUM
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Leptis", "Phazania", "Thapsus", "Cirta"]
+      fleet: ["Leptis", "Thapsus", "Gulf of Tacape"]
+  - name: Thapsus
+    code: THA
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Numidia", "Carthage", "Cirta"]
+      fleet: ["Numidia", "Carthage", "Punic Sea", "Gulf of Tacape"]
+  - name: Carthage
+    code: CAR
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Thapsus", "Cirta", "Mauretania"]
+      fleet: ["Thapsus", "Mauretania", "Berber Sea", "Punic Sea"]
+  - name: Cirta
+    code: CIR
+    kind: inland
+    supply_center: true
+    links:
+      army: ["Phazania", "Sahara", "Numidia", "Thapsus", "Carthage", "Mauretania"]
+  - name: Mauretania
+    code: MAU
+    kind: coast
+    links:
+      army: ["Saguntum", "Sahara", "Carthage", "Cirta"]
+      fleet: ["Saguntum", "Carthage", "Iberian Sea", "Berber Sea"]
+  - name: Baleares
+    code: BAL
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Tarraconensis", "Saguntum", "Berber Sea", "Ligurian Sea"]
+  - name: Sardinia
+    code: SAR
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Corsica"]
+      fleet: ["Corsica", "Berber Sea", "Ligurian Sea", "Tyrrhenean Sea", "Punic Sea"]
+  - name: Corsica
+    code: COR
+    kind: coast
+    links:
+      army: ["Sardinia"]
+      fleet: ["Sardinia", "Ligurian Sea", "Tyrrhenean Sea"]
+  - name: Sicilia
+    code: SIC
+    kind: coast
+    supply_center: true
+    links:
+      army: ["Neapolis"]
+      fleet: ["Neapolis", "Tyrrhenean Sea", "Punic Sea", "Ausonian Sea"]
+  - name: Crete
+    code: CRE
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Messenian Sea", "Libyan Sea", "Aegean Sea", "Egyptian Sea", "Minoan Sea"]
+  - name: Cyprus
+    code: CYP
+    kind: coast
+    supply_center: true
+    links:
+      fleet: ["Egyptian Sea", "Cilician Strait", "Syrian Sea"]
+  - name: Iberian Sea
+    code: IBE
+    kind: sea
+    links:
+      fleet: ["Saguntum", "Mauretania", "Berber Sea"]
+  - name: Berber Sea
+    code: BER
+    kind: sea
+    links:
+      fleet: ["Saguntum", "Carthage", "Mauretania", "Baleares", "Sardinia", "Iberian Sea", "Ligurian Sea", "Punic Sea"]
+  - name: Ligurian Sea
+    code: LIG
+    kind: sea
+    links:
+      fleet: ["Tarraconensis", "Massilia", "Etruria", "Roma", "Baleares", "Sardinia", "Corsica", "Berber Sea", "Tyrrhenean Sea"]
+  - name: Tyrrhenean Sea
+    code: TYR
+    kind: sea
+    links:
+      fleet: ["Roma", "Neapolis", "Sardinia", "Corsica", "Sicilia", "Ligurian Sea", "Punic Sea", "Ausonian Sea"]
+  - name: Punic Sea
+    code: PUN
+    kind: sea
+    links:
+      fleet: ["Thapsus", "Carthage", "Sardinia", "Sicilia", "Berber Sea", "Tyrrhenean Sea", "Gulf of Tacape", "Ausonian Sea"]
+  - name: Gulf of Tacape
+    code: TAC
+    kind: sea
+    links:
+      fleet: ["Leptis", "Numidia", "Thapsus", "Punic Sea", "Ausonian Sea", "Messenian Sea", "Libyan Sea", "Gulf of Syrtis"]
+  - name: Ausonian Sea
+    code: AUS
+    kind: sea
+    links:
+      fleet: ["Neapolis", "Sicilia", "Tyrrhenean Sea", "Punic Sea", "Gulf of Tacape", "Ionian Sea", "Messenian Sea", "Libyan Sea"]
+  - name: Adriatic Sea
+    code: ADR
+    kind: sea
+    links:
+      fleet: ["Venetia", "Ravenna", "Apulia", "Dalmatia", "Epirus", "Ionian Sea"]
+  - name: Ionian Sea
+    code: ION
+    kind: sea
+    links:
+      fleet: ["Neapolis", "Apulia", "Epirus", "Athens", "Sparta", "Ausonian Sea", "Adriatic Sea", "Messenian Sea"]
+  - name: Messenian Sea
+    code: MES
+    kind: sea
+    links:
+      fleet: ["Sparta", "Crete", "Gulf of Tacape", "Ausonian Sea", "Ionian Sea", "Libyan Sea", "Aegean Sea"]
+  - name: Libyan Sea
+    code: LIB
+    kind: sea
+    links:
+      fleet: ["Alexandria", "Cyrene", "Crete", "Gulf of Tacape", "Ausonian Sea", "Messenian Sea", "Gulf of Syrtis", "Egyptian Sea"]
+  - name: Gulf of Syrtis
+    code: SYT
+    kind: sea
+    links:
+      fleet: ["Cyrene", "Leptis", "Gulf of Tacape", "Libyan Sea"]
+  - name: Aegean Sea
+    code: AEG
+    kind: sea
+    links:
+      fleet: ["Macedonia", "Athens", "Sparta", "Byzantium", "Miletus", "Crete", "Messenian Sea", "Minoan Sea"]
+  - name: Black Sea
+    code: BLA
+    kind: sea
+    links:
+      fleet: ["Dacia", "Chersonesus", "Byzantium", "Bithynia", "Sinope"]
+  - name: Egyptian Sea
+    code: EGY
+    kind: sea
+    links:
+      fleet: ["Alexandria", "Crete", "Cyprus", "Libyan Sea", "Minoan Sea", "Cilician Strait", "Syrian Sea", "Gulf of Pelusium"]
+  - name: Minoan Sea
+    code: MIN
+    kind: sea
+    links:
+      fleet: ["Miletus", "Crete", "Aegean Sea", "Egyptian Sea", "Cilician Strait"]
+  - name: Cilician Strait
+    code: CIL
+    kind: sea
+    links:
+      fleet: ["Miletus", "Isauria", "Cappadocia", "Antioch", "Sidon", "Cyprus", "Egyptian Sea", "Minoan Sea", "Syrian Sea"]
+  - name: Syrian Sea
+    code: SYR
+    kind: sea
+    links:
+      fleet: ["Sidon", "Tyre", "Jerusalem", "Cyprus", "Egyptian Sea", "Cilician Strait", "Gulf of Pelusium"]
+  - name: Gulf of Pelusium
+    code: PEL
+    kind: sea
+    links:
+      fleet: ["Jerusalem", "Sinai", "Thebes", "Alexandria", "Egyptian Sea", "Syrian Sea"]
+  - name: Red Sea
+    code: RED
+    kind: sea
+    links:
+      fleet: ["Petra", "Nabatea", "Sinai", "Thebes"]
+  - name: Atlantic Ocean
+    code: ATL
+    kind: neutral
+    water: true
+  - name: Baleares (waters)
+    kind: child
+    parent: Baleares
+    water: true
+  - name: Byzantium (waters)
+    kind: child
+    parent: Byzantium
+    water: true
+countries:
+  - name: Carthage
+    color: [121, 175, 198]
+    home_centers: ["Thapsus", "Carthage", "Cirta"]
+    provinces: ["Thapsus", "Carthage", "Cirta"]
+    units: {"Thapsus": "fleet", "Cirta": "army", "Carthage": "army"}
+  - name: Egypt
+    color: [234, 234, 175]
+    home_centers: ["Thebes", "Memphis", "Alexandria"]
+    provinces: ["Thebes", "Memphis", "Alexandria"]
+    units: {"Alexandria": "fleet", "Memphis": "army", "Thebes": "army"}
+  - name: Greece
+    color: [164, 196, 153]
+    home_centers: ["Macedonia", "Athens", "Sparta"]
+    provinces: ["Macedonia", "Athens", "Sparta"]
+    units: {"Sparta": "fleet", "Athens": "army", "Macedonia": "army"}
+  - name: Persia
+    color: [168, 126, 159]
+    home_centers: ["Antioch", "Damascus", "Sidon"]
+    provinces: ["Antioch", "Damascus", "Sidon"]
+    units: {"Sidon": "fleet", "Antioch": "army", "Damascus": "army"}
+  - name: Rome
+    color: [196, 143, 133]
+    home_centers: ["Roma", "Ravenna", "Neapolis"]
+    provinces: ["Roma", "Ravenna", "Neapolis"]
+    units: {"Neapolis": "fleet", "Roma": "army", "Ravenna": "army"}
