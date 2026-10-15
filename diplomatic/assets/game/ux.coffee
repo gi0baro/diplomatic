@@ -27,8 +27,9 @@ class UX
     launched: (gamePre, gameOver) ->
         @gamePre = gamePre
         @gameOver = gameOver
-        #: events dispatched by `Network` from the game socket frames
+        #: events dispatched by `Network` from the game socket frames; play.js handles "processed"
         document.addEventListener "game:state", (e) =>
+            return if e.detail is "processed"
             @alert("Game changed, reloading in 5 seconds..", false)
             setTimeout (=>
                 @app.reload()

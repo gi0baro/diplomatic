@@ -42,20 +42,7 @@
         %button.nb{type: "button", "data-nav": "next", title: "Next phase (→)"} &gt;
         %button.nb{type: "button", "data-nav": "last", title: "Current phase (End)"} &gt;|
 
-    .ml-1.pl-4.border-l.border-ink-700.flex.items-center.gap-3.shrink-0
-        .h-8.rounded-sm.bg-ink-600.flex.flex-col.justify-end.overflow-hidden{class: "w-[3px]", title: "{{=left_pct}} % of the phase time left"}
-            #clock-bar.w-full.rounded-sm.bg-signal{class: "shadow-[0_0_8px_#9fe8ff]", style: "height: {{=left_pct}}%"}
-        %div
-            .flex.items-center.gap-2
-                %span#clock{class: "font-mono text-[18px] leading-none tabular-nums text-fog-200"}
-                    = countdown
-                - if deadline
-                    %span{class: "h-1.5 w-1.5 rounded-full bg-signal shadow-[0_0_8px_#9fe8ff] animate-pulse"}
-            %div{class: "font-mono text-[9px] tracking-[.12em] text-fog-500 uppercase mt-0.5 whitespace-nowrap"}
-                - if deadline
-                    left · due {{=deadline}}
-                - else
-                    no deadline
+    - include 'games/partials/clock.haml'
 
     - include '_header_user.haml'
 - end
@@ -70,9 +57,12 @@
     %div{"x-data": "alerts", class: "absolute left-3 top-3 z-20 flex flex-col gap-1.5 w-[340px] pointer-events-none"}
         %template{"x-for": "a in items", ":key": "a.id"}
             .toast.pointer-events-auto{":class": 'a.kind === "ready" ? "items-center py-1.5" : "shadow-glow border-signal/40"', ":data-power": "a.power"}
-                %span.toast-dot{"x-show": 'a.kind !== "ready"'}
+                %span.toast-dot{"x-show": 'a.kind !== "ready"', ":class": "a.tone"}
                 %span.sw.h-2.w-2{"x-show": 'a.kind === "ready"'}
-                %div{"x-show": 'a.kind !== "ready"', "x-text": "a.message", class: "flex-1 text-[12px] text-fog-300 leading-snug"}
+                %div{"x-show": 'a.kind !== "ready" && a.kind !== "phase"', "x-text": "a.message", class: "flex-1 text-[12px] text-fog-300 leading-snug"}
+                %div{"x-show": 'a.kind === "phase"', class: "flex-1"}
+                    %div{"x-text": "a.title", ":class": "a.tone", class: "font-mono text-[10px] tracking-[.2em] uppercase"}
+                    %div{"x-text": "a.message", class: "text-[12px] text-fog-300 leading-snug"}
                 %div{"x-show": 'a.kind === "ready"', class: "flex-1 text-[12px] text-fog-400"}
                     %span{"x-text": "a.country", style: "color: var(--c)"}
                     is ready ·
@@ -144,6 +134,7 @@
     gapp.net.route("orders", "{{=url('api.authorized.game_orders', game.id)}}");
     gapp.net.route("order_save", "{{=url('api.authorized.order_save', ':ID:')}}");
     gapp.net.route("ready", "{{=url('api.authorized.player_ready', game.id)}}");
+    gapp.net.route("clock", "{{=url('front.games.partial_clock', game.id)}}");
     gapp.net.route("chat_rooms", "{{=url('api.authorized.chat_rooms', game.id)}}");
     gapp.net.route("chat_readings", "{{=url('api.authorized.chat_readings', game.id)}}");
     gapp.net.route("chat_messages", "{{=url('api.authorized.chat_messages', ':ID:')}}");

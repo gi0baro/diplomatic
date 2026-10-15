@@ -29,6 +29,7 @@ class Game
         @_saveTimer = null
         @_saving = null
         @_saveAgain = false
+        @_saveGen = 0
         @_emitQueued = false
         #: live updates of the players (ready / join), relayed by the game socket
         document.addEventListener "game:players", (e) =>
@@ -58,6 +59,24 @@ class Game
         @_initOrders(orders)
         # @_loadPhasesOrders(callback)
         return
+
+    resetPhase: (data, orders, isPlayerReady, canOrder) ->
+        lost = (order for territory, order of @orders when order._changed).length
+        @_saveGen++
+        clearTimeout(@_saveTimer) if @_saveTimer isnt null
+        @_saveTimer = null
+        @_saving = null
+        @_saveAgain = false
+        @orders = {}
+        @moves = {}
+        @builds = {}
+        @moves_queue = []
+        @steps = {}
+        @ready = !!isPlayerReady
+        @canOrder = !!canOrder
+        @players = ((Object.assign({}, p) for p in (data.players or [])))
+        @_initOrders(orders)
+        return lost
 
     setStep: (step) ->
         oldStep = @step
@@ -340,8 +359,12 @@ class Game
         if not changed.length
             return Promise.resolve({saved: 0, errors: {}})
         @_emit("orders:saving", {count: changed.length})
-        @_saving = @app.net.saveOrders(changed).then (res) =>
-            @_saving = null
+        gen = @_saveGen
+        saving = @app.net.saveOrders(changed).then (res) =>
+            #: after a phase change @_saving may already be a newer save's
+            @_saving = null if @_saving is saving
+            #: the phase changed meanwhile: drop the result
+            return res if gen isnt @_saveGen
             if not isObjectEmpty(res.errors)
                 @_emit("orders:error", res.errors)
             else if not @_hasChanged()
@@ -352,6 +375,7 @@ class Game
                 @_saveAgain = false
                 @_scheduleSave() if @_hasChanged()
             return res
+        @_saving = saving
         return @_saving
 
     #: kept for older callers

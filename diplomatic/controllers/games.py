@@ -1,3 +1,5 @@
+from datetime import timezone
+
 from emmett import abort, redirect, request, url
 from emmett.tools import requires
 
@@ -160,32 +162,16 @@ def play(gid):
             + svg[root_end + 1 :]
         )
 
-    #: deadline: countdown (static for now), absolute time, share of the phase time left
-    timer = game.timer()
-    left = timer.d * 86400 + timer.h * 3600 + timer.m * 60 + timer.s
-    if not game.next_process_at or game.stage != Game.Stage.GAME:
-        countdown, deadline, left_pct = "--:--:--", None, 0
-    else:
-        if timer.d:
-            countdown = f"{timer.d}d {timer.h:02d}:{timer.m:02d}"
-        else:
-            countdown = f"{timer.h:02d}:{timer.m:02d}:{timer.s:02d}"
-        deadline = game.next_process_at.strftime("%d %b %H:%M UTC")
-        left_pct = max(0, min(100, round(100 * left / max(1, game.phase_time * 60))))
-
     return {
         "game": game,
         "variant": variant,
         "board_svg": board_svg,
         "country_css": "\n".join(css),
         "player_key": keys.get(player.country) if player else None,
-        "countdown": countdown,
-        "deadline": deadline,
-        "left_pct": left_pct,
+        **clock_values(game),
         "scs": scs,
         "chats": {"global": 1},
         "players": players,
-        "timer": timer,
         "player_id": player.id if player else None,
         "player_country": player.country if player else None,
         "player_ready": player.is_ready if player else False,
@@ -194,6 +180,42 @@ def play(gid):
         # timer=game.time_to_next(),
         # statscol=statscol, unames=usernames)}
     }
+
+
+def clock_values(game):
+    timer = game.timer()
+    left = timer.d * 86400 + timer.h * 3600 + timer.m * 60 + timer.s
+    running = game.stage == Game.Stage.GAME
+    if not game.next_process_at or not running:
+        countdown, deadline, deadline_iso, left_pct = "--:--:--", "", "", 0
+    else:
+        if timer.d:
+            countdown = f"{timer.d}d {timer.h:02d}:{timer.m:02d}"
+        else:
+            countdown = f"{timer.h:02d}:{timer.m:02d}:{timer.s:02d}"
+        deadline = game.next_process_at.strftime("%d %b %H:%M UTC")
+        #: naive UTC
+        at = game.next_process_at
+        deadline_iso = (at.replace(tzinfo=timezone.utc) if at.tzinfo is None else at).isoformat()
+        left_pct = max(0, min(100, round(100 * left / max(1, game.phase_time * 60))))
+    phase = game.active_phase() if running else None
+    return {
+        "countdown": countdown,
+        "deadline": deadline,
+        "deadline_iso": deadline_iso,
+        "left_pct": left_pct,
+        "phase_time": game.phase_time,
+        "resolved": phase.created_at.strftime("%d %b %H:%M UTC") if phase else "",
+        "timer": timer,
+    }
+
+
+@games.route("/play/<str:gid>/clock", template="partials/clock.haml")
+def partial_clock(gid):
+    game = Game.get(gid)
+    if not game:
+        abort(404)
+    return clock_values(game)
 
 
 @games.route("/mine")

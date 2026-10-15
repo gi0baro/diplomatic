@@ -84,6 +84,7 @@
       },
 
       launch: function (d) {
+        this.errors = [];
         this.canOrder = !!d.canOrder;
         this.ready = !!d.ready;
         this.player = d.player || null;
@@ -273,6 +274,7 @@
         on('board:menu-close', function (d) {
           if (!d || !self.m || d.type === self.m.type) self.open = false;
         });
+        on('board:launched', function () { self.open = false; });
         on('orders:changed', function () { if (self.open) self.refresh(); });
         if (global.Floating) {
           Floating.draggable(el, '[data-drag]', function (pos) {
@@ -396,7 +398,7 @@
         var self = this, item = null, key = d.key || d.message;
         var fields = {
           kind: d.kind || 'alert', message: d.message, country: d.country || null, power: d.power || null,
-          count: d.count || ''
+          count: d.count || '', title: d.title || '', tone: d.tone || ''
         };
         this.items.forEach(function (i) { if (i.key === key) item = i; });
         if (item) {

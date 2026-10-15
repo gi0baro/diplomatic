@@ -1,0 +1,14 @@
+#clock-box.ml-1.pl-4.border-l.border-ink-700.flex.items-center.gap-3.shrink-0{"data-deadline": "{{=deadline_iso}}", "data-span": "{{=phase_time}}", "data-due": "{{=deadline}}", "data-resolved": "{{=resolved}}"}
+    .h-8.rounded-sm.bg-ink-600.flex.flex-col.justify-end.overflow-hidden{class: "w-[3px]", title: "{{=left_pct}} % of the phase time left"}
+        #clock-bar.w-full.rounded-sm.bg-signal{class: "shadow-[0_0_8px_#9fe8ff]", style: "height: {{=left_pct}}%"}
+    %div
+        .flex.items-center.gap-2
+            %span#clock{class: "font-mono text-[18px] leading-none tabular-nums text-fog-200"}
+                = countdown
+            - if deadline
+                %span{class: "h-1.5 w-1.5 rounded-full bg-signal shadow-[0_0_8px_#9fe8ff] animate-pulse"}
+        %div{class: "font-mono text-[9px] tracking-[.12em] text-fog-500 uppercase mt-0.5 whitespace-nowrap"}
+            - if deadline
+                left · due {{=deadline}}
+            - else
+                no deadline

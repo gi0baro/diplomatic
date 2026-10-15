@@ -4,6 +4,7 @@
 // the strings and the routes (gapp.net.routes) and set the page constants:
 //   PLAYER        the player's country, or null
 //   PRE, ACTIVE, OVER   game stage
+//   PLAYER_ACTIVE the player has orders in the open phase
 //   PLAYER_READY  the initial value of gapp.game.ready (the engine owns it from there: setReady, game:players)
 //   FULL          the player gets the virtual "next" step (their pending orders) on top of the phases
 (function () {
@@ -26,6 +27,7 @@
     var PRE = window.PRE;
     var ACTIVE = window.ACTIVE;
     var OVER = window.OVER;
+    var PLAYER_ACTIVE = window.PLAYER_ACTIVE;
     var PLAYER_READY = window.PLAYER_READY;
     var FULL = window.FULL;
     var TYPES = Steps.TYPES;
@@ -37,6 +39,10 @@
     var view = 0;        // index of the displayed step
     var current = 0;     // index of the step of the phase being played (>= current is CURRENT)
     var busy = false;
+    var moving = null;
+    var refreshing = false;
+    var mapData = null;
+    var clockTimer = null;
 
     // ---- phase bar ----
     // a step draws the orders of the phase before it, so it is named after that phase; the pre-game step is the
@@ -47,13 +53,16 @@
       return season + ' ' + d.year;
     }
 
+    function phaseLabel(d) {
+      return { name: phaseName(d), type: PHASE_TYPES.translate(d.type), kind: TYPES[d.type] };
+    }
+
     function label(step) {
       var pregame = T.get('phase_type.pregame');
       if (step.type === 'pre') return { name: '\u2014', type: pregame, kind: 'pre' };
       var prev = step.type === 'next' ? null : step.prev();
       if (prev && prev.type === 'pre') return { name: phaseName(step.data || {}), type: pregame, kind: 'pre' };
-      var d = (prev || step).data || {};
-      return { name: phaseName(d), type: PHASE_TYPES.translate(d.type), kind: TYPES[d.type] };
+      return phaseLabel((prev || step).data || {});
     }
 
     function renderBar() {
@@ -90,21 +99,21 @@
 
     // ---- navigation (the Vue board's controlTime: every phase is known, orders load on demand) ----
     function go(where) {
-      if (!gapp.launched || busy || !steps.length) return;
+      if (!gapp.launched || busy || refreshing || !steps.length) return;
       var targets = { first: 0, prev: view - 1, next: view + 1, last: steps.length - 1 };
       var i = targets[where];
       if (i === undefined) return;
       i = Math.max(0, Math.min(steps.length - 1, i));
       if (i === view) return;
       busy = true;
-      shaper.ensureOrders(steps[i])
+      moving = shaper.ensureOrders(steps[i])
         .then(function () {
           view = i;
           gapp.ux.stepChange(steps[i], info(i));
           renderBar();
         })
         .catch(function (err) { console.error(err); })
-        .then(function () { busy = false; });
+        .then(function () { busy = false; moving = null; });
     }
 
     // ---- engine wiring: menus and alerts are DOM events (board-ui.js); the step callback (the engine
@@ -112,17 +121,21 @@
     gapp.init(null, null, null, null, null);
     gapp.bindings(null, null, null, null, null, null, null, null, function () { go('last'); });
 
-    // ---- deadline: play() renders the countdown and the bar once; from the game's next_process_at they tick here,
-    // in the server's formats. At zero they stay there until the state frame reloads the page.
+    // ---- deadline: ticks the clock partial's countdown and bar from its data-deadline and data-span
     function pad(n) { return (n < 10 ? '0' : '') + n; }
 
-    function startClock(game) {
+    function startClock() {
+      if (clockTimer !== null) {
+        clearInterval(clockTimer);
+        clockTimer = null;
+      }
+      var box = document.getElementById('clock-box');
       var clock = $('#clock');
       var bar = $('#clock-bar');
-      if (!ACTIVE || !game || !game.next_process_at || !clock || !bar) return;
-      var deadline = new Date(game.next_process_at).getTime();
-      var span = Math.max(1, game.phase_time * 60);
-      var timer = null;
+      if (!ACTIVE || !box || !box.dataset.deadline || !clock || !bar) return;
+      var deadline = new Date(box.dataset.deadline).getTime();
+      if (isNaN(deadline)) return;
+      var span = Math.max(1, (Number(box.dataset.span) || 0) * 60);
       function tick() {
         var left = Math.max(0, Math.floor((deadline - Date.now()) / 1000));
         var d = Math.floor(left / 86400), h = Math.floor(left / 3600) % 24, m = Math.floor(left / 60) % 60;
@@ -130,21 +143,23 @@
         var pct = Math.max(0, Math.min(100, Math.round(100 * left / span)));
         bar.style.height = pct + '%';
         bar.parentNode.title = pct + ' % of the phase time left';
-        if (!left && timer) clearInterval(timer);
+        if (!left && clockTimer !== null) {
+          clearInterval(clockTimer);
+          clockTimer = null;
+        }
       }
       tick();
-      if (deadline > Date.now()) timer = setInterval(tick, 1000);
+      if (deadline > Date.now()) clockTimer = setInterval(tick, 1000);
     }
 
     function boot() {
-      var mapData = null;
       var gameData = null;
+      startClock();
       // a finished game has no phase rows left: its steps come from the history snapshot
       Promise.all([getJSON(routes.map), getJSON(routes.game), getJSON(OVER ? routes.history : routes.phases)])
         .then(function (res) {
           mapData = res[0];
           gameData = res[1];
-          startClock(gameData);
           if (OVER) {
             // every step carries its orders; the final position is current and shown
             steps = shaper.link(shaper.buildHistory(mapData, gameData, (res[2] && res[2].phases) || []));
@@ -184,6 +199,84 @@
         })
         .catch(function (err) { console.error(err); });
     }
+
+    // ---- a processed phase, in place ----
+    function toast(detail) {
+      document.dispatchEvent(new CustomEvent('board:alert', { detail: detail }));
+    }
+
+    function playerFlags(players) {
+      var me = (players || []).filter(function (p) { return PLAYER !== null && p.country === PLAYER; })[0];
+      PLAYER_ACTIVE = !!(me && me.is_active);
+      PLAYER_READY = !!(me && me.is_ready);
+      FULL = ACTIVE && PLAYER !== null && PLAYER_ACTIVE;
+    }
+
+    function refresh() {
+      if (!gapp.launched || OVER || !ACTIVE || !steps.length) return;
+      var id = steps[current] && steps[current].id;
+      if (!id) return;
+      refreshing = true;
+      var clock = Promise.resolve().then(function () {
+        if (window.htmx) return htmx.ajax('GET', routes.clock, { target: '#clock-box', swap: 'outerHTML' });
+      });
+      return Promise.all([
+        getJSON(routes.phase.replace(':ID:', id)),
+        getJSON(routes.phase_next + '?last_id=' + encodeURIComponent(id)),
+        getJSON(routes.game),
+        getJSON(routes.orders),
+        clock,
+        moving || Promise.resolve()
+      ]).then(function (res) {
+        var rowN = res[0], rowN1 = res[1], gameData = res[2];
+        var orders = (res[3] && Array.isArray(res[3].data)) ? res[3].data : [];
+        if (!rowN1 || rowN1.id === id) throw new Error('no phase after ' + id);
+        orders = orders.map(function (o) { return Object.assign({}, o, { _changed: false }); });
+        playerFlags(gameData.players);
+
+        var oldCurrent = current;
+        steps[oldCurrent].isLast = false;
+        steps.splice(oldCurrent + 1);    // the old NEXT, if any
+        var last = shaper.buildGameStep(mapData, rowN1, rowN.orders || {}, true);
+        steps.push(last);
+        if (FULL) {
+          var next = shaper.buildNextGameStep(PLAYER, last);
+          next.orders[PLAYER] = orders;
+          steps.push(next);
+        }
+        shaper.link(steps);
+
+        var lost = gapp.refresh(gameData, orders, PLAYER_READY, FULL);
+        current = oldCurrent + 1;
+        if (view >= oldCurrent) view = current;
+        gapp.ux.stepChange(steps[view], info(view));
+        renderBar();
+        startClock();
+
+        var box = document.getElementById('clock-box');
+        var resolved = box ? box.dataset.resolved : '';
+        var due = box ? box.dataset.due : '';
+        var was = label(last), now = phaseLabel(rowN1);
+        toast({
+          kind: 'phase', key: 'phase', autoDismiss: 8, tone: TYPE_CLASS[now.kind] || '',
+          title: 'TURN RESOLVED' + (resolved ? ' \u00b7 ' + resolved : ''),
+          message: was.name + ' ' + was.type + ' resolved \u00b7 ' + now.name + ' ' + now.type + ' is open' +
+            (due ? ', orders due ' + due : ', no deadline')
+        });
+        if (lost > 0) {
+          toast({
+            message: lost + (lost === 1 ? ' order change was' : ' order changes were') +
+              ' not saved before the turn resolved.',
+            dismissable: true
+          });
+        }
+      }).catch(function (err) { console.error(err); })
+        .then(function () { refreshing = false; });
+    }
+
+    document.addEventListener('game:state', function (e) {
+      if (e.detail === 'processed') refresh();
+    });
 
     // ---- input (the engine refuses clicks while the player is ready) ----
     svg.addEventListener('click', function (e) {

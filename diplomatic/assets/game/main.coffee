@@ -36,6 +36,19 @@ class App
         if player and not isGameOver
             @net.setSockets()
         @launched = true
+        @_announce(player, isPreGame, isGameOver)
+        @game._emitOrders()
+        callback()
+
+    refresh: (gameData, orders, ready, canOrder) ->
+        @ux.relevantActionMenuClose()
+        @act.cancel()
+        lost = @game.resetPhase(gameData, orders, ready, canOrder)
+        @_announce(@game.country, @ux.gamePre, @ux.gameOver)
+        @game._emitOrders()
+        return lost
+
+    _announce: (player, isPreGame, isGameOver) ->
         document.dispatchEvent(new CustomEvent("board:launched", {detail: {
             player: player
             power: if player then @env.countryKey(player) else null
@@ -46,8 +59,7 @@ class App
             pre: isPreGame
             over: isGameOver
         }}))
-        @game._emitOrders()
-        callback()
+        return
 
     reload: ->
         location.reload()
