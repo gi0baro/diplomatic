@@ -10,7 +10,3 @@ Array.prototype.last = ->
 
 window.isObjectEmpty = window.isObjectEmpty || (obj) ->
     return !obj or Object.keys(obj).length is 0
-
-# fix webkit
-window.console.error = window.console.error || (obj) ->
-    return window.console.log(obj)

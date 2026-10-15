@@ -1,6 +1,5 @@
 class Step
     constructor: (@app, step, prev=true) ->
-        console.log('NEW STEP', step)
         @id = if step.type isnt "next" then step.id else "next"
         @type = if step.data.type is undefined then step.type else step.data.type
         @year = if step.id is null then null else step.data.year
@@ -50,8 +49,9 @@ class Step
         for country, orders of allOrders
             for order in orders
                 territory = order.territory
-                if order.type not in [ORDER_TYPES.hold, ORDER_TYPES.build]
-                    w = order.data
+                if order.type not in [ORDER_TYPES.hold, ORDER_TYPES.build, ORDER_TYPES.disband]
+                    #: a copy: the internal type, src and success must not leak into the order row's data
+                    w = Object.assign({}, order.data)
                     w.src = order.data.src or territory
                     @pastMoves[territory] = w
                     @pastMoves[territory].type = ORDER_TYPES.remote_to_internal(order.type)

@@ -259,10 +259,8 @@ class Interactions
                 @app.game.delMove(m_id)
                 @app.screen.drawLines()
             if @app.game.phase().type is PHASE_TYPES.builds
-                todel = @app.game._nphases isnt 2 or (@app.game._nphases is 2 and not re_act)
-                if todel
-                    @app.game.delBuild(@active)
-                    @app.screen.drawTroops()
+                @app.game.delBuild(@active)
+                @app.screen.drawTroops()
             if @app.game.phase().type is PHASE_TYPES.retreats
                 # a cleared retreat falls back to the phase's default, disband (re-targeting replaces it)
                 if act is "retreat"
@@ -307,7 +305,7 @@ class Interactions
                     @_onRetreatTo(@active)
                     @app.ux.relevantActionMenuClose()
             when "disband"
-                if @app.game.phase('last').type is PHASE_TYPES.builds
+                if @app.game.phase().type is PHASE_TYPES.builds
                     if not re_act
                         @intent("disband", null)
                         @app.ux.relevantActionMenuClose()
@@ -534,7 +532,7 @@ class Interactions
                 id = @active
                 t_id = tid
                 ## multi-coasts check
-                if @app.env.isMCoast(t_id) and @app.game.phase('last').prev.isFleet(id)
+                if @app.env.isMCoast(t_id) and @app.game.phase().prev.isFleet(id)
                     mv_mc_lst = @app.env.moves.mc[t_id]
                     l0 = id in mv_mc_lst[0]
                     l1 = id in mv_mc_lst[1]
@@ -562,7 +560,7 @@ class Interactions
                     @current = "none"
                     @app.screen.drawTroops()
             when "disband"
-                if @app.game.phase('last').type is PHASE_TYPES.builds
+                if @app.game.phase().type is PHASE_TYPES.builds
                     @app.game.addBuild(@active, "disband")
                     @app.screen.offTerritory(@active)
                     @current = "none"
@@ -775,7 +773,6 @@ class Interactions
                         for j in @app.env.moves.armies[i]
                             if j isnt id_f and @app.game.phase().isArmy(j)
                                 f_nears.push(j)
-                    #console.log(f_nears)
                     for j in f_nears
                         if j not in nears_res
                             #if j in @app.map.troops_lst or j in @app.map.fleets_lst
@@ -786,7 +783,6 @@ class Interactions
                 #for key, j in @app.play.orders
                 #   if j.type is "move" and j.viaConvoy isnt null and j.dst in nears
                 #       c_nears.push(key)
-                #console.log(c_nears)
                 #for j in c_nears
                 #   if j not in nears_res
                 #       nears_res.push(j)
@@ -837,12 +833,12 @@ class Interactions
                     if @app.env.isCoast(i)
                         nears_res.push(i)
             when "retreat"
-                if @app.game.phase('last').prev.isArmy(id_f)
+                if @app.game.phase().prev.isArmy(id_f)
                     nears = @app.env.moves.armies[id_f]
                 else
                     #: check multicoasts
                     if @app.env.isMCoast(id_f)
-                        mc_pos = @app.game.phase('last').prev.mcpos[id_f]
+                        mc_pos = @app.game.phase().prev.mcpos[id_f]
                         nears = @app.env.moves.mc[id_f][mc_pos]
                     else
                         nears = @app.env.moves.fleets[id_f]
@@ -852,7 +848,7 @@ class Interactions
                         continue
                     #: don't track prior moves to terr
                     skip = false
-                    for country, orders of @app.game.phase('last').prev.orders
+                    for country, orders of @app.game.phase().prev.orders
                         for odata in orders
                             if odata.type is undefined
                                 continue
@@ -897,7 +893,6 @@ class Interactions
             route = routes[i]
             if route.length > 1
                 #arm_dict = @app.map.troops[country]
-                #console.log(arm_dict)
                 for i in route
                     #if i in (key for key of (tlist for ttype, tlist of arm_dict))
                     if i in country_troops
@@ -908,7 +903,6 @@ class Interactions
         return conv_lst
 
     _getConvoysFromMove: (id_f, id_t) ->
-        #console.log(@trackedConvoys)
         choosen = false
         choice = null
         choices = []

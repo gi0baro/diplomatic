@@ -267,6 +267,8 @@ async def order_save(order_id):
                 & (GameRole.id == m.game_role)
                 & (GameRole.user == auth.user.id)
                 & (Game.id == GameRole.game)
+                & (GamePhase.id == m.game_phase)
+                & (GamePhase.stage == GamePhase.Stage.OPEN)
             )
         )
         .select(Order.table.ALL, GameRole.table.ALL, Game.table.ALL)
@@ -623,6 +625,9 @@ async def chat_read_message(gid, rid):
         response.status = 403
         return {"error": "no member"}
     params = await request.body_params
+    if not ChatMessage.where(lambda m: (m.id == params.message) & (m.room == row.room)).count():
+        response.status = 422
+        return {"error": {"message": "invalid"}}
     res = ChatReading.where(lambda m: (m.id == rid) & (m.member == member.id)).validate_and_update(
         message=params.message
     )

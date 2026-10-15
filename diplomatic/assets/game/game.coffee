@@ -1,7 +1,6 @@
 class Game
     constructor: (@app) ->
         @country = null
-        @_phases = {}
         @steps = {}
         @step =
             territories: {}
@@ -9,9 +8,6 @@ class Game
             mcpos: {}
             dislodged: {}
             isLast: false
-        @_currentPhase = 0
-        @_nphases = 0
-        @_phases_loaded = 0
         @moves = {}
         @builds = {}
         @moves_mc = {}
@@ -19,7 +15,6 @@ class Game
         @orders = {}
         # useless?
         @ready = false
-        @_nextPhase = null
         @buildew = null
         #@builds = {}
         @presstype = null
@@ -55,18 +50,6 @@ class Game
         @_setCountries(data.players)
         @buildew = data.build_everywhere
         @presstype = data.press_type
-        #: load phases
-        # @step = new Step(@app, step)
-        # console.log('game init set step', step)
-        # @_phases["0"] = new Phase(@app, 0, null, 2, PHASE_TYPES.pregame, 1920, null, @app.env.countries_init, {}, {}, {}, {})
-        # i = 1
-        # for phase in phases
-        #     @_phases[i+''] = new Phase(@app, i, phase.id, phase.stage, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.coasts, phase.dislodged, {})
-        #     i++
-        # TEMP
-        # console.log(phases, orders)
-        # @_nphases = phases.length + 1
-        # @_currentPhase = @_nphases-1
         @orders = {}
         # TODO: change ready to endpoint
         # if orders.ready
@@ -74,8 +57,6 @@ class Game
         # @ready = currentReady
         @ready = isPlayerReady
         @_initOrders(orders)
-        # if @phase('last') isnt undefined and @phase('last').type is PHASE_TYPES.won
-        #     @win = data.phases[@_nphases-1].winner
         # @_loadPhasesOrders(callback)
         return
 
@@ -85,33 +66,11 @@ class Game
         if @app.launched
             @loadStep(@step, oldStep)
 
-    # reload: (data, orders) ->
-    #     @_phases = {}
-    #     for phase in data.phases
-    #         @_phases[i+''] = new Phase(@app, i, phase.id, phase.stage, phase.type, phase.year, phase.season, phase.territories, phase.troops, phase.mc, phase.dislodged, phase.orders)
-    #         i++
-    #     @_nphases = data.phases.length
-    #     @_currentPhase = @_nphases-1
-    #     @_nextPhase = new PhaseNext(@app)
-    #     @orders = {}
-    #     @moves = {}
-    #     @moves_mc = {}
-    #     @moves_queue = []
-    #     @_initOrders(orders.data)
-    #     return
-
-    phase: (id='current') ->
-        # if id is 'next' or (id is 'current' and @_currentPhase is 'next')
-        #     return @_nextPhase
-        # if id is 'last'
-        #     return @_phases[@_nphases-1]
-        # if id isnt 'current'
-        #     return @_phases[id+'']
-        # return @_phases[@_currentPhase+'']
+    #: the displayed step
+    phase: ->
         return @step
 
     isLastPhase: ->
-        # return @_currentPhase is @_nphases-1
         return @step.isLast
 
     _setCountries: (players) ->
@@ -138,9 +97,6 @@ class Game
                         internalType = "build_army"
                     else
                         internalType = "disband"
-                    # if order.data.coast isnt undefined
-                    #     d.coast = order.data.coast
-                    # @_nextPhase.builds[territory] = d
                     #: copies: the internal type and src must not leak into the server row's data
                     @builds[territory] = Object.assign({}, order.data)
                     @builds[territory].type = internalType
@@ -149,38 +105,16 @@ class Game
                     @moves[territory].type = ORDER_TYPES.remote_to_internal(order.type)
                     if not @moves[territory].src
                         @moves[territory].src = territory
-                    #: add expected movements
-                    # if order.type is ORDER_TYPES.support_move and order.data.src not in @_nextPhase.getCountryTroops()
-                    #     @moves[order.data.src] =
-                    #         from: order.data.src
-                    #         dst: order.data.dst
-                    #         type: 'move'
-                    # if order.type is ORDER_TYPES.move and order.data.through
-                    #     for route in order.data.routes
-                    #         for convoying_territory in route
-                    #             if convoying_territory not in @_nextPhase.getCountryTroops()
-                    #                 @moves[convoying_territory] =
-                    #                     from: order.data.src
-                    #                     dst: order.data.dst
-                    #                     type: 'convoy'
         return
 
     loadStep: (step, oldStep, drawl=true, drawt=true) ->
         reset_map = not (step.id is "next" and oldStep.isLast)
         if reset_map
-            # time_start = new Date().getTime()
             @app.screen.change()
-            # time_end = new Date().getTime()
-            # time_ex = time_end - time_start
-            # console.log("ChangeMap time "+time_ex)
         else
             if drawl
-                # time_start = new Date().getTime()
                 @app.screen.drawLines()
                 @app.screen.drawTroops()
-                # time_end = new Date().getTime()
-                # time_ex = time_end - time_start
-                # console.log("DrawLines time "+time_ex)
             if drawt
                 @app.screen.drawTroops()
             if drawt or drawl
@@ -272,7 +206,6 @@ class Game
         return false
 
     _addBuild: (id, data) ->
-        # @_nextPhase.builds[id] = data
         @builds[id] = data
         if data.type is "disband"
             order = type: "disband"
