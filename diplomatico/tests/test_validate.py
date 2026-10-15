@@ -20,7 +20,25 @@ MAP = {
             "s2": ["b", "c", "m", "s1", "s3"],
             "s3": ["c", "s2"],
         },
-        "multi_coasts": {"m": [["b", "s2"], ["c", "s2"]]},
+        "multi_coasts": {"m": [{"b": None, "s2": None}, {"c": None, "s2": None}]},
+    },
+}
+
+# the two-coasted p and q border each other west to west (coast 0) and east to east (coast 1);
+# the seas w and e touch the west and east coasts of both
+PAIRED = {
+    "seas": ["w", "e"],
+    "coasts": ["p", "q"],
+    "neutrals": [],
+    "multi_coasts": ["p", "q"],
+    "supply_centers": [],
+    "links": {
+        "armies": {"p": ["q"], "q": ["p"]},
+        "fleets": {"p": ["w", "q", "e"], "q": ["w", "p", "e"], "w": ["p", "q"], "e": ["p", "q"]},
+        "multi_coasts": {
+            "p": [{"w": None, "q": [0]}, {"e": None, "q": [1]}],
+            "q": [{"w": None, "p": [0]}, {"e": None, "p": [1]}],
+        },
     },
 }
 
@@ -82,6 +100,30 @@ def test_fleets_move_between_specific_coasts():
         "m": "cannot move there",
     }
     assert "coast" not in orders["a"]
+
+
+def test_fleets_between_two_multi_coast_provinces_keep_the_coast_pairing():
+    troops = ["p", "q", "w", "e"]
+    paired = Board(PAIRED, {"x": {"armies": [], "fleets": troops}}, {"p": 0, "q": 1})
+    orders = {
+        "p": order(OrderType.MOVE, dst="q", coast=1),
+        "q": order(OrderType.MOVE, dst="p", coast=1),
+        "w": order(OrderType.MOVE, dst="q", coast=1),
+        "e": order(OrderType.MOVE, dst="q", coast=1),
+    }
+    rejected = validate(Phase.DIPLOMACY, orders, paired, player(troops=troops))
+    assert rejected == {"p": "cannot reach that coast", "w": "cannot reach that coast"}
+    orders = {
+        "p": order(OrderType.MOVE, dst="q", coast=0),
+        "q": order(OrderType.MOVE, dst="p", coast=0),
+        "w": order(OrderType.MOVE, dst="p", coast=0),
+        "e": order(OrderType.MOVE, dst="p", coast=0),
+    }
+    rejected = validate(Phase.DIPLOMACY, orders, paired, player(troops=troops))
+    assert rejected == {"q": "cannot reach that coast", "e": "cannot reach that coast"}
+    orders = {"p": order(OrderType.MOVE, dst="e"), "q": order(OrderType.MOVE, dst="p")}
+    rejected = validate(Phase.DIPLOMACY, orders, paired, player(troops=troops))
+    assert rejected == {"p": "cannot move there", "q": "missing coast"}
 
 
 def test_convoyed_moves_need_an_existing_route():

@@ -11,7 +11,6 @@ class Environment
         #: starting countries terrs
         @countries_init = {}
         #: map terrs type
-        @neutrals = []
         @seas = []
         @coasts = []
         @mcoasts = []
@@ -31,7 +30,6 @@ class Environment
         @moves.armies = data.links.armies
         @moves.fleets = data.links.fleets
         @moves.mc = data.links.multi_coasts
-        @neutrals = data.neutrals or []
         @seas = data.seas or []
         @coasts = data.coasts or []
         @mcoasts = data.multi_coasts or []
@@ -45,30 +43,6 @@ class Environment
         @codes = data.codes or {}
         @countries = data.countries
         @countries_init = data.init.territories
-        #@_cleanAvailMoves()
-        return
-
-    _cleanAvailMoves: ->
-        #: this can be avoided if we're sure links not contains neutrals
-        rv =
-            armies: {}
-            fleets: {}
-            mc: {}
-        for k in ["armies", "fleets"]
-            for tid, links of @moves[k]
-                if tid not in @neutrals
-                    rv[tid] = []
-                    for l in links
-                        if l not in @neutrals
-                            rv[tid].push(l)
-        for tid, alinks of @moves.mc
-            if tid not in @neutrals
-                rv.mc[tid] = [[], []]
-                for i in [0, 1]
-                    for l in alinks[i]
-                        if l not in @neutrals
-                            rv.mc[tid][i].push(l)
-        @moves = rv
         return
 
     #: the key used for a country in the page: `--c-<key>` custom properties, `data-power` / `data-owner`
@@ -85,6 +59,21 @@ class Environment
 
     isMCoast: (id) ->
         return id in @mcoasts
+
+    #: the province ids a fleet on coast `coast` of multi-coast `id` reaches (links.multi_coasts[id][coast]
+    #: maps each of them to the coasts of it that this coast touches, null when it has none)
+    fleetReach: (id, coast) ->
+        return (k for k of @moves.mc[id][coast])
+
+    #: which coasts of multi-coast `dst` a fleet in `src` reaches, as [coast 0, coast 1]: a coast counts
+    #: when it borders `src` and, if `src` has coasts too, touches the fleet's own one, `srcCoast`
+    #: (the server's touches_coast)
+    reachableCoasts: (src, srcCoast, dst) ->
+        res = []
+        for reach in @moves.mc[dst]
+            coasts = reach[src]
+            res.push(src of reach and (coasts is null or srcCoast in coasts))
+        return res
 
     isSupply: (id) ->
         if @app.game.buildew

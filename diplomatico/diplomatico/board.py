@@ -29,7 +29,12 @@ class Board:
         return dst in self._fleet_links(src)
 
     def touches_coast(self, src, dst, coast):
-        return src in self.links["multi_coasts"][dst][coast]
+        reach = self.links["multi_coasts"][dst][coast]
+        if src not in reach:
+            return False
+        # None: src has no coasts; otherwise the coasts of src that this coast of dst touches
+        allowed = reach[src]
+        return allowed is None or self.coast_positions[src] in allowed
 
     def _fleet_links(self, src):
         if src in self.multi_coasts:

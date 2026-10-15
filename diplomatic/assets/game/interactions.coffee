@@ -342,9 +342,7 @@ class Interactions
                 t_id = tid
                 ## multi-coasts check
                 if @app.env.isMCoast(t_id) and @app.game.phase().isFleet(id)
-                    mv_mc_lst = @app.env.moves.mc[t_id]
-                    l0 = id in mv_mc_lst[0]
-                    l1 = id in mv_mc_lst[1]
+                    [l0, l1] = @app.env.reachableCoasts(id, @app.game.phase().mcpos[id], t_id)
                     if l0 and l1
                         @current = "mcoast_move"
                         ## store the t_id in track_terrs
@@ -354,10 +352,6 @@ class Interactions
                         #@app.UpdateMap()
                         @app.ux.menuOpen("coast", {position: @_lastRpos, territory: t_id})
                     else
-                        #if l0
-                        #    @app.game.moves_mc[id] = 0
-                        #else
-                        #    @app.game.moves_mc[id] = 1
                         mc = if l0 then 0 else 1
                         #@app.game.moves[id] = type: "move", from: id, to: t_id
                         @_offTracked()
@@ -423,9 +417,8 @@ class Interactions
                 if f_id in @app.game.phase().getCountryTroops()
                     if @app.env.isMCoast(t_id) and @app.game.phase().isFleet(f_id)
                         need_mc = true
-                        mv_mc_lst = @app.env.moves.mc[t_id]
-                        l0 = id in mv_mc_lst[0]
-                        l1 = id in mv_mc_lst[1]
+                        ## the coasts the supported (moving) fleet reaches, not the supporter's
+                        [l0, l1] = @app.env.reachableCoasts(f_id, @app.game.phase().mcpos[f_id], t_id)
                         if l0 and l1
                             continue_mc = true
                             @current = "mcoast_move"
@@ -439,11 +432,6 @@ class Interactions
                             # open mc selection menu
                             @app.ux.menuOpen("coast", {position: @_lastRpos, territory: t_id})
                         else
-                            #if l0
-                            #    @app.game.moves_mc[id] = 0
-                            #else
-                            #    @app.game.moves_mc[id] = 1
-                            # ---
                             mc = if l0 then 0 else 1
                             #@app.game.moves[id] = type: "move", from: id, to: t_id
                             #@app.game.addMove(id, "move", id, t_id)
@@ -533,9 +521,7 @@ class Interactions
                 t_id = tid
                 ## multi-coasts check
                 if @app.env.isMCoast(t_id) and @app.game.phase().prev.isFleet(id)
-                    mv_mc_lst = @app.env.moves.mc[t_id]
-                    l0 = id in mv_mc_lst[0]
-                    l1 = id in mv_mc_lst[1]
+                    [l0, l1] = @app.env.reachableCoasts(id, @app.game.phase().prev.mcpos[id], t_id)
                     if l0 and l1
                         @current = "mcoast_retreat"
                         ## store the t_id in track_terrs
@@ -665,7 +651,7 @@ class Interactions
                     ## check multicoasts
                     if @app.env.isMCoast(id_f)
                         mc_pos = @app.game.phase().mcpos[id_f]
-                        nears_res = @app.env.moves.mc[id_f][mc_pos]
+                        nears_res = @app.env.fleetReach(id_f, mc_pos)
                     else
                         nears_res = @app.env.moves.fleets[id_f]
             when "move_convoy"
@@ -691,7 +677,11 @@ class Interactions
                 if @app.game.phase().isArmy(id_f)
                     nears = @app.env.moves.armies[id_f]
                 else
-                    nears = @app.env.moves.fleets[id_f]
+                    if @app.env.isMCoast(id_f)
+                        mc_pos = @app.game.phase().mcpos[id_f]
+                        nears = @app.env.fleetReach(id_f, mc_pos)
+                    else
+                        nears = @app.env.moves.fleets[id_f]
                 for i in nears
                     #if i in @app.map.troops_lst or i in @app.map.fleets_lst
                     if i in @app.game.phase().listArmies or i in @app.game.phase().listFleets
@@ -703,11 +693,19 @@ class Interactions
                 if @app.game.phase().isArmy(id_o)
                     nears_o = @app.env.moves.armies[id_o]
                 else
-                    nears_o = @app.env.moves.fleets[id_o]
+                    if @app.env.isMCoast(id_o)
+                        mc_pos = @app.game.phase().mcpos[id_o]
+                        nears_o = @app.env.fleetReach(id_o, mc_pos)
+                    else
+                        nears_o = @app.env.moves.fleets[id_o]
                 if @app.game.phase().isArmy(id_f)
                     nears_f = @app.env.moves.armies[id_f]
                 else
-                    nears_f = @app.env.moves.fleets[id_f]
+                    if @app.env.isMCoast(id_f)
+                        mc_pos = @app.game.phase().mcpos[id_f]
+                        nears_f = @app.env.fleetReach(id_f, mc_pos)
+                    else
+                        nears_f = @app.env.moves.fleets[id_f]
                 nears = []
                 for i in nears_o
                     if i not in nears
@@ -760,7 +758,7 @@ class Interactions
                 else
                     if @app.env.isMCoast(id_f)
                         mc_pos = @app.game.phase().mcpos[id_f]
-                        nears = @app.env.moves.mc[id_f][mc_pos]
+                        nears = @app.env.fleetReach(id_f, mc_pos)
                     else
                         nears = @app.env.moves.fleets[id_f]
                 for i in nears
@@ -839,7 +837,7 @@ class Interactions
                     #: check multicoasts
                     if @app.env.isMCoast(id_f)
                         mc_pos = @app.game.phase().prev.mcpos[id_f]
-                        nears = @app.env.moves.mc[id_f][mc_pos]
+                        nears = @app.env.fleetReach(id_f, mc_pos)
                     else
                         nears = @app.env.moves.fleets[id_f]
                 for i in nears
