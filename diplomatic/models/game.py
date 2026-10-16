@@ -120,8 +120,8 @@ class Game(TSModel, UUIDModel):
         "starts_on": {"in": Start.choices()},
         "max_turns": {"gt": 0, "allow": "empty"},
         "target_sc": {"gt": 0, "allow": "empty"},
-        "phase_time": {"in": {"range": (10, 60 * 24 * 10)}},
-        "join_time": {"in": {"range": (10, 60 * 24 * 10)}},
+        "phase_time": {"in": {"range": (10, 60 * 24 * 10 + 1)}},
+        "join_time": {"in": {"range": (10, 60 * 24 * 10 + 1)}},
         "skip_processing": {"allow": "empty", "custom": SkipProcessingValidator()},
         "next_process_at": {"allow": "empty"},
         "countries": {"allow": "empty"},
@@ -160,32 +160,28 @@ class Game(TSModel, UUIDModel):
 
     form_labels = {
         "map": T("Variant"),
-        "lang": T("Language"),
-        "players_number": T("Players number"),
-        "bet": T("Bet amount"),
+        "lang": T("Press language"),
+        "players_number": T("Players"),
+        "bet": T("Bet"),
         "pot_type": T("Pot type"),
         "phase_time": T("Turn duration"),
-        "join_time": T("Join period duration"),
-        "starts_on": T("Game start strategy"),
+        "join_time": T("Join period"),
+        "starts_on": T("Game starts"),
         "build_everywhere": T("Allow builds on all centers"),
         "build_on_start": T("Starts game with a build turn"),
         "anonymous": T("Anonymous players"),
         "press_type": T("In-game messaging"),
-        "access": T("Access policy"),
+        "access": T("Access"),
         "max_turns": T("Maximum turns"),
-        "target_sc": T("Target supply centers number for win"),
-        "skip_processing": T("Avoid game processing on dates"),
+        "target_sc": T("Centers to win"),
+        "skip_processing": T("Skip processing on"),
         "countries": T("Enabled countries"),
-        "countries_assignment": T("Countries assignment policy"),
+        "countries_assignment": T("Country assignment"),
     }
 
     form_info = {
-        "max_turns": T("Limit number of turns can be played."),
-        "countries": T(
-            "Select which countries will be available for assignment or could be picked by players. "
-            "Remind that, in case you picked the maximum number of players for the variant, this option "
-            "won't have effect, and all countries will be available."
-        ),
+        "max_turns": T("Empty for no limit."),
+        "countries": T("With fewer countries than players, all of them are enabled."),
     }
 
     form_widgets = {

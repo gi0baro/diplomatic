@@ -1,0 +1,41 @@
+- names = list(variant.countries)
+- fixed = variant.min_players == len(names)
+
+#vo-preview.panel.overflow-hidden
+    .bg-ink-950
+        %img.block.w-full.h-auto{src: "{{=url('map_files.preview_svg', variant.id)}}", alt: "{{=variant.name}}"}
+
+#vo-players.field{"x-init": "players = {{=len(names)}}; targetSc = {{=variant.scs_to_win}}"}
+    - if fixed
+        %input{type: "hidden", name: "players_number", value: "{{=len(names)}}"}
+        .label
+            = T("Players")
+        .input.text-fog-400
+            {{=len(names)}} · {{=T("fixed")}}
+    - else
+        %label.label{for: "f-players-number"}
+            = T("Players")
+        %select#f-players-number.input{name: "players_number", "x-model.number": "players"}
+            - for n in range(variant.min_players, len(names) + 1)
+                %option{value: "{{=n}}"}
+                    = n
+
+#vo-countries.space-y-5{"x-init": 'setCountries([...$el.querySelectorAll("[data-enabled]")].map((b) => [b.dataset.name, b.style.getPropertyValue("--c")]))'}
+    .field
+        .label
+            = T("Enabled countries")
+        .flex.flex-wrap.gap-2
+            - for name, c in variant.countries.items()
+                %button.chip.chip-c.on{type: "button", "data-name": "{{=name}}", "data-enabled": None, style: "--c: rgb({{=c['r']}} {{=c['g']}} {{=c['b']}})", "@click": "toggleCountry($el.dataset.name)", ":class": "{ on: countries[$el.dataset.name] }", ":aria-pressed": "String(!!countries[$el.dataset.name])"}
+                    %span.sw
+                    = name
+        %input{type: "hidden", name: "countries", ":value": "JSON.stringify(countries)"}
+    .field{"x-show": "assign === 1", "x-cloak": None}
+        .label
+            = T("Your country")
+        .flex.flex-wrap.gap-2{role: "radiogroup"}
+            - for name, c in variant.countries.items()
+                %button.chip.chip-c{type: "button", role: "radio", "data-name": "{{=name}}", style: "--c: rgb({{=c['r']}} {{=c['g']}} {{=c['b']}})", "@click": "choose($el.dataset.name)", ":class": "{ on: mine === $el.dataset.name }", ":disabled": "!countries[$el.dataset.name]", ":aria-checked": "String(mine === $el.dataset.name)"}
+                    %span.sw
+                    = name
+        %input{type: "hidden", name: "country_choice", ":value": "mine", ":disabled": "assign !== 1"}

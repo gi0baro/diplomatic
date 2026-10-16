@@ -1,84 +1,320 @@
-- extend 'legacy.haml'
+- footer_enabled = True
+- extend 'layout.haml'
 
-.container
-    .row
-        %h1.center
-            = T("Create a new game")
-        .row.m-15
-        %form.form-horizontal{enctype: "multipart/form-data", method: 'POST'}
-            %fieldset
-                - for field in ['map', 'name', 'lang', 'players_number', 'bet', 'pot_type', 'phase_time', 'build_everywhere', 'build_on_start', 'anonymous', 'press_type']
-                    .form-group
-                        %label.col-sm-2.control-label
-                            = form.custom.label[field]
-                        .col-sm-10
-                            = form.custom.widget[field]
-                            - if form.errors[field]
-                                %p.text-danger
-                                    = form.errors[field]
-                            - if form.custom.comment[field]
-                                %p.help-block
-                                    = form.custom.comment[field]
-                .form-group
-                    %label.col-sm-2.control-label
-                        = form.custom.label.countries_assignment
-                    .col-sm-10
-                        = form.custom.widget.countries_assignment
-                        #games_countries_choice.row.m-15.nulled
-                            .form-group
-                                %label.col-sm-4.control-label
-                                    = T("Pick your country:")
-                                .col-sm-8
-                                    %select#games_countries_choice_selection.form-control
-                                    - if form.errors["countries_assignment"]
-                                        %p.text-danger
-                                            = form.errors["countries_assignment"]
-                %textarea#games_countries_choice_hide{name: "country_choice", style: "display: none;"}
-                .form-group
-                    %label.col-sm-2.control-label
-                        = form.custom.label.countries
-                    .col-sm-10
-                        = form.custom.widget.countries
-                        %p.help-block
-                            = form.custom.comment.countries
-                .form-group
-                    %label.col-sm-2.control-label
-                        = form.custom.label.access
-                    .col-sm-10
-                        = form.custom.widget.access
-                        #games_psw_c.row.m-15.nulled
-                            .form-group
-                                %label.col-sm-4.control-label
-                                    = T("Enter the password:")
-                                .col-sm-8
-                                    %input#games_psw_hide.form-control{type: 'password', name: 'password'}
-                                    - if form.errors["password"]
-                                        %p.text-danger
-                                            = form.errors["password"]
-                .col-md-6.col-md-offset-3
-                    .row.m-15{style: "text-align: center;"}
-                        %h3{style: "color: #888"}
-                            %i.fa.fa-cog
-                            = T("Advanced settings")
-                        .btn.btn-default{onclick: "act._gameFormToggleAdv();"}
-                            %span#advanced-btn Show them
-                            %i#advanced-btn-i.fa.fa-angle-down
-                #advancedblock.col-md-12.nulled
-                    .box.border
-                        .row.m-15
-                            - for field in ['join_time', 'starts_on', 'target_sc', 'max_turns', 'skip_processing']
-                                .form-group
-                                    %label.col-sm-2.control-label
-                                        = form.custom.label[field]
-                                    .col-sm-10
-                                        = form.custom.widget[field]
-                                        - if form.errors[field]
-                                            %p.text-danger
-                                                = form.errors[field]
-                                        - if form.custom.comment[field]
-                                            %p.help-block
-                                                = form.custom.comment[field]
-                .form-group
-                    .col-sm-10.col-sm-offset-2
-                        %input.btn.btn-primary{type: 'submit', value: 'Create'}
-                %input{name: '_csrf_token', type: 'hidden', value: '{{=form.formkey}}'}
+- custom = form.custom
+- v = custom.inpval
+- errors = form.errors
+- sel = lambda name, value: 'selected' if str(v[name]) == str(value) else ''
+- invalid = lambda name: 'true' if errors.get(name) else 'false'
+- steps = [10, 15, 30, 60, 120, 240, 360, 480, 720, 1080, 1440, 2160, 2880, 4320, 5760, 7200, 10080, 14400]
+- paces = [('live', 15, 30), ('quick', 720, 1440), ('normal', 1440, 2880), ('relaxed', 4320, 10080)]
+
+- if not variants
+    .panel.px-4.py-6.cap
+        = T("No variants loaded")
+- else
+    - if errors
+        .toast.mb-6{role: "alert", class: "border-alert/40"}
+            %span.toast-dot.text-alert
+            %div{class: "flex-1 text-[13px] leading-snug text-fog-300"}
+                = T("The game was not created. Check the fields marked below.")
+
+    %form.mt-6{method: "post", "x-data": "createGame"}
+        %input{type: "hidden", name: "_csrf_token", value: "{{=form.formkey}}"}
+
+        .grid.gap-4{class: "lg:grid-cols-3"}
+            .space-y-4{class: "lg:col-span-2"}
+                .grid.gap-4.items-end{class: "grid-cols-4"}
+                    .field{class: "col-span-3"}
+                        %input.title-input{type: "text", name: "name", required: None, autofocus: None, placeholder: "{{=T('Name your game')}}", value: "{{=v.name or ''}}", "x-model.fill": "name", "aria-label": "{{=custom.label.name}}", "aria-invalid": "{{=invalid('name')}}"}
+                        - if errors.name
+                            .err
+                                = errors.name
+                    .field
+                        %label.label{for: "f-map"}
+                            = custom.label.map
+                        %select#f-map.input{name: "map", "x-ref": "map", "x-model.number.fill": "map", "hx-get": "{{=url('front.games.partial_variant_options')}}", "hx-trigger": "load, change", "hx-target": "#vo-preview", "hx-select": "#vo-preview", "hx-select-oob": "#vo-players,#vo-countries", "hx-swap": "outerHTML", "hx-sync": "this:replace", "aria-invalid": "{{=invalid('map')}}"}
+                            - for m in variants
+                                %option{value: "{{=m.id}}", "{{=sel('map', m.id)}}": None}
+                                    = m.name
+                        - if errors.map
+                            .err
+                                = errors.map
+
+                %section.panel
+                    %h2.panel-title.px-4.pt-3.pb-2.border-b.border-ink-700
+                        = T("Rules")
+                    .p-4.space-y-4
+                        .grid.gap-4{class: "grid-cols-4"}
+                            #vo-players
+                            .field
+                                %label.label{for: "f-countries-assignment"}
+                                    = custom.label.countries_assignment
+                                %select#f-countries-assignment.input{name: "countries_assignment", "x-ref": "assign", "x-model.number.fill": "assign", "aria-invalid": "{{=invalid('countries_assignment')}}"}
+                                    - for m in Game.Assignment
+                                        %option{value: "{{=m.value}}", "{{=sel('countries_assignment', m.value)}}": None}
+                                            = m.label
+                                - if errors.countries_assignment
+                                    .err
+                                        = errors.countries_assignment
+                            - for name, key in [('target_sc', 'targetSc'), ('max_turns', 'maxTurns')]
+                                .field
+                                    %label.label{for: "f-{{=name}}"}
+                                        = custom.label[name]
+                                    %input.input{id: "f-{{=name}}", type: "number", name: "{{=name}}", min: 1, step: 1, value: "{{=v[name] or ''}}", "x-model.number.fill": "{{=key}}", "aria-invalid": "{{=invalid(name)}}"}
+                                    - if errors.get(name)
+                                        .err
+                                            = errors[name]
+                                    - if custom.comment[name]
+                                        .help
+                                            = custom.comment[name]
+                        #vo-countries
+                        - if custom.comment.countries
+                            .help
+                                = custom.comment.countries
+                        .flex.flex-wrap.gap-x-8.gap-y-3.pt-3.border-t.border-ink-700
+                            - for name, key in [('build_everywhere', 'buildEverywhere'), ('build_on_start', 'buildOnStart'), ('anonymous', 'anonymous')]
+                                .field
+                                    %label.flex.items-center.gap-3.cursor-pointer
+                                        %input.sr-only{type: "checkbox", name: "{{=name}}", "x-model.fill": "{{=key}}", "{{='checked' if v[name] else ''}}": None}
+                                        %span.toggle
+                                        %span{class: "text-[13px] text-fog-200"}
+                                            = custom.label[name]
+                                    - if errors.get(name)
+                                        .err
+                                            = errors[name]
+
+                .grid.gap-4{class: "md:grid-cols-2"}
+                    %section.panel
+                        %h2.panel-title.px-4.pt-3.pb-2.border-b.border-ink-700
+                            = T("Stake")
+                        .p-4.grid.gap-4{class: "grid-cols-2"}
+                            .field
+                                %label.label{for: "f-bet"}
+                                    = custom.label.bet
+                                %input#f-bet.input{type: "number", name: "bet", step: 1, ":min": "players === 2 ? 1 : 5", ":max": "players === 2 ? 1 : {{=balance}}", required: None, value: "{{=v.bet or 5}}", "x-model.number.fill": "bet", "aria-invalid": "{{=invalid('bet')}}"}
+                                - if errors.bet
+                                    .err
+                                        = errors.bet
+                                .help
+                                    5 to {{=balance}} · 1 for two players
+                            .field
+                                %label.label{for: "f-pot-type"}
+                                    = custom.label.pot_type
+                                %select#f-pot-type.input{name: "pot_type", "x-ref": "pot", "x-model.number.fill": "pot", "aria-invalid": "{{=invalid('pot_type')}}"}
+                                    - for m in Game.PotType
+                                        %option{value: "{{=m.value}}", "{{=sel('pot_type', m.value)}}": None}
+                                            = m.label
+                                - if errors.pot_type
+                                    .err
+                                        = errors.pot_type
+
+                    %section.panel
+                        %h2.panel-title.px-4.pt-3.pb-2.border-b.border-ink-700
+                            = T("Access")
+                        .p-4.grid.gap-4{class: "grid-cols-2"}
+                            .field
+                                %label.label{for: "f-access"}
+                                    = custom.label.access
+                                %select#f-access.input{name: "access", "x-ref": "access", "x-model.number.fill": "access", "aria-invalid": "{{=invalid('access')}}"}
+                                    - for m in Game.Access
+                                        %option{value: "{{=m.value}}", "{{=sel('access', m.value)}}": None}
+                                            = m.label
+                                - if errors.access
+                                    .err
+                                        = errors.access
+                            .field{":class": "{ invisible: access !== 1 }"}
+                                %label.label{for: "f-password"}
+                                    = custom.label.password
+                                %input#f-password.input{type: "password", name: "password", autocomplete: "new-password", ":disabled": "access !== 1", "aria-invalid": "{{=invalid('password')}}"}
+                                - if errors.password
+                                    .err
+                                        = errors.password
+                            .field
+                                %label.label{for: "f-press-type"}
+                                    = custom.label.press_type
+                                %select#f-press-type.input{name: "press_type", "x-ref": "press", "x-model.number.fill": "press", "aria-invalid": "{{=invalid('press_type')}}"}
+                                    - for m in Game.Press
+                                        %option{value: "{{=m.value}}", "{{=sel('press_type', m.value)}}": None}
+                                            = m.label
+                                - if errors.press_type
+                                    .err
+                                        = errors.press_type
+                            .field
+                                %label.label{for: "f-lang"}
+                                    = custom.label.lang
+                                %select#f-lang.input{name: "lang", "x-ref": "lang", "x-model.fill": "lang", "aria-invalid": "{{=invalid('lang')}}"}
+                                    - for code, label in langs.items()
+                                        %option{value: "{{=code}}", "{{=sel('lang', code)}}": None}
+                                            = label
+                                - if errors.lang
+                                    .err
+                                        = errors.lang
+
+                %section.panel
+                    %h2.panel-title.px-4.pt-3.pb-2.border-b.border-ink-700
+                        = T("Timing")
+                    .p-4.space-y-4
+                        .field
+                            .label
+                                = T("Pace")
+                            .flex.flex-wrap.gap-2
+                                - for name, turn, join in paces
+                                    %button.chip{type: "button", "data-turn": "{{=turn}}", "data-join": "{{=join}}", "@click": "phase = +$el.dataset.turn; join = +$el.dataset.join", ":class": "{ on: phase === +$el.dataset.turn && join === +$el.dataset.join }"}
+                                        = T(name)
+                        .grid.gap-4{class: "grid-cols-2"}
+                            - for name, key in [('phase_time', 'phase'), ('join_time', 'join')]
+                                .field{"x-data": 'duration("{{=key}}", {{=v[name]}})'}
+                                    %label.label{for: "f-{{=name}}"}
+                                        = custom.label[name]
+                                    .flex.items-center.gap-3
+                                        %input.range.flex-1{id: "f-{{=name}}", type: "range", min: 0, max: "{{=len(steps) - 1}}", step: 1, "x-model.number": "i", "aria-invalid": "{{=invalid(name)}}"}
+                                        %span.w-16.shrink-0{class: "font-mono text-[12px] tabular-nums text-fog-200", "x-text": "human(minutes)"}
+                                    %input{type: "hidden", name: "{{=name}}", ":value": "minutes"}
+                                    - if errors.get(name)
+                                        .err
+                                            = errors[name]
+                            .field
+                                %label.label{for: "f-starts-on"}
+                                    = custom.label.starts_on
+                                %select#f-starts-on.input{name: "starts_on", "x-ref": "starts", "x-model.number.fill": "starts", "aria-invalid": "{{=invalid('starts_on')}}"}
+                                    - for m in Game.Start
+                                        %option{value: "{{=m.value}}", "{{=sel('starts_on', m.value)}}": None}
+                                            = m.label
+                                - if errors.starts_on
+                                    .err
+                                        = errors.starts_on
+                            .field
+                                .label
+                                    = custom.label.skip_processing
+                                .flex.flex-wrap{class: "gap-1.5"}
+                                    - for day in Game.PROC_DAYS
+                                        %button.chip{type: "button", "data-name": "{{=day}}", title: "{{=day.capitalize()}}", "@click": "toggleDay($el.dataset.name)", ":class": "{ on: days[$el.dataset.name] }", ":aria-pressed": "String(!!days[$el.dataset.name])"}
+                                            = day[:3]
+                                %input{type: "hidden", name: "skip_processing", value: "{{=v.skip_processing}}", "x-init": 'days = JSON.parse($el.value || "{}")', ":value": "JSON.stringify(days)"}
+                                - if errors.skip_processing
+                                    .err
+                                        = errors.skip_processing
+
+                .flex.items-center.justify-end.gap-3
+                    %a.btn.btn-ghost{href: "{{=url('front.games.index')}}"}
+                        = T("Cancel")
+                    %button.btn.btn-primary.px-5.py-2{type: "submit"}
+                        = T("Create game")
+
+            %aside.space-y-4.self-start{class: "lg:sticky lg:top-6"}
+                #vo-preview
+                .panel
+                    %h2.panel-title.px-4.pt-3.pb-2
+                        = T("Summary")
+                    .px-4.pb-2
+                        %div{class: "font-display font-semibold text-[22px] leading-tight uppercase tracking-[.06em] text-fog-200 truncate", "x-text": 'name || "—"'}
+                    %table.table.w-full
+                        %tbody
+                            %tr
+                                %td.pl-4
+                                    = T("Variant")
+                                %td.pr-4.text-right.text-fog-200{"x-text": 'label("map")'}
+                            %tr
+                                %td.pl-4
+                                    = T("Players")
+                                %td.pr-4.text-right.text-fog-200{"x-text": 'players ? "1 of " + players : ""'}
+                            %tr
+                                %td.pl-4
+                                    = T("Stake")
+                                %td.pr-4.text-right.text-fog-200{"x-text": '(bet || 0) + " points · " + label("pot")'}
+                            %tr
+                                %td.pl-4
+                                    = T("Turn")
+                                %td.pr-4.text-right.text-fog-200{"x-text": "human(phase)"}
+                            %tr
+                                %td.pl-4
+                                    = T("Join period")
+                                %td.pr-4.text-right.text-fog-200{"x-text": "human(join)"}
+                            %tr
+                                %td.pl-4
+                                    = T("Access")
+                                %td.pr-4.text-right.text-fog-200{"x-text": 'label("access") + (anonymous ? " · anonymous" : "")'}
+                            %tr
+                                %td.pl-4
+                                    = T("Press")
+                                %td.pr-4.text-right.text-fog-200{"x-text": 'label("press") + " · " + label("lang")'}
+                            %tr{"x-show": "buildEverywhere || buildOnStart"}
+                                %td.pl-4
+                                    = T("Builds")
+                                %td.pr-4.text-right.text-fog-200{"x-text": '[buildEverywhere && "everywhere", buildOnStart && "on start"].filter(Boolean).join(" · ")'}
+                            %tr
+                                %td.pl-4
+                                    = T("Limits")
+                                %td.pr-4.text-right.text-fog-200{"x-text": '[targetSc && targetSc + " centers", maxTurns && maxTurns + " turns"].filter(Boolean).join(" · ") || "—"'}
+                    .px-4.py-3.border-t.border-ink-700
+                        .cap.mb-2{"x-text": 'enabled.length + " " + (assign === 1 ? "countries · you play " + (mine || "?") : "countries")'}
+                        .flex.flex-wrap.gap-2
+                            %template{"x-for": "n in enabled", ":key": "n"}
+                                %span.flex.items-center.gap-2{":style": '"--c: " + colors[n]', class: "font-display text-[14px] uppercase tracking-wider text-fog-200"}
+                                    %span.sw
+                                    %span{"x-text": "n"}
+
+:javascript
+    document.addEventListener('alpine:init', () => {
+      const STEPS = {{=steps}};
+      Alpine.data('createGame', () => ({
+        name: null, lang: null, map: null, players: null, bet: null, pot: null, access: null, assign: null, press: null,
+        anonymous: null, buildEverywhere: null, buildOnStart: null, starts: null, targetSc: null, maxTurns: null,
+        phase: 0, join: 0, countries: {}, colors: {}, mine: null, days: {},
+        init() {
+          this.$watch('players', (p) => {
+            if (p === 2) this.bet = 1;
+            else if (!(this.bet >= 5)) this.bet = 5;
+          });
+        },
+        setCountries(pairs) {
+          this.colors = Object.fromEntries(pairs);
+          this.countries = Object.fromEntries(pairs.map(([n]) => [n, true]));
+          this.mine = pairs.length ? pairs[0][0] : null;
+        },
+        toggleCountry(n) {
+          this.countries[n] = !this.countries[n];
+          if (!this.countries[this.mine]) this.mine = this.enabled[0] || null;
+        },
+        choose(n) {
+          if (this.countries[n]) this.mine = n;
+        },
+        toggleDay(d) {
+          this.days[d] = !this.days[d];
+        },
+        get enabled() {
+          return Object.keys(this.countries).filter((n) => this.countries[n]);
+        },
+        // the selected option's text of the select x-ref'd `f`; reads this[f] so it re-evaluates when the value changes
+        label(f) {
+          void this[f];
+          const el = this.$refs[f];
+          return el && el.selectedIndex >= 0 ? el.options[el.selectedIndex].text : '';
+        },
+        human(m) {
+          const d = Math.floor(m / 1440), h = Math.floor(m / 60) % 24, r = m % 60;
+          const parts = [];
+          if (d) parts.push(d + (d > 1 ? ' days' : ' day'));
+          if (h) parts.push(h + ' h');
+          if (r) parts.push(r + ' min');
+          return parts.join(' ');
+        }
+      }));
+      // a duration picked on the STEPS scale; `minutes` feeds the hidden input and the form's `key`
+      Alpine.data('duration', (key, initial) => ({
+        i: 0,
+        init() {
+          this.i = this.nearest(Number(initial) || 0);
+          this.$watch('minutes', (m) => { this[key] = m; });
+          this.$watch(key, (m) => { this.i = this.nearest(m); });
+          this[key] = this.minutes;
+        },
+        nearest(target) {
+          return STEPS.reduce((best, m, i) => Math.abs(m - target) < Math.abs(STEPS[best] - target) ? i : best, 0);
+        },
+        get minutes() {
+          return STEPS[this.i];
+        }
+      }));
+    });

@@ -42,7 +42,7 @@
                 %h6
                     = T("won't be processed on:")
                 %h6.grey-light
-                    = " ".join(str(T(d)) for d in game.skip_proc)
+                    = " ".join(str(T(d)) for d in game.skip_processing)
     .row
         .col-md-12
             - if game.stage == 0

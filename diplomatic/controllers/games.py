@@ -4,6 +4,7 @@ from emmett import abort, redirect, request, url
 from emmett.tools import requires
 
 from .. import Game, GameRole, Map, Vault, app, auth
+from ..models.game import LANGS
 from . import front
 
 
@@ -69,7 +70,27 @@ async def create():
         form.record.add_player(auth.user, form.input_params.country_choice)
         redirect(url(".play", form.record.id))
     app.log.debug(form.errors)
-    return dict(form=form)
+    return {
+        "form": form,
+        "variants": Map.all_latest().select(Map.id, Map.name, orderby=Map.name),
+        "balance": auth.user.vault().balance,
+        "Game": Game,
+        "langs": LANGS,
+    }
+
+
+@games.route("/variant-options", methods="get", template="partials/variant_options.haml")
+@requires(auth.is_logged, url("auth.login"))
+def partial_variant_options():
+    variant = (
+        Map.all_latest()
+        .where(Map.id == request.query_params.map)
+        .select(Map.id, Map.name, Map.min_players, Map.scs_to_win, Map.countries)
+        .first()
+    )
+    if not variant:
+        abort(404)
+    return {"variant": variant}
 
 
 @games.route("/play/<str:gid>", template="play.haml")

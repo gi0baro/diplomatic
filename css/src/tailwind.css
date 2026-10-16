@@ -224,6 +224,94 @@
     @apply text-signal underline decoration-dotted underline-offset-2 hover:text-fog-200;
   }
 
+  /* ---- document forms ---- */
+  .title-input {
+    @apply w-full border-0 border-b border-ink-700 bg-transparent px-0 py-2 font-display text-[34px] font-semibold uppercase
+      leading-none tracking-[.08em] text-fog-200 placeholder:text-fog-500/60 focus:border-signal/60 focus:outline-none;
+  }
+  .title-input[aria-invalid='true'] {
+    @apply border-alert/60;
+  }
+  .field {
+    @apply flex min-w-0 flex-col gap-1.5;
+  }
+  .field .input {
+    @apply h-8 w-full py-1 text-[13px];
+    color-scheme: dark;
+  }
+  .input[aria-invalid='true'] {
+    @apply border-alert/60;
+  }
+  .label {
+    @apply truncate font-mono text-[10px] font-medium uppercase tracking-[.18em] text-fog-400;
+  }
+  .help {
+    @apply text-[11.5px] leading-snug text-fog-500;
+  }
+  .err {
+    @apply font-mono text-[11px] leading-snug text-alert;
+  }
+  .range {
+    @apply h-8 w-full cursor-pointer appearance-none bg-transparent;
+  }
+  .range::-webkit-slider-runnable-track {
+    @apply h-[3px] rounded-sm bg-ink-500;
+  }
+  .range::-moz-range-track {
+    @apply h-[3px] rounded-sm bg-ink-500;
+  }
+  .range::-webkit-slider-thumb {
+    @apply -mt-[6px] h-[15px] w-[15px] appearance-none rounded-full border border-signal/60 bg-ink-800;
+    box-shadow: 0 0 6px rgba(159, 232, 255, 0.35);
+  }
+  .range::-moz-range-thumb {
+    @apply h-[13px] w-[13px] rounded-full border border-signal/60 bg-ink-800;
+    box-shadow: 0 0 6px rgba(159, 232, 255, 0.35);
+  }
+  .range:focus-visible {
+    @apply outline-none;
+  }
+  .range:focus-visible::-webkit-slider-thumb {
+    @apply border-signal bg-ink-600;
+  }
+  :checked + .toggle {
+    @apply border-ok/50 bg-ok/25 text-ok;
+  }
+  :checked + .toggle::after {
+    left: 16px;
+  }
+  :focus-visible + .toggle {
+    @apply ring-1 ring-signal/60;
+  }
+  .chip {
+    @apply inline-flex h-8 items-center gap-2 rounded-sm border border-ink-600 bg-ink-800 px-2.5 font-mono text-[10.5px]
+      font-medium uppercase tracking-[.12em] text-fog-500 transition-colors;
+  }
+  .chip:hover {
+    @apply border-ink-500 text-fog-300;
+  }
+  .chip:focus-visible {
+    @apply outline-none ring-1 ring-signal/60;
+  }
+  .chip:disabled {
+    @apply cursor-not-allowed opacity-40;
+  }
+  .chip.on {
+    @apply border-signal/50 bg-signal/10 text-fog-200;
+  }
+  .chip .sw {
+    @apply opacity-30;
+    box-shadow: none;
+  }
+  .chip.on .sw {
+    @apply opacity-100;
+    box-shadow: 0 0 6px color-mix(in srgb, var(--c) 65%, transparent);
+  }
+  .chip-c.on {
+    border-color: color-mix(in srgb, var(--c) 55%, transparent);
+    background: color-mix(in srgb, var(--c) 10%, transparent);
+  }
+
   /* ---- dark scrollbar ---- */
   html {
     scrollbar-color: theme('colors.ink.600') transparent;
