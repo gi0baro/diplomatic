@@ -1,12 +1,8 @@
 from emmett.orm import Field, after_insert, belongs_to, has_many, has_one
 from emmett.tools.auth.models import AuthUserBasic
 
-# from .. import app
 from . import TSModel
 from .economy import Vault
-
-
-# from diplomatic.helpers.validators import UserAvatarSet
 
 
 class User(AuthUserBasic):
@@ -19,18 +15,23 @@ class User(AuthUserBasic):
     )
 
     username = Field(notnull=True)
-    avatar_src = Field()
     avatar_img = Field.upload()
-    # facebook = Field()
 
     form_registration_rw = {"username": True}
-    form_profile_rw = {"avatar_src": True, "avatar_img": True}
+    form_profile_rw = {"avatar_img": True}
+    form_labels = {"avatar_img": "Avatar"}
 
     validation = {
-        # 'avatar_src': UserAvatarSet(app.config.auth.photo_source, zero=None)
+        "username": {
+            "presence": True,
+            "len": {"range": (3, 33)},
+            "match": r"^[A-Za-z0-9_.-]+$",
+            "unique": True,
+            "message": "Username not available",
+        }
     }
 
-    indexes = {"email": True}
+    indexes = {"email": True, "uniq_username": {"fields": ["username"], "unique": True}}
 
     @after_insert
     def create_account_data(self, fields, rid):

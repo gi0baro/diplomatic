@@ -22,8 +22,9 @@ app.config.static_version = "0.1.3"
 app.config.Haml.set_as_default = True
 app.config_from_yaml("app.yml")
 # app.config_from_yaml('db.yml', 'db')
-app.config.auth.registration_verification = False
+app.config.auth.registration_verification = os.environ.get("AUTH_EMAIL_VERIFICATION", "1") == "1"
 app.config.auth.hmac_key = "foobar"
+app.config.build_commit = os.environ.get("APP_COMMIT", "dev")
 
 app.config.db.host = os.environ.get("POSTGRES_HOST", "localhost")
 app.config.db.user = os.environ.get("POSTGRES_USER", "postgres")

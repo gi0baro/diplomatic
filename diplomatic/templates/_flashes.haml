@@ -1,0 +1,10 @@
+- messages = flashes()
+
+- if messages
+    .space-y-2.mb-6
+        - for category, message in messages
+            .toast{role: "alert", "x-data": "{open: true}", "x-show": "open"}
+                %span.toast-dot{class: "{{='text-alert' if category == 'error' else 'text-signal'}}"}
+                %div{class: "flex-1 text-[13px] leading-snug text-fog-300"}
+                    = message
+                %button.toast-close{type: "button", "@click": "open = false", title: "Dismiss"} ×

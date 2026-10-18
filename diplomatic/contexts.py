@@ -1,5 +1,5 @@
-# from gravatar import Gravatar
 from emmett import T, url
+from emmett.helpers import get_flashed_messages
 from emmett.pipeline import Injector
 
 from . import app, auth
@@ -12,6 +12,10 @@ class BaseContext(Injector):
     @staticmethod
     def debug():
         return app.debug
+
+    @staticmethod
+    def build_commit():
+        return app.config.build_commit
 
     @staticmethod
     def current_user():
@@ -30,13 +34,11 @@ class BaseContext(Injector):
         return auth.user.vault()
 
     @staticmethod
+    def flashes():
+        return get_flashed_messages(with_categories=True)
+
+    @staticmethod
     def userpic():
-        # if auth.user.avatar_src == "gravatar":
-        #     return Gravatar(auth.user.email).thumb
-        # elif auth.user.avatar_src == "facebook":
-        #     return "https://graph.facebook.com/" + auth.user.facebook + \
-        #         "/picture?type=normal"
-        # else:
         return url("download", auth.user.avatar_img)
 
     @staticmethod

@@ -1,0 +1,72 @@
+- footer_enabled = True
+- extend 'layout.haml'
+
+- errors = form.errors
+- invalid = lambda name: 'true' if errors.get(name) else 'false'
+- user = current_user()
+- vault = uservault()
+
+.max-w-3xl.mx-auto
+    %h1{class: "font-display uppercase tracking-wider text-[22px] text-fog-200 mb-6"}
+        = T("Account")
+    - if errors
+        .toast.mb-6{role: "alert", class: "border-alert/40"}
+            %span.toast-dot.text-alert
+            %div{class: "flex-1 text-[13px] leading-snug text-fog-300"}
+                = T("Check the fields marked below.")
+
+    .space-y-6
+        %section.panel
+            %h2.panel-title.px-4.pt-3.pb-2.border-b.border-ink-700
+                = T("Identity")
+            .p-4.flex.items-start.gap-6
+                .flex-1.min-w-0.grid.grid-cols-2.gap-4
+                    .min-w-0.space-y-1
+                        .cap
+                            = T("Username")
+                        %div{class: "text-[14px] text-fog-200 truncate"}
+                            = user.username
+                    .min-w-0.space-y-1
+                        .cap
+                            = T("E-mail")
+                        %div{class: "text-[14px] text-fog-200 truncate"}
+                            = user.email
+                    .min-w-0.space-y-1
+                        .cap
+                            = T("Member since")
+                        %div{class: "text-[14px] text-fog-200"}
+                            = user.created_at.strftime('%d %b %Y')
+                    .min-w-0.space-y-1
+                        .cap
+                            = T("Points")
+                        %div{class: "text-[14px] text-fog-200"}
+                            {{=vault.balance}} points
+                        - if vault.credit
+                            .cap
+                                +{{=vault.credit}} staked
+                %form#avatar-block.w-28.shrink-0.flex.flex-col.items-center.gap-2{method: "post", enctype: "multipart/form-data", "hx-post": "{{=url('auth.profile')}}", "hx-encoding": "multipart/form-data", "hx-trigger": "change from:#f-avatar-img, submit", "hx-select": "#avatar-block", "hx-swap": "outerHTML", "hx-target": "this"}
+                    %input{type: "hidden", name: "_csrf_token", value: "{{=form.formkey}}"}
+                    %label.block.relative.cursor-pointer.group{for: "f-avatar-img", title: "{{=T('Change avatar')}}"}
+                        .avatar{class: "h-28 w-28 text-[32px]"}
+                            = (user.username or '?')[:2].upper()
+                            - if user.avatar_img
+                                %img{src: "{{=userpic()}}", alt: "", onerror: "this.remove()"}
+                        %div{class: "absolute inset-0 rounded-full grid place-items-center bg-ink-950/70 opacity-0 group-hover:opacity-100 transition-opacity"}
+                            %span.cap
+                                = T("Change")
+                        %input#f-avatar-img.sr-only{type: "file", name: "avatar_img", accept: "image/*", "aria-invalid": "{{=invalid('avatar_img')}}"}
+                    - if user.avatar_img
+                        %button#avatar-remove.cap{type: "submit", name: "avatar_img__del", value: "1", class: "hover:text-fog-200"}
+                            = T("Remove")
+                    - if errors.avatar_img
+                        .err.text-center
+                            = errors.avatar_img
+
+        %section.panel
+            %h2.panel-title.px-4.pt-3.pb-2.border-b.border-ink-700
+                = T("Security")
+            .p-4.flex.items-center.justify-between
+                .cap
+                    = T("Password")
+                %a.btn{href: "{{=url('auth.password_change')}}"}
+                    = T("Change")

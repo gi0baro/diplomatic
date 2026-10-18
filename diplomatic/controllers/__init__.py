@@ -19,12 +19,12 @@ authenticated.pipeline = [RequirePipe(auth.is_logged, url("auth.login"))]
 
 @auth_routes.after_login
 def after_login(form):
-    redirect(url("front.games.index"))
+    redirect(url("front.index"))
 
 
 @auth_routes.after_registration
 def after_registration(form, user, logged_in):
-    redirect(url("front.games.index"))
+    redirect(url("front.index"))
 
 
 @app.route("/_health", methods="get", output="bytes")

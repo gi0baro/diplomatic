@@ -3,7 +3,7 @@ from datetime import timezone
 from emmett import abort, redirect, request, url
 from emmett.tools import requires
 
-from .. import Game, GameRole, Map, Vault, app, auth
+from .. import Game, Map, Vault, app, auth
 from ..models.game import LANGS
 from . import front
 
@@ -237,9 +237,3 @@ def partial_clock(gid):
     if not game:
         abort(404)
     return clock_values(game)
-
-
-@games.route("/mine")
-@requires(auth.is_logged, url("front.games.index"))
-def owned():
-    return {"games": auth.user.participated_games.where(Game.id == GameRole.game).select(Game.table.ALL)}

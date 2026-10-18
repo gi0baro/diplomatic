@@ -1,3 +1,25 @@
+- author_url = "https://github.com/gi0baro"
+- repo_url = "https://github.com/gi0baro/diplomatic"
+- sponsor_url = "https://github.com/sponsors/gi0baro"
+
 - if globals().get('footer_enabled', False)
+    - commit = build_commit()
     %footer.shrink-0.border-t.border-ink-700
-        %div{class: "w-full max-w-7xl mx-auto px-6 py-4 font-mono text-[10px] tracking-[.2em] uppercase text-fog-500"} Diplomatic
+        %div{class: "w-full max-w-7xl mx-auto px-6 py-4 flex items-center justify-between font-mono text-[10px] tracking-[.2em] uppercase text-fog-500"}
+            %span
+                Diplomatic · made by
+                %a{href: "{{=author_url}}", target: "_blank", rel: "noopener", class: "text-fog-300 hover:text-fog-200"} gi0baro
+                and agents
+            .flex.items-center.gap-4
+                - if commit != 'dev'
+                    %a{href: "{{=repo_url}}/commit/{{=commit}}", target: "_blank", rel: "noopener", class: "hover:text-fog-200"}
+                        Build {{=commit}}
+                - else
+                    %span
+                        Build {{=commit}}
+                %a{href: "{{=repo_url}}", target: "_blank", rel: "noopener", title: "Source", class: "text-fog-500 hover:text-fog-200"}
+                    %svg{width: "14", height: "14", "aria-hidden": "true"}
+                        %use{href: "#i-github"}
+                %a{href: "{{=sponsor_url}}", target: "_blank", rel: "noopener", title: "Sponsor", class: "text-fog-500 hover:text-fog-200"}
+                    %svg{width: "14", height: "14", "aria-hidden": "true"}
+                        %use{href: "#i-heart"}

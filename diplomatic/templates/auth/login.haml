@@ -1,8 +1,55 @@
-- extend 'legacy.haml'
+- footer_enabled = True
+- extend 'layout.haml'
 
-.content
-    .container
-        .row
-            .col-lg-6.col-lg-offset-3
-                %h1 Signin
-                = form
+- custom = form.custom
+- v = custom.inpval
+- errors = form.errors
+- invalid = lambda name: 'true' if errors.get(name) else 'false'
+
+.max-w-sm.mx-auto
+    %h1{class: "font-display uppercase tracking-wider text-[22px] text-fog-200 mb-6"}
+        = T("Sign in")
+    - if errors
+        .toast.mb-6{role: "alert", class: "border-alert/40"}
+            %span.toast-dot.text-alert
+            %div{class: "flex-1 text-[13px] leading-snug text-fog-300"}
+                = T("Check the fields marked below.")
+
+    %section.panel
+        %form{method: "post"}
+            %input{type: "hidden", name: "_csrf_token", value: "{{=form.formkey}}"}
+            .p-5.space-y-4
+                .field
+                    %label.label{for: "f-email"}
+                        = custom.label.email
+                    %input#f-email.input{type: "email", name: "email", required: None, autofocus: None, autocomplete: "email", value: "{{=v.email or ''}}", "aria-invalid": "{{=invalid('email')}}"}
+                    - if errors.email
+                        .err
+                            = errors.email
+                .field
+                    %label.label{for: "f-password"}
+                        = custom.label.password
+                    %input#f-password.input{type: "password", name: "password", required: None, autocomplete: "current-password", "aria-invalid": "{{=invalid('password')}}"}
+                    - if errors.password
+                        .err
+                            = errors.password
+                .field
+                    %label.flex.items-center.gap-3.cursor-pointer
+                        %input.sr-only{type: "checkbox", name: "remember", "{{='checked' if v.remember else ''}}": None}
+                        %span.toggle
+                        %span{class: "text-[13px] text-fog-200"}
+                            = custom.label.remember
+                    - if errors.remember
+                        .err
+                            = errors.remember
+                %button.btn.btn-primary{type: "submit"}
+                    = form.attributes['submit']
+
+    .mt-4.space-y-2{class: "font-mono text-[11px] tracking-[.12em] uppercase text-fog-500"}
+        %div
+            = T("No account?")
+            %a{href: "{{=url('auth.registration')}}", class: "text-fog-300 hover:text-fog-200"}
+                = T("Sign up")
+        %div
+            %a{href: "{{=url('auth.password_retrieval')}}", class: "text-fog-300 hover:text-fog-200"}
+                = T("Forgot your password?")
