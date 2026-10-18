@@ -40,9 +40,9 @@ def card_rules(game):
     rules = []
     if game.build_everywhere:
         rules.append(("hammer", T("Build anywhere")))
-    if game.is_open and game.build_on_start:
+    if game.stage == Game.Stage.PREGAME and game.is_open and game.build_on_start:
         rules.append(("flag", T("Builds on start")))
-    if game.is_open and game.countries_assignment == Game.Assignment.RANDOM:
+    if game.stage == Game.Stage.PREGAME and game.is_open and game.countries_assignment == Game.Assignment.RANDOM:
         rules.append(("die", T("Random countries")))
     if game.anonymous:
         rules.append(("eye-off", T("Anonymous")))
@@ -52,9 +52,13 @@ def card_rules(game):
 def card_values(game, variant, roles, user):
     role = next((r for r in roles if user and r.user == user.id), None)
     choices = None
-    if user and not role and game.is_open and game.countries_assignment == Game.Assignment.CHOICE:
-        taken = {r.country for r in roles}
-        choices = [name for name, enabled in game.countries.items() if enabled and name not in taken]
+    if (
+        user
+        and not role
+        and game.is_open
+        and (game.stage == Game.Stage.GAME or game.countries_assignment == Game.Assignment.CHOICE)
+    ):
+        choices = game.available_countries()
     at = game.next_process_at
     return {
         "count": sum(1 for r in roles if r.state != GameRole.State.LEFT),
@@ -162,21 +166,30 @@ async def join(gid):
 
 
 async def join_game(gid):
-    game = Game.in_stage(Game.Stage.PREGAME).where(lambda g: g.id == gid).select(for_update=True).first()
+    game = (
+        Game.where(
+            lambda g: (
+                (g.id == gid) & ((g.stage == Game.Stage.PREGAME) | ((g.stage == Game.Stage.GAME) & (g.is_open == True)))
+            )
+        )
+        .select(for_update=True)
+        .first()
+    )
     if not game:
         return "no game found"
     params = await request.body_params
-    if game.player_country(auth.user) is not None:
+    if game.players.where(lambda p: p.user == auth.user.id).count():
         return "already in game"
-    vault = Vault.where(lambda m: m.user == auth.user.id).select(for_update=True).first()
-    if vault.balance < game.bet:
-        return "Not enough points"
-    if game.players.count() == game.players_number:
-        return "no slots available"
+    if game.stage == Game.Stage.PREGAME:
+        vault = Vault.where(lambda m: m.user == auth.user.id).select(for_update=True).first()
+        if vault.balance < game.bet:
+            return "Not enough points"
+        if game.players.current().count() == game.players_number:
+            return "no slots available"
     if game.access == Game.Access.PASSWORD:
         if params.password != game.password:
             return "wrong password"
-    if game.countries_assignment == Game.Assignment.CHOICE:
+    if game.stage == Game.Stage.GAME or game.countries_assignment == Game.Assignment.CHOICE:
         if params.country not in game.available_countries():
             return "Selected country not available"
     try:
@@ -184,17 +197,23 @@ async def join_game(gid):
             role = game.add_player(auth.user, params.country)
     except Exception as e:
         app.log.exception(e)
-        role = None
-    if not role:
         return "Cannot join game"
-    if game.players.count() == game.players_number:
+    if not role:
+        return "Selected country not available" if game.stage == Game.Stage.GAME else "Cannot join game"
+    if game.stage == Game.Stage.PREGAME and game.players.current().count() == game.players_number:
         game.close()
     db.commit()
     await publish(
         app.ext.Redis.client,
         f"game:{gid}:players",
         "players",
-        {"country": role.country, "is_active": role.is_active, "is_ready": role.is_ready, "state": role.state},
+        {
+            "country": role.country,
+            "name": None if game.anonymous else auth.user.username,
+            "is_active": role.is_active,
+            "is_ready": role.is_ready,
+            "state": role.state,
+        },
     )
     return None
 
@@ -306,7 +325,7 @@ def play(gid):
     # usernames = {}
     # for el in game.countries:
     #     usernames[el['country']] = db.User(id=objidToLong(el['player'])).username
-    players = game.players.join("user").select()
+    players = game.players.current().join("user").select()
     player = game.player(auth.user) if auth.is_logged() else None
 
     #: the country key used by the board (`--c-<key>`, data-power, data-owner): lowercase, every run of

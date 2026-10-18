@@ -207,8 +207,10 @@ class Game(TSModel, UUIDModel):
 
     @rowmethod("available_countries")
     def available_countries(self, row):
+        if row.stage == self.Stage.GAME:
+            return row.players.current().in_state(GameRole.State.DISORDER).select(GameRole.country).column("country")
         enabled_countries = {country for country in row.countries.keys() if row.countries[country]}
-        joined_countries = set(row.players(GameRole.country).column("country"))
+        joined_countries = set(row.players.current().select(GameRole.country).column("country"))
         return list(enabled_countries - joined_countries)
 
     def _add_player_to_dm_chat_rooms(self, game, player):
@@ -219,6 +221,8 @@ class Game(TSModel, UUIDModel):
 
     @rowmethod("add_player")
     def add_player(self, row, user, country=None):
+        if row.stage == self.Stage.GAME:
+            return self._take_over_player(row, user, country)
         available_countries = row.available_countries()
         if not country or (country not in available_countries):
             random.shuffle(available_countries)
@@ -236,14 +240,44 @@ class Game(TSModel, UUIDModel):
                     self._add_player_to_dm_chat_rooms(row, player)
         return player.id
 
+    def _take_over_player(self, game, user, country):
+        old = game.players.current().where(lambda p: p.country == country).select(for_update=True).first()
+        if not old or old.state != GameRole.State.DISORDER:
+            return None
+        game.settle_role(old, GameRole.State.LEFT, 0)
+        player = game.players.create(
+            user=user.id,
+            country=country,
+            state=GameRole.State.PLAYING,
+            is_active=old.is_active,
+            supply_centers_owned=old.supply_centers_owned,
+            is_ready=False,
+            missed_phases=0,
+        )
+        if not player.id:
+            raise ValueError("Cannot create takeover role")
+        game.active_phase().orders.where(lambda o: o.game_role == old.id).update(game_role=str(player.id))
+        for member in old.chat_memberships.select():
+            room = member.room
+            if room.type == ChatRoom.Type.DM:
+                room.readings.update(message=None)
+                room.messages.delete()
+        old.chat_memberships.update(player=str(player.id))
+        game.update_record(is_open=game.open_from_roles())
+        return player.id
+
     @rowmethod("players_all_ready")
     def _players_all_ready(self, row):
         ready_flags = row.players.in_state(GameRole.State.PLAYING).active().select(GameRole.is_ready).column("is_ready")
         return all(ready_flags)
 
+    @rowmethod("open_from_roles")
+    def _open_from_roles(self, row):
+        return bool(row.players.current().in_state(GameRole.State.DISORDER).count())
+
     @rowmethod("player")
     def get_user(self, row, user):
-        return row.players.where(lambda p: p.user == user.id).select().first()
+        return row.players.current().where(lambda p: p.user == user.id).select().first()
 
     @rowmethod("player_country")
     def get_user_country(self, row, user):
@@ -279,7 +313,7 @@ class Game(TSModel, UUIDModel):
     @rowmethod("cancel")
     @wrap_in_atomic
     def _cancel_game(self, game):
-        for player in game.players():
+        for player in game.players.where(lambda p: ~p.state.belongs(GameRole.TERMINAL_STATES)).select():
             vault = Vault.get(user=player.user)
             stake = game.stake(vault)
             if stake > 0:
@@ -343,6 +377,14 @@ class Game(TSModel, UUIDModel):
 
     @rowmethod("process")
     def process_game(self, game):
+        if not game.players.current().in_state(GameRole.State.PLAYING).count():
+            #: everyone in civil disorder for a whole phase: a draw on the current position
+            with self.db.atomic():
+                final = game.active_phase()
+                final.stage = GamePhase.Stage.CLOSED
+                game.end(None, final)
+            self.db.commit()
+            return True
         try:
             outcome, updated_orders, new_orders, successful_orders = process_game(game)
         except Exception:
@@ -353,6 +395,21 @@ class Game(TSModel, UUIDModel):
 
         with self.db.atomic():
             current_phase = game.active_phase()
+            if not outcome.winner:
+                # Adjudication writes bump order timestamps too; detect touches before those writes.
+                touched = (
+                    current_phase.orders.where(lambda o: o.updated_at > o.created_at)
+                    .select(Order.game_role, distinct=True)
+                    .column("game_role")
+                )
+                missed = (
+                    game.players.current()
+                    .in_state(GameRole.State.PLAYING)
+                    .active()
+                    .where(lambda r: (r.is_ready == False) & ~r.id.belongs(touched))
+                )
+                missed.update(missed_phases=GameRole.missed_phases + 1)
+                missed.where(lambda r: r.missed_phases >= 2).update(state=GameRole.State.DISORDER)
             current_phase.update_orders_stage_from_processor(updated_orders, successful_orders)
             current_phase.stage = GamePhase.Stage.CLOSED
             current_phase.save()
@@ -388,6 +445,7 @@ class Game(TSModel, UUIDModel):
                 next_process_at=game.next_deadline(),
                 processed_at=now(),
                 is_ready=False,
+                is_open=game.open_from_roles(),
             )
         self.db.commit()
         return True
@@ -460,6 +518,7 @@ class Game(TSModel, UUIDModel):
             GameRole.State.WON: UserStats.won,
             GameRole.State.SURVIVED: UserStats.survived,
             GameRole.State.DEFEATED: UserStats.defeated,
+            GameRole.State.LEFT: UserStats.defeated,
             GameRole.State.DRAWN: UserStats.drawn,
         }
         counter = counters[state]
@@ -482,6 +541,8 @@ class Game(TSModel, UUIDModel):
                 state = GameRole.State.WON
             elif not centers[role.country]:
                 state = GameRole.State.DEFEATED
+            elif winner is None:
+                state = GameRole.State.DRAWN
             else:
                 state = GameRole.State.SURVIVED
             role.supply_centers_owned = centers[role.country]
@@ -502,6 +563,7 @@ class Game(TSModel, UUIDModel):
             processed_at=now(),
             history=history,
             chat_history=chat_history,
+            is_open=game.open_from_roles(),
         )
         game.phases.delete()
         game.chat_rooms.delete()
@@ -534,7 +596,9 @@ class Game(TSModel, UUIDModel):
                 "orders": phase_orders,
             }
 
-        history = [entry(phase, dict(orders[phase.id])) for phase in phases]
+        #: the final position is the phase the adjudicator opened (never saved) or, for a draw on the
+        #: current position, the open phase itself: listed once, as final
+        history = [entry(phase, dict(orders[phase.id])) for phase in phases if phase.id != final.id]
         history.append(entry(final, {}))
         return history, ChatMessage.public_for_game(game.id)
 
@@ -596,13 +660,20 @@ class GameRole(UUIDModel):
     is_active = Field.bool(notnull=True)
     is_ready = Field.bool(notnull=True)
     state = Field.int(notnull=True)
+    missed_phases = Field.int(notnull=True)
     supply_centers_owned = Field.int(notnull=True)
 
     validation = {"state": {"in": State.choices()}}
 
-    default_values = {"is_active": False, "is_ready": False, "state": State.PLAYING, "supply_centers_owned": 0}
+    default_values = {
+        "is_active": False,
+        "is_ready": False,
+        "state": State.PLAYING,
+        "missed_phases": 0,
+        "supply_centers_owned": 0,
+    }
 
-    fields_rw = {"is_active": (True, False), "state": False, "supply_centers_owned": False}
+    fields_rw = {"is_active": (True, False), "state": False, "missed_phases": False, "supply_centers_owned": False}
 
     repr_values = {"state": State.repr()}
 
@@ -629,6 +700,10 @@ class GameRole(UUIDModel):
     @scope("actionable")
     def filter_actionable(self):
         return (self.is_active == True) & (self.state.belongs([self.State.PLAYING, self.State.DISORDER]))
+
+    @scope("in_live_phase")
+    def filter_live_phase(self, phase_id):
+        return self.game.belongs(GamePhase.live().where(lambda p: p.id == phase_id).nested_select(GamePhase.game))
 
 
 class GamePhase(TSModel, UUIDModel):
@@ -689,6 +764,13 @@ class GamePhase(TSModel, UUIDModel):
         "unique_phase": {"fields": ["game", "year", "season", "type"], "unique": True},
     }
 
+    @scope("live")
+    def filter_live(self):
+        #: open, in a game that is taking orders (not claimed, not processing)
+        return (self.stage == self.Stage.OPEN) & self.game.belongs(
+            Game.in_stage(Game.Stage.GAME).nested_select(Game.id)
+        )
+
     @rowmethod("supply_centers_no_grouped")
     def _supply_centers_no_grouped(self, row):
         map_centers = set(row.game.map.supply_centers)
@@ -697,10 +779,11 @@ class GamePhase(TSModel, UUIDModel):
     @rowmethod("init_orders")
     def _init_orders(self, row, roles, orders, defeats=False):
         supply_centers_no = row.supply_centers_no_grouped()
+        created = now()
         for role in roles:
             role_orders = orders.get(role.country, [])
             for order in role_orders:
-                row.orders.create(game_role=role.id, **order)
+                row.orders.create(game_role=role.id, created_at=created, updated_at=created, **order)
             troops = row.troops.get(role.country, {})
             player_supply_centers_no = supply_centers_no.get(role.country, 0)
             updates = {
@@ -774,3 +857,7 @@ class Order(TSModel, UUIDModel):
     @scope("failed")
     def filter_failed(self):
         return self.stage == self.Stage.FAILED
+
+    @scope("in_live_phase")
+    def filter_live_phase(self, phase_id):
+        return self.game_phase.belongs(GamePhase.live().where(lambda p: p.id == phase_id).nested_select(GamePhase.id))

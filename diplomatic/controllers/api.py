@@ -220,7 +220,7 @@ async def order_save(order_id):
                 & (GamePhase.stage == GamePhase.Stage.OPEN)
             )
         )
-        .select(Order.table.ALL, GameRole.table.ALL, Game.table.ALL)
+        .select(Order.table.ALL, GameRole.table.ALL, Game.table.ALL, GamePhase.id)
         .first()
     )
     if not row:
@@ -231,8 +231,7 @@ async def order_save(order_id):
         response.status = 400
         rv.data = "Game doesn't allow orders"
         return rv
-    # TODO: DISORDER allowance + flip
-    if not row.game_roles.is_active or row.game_roles.state != GameRole.State.PLAYING:
+    if not row.game_roles.is_active or row.game_roles.state not in (GameRole.State.PLAYING, GameRole.State.DISORDER):
         response.status = 400
         rv.data = "Cannot update orders in this turn"
         return rv
@@ -250,11 +249,34 @@ async def order_save(order_id):
         response.status = 422
         rv.data = errors
         return rv
-    res = Order.where(lambda m: m.id == order_id).validate_and_update(type=order_type, data=data)
+    #: the writes are conditional on the phase still taking orders: a claim or a processing in the
+    #: meantime makes them no-ops
+    phase_id = row.game_phases.id
+    res = (
+        Order.in_live_phase(phase_id).where(lambda m: m.id == order_id).validate_and_update(type=order_type, data=data)
+    )
     if res.errors:
         response.status = 422
         rv.data = res.errors
         return rv
+    if not res.updated:
+        response.status = 400
+        rv.data = "Game doesn't allow orders"
+        return rv
+    flipped = (
+        GameRole.in_live_phase(phase_id)
+        .where(lambda m: (m.id == row.game_roles.id) & (m.state == GameRole.State.DISORDER))
+        .update(state=GameRole.State.PLAYING)
+    )
+    if flipped:
+        row.games.update_record(is_open=row.games.open_from_roles())
+        db.commit()
+        await publish(
+            app.ext.Redis.client,
+            f"game:{row.games.id}:players",
+            "players",
+            {"country": row.game_roles.country, "is_ready": False, "state": GameRole.State.PLAYING},
+        )
     rv.status = "ok"
     rv.id = order_id
     rv.territory = row.orders.territory
@@ -272,10 +294,23 @@ async def player_ready(gid):
         response.status = 422
         rv.data = "invalid ready status"
         return rv
-    roles = game.players.actionable().where(lambda m: m.user == auth.user.id)
-    country = None
-    if roles.update(is_ready=status):
-        country = roles.select(GameRole.country).first().country
+    phase = game.active_phase()
+    if not phase:
+        return rv
+    roles = game.players.actionable().in_live_phase(phase.id).where(lambda m: m.user == auth.user.id)
+    role = roles.select(GameRole.country, GameRole.state).first()
+    updated = restored = False
+    if role:
+        updated = bool(roles.update(is_ready=status))
+        restored = (
+            updated
+            and status
+            and roles.where(lambda m: (m.state == GameRole.State.DISORDER) & (m.is_ready == True)).update(
+                state=GameRole.State.PLAYING
+            )
+        )
+        if restored:
+            game.update_record(is_open=game.open_from_roles())
     db.commit()
     # claimed = game.all_ready() and game.claim(Game.Stage.GAME)
     # if claimed:
@@ -283,8 +318,14 @@ async def player_ready(gid):
     if game.players_all_ready():
         game.set_ready()
     db.commit()
-    if country:
-        await publish(app.ext.Redis.client, f"game:{gid}:players", "players", {"country": country, "is_ready": status})
+    if updated:
+        state = GameRole.State.PLAYING if restored else role.state
+        await publish(
+            app.ext.Redis.client,
+            f"game:{gid}:players",
+            "players",
+            {"country": role.country, "is_ready": status, "state": state},
+        )
     # if claimed:
     #     process_game.delay(game.id)
     rv.data = status

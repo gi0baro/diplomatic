@@ -13,7 +13,7 @@ async def _player_role(gid):
     if not session.auth or not session.auth.user:
         return None
     async with db.connection():
-        role = GameRole.where(lambda m: (m.game == gid) & (m.user == session.auth.user.id)).select().first()
+        role = GameRole.current().where(lambda m: (m.game == gid) & (m.user == session.auth.user.id)).select().first()
     return role.id if role else None
 
 

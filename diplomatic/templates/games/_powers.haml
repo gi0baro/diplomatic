@@ -23,7 +23,8 @@
                     %span{"x-show": "p.me", class: "text-signal ml-1.5 text-[9px] tracking-[.12em]"} YOU
                 %span{"x-text": "p.sc", ":class": 'target && p.sc >= target ? "text-ok" : "text-fog-200"', class: "text-right tabular-nums"}
                 %span{"x-text": "p.units", class: "text-right tabular-nums text-fog-400"}
-                %span.flex.justify-end
+                %span.flex.items-center.justify-end.gap-1
+                    %span{"x-show": "!over && p.state === 1", title: "civil disorder", class: "text-[9px] text-warn"} CD
                     %span{"x-show": "!over", ":class": 'p.ready ? "bg-ok shadow-[0_0_6px_#58d66d]" : (p.active ? "bg-ink-500" : "bg-transparent border border-ink-600")', ":title": 'p.ready ? "ready" : (p.active ? "not ready" : "not playing this phase")', class: "h-1.5 w-1.5 rounded-full"}
                     %span{"x-show": "over", class: "text-[9px] tracking-[.12em]"}
                         %span{"x-show": "p.state === 6", class: "text-ok"} WON

@@ -204,8 +204,10 @@
           p = { country: d.country, name: null, ready: false, active: false, state: null };
           this.players.push(p);
         }
+        if (d.name !== undefined) p.name = d.name;
         if (d.is_ready !== undefined) p.ready = !!d.is_ready;
         if (d.is_active !== undefined) p.active = !!d.is_active;
+        if (d.state !== undefined) p.state = d.state;
       },
 
       get rows() {

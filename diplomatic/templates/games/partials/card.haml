@@ -1,5 +1,5 @@
 - card_play = url('front.games.play', game.id)
-- card_joinable = bool(current_user()) and game.is_open and not role
+- card_joinable = bool(current_user()) and game.is_open and game.stage in (Game.Stage.PREGAME, Game.Stage.GAME) and not role
 - card_open = 'true' if card_joinable and error else 'false'
 - card_locked = game.is_open and game.access == Game.Access.PASSWORD
 
@@ -38,6 +38,11 @@
                         %use{href: "#i-{{=icon}}"}
         %div{class: "mt-auto pt-3 font-mono text-[12px] text-fog-200"}
             - if game.is_open
+                - if game.stage == Game.Stage.GAME
+                    .mb-1
+                        - if turn
+                            {{=turn}} ·
+                        = status
                 {{=T("Deadline")}}
                 %span{"data-deadline": "{{=deadline_iso}}"}
                     = deadline
@@ -60,7 +65,7 @@
                         %label.label{for: "join-password-{{=game.id}}"}
                             = T("Password")
                         %input.input{id: "join-password-{{=game.id}}", type: "password", name: "password", required: None, autocomplete: "off"}
-                - if game.countries_assignment == Game.Assignment.CHOICE and choices
+                - if choices is not None
                     .field
                         %label.label{for: "join-country-{{=game.id}}"}
                             = T("Country")
@@ -69,7 +74,10 @@
                                 %option{value: "{{=name}}"}
                                     = name
                 .cap
-                    {{=T("This stakes")}} {{=game.bet}} {{=T("points")}}
+                    - if game.stage == Game.Stage.GAME
+                        = T("No stake required")
+                    - else
+                        {{=T("This stakes")}} {{=game.bet}} {{=T("points")}}
                 - if error
                     .err
                         = error
@@ -77,14 +85,14 @@
                     %button.btn{type: "button", "@click": "joining = false"}
                         = T("Cancel")
                     %button.btn.btn-primary{type: "submit"}
-                        = T("Confirm")
+                        = T("Take over") if game.stage == Game.Stage.GAME else T("Confirm")
         .pt-4.flex.justify-end.gap-2
             - if role
                 %a.btn.btn-primary{href: "{{=card_play}}"}
                     = T("Enter")
             - elif card_joinable
                 %button.btn.btn-primary{type: "button", "x-show": "!joining", "@click": "joining = true"}
-                    = T("Join")
+                    = T("Take over") if game.stage == Game.Stage.GAME else T("Join")
             - elif game.is_open
                 %a.btn{href: "{{=url('auth.login')}}"}
                     = T("Sign in to join")
