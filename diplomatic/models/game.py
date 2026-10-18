@@ -20,15 +20,6 @@ from .. import app
 from ..diplomacy import process_game
 from ..helpers.choice import Choice
 from ..helpers.validators import SkipProcessingValidator
-from ..helpers.widgets import (
-    games_bet,
-    games_countries_enabled,
-    games_join_time,
-    games_map,
-    games_phase_time,
-    games_players_number,
-    games_skip_processing,
-)
 from . import TSModel, UUIDModel, wrap_in_atomic
 from .chat import ChatMessage, ChatRoom
 from .economy import Transaction, Vault
@@ -182,16 +173,6 @@ class Game(TSModel, UUIDModel):
     form_info = {
         "max_turns": T("Empty for no limit."),
         "countries": T("With fewer countries than players, all of them are enabled."),
-    }
-
-    form_widgets = {
-        "map": games_map,
-        "players_number": games_players_number,
-        "bet": games_bet,
-        "countries": games_countries_enabled,
-        "phase_time": games_phase_time,
-        "join_time": games_join_time,
-        "skip_processing": games_skip_processing,
     }
 
     repr_values = {

@@ -144,6 +144,6 @@ def ranking():
 #     return locals()
 
 
-@app.route("/download/<str:filename>", pipeline=[db.pipe])
+@app.route("/download/<str:filename>", methods="get", pipeline=[db.pipe])
 def download(filename):
     return response.wrap_dbfile(db, filename)

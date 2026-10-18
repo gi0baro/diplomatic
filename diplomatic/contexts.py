@@ -3,7 +3,6 @@ from emmett.helpers import get_flashed_messages
 from emmett.pipeline import Injector
 
 from . import app, auth
-from .helpers.utils import cached_user_stats
 
 
 class BaseContext(Injector):
@@ -20,12 +19,6 @@ class BaseContext(Injector):
     @staticmethod
     def current_user():
         return auth.user
-
-    @staticmethod
-    def userdata():
-        if not auth.user:
-            return None
-        return cached_user_stats(auth.user)
 
     @staticmethod
     def uservault():
