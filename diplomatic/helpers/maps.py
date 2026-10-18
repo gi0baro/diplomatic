@@ -31,8 +31,13 @@ OWNED_TINT = 0.55  # previews are small: more solid than the board's 21% so owne
 #: hairline vanishes: every border is drawn 2 map units wide
 PREVIEW_STROKE_WIDTH = 2
 
+#: the edge provinces are stroked along the viewBox boundary, which draws a frame around the whole map; the
+#: thumbnail's viewBox is inset by one stroke width so the frame falls outside it
+THUMB_INSET = PREVIEW_STROKE_WIDTH
+
 _STYLE_ELEMENT = re.compile(r"<style\b[^>]*?(?:/>|>.*?</style\s*>)", re.S)
 _SVG_OPEN = re.compile(r"<svg\b[^>]*>", re.S)
+_VIEWBOX = re.compile(r'viewBox="([^"]*)"')
 
 
 def _xml_text(value):
@@ -169,5 +174,19 @@ def replace_style(svg, css):
     return rv
 
 
+def inset_viewbox(svg, inset):
+    """`svg` with the root viewBox shrunk by `inset` units on every side."""
+
+    def shrink(match):
+        x, y, w, h = (float(v) for v in match.group(1).split())
+        return f'viewBox="{x + inset:g} {y + inset:g} {w - 2 * inset:g} {h - 2 * inset:g}"'
+
+    return _VIEWBOX.sub(shrink, svg, count=1)
+
+
 def preview_svg(row):
     return replace_style(row["svg"], preview_style(row))
+
+
+def thumb_svg(row):
+    return inset_viewbox(preview_svg(row), THUMB_INSET)

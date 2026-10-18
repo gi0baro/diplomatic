@@ -42,28 +42,14 @@ class BaseContext(Injector):
         return url("download", auth.user.avatar_img)
 
     @staticmethod
-    def pretty_gamephasetime(minutes):
-        hours = minutes // 60
-        m = minutes
-        h = 0
-        d = hours // 24
-        if hours != 0:
-            if d != 0:
-                h = hours % 24
-            m = minutes % 60
-        rv = ""
-        comma = False
-        if d:
-            rv += str(d) + " day"
-            comma = True
-        if h:
-            s = str(h) + " hours"
-            if comma:
-                s = " ," + s
-            rv += s
-        if m:
-            s = str(m) + " minutes"
-            if comma:
-                s = " ," + s
-            rv += s
-        return rv
+    def duration(minutes):
+        #: as human() in games/create.haml: "1 day 12 h 30 min", zero parts omitted
+        days, hours, rest = minutes // 1440, minutes // 60 % 24, minutes % 60
+        parts = []
+        if days:
+            parts.append(f"{days} day" if days == 1 else f"{days} days")
+        if hours:
+            parts.append(f"{hours} h")
+        if rest:
+            parts.append(f"{rest} min")
+        return " ".join(parts)

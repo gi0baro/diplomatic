@@ -1,55 +1,25 @@
-- extend 'legacy.haml'
+- footer_enabled = True
+- extend 'layout.haml'
 
-:javascript
-    var ulist = '{{#=url("games.query")}}';
+- modes = [('open', T('Open')), ('running', T('Running')), ('finished', T('Finished'))]
 
-.container
-    .row
-        .col-sm-12{align: "center"}
-            %h1#title
-                = T("Discover open games") if show == 'open' else T("Discover games")
-            %h4.pull-left
-                - if show == "open"
-                    %a.btn.btn-default.btn-md{href: '{{=url(".index")}}'}
-                        Show all games
-                - else
-                    %a.btn.btn-default.btn-md{href: '{{=url(".index")}}'}
-                        Show open games
-                %a.btn.btn-success.btn-md{href: '{{=url(".create")}}'}
-                    = T("Create a new game")
-    %br
-    .row
-        #games.js-masonry
-            :javascript
-                // ajax('{{#=url("games.query", show)}}', [], 'games');
-            - include 'games/list.haml'
+%div{"x-data": '{ view: localStorage.getItem("lobbyView") || "grid" }', "x-init": '$watch("view", (v) => localStorage.setItem("lobbyView", v))'}
+    .flex.items-center.justify-between.gap-4.mb-6
+        %h1.panel-title
+            = T("Games")
+        - if current_user()
+            %a.btn.btn-primary{href: "{{=url('front.games.create')}}"}
+                = T("Create a game")
 
-#joinframe.container.nulled.overframe
-    .backframe
-    .row.intframe
-        .col-md-3
-        .col-md-6
-            .box.border.white
-                .box-title
-                    = T("Join the game")
-                    %i.fa.fa-close.pull-right{onclick: 'javascript: act.hideJoinFrame();'}
-                .row.m-15{style: 'text-align: center;'}
-                    #joinmsg.col-md-12
-                        = T("In order to join this game you will spend")
-                        %h3#betwarn
-                        = T("of your points.")
-                    #joinerr.col-md-12.bg-danger.nulled
-                    #joinpsw.col-md-12.nulled
-                        .form-group
-                            %label{for: "psw"}
-                                = T("This game requires the password")
-                            %input#joinpswinput.form-control{type: "password", name: "psw"}
-                    #joincountry.nulled
-                        .form-group
-                            %label{for: "country"}
-                                = T("Choose the country")
-                            %select#joincountrysel.form-control{name: "country"}
-                    #joinbtn.col-md-12{style: 'margin-top: 15px;'}
-                        .btn.btn-success{onclick: 'javascript: act.confirmJoinGame(act.jgid)'}
-                            = T("Join the game")
-        .col-md-3
+    -# `mode` follows the URL so that an htmx history restore (which keeps this attribute) marks the right filter
+    .flex.items-center.justify-between.gap-4.mb-4{"x-data": '{ mode: "{{=mode}}" }', "x-init": 'const m = new URLSearchParams(location.search).get("mode"); mode = ["running", "finished"].includes(m) ? m : "open"'}
+        .seg{role: "group", "aria-label": "{{=T('Filter')}}"}
+            - for m, label in modes
+                %button{type: "button", class: "{{='on' if m == mode else ''}}", "data-mode": "{{=m}}", ":class": "{ on: mode === $el.dataset.mode }", "@click": "mode = $el.dataset.mode", "hx-get": "{{=url('front.games.partial_list', params=dict(mode=m))}}", "hx-target": "#games-list", "hx-swap": "outerHTML", "hx-push-url": "{{=url('front.games.index', params=dict(mode=m))}}"}
+                    = label
+        .seg{role: "group", "aria-label": "{{=T('View')}}"}
+            - for v, label in [('grid', T('Grid')), ('table', T('Table'))]
+                %button{type: "button", "data-view": "{{=v}}", ":class": "{ on: view === $el.dataset.view }", "@click": "view = $el.dataset.view"}
+                    = label
+
+    - include 'games/partials/list.haml'

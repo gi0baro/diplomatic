@@ -28,6 +28,8 @@
                     - if vault.credit
                         %span.text-fog-400
                             · +{{=vault.credit}} staked
+                %a{href: "{{=url('front.users.profile', user.username)}}", class: "block px-3 py-1.5 font-mono text-[11px] tracking-[.12em] uppercase text-fog-400 hover:text-fog-200 hover:bg-ink-800"}
+                    = T("Profile")
                 %a{href: "{{=url('auth.profile')}}", class: "block px-3 py-1.5 font-mono text-[11px] tracking-[.12em] uppercase text-fog-400 hover:text-fog-200 hover:bg-ink-800"}
                     = T("Account")
                 %a{href: "{{=url('auth.logout')}}", class: "block px-3 py-1.5 font-mono text-[11px] tracking-[.12em] uppercase text-fog-400 hover:text-fog-200 hover:bg-ink-800 border-t border-ink-700"}

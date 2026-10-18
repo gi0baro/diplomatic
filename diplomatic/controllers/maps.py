@@ -4,7 +4,7 @@ from emmett import abort, response
 # from diplomatic.handlers import AppStatus
 # from diplomatic.contexts import BaseContext
 from .. import Map, app, cache, db
-from ..helpers.maps import preview_svg as build_preview
+from ..helpers.maps import preview_svg as build_preview, thumb_svg as build_thumb
 from . import front
 
 
@@ -50,6 +50,12 @@ def map_svg(mid):
 @cache.response(duration=None)
 def preview_svg(mid):
     return build_preview(_svg_row(mid, Map.names, Map.countries, Map.init))
+
+
+@map_files.route("/<int:mid>/thumb.svg")
+@cache.response(duration=None)
+def thumb_svg(mid):
+    return build_thumb(_svg_row(mid, Map.names, Map.countries, Map.init))
 
 
 # @maps.route()

@@ -1,0 +1,87 @@
+- list_empty = dict(open=T('No open games'), running=T('No running games'), finished=T('No finished games'))
+- list_part = lambda p: url('front.games.partial_list', params=dict(mode=mode, page=p))
+- list_page = lambda p: url('front.games.index', params=dict(mode=mode, page=p))
+
+#games-list
+    - if not games
+        .panel.px-4.py-6.cap
+            = list_empty[mode]
+    - else
+        .grid.gap-4{class: "md:grid-cols-2 lg:grid-cols-3", "x-show": 'view === "grid"'}
+            - for game in games
+                - variant = variants[game.id]
+                - card = cards[game.id]
+                - count, role, choices, winner, turn, status = card['count'], card['role'], card['choices'], card['winner'], card['turn'], card['status']
+                - deadline_iso, deadline = card['deadline_iso'], card['deadline']
+                - error = None
+                - include 'games/partials/card.haml'
+        .panel.overflow-x-auto{"x-show": 'view === "table"', "x-cloak": None}
+            - list_cols = dict(open=['Turn length', 'Deadline'], running=['Turn', 'Status'], finished=['Result'])[mode]
+            %table.table
+                %thead
+                    %tr
+                        %th.pl-4.w-full
+                            = T("Name")
+                        - for label in ['Variant', 'Players', 'Bet', 'Pot'] + list_cols
+                            %th.whitespace-nowrap
+                                = T(label)
+                        %th.pr-4
+                %tbody
+                    - for game in games
+                        - row = cards[game.id]
+                        - row_play = url('front.games.play', game.id)
+                        %tr
+                            %td.pl-4
+                                %a{href: "{{=row_play}}", class: "font-display font-semibold text-[14px] uppercase tracking-[.08em] text-fog-200 hover:text-signal"}
+                                    = game.name
+                            %td.whitespace-nowrap
+                                = variants[game.id].name
+                            %td.whitespace-nowrap
+                                {{=row['count']}} / {{=game.players_number}}
+                            %td.whitespace-nowrap
+                                = game.bet
+                            %td.whitespace-nowrap
+                                = Game.PotType(game.pot_type).label
+                            - if mode == 'open'
+                                %td.whitespace-nowrap
+                                    = duration(game.phase_time)
+                                %td.whitespace-nowrap
+                                    %span{"data-deadline": "{{=row['deadline_iso']}}"}
+                                        = row['deadline']
+                            - elif mode == 'running'
+                                %td.whitespace-nowrap
+                                    - if row['turn']
+                                        = row['turn']
+                                    - else
+                                        —
+                                %td.whitespace-nowrap
+                                    = row['status']
+                            - else
+                                %td.whitespace-nowrap
+                                    - if row['winner']
+                                        {{=T("Won by")}} {{=row['winner']}}
+                                    - else
+                                        = row['status']
+                            %td.pr-4.text-right.whitespace-nowrap
+                                - if row['role']
+                                    %a.btn.btn-primary{href: "{{=row_play}}"}
+                                        = T("Enter")
+                                - elif game.is_open and current_user()
+                                    %button.btn.btn-primary{type: "button", "data-game": "{{=game.id}}", "@click": 'view = "grid"; $nextTick(() => $dispatch("lobby-join", $el.dataset.game))'}
+                                        = T("Join")
+                                - elif game.is_open
+                                    %a.btn{href: "{{=url('auth.login')}}"}
+                                        = T("Sign in to join")
+                                - else
+                                    %a.btn{href: "{{=row_play}}"}
+                                        = T("Watch")
+    - if page > 1 or has_next
+        .mt-6.flex.items-center.justify-center.gap-4
+            - if page > 1
+                %a.btn{href: "{{=list_page(page - 1)}}", "hx-get": "{{=list_part(page - 1)}}", "hx-target": "#games-list", "hx-swap": "outerHTML", "hx-push-url": "{{=list_page(page - 1)}}"}
+                    = T("Previous")
+            %span.cap
+                {{=T("Page")}} {{=page}}
+            - if has_next
+                %a.btn{href: "{{=list_page(page + 1)}}", "hx-get": "{{=list_part(page + 1)}}", "hx-target": "#games-list", "hx-swap": "outerHTML", "hx-push-url": "{{=list_page(page + 1)}}"}
+                    = T("Next")

@@ -31,11 +31,19 @@ def index():
 #     return dict(form=form)
 
 
+RANKING_SIZE = 100
+RANKING_TTL = 300
+
+
+def top_ranks():
+    return UserStats.all().select(
+        orderby=~UserStats.score | ~UserStats.points, paginate=(1, RANKING_SIZE), including="user"
+    )
+
+
 @front.route()
-@cache.response()
 def ranking():
-    rows = UserStats.all().select(orderby=~UserStats.points, paginate=(1, 100))
-    return {"ranks": rows}
+    return {"ranks": cache("ranking", top_ranks, RANKING_TTL)}
 
 
 # @app.route(helpers=[AppStatus(), BaseContext()])

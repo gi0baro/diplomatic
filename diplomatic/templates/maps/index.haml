@@ -14,8 +14,8 @@
     .grid.gap-4{class: "md:grid-cols-2 lg:grid-cols-3"}
         - for map in maps
             %a.panel.group.block.overflow-hidden.transition-colors{href: "{{=url('front.maps.detail', map.id)}}", class: "hover:border-ink-500"}
-                .bg-ink-950.border-b.border-ink-700
-                    %img.block.w-full.h-auto{src: "{{=url('map_files.preview_svg', map.id)}}", alt: "", loading: "lazy"}
+                .preview
+                    %img{src: "{{=url('map_files.thumb_svg', map.id)}}", alt: "", loading: "lazy"}
                 .px-4.py-3
                     %div{class: "font-display font-semibold text-[20px] leading-none tracking-[.1em] uppercase text-fog-200 group-hover:text-signal"}
                         = map.name

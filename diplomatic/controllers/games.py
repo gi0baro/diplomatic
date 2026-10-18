@@ -1,29 +1,171 @@
+from collections import defaultdict
 from datetime import timezone
 
-from emmett import abort, redirect, request, url
+from emmett import abort, redirect, request, response, url
 from emmett.tools import requires
 
-from .. import Game, Map, Vault, app, auth
+from .. import Game, GamePhase, GameRole, Map, Vault, app, auth, db
+from ..helpers.events import publish
 from ..models.game import LANGS
 from . import front
+from .api import query_page
 
 
 games = front.module(__name__, "games", url_prefix="games", template_folder="games")
 
+RUNNING_STAGES = [Game.Stage.GAME, Game.Stage.PROCESSING, Game.Stage.PAUSE, Game.Stage.CRASH]
+LOBBY_MODES = {
+    "open": lambda g: g.is_open == True,
+    "running": lambda g: g.stage.belongs(RUNNING_STAGES) | ((g.stage == Game.Stage.PREGAME) & (g.is_open == False)),
+    "finished": lambda g: g.stage == Game.Stage.OVER,
+}
+LOBBY_PAGE = 20
+CARD_FIELDS = [field for field in Game.table if field.name not in ("history", "chat_history", "password")]
+DEADLINE_FORMAT = "%d %b %H:%M UTC"
+
+
+def iso_utc(at):
+    return (at.replace(tzinfo=timezone.utc) if at.tzinfo is None else at).isoformat()
+
+
+def card_values(game, roles, user):
+    role = next((r for r in roles if user and r.user == user.id), None)
+    choices = None
+    if user and not role and game.is_open and game.countries_assignment == Game.Assignment.CHOICE:
+        taken = {r.country for r in roles}
+        choices = [name for name, enabled in game.countries.items() if enabled and name not in taken]
+    at = game.next_process_at
+    return {
+        "count": sum(1 for r in roles if r.state != GameRole.State.LEFT),
+        "role": role,
+        "choices": choices,
+        "winner": next((r.country for r in roles if r.state == GameRole.State.WON), None),
+        "deadline_iso": iso_utc(at) if at else "",
+        "deadline": at.strftime(DEADLINE_FORMAT) if at else "",
+        "status": Game.Stage(game.stage).label,
+        "turn": None,
+    }
+
+
+def set_phase(card, game, phase):
+    if not phase:
+        return
+    card["turn"] = GamePhase.label(phase)
+    if game.stage == Game.Stage.GAME:
+        card["status"] = GamePhase.type_label(phase)
+
+
+def card_context(game, user):
+    roles = GameRole.where(lambda m: m.game == game.id).select()
+    variant = Map.where(lambda m: m.id == game.map).select(Map.id, Map.name).first()
+    card = card_values(game, roles, user)
+    if game.stage in RUNNING_STAGES:
+        set_phase(card, game, game.active_phase())
+    return {"game": game, "variant": variant, **card, "error": None, "Game": Game}
+
+
+def lobby_context():
+    mode = request.query_params.mode
+    if mode not in LOBBY_MODES:
+        mode = "open"
+    page = query_page()
+    rows = Game.where(lambda g: LOBBY_MODES[mode](g) & (g.map == Map.id)).select(
+        *CARD_FIELDS,
+        Map.id,
+        Map.name,
+        orderby=~Game.created_at,
+        limitby=((page - 1) * LOBBY_PAGE, page * LOBBY_PAGE + 1),
+    )
+    has_next = len(rows) > LOBBY_PAGE
+    rows = list(rows)[:LOBBY_PAGE]
+    listed = [row.games for row in rows]
+    ids = [game.id for game in listed]
+    roles = defaultdict(list)
+    if ids:
+        for role in GameRole.where(lambda m: m.game.belongs(ids)).select():
+            roles[role.game].append(role)
+    running = [game.id for game in listed if game.stage in RUNNING_STAGES]
+    phases = {}
+    if running:
+        open_phases = GamePhase.where(lambda m: m.game.belongs(running) & (m.stage == GamePhase.Stage.OPEN))
+        fields = (GamePhase.id, GamePhase.game, GamePhase.year, GamePhase.season, GamePhase.type)
+        phases = {phase.game: phase for phase in open_phases.select(*fields)}
+    variants = {row.games.id: row.maps for row in rows}
+    cards = {game.id: card_values(game, roles[game.id], auth.user) for game in listed}
+    for game in listed:
+        set_phase(cards[game.id], game, phases.get(game.id))
+    return {
+        "games": listed,
+        "mode": mode,
+        "page": page,
+        "has_next": has_next,
+        "variants": variants,
+        "cards": cards,
+        "Game": Game,
+    }
+
 
 @games.route("/")
 def index():
-    mode = request.query_params.mode or "open"
+    return lobby_context()
+
+
+@games.route("/list", methods="get", template="partials/list.haml")
+def partial_list():
+    return lobby_context()
+
+
+@games.route("/<str:gid>/join", methods="post", template="partials/card.haml")
+@requires(auth.is_logged, url("auth.login"))
+async def join(gid):
+    error = await join_game(gid)
+    if not error:
+        if request.headers.get("hx-request"):
+            response.headers["HX-Redirect"] = url(".play", gid)
+        else:
+            redirect(url(".play", gid))
+    game = Game.get(gid)
+    if not game:
+        abort(404)
+    return {**card_context(game, auth.user), "error": error}
+
+
+async def join_game(gid):
+    game = Game.in_stage(Game.Stage.PREGAME).where(lambda g: g.id == gid).select(for_update=True).first()
+    if not game:
+        return "no game found"
+    params = await request.body_params
+    if game.player_country(auth.user) is not None:
+        return "already in game"
+    vault = Vault.where(lambda m: m.user == auth.user.id).select(for_update=True).first()
+    if vault.balance < game.bet:
+        return "Not enough points"
+    if game.players.count() == game.players_number:
+        return "no slots available"
+    if game.access == Game.Access.PASSWORD:
+        if params.password != game.password:
+            return "wrong password"
+    if game.countries_assignment == Game.Assignment.CHOICE:
+        if params.country not in game.available_countries():
+            return "Selected country not available"
     try:
-        page = request.query_params.page or 1
-        page = int(page)
-        assert page >= 1
-    except Exception:
-        page = 1
-    if mode not in ["all", "open"]:
-        mode = "open"
-    games = Game.where(lambda g: g.is_open == True) if mode == "open" else Game.all()
-    return {"games": games.select(orderby=~Game.created_at, paginate=(page, 20), including="user"), "show": mode}
+        with db.atomic():
+            role = game.add_player(auth.user, params.country)
+    except Exception as e:
+        app.log.exception(e)
+        role = None
+    if not role:
+        return "Cannot join game"
+    if game.players.count() == game.players_number:
+        game.close()
+    db.commit()
+    await publish(
+        app.ext.Redis.client,
+        f"game:{gid}:players",
+        "players",
+        {"country": role.country, "is_active": role.is_active, "is_ready": role.is_ready, "state": role.state},
+    )
+    return None
 
 
 @games.route()

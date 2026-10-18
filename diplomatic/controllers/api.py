@@ -14,7 +14,6 @@ from .. import (
     GameRole,
     Map,
     Order,
-    Vault,
     app,
     auth,
     db,
@@ -182,56 +181,6 @@ def game_history(gid):
 # def game_status(gid):
 #     game = db(db.Game.id == gid).select(db.Game.status, db.Game.phases).first()
 #     return dict(status=game.status, phase=len(game.phases) - 1)
-
-
-@authorized.route("/game/<str:gid>/join", methods=["post"])
-async def game_join(gid):
-    rv = sdict(status="error")
-    game = Game.in_stage(Game.Stage.PREGAME).where(lambda g: g.id == gid).select(for_update=True).first()
-    if not game:
-        rv.data = "no game found"
-        return rv
-    params = await request.body_params
-    if game.player_country(auth.user) is not None:
-        rv.data = "already in game"
-        return rv
-    vault = Vault.where(lambda m: m.user == auth.user.id).select(for_update=True).first()
-    if vault.balance < game.bet:
-        rv.data = "Not enough points"
-        return rv
-    if game.players.count() == game.players_number:
-        rv.data = "no slots available"
-        return rv
-    if game.access == Game.Access.PASSWORD:
-        if params.password != game.password:
-            rv.data = "wrong password"
-            return rv
-    try:
-        with db.atomic():
-            role = game.add_player(auth.user, params.country)
-    except Exception as e:
-        app.log.exception(e)
-        role = None
-    if not role:
-        rv.data = "Cannot join game"
-        return rv
-    # claimed = False
-    if game.players.count() == game.players_number:
-        game.close()
-        # if game.close() and game.starts_on == Game.Start.ASAP:
-        #     claimed = game.claim(Game.Stage.PREGAME)
-    db.commit()
-    await publish(
-        app.ext.Redis.client,
-        f"game:{gid}:players",
-        "players",
-        {"country": role.country, "is_active": role.is_active, "is_ready": role.is_ready, "state": role.state},
-    )
-    # if claimed:
-    #     start_game.delay(game.id)
-    rv.status = "ok"
-    rv.data = "joined successfully"
-    return rv
 
 
 @api.route("/phases/<str:pid>/orders")

@@ -32,4 +32,4 @@ def health():
     return b"ok"
 
 
-from . import api, games, main, maps, ws
+from . import api, games, main, maps, users, ws

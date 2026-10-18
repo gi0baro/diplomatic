@@ -1,0 +1,82 @@
+- card_play = url('front.games.play', game.id)
+- card_joinable = bool(current_user()) and game.is_open and not role
+- card_open = 'true' if card_joinable and error else 'false'
+- card_rules = []
+- if game.access == Game.Access.PASSWORD
+    - card_rules.append(str(T('password')))
+- if game.build_everywhere
+    - card_rules.append(str(T('build anywhere')))
+- if game.build_on_start
+    - card_rules.append(str(T('builds on start')))
+
+%article.panel.flex.flex-col.overflow-hidden{id: "game-{{=game.id}}", "data-game": "{{=game.id}}", "x-data": "{ joining: {{=card_open}} }", "@lobby-join.window": 'if ($event.detail === $el.dataset.game) { joining = true; $nextTick(() => $el.scrollIntoView({block: "center", behavior: "smooth"})) }'}
+    %a.preview{href: "{{=card_play}}"}
+        %img{src: "{{=url('map_files.thumb_svg', variant.id)}}", alt: "", loading: "lazy"}
+    .p-4.flex-1.flex.flex-col
+        .cap
+            = variant.name
+        %a{href: "{{=card_play}}", class: "mt-1.5 block truncate font-display font-semibold text-[20px] leading-none tracking-[.1em] uppercase text-fog-200 hover:text-signal"}
+            = game.name
+        .cap.mt-3
+            {{=count}} / {{=game.players_number}} {{=T("players")}} · {{=game.bet}} {{=T("points")}} · {{=Game.PotType(game.pot_type).label}}
+        - if game.is_open
+            .cap.mt-1
+                = ' · '.join([duration(game.phase_time) + ' ' + str(T('per turn'))] + card_rules)
+        - elif card_rules
+            .cap.mt-1
+                = ' · '.join(card_rules)
+        %div{class: "mt-3 font-mono text-[12px] text-fog-200"}
+            - if game.is_open
+                {{=T("Deadline")}}
+                %span{"data-deadline": "{{=deadline_iso}}"}
+                    = deadline
+            - elif game.stage == Game.Stage.OVER
+                - if winner
+                    {{=T("Won by")}} {{=winner}}
+                - else
+                    = status
+            - else
+                - if turn
+                    {{=turn}} ·
+                = status
+        - if error and not card_joinable
+            .err.mt-3
+                = error
+        - if card_joinable
+            %form.mt-4.pt-4.border-t.border-ink-700.space-y-3{"x-show": "joining", "x-cloak": None, "hx-post": "{{=url('front.games.join', game.id)}}", "hx-target": "#game-{{=game.id}}", "hx-swap": "outerHTML"}
+                - if game.access == Game.Access.PASSWORD
+                    .field
+                        %label.label{for: "join-password-{{=game.id}}"}
+                            = T("Password")
+                        %input.input{id: "join-password-{{=game.id}}", type: "password", name: "password", required: None, autocomplete: "off"}
+                - if game.countries_assignment == Game.Assignment.CHOICE and choices
+                    .field
+                        %label.label{for: "join-country-{{=game.id}}"}
+                            = T("Country")
+                        %select.input{id: "join-country-{{=game.id}}", name: "country"}
+                            - for name in choices
+                                %option{value: "{{=name}}"}
+                                    = name
+                .cap
+                    {{=T("This stakes")}} {{=game.bet}} {{=T("points")}}
+                - if error
+                    .err
+                        = error
+                .flex.justify-end.gap-2
+                    %button.btn{type: "button", "@click": "joining = false"}
+                        = T("Cancel")
+                    %button.btn.btn-primary{type: "submit"}
+                        = T("Confirm")
+        .mt-auto.pt-4.flex.justify-end.gap-2
+            - if role
+                %a.btn.btn-primary{href: "{{=card_play}}"}
+                    = T("Enter")
+            - elif card_joinable
+                %button.btn.btn-primary{type: "button", "x-show": "!joining", "@click": "joining = true"}
+                    = T("Join")
+            - elif game.is_open
+                %a.btn{href: "{{=url('auth.login')}}"}
+                    = T("Sign in to join")
+            - else
+                %a.btn{href: "{{=card_play}}"}
+                    = T("Watch")

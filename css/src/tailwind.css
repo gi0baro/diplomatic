@@ -93,6 +93,13 @@
   .panel {
     @apply rounded-sm border border-ink-700 bg-ink-900;
   }
+  /* variant preview frame on grid cards: one ratio for every map, letterboxed on the map's own background */
+  .preview {
+    @apply block aspect-[16/10] border-b border-ink-700 bg-ink-950;
+  }
+  .preview img {
+    @apply h-full w-full object-contain;
+  }
   /* section heading: small caps, mono */
   .panel-title {
     @apply font-mono text-[10px] font-medium uppercase tracking-[.2em] text-fog-400;

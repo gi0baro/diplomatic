@@ -1,34 +1,40 @@
-- extend 'legacy.haml'
+- footer_enabled = True
+- extend 'layout.haml'
 
-.row
-    .col-sm-12{align: "center"}
-        %h1 Ranking
-%br
-.row
-    .col-sm-6{align: "center"}
-        %h2
-        %h5
-    .col-sm-6{align: "center"}
-        %h2
-        %h5
-%br
-%br
-.row.m-15
-    .card
-        .row
-            .col-xs-12
-                %h2 High score players
-                %table.table.table-hover.table-responsive
-                    %thead
-                        %tr
-                            %th Name:
-                            %th Points:
-                    %tbody
-                        - for rank in ranks
-                            %p
-                                %tr
-                                    %td
-                                        %a{href: "#"}
-                                            = rank.user.username
-                                    %td
-                                        = rank.points
+.flex.items-baseline.justify-between.gap-4.mb-6
+    %h1.panel-title
+        = T("Ranking")
+    %span.cap
+        = T("top 100 by score")
+
+- if not ranks
+    .panel.px-4.py-6.cap
+        = T("No players yet")
+- else
+    %section.panel.overflow-x-auto
+        %table.table
+            %thead
+                %tr
+                    %th.tabular-nums{class: "!text-right"}
+                        = T("#")
+                    %th
+                        = T("Player")
+                    - for label in ['Score', 'Points', 'Played', 'Won', 'Survived', 'Defeated', 'Drawn']
+                        %th.tabular-nums{class: "!text-right"}
+                            = T(label)
+            %tbody
+                - for position, rank in enumerate(ranks, 1)
+                    %tr
+                        %td.text-right.tabular-nums
+                            = position
+                        %td
+                            %a.flex.items-center.gap-2{href: "{{=url('front.users.profile', rank.user.username)}}", class: "text-fog-200 hover:text-signal"}
+                                %span.avatar
+                                    = (rank.user.username or '?')[:2].upper()
+                                    - if rank.user.avatar_img
+                                        %img{src: "{{=url('download', rank.user.avatar_img)}}", alt: "", onerror: "this.remove()"}
+                                %span
+                                    = rank.user.username
+                        - for field in ['score', 'points', 'played', 'won', 'survived', 'defeated', 'drawn']
+                            %td.text-right.tabular-nums
+                                = rank[field]

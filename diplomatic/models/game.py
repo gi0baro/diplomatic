@@ -67,7 +67,7 @@ class Game(TSModel, UUIDModel):
         NONE = 2, T("Disable in-game messaging")
 
     class Stage(Choice):
-        PREGAME = 0, T("Waiting for players")
+        PREGAME = 0, T("Pre-game")
         GAME = 1, T("In progress")
         PROCESSING = 2, T("Processing")
         PAUSE = 3, T("Paused")
@@ -624,6 +624,18 @@ class GamePhase(TSModel, UUIDModel):
         OPEN = 0, T("Open")
         READY = 1, T("Ready")
         CLOSED = 2, T("Closed")
+
+    @classmethod
+    def label(cls, row):
+        if row.type == Phase.BUILDS:
+            season = T("winter")
+        else:
+            season = T("spring") if row.season == Season.SPRING else T("autumn")
+        return f"{str(season).title()} {row.year}"
+
+    @classmethod
+    def type_label(cls, row):
+        return str(T(Phase(row.type).name.lower())).title()
 
     year = Field.int(notnull=True)
     season = Field.int(notnull=True)
