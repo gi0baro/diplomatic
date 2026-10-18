@@ -1,23 +1,58 @@
 - footer_enabled = True
 - extend 'layout.haml'
 
-.flex.items-baseline.justify-between.gap-4.mb-6
-    %h1.panel-title
-        = T("Variants")
-    %span.cap
-        {{=len(maps)}} {{=T("available")}}
+%div{"x-data": '{ view: localStorage.getItem("variantsView") || "grid" }', "x-init": '$watch("view", (v) => localStorage.setItem("variantsView", v))'}
+    .flex.items-center.justify-between.gap-4.mb-6
+        %h1.panel-title
+            = T("Variants")
+        .seg{role: "group", "aria-label": "{{=T('View')}}"}
+            - for v, label in [('grid', T('Grid')), ('table', T('Table'))]
+                %button{type: "button", "data-view": "{{=v}}", ":class": "{ on: view === $el.dataset.view }", "@click": "view = $el.dataset.view"}
+                    = label
 
-- if not maps
-    .panel.px-4.py-6.cap
-        = T("No variants loaded")
-- else
-    .grid.gap-4{class: "md:grid-cols-2 lg:grid-cols-3"}
-        - for map in maps
-            %a.panel.group.block.overflow-hidden.transition-colors{href: "{{=url('front.maps.detail', map.id)}}", class: "hover:border-ink-500"}
-                .preview
-                    %img{src: "{{=url('map_files.thumb_svg', map.id)}}", alt: "", loading: "lazy"}
-                .px-4.py-3
-                    %div{class: "font-display font-semibold text-[20px] leading-none tracking-[.1em] uppercase text-fog-200 group-hover:text-signal"}
-                        = map.name
-                    .cap.mt-2
-                        {{=len(map.countries)}} {{=T("players")}} · {{=map.games.count()}} {{=T("games")}}
+    - if not maps
+        .panel.px-4.py-6.cap
+            = T("No variants loaded")
+    - else
+        .grid.gap-4{class: "md:grid-cols-2 lg:grid-cols-3", "x-show": 'view === "grid"'}
+            - for map in maps
+                - row = rows[map.id]
+                %a.panel.group.block.overflow-hidden.transition-colors{href: "{{=url('front.maps.detail', map.id)}}", class: "hover:border-ink-500"}
+                    .preview
+                        %img{src: "{{=url('map_files.thumb_svg', map.id)}}", alt: "", loading: "lazy"}
+                    .px-4.py-3
+                        %div{class: "font-display font-semibold text-[20px] leading-none tracking-[.1em] uppercase text-fog-200 group-hover:text-signal"}
+                            = map.name
+                        .cap.mt-2
+                            {{=row['players']}} {{=T("players")}} · {{=row['played']}} {{=T("played")}}
+        .panel.overflow-x-auto{"x-show": 'view === "table"', "x-cloak": None}
+            %table.table
+                %thead
+                    %tr
+                        %th
+                            = T("Name")
+                        - for label in ['Players', 'Played', 'Avg. turns']
+                            %th.whitespace-nowrap{class: "!text-right"}
+                                = T(label)
+                        %th
+                            = T("Win rate")
+                %tbody
+                    - for map in maps
+                        - row = rows[map.id]
+                        %tr
+                            %td
+                                %a{href: "{{=url('front.maps.detail', map.id)}}", class: "font-display font-semibold text-[14px] uppercase tracking-[.08em] text-fog-200 hover:text-signal"}
+                                    = map.name
+                            %td.text-right.tabular-nums
+                                = row['players']
+                            %td.text-right.tabular-nums
+                                = row['played']
+                            %td.text-right.tabular-nums
+                                = row['avg_turns'] if row['avg_turns'] is not None else '—'
+                            %td
+                                .flex.flex-wrap.gap-x-3.gap-y-1
+                                    - for name, colour, rate in row['win_rates']
+                                        %span.inline-flex.items-center.gap-1{title: "{{=name}}"}
+                                            %span.sw{style: "--c: rgb({{=colour['r']}} {{=colour['g']}} {{=colour['b']}})"}
+                                            %span.tabular-nums
+                                                = rate

@@ -20,18 +20,18 @@
             %table.table
                 %thead
                     %tr
-                        %th.pl-4.w-full
+                        %th.w-full
                             = T("Name")
                         - for label in ['Variant', 'Players', 'Bet', 'Pot'] + list_cols
                             %th.whitespace-nowrap
                                 = T(label)
-                        %th.pr-4
+                        %th
                 %tbody
                     - for game in games
                         - row = cards[game.id]
                         - row_play = url('front.games.play', game.id)
                         %tr
-                            %td.pl-4
+                            %td
                                 %a{href: "{{=row_play}}", class: "font-display font-semibold text-[14px] uppercase tracking-[.08em] text-fog-200 hover:text-signal"}
                                     = game.name
                             %td.whitespace-nowrap
@@ -62,7 +62,7 @@
                                         {{=T("Won by")}} {{=row['winner']}}
                                     - else
                                         = row['status']
-                            %td.pr-4.text-right.whitespace-nowrap
+                            %td.text-right.whitespace-nowrap
                                 - if row['role']
                                     %a.btn.btn-primary{href: "{{=row_play}}"}
                                         = T("Enter")

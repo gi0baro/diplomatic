@@ -8,51 +8,105 @@
         = map.name
 
 .grid.gap-6{class: "lg:grid-cols-3"}
-    .panel.p-3{class: "lg:col-span-2"}
-        .bg-ink-950
-            %img.block.w-full.h-auto{src: "{{=url('map_files.preview_svg', map.id)}}", alt: ""}
+    .space-y-6.min-w-0{class: "lg:col-span-2"}
+        .panel.p-3
+            .bg-ink-950
+                %img.block.w-full.h-auto{src: "{{=url('map_files.preview_svg', map.id)}}", alt: ""}
+
+        %section.panel
+            %h2.panel-title.px-4.pt-4.pb-2
+                = T("Outcomes")
+            - if has_outcomes
+                .overflow-x-auto
+                    %table.table
+                        %thead
+                            %tr
+                                %th.w-full
+                                    = T("Country")
+                                - for label in ['Played', 'Won', 'Survived', 'Defeated', 'Drawn']
+                                    %th.whitespace-nowrap{class: "!text-right"}
+                                        = T(label)
+                        %tbody
+                            - for name, colour, played_count, won, survived, defeated, drawn in outcomes
+                                %tr
+                                    %td
+                                        %span.inline-flex.items-center.gap-2
+                                            %span.sw{style: "--c: rgb({{=colour['r']}} {{=colour['g']}} {{=colour['b']}})"}
+                                            = name
+                                    - for count in [played_count, won, survived, defeated, drawn]
+                                        %td.text-right.tabular-nums
+                                            = count
+            - else
+                .px-4.pb-4.cap
+                    = T("No games played yet")
+
+        .grid.gap-6{class: "md:grid-cols-2"}
+            - for title, entries, label in [('Games by players', by_players, 'Players'), ('Games by pot', by_pot, 'Pot')]
+                %section.panel
+                    %h2.panel-title.px-4.pt-4.pb-2
+                        = T(title)
+                    - if entries
+                        %table.table
+                            %thead
+                                %tr
+                                    %th.w-full
+                                        = T(label)
+                                    %th{class: "!text-right"}
+                                        = T("Games")
+                            %tbody
+                                - for name, count in entries
+                                    %tr
+                                        %td
+                                            = name
+                                        %td.text-right.tabular-nums
+                                            = count
+                    - else
+                        .px-4.pb-4.cap
+                            —
+
+        %section.panel
+            .flex.items-baseline.justify-between.gap-4.px-4.pt-4.pb-2
+                %h2.panel-title
+                    = T("Games per day")
+                %span.cap
+                    = T("last 30 days")
+            .px-4.pb-4
+                .flex.gap-2
+                    .h-16.flex.flex-col.justify-between.text-right.tabular-nums{class: "font-mono text-[9px] leading-none text-fog-500"}
+                        %span
+                            = per_day_max
+                        %span
+                            0
+                    .flex-1.min-w-0
+                        .text-signal
+                            %svg.block.w-full.h-16{viewBox: "0 0 300 60", preserveAspectRatio: "none", role: "img", "aria-label": "{{=T('Games per day')}}"}
+                                - for bar in bars
+                                    %rect{x: "{{=bar['x']}}", y: "{{=bar['y']}}", width: "{{=bar['width']}}", height: "{{=bar['height']}}", fill: "currentColor", class: "{{='' if bar['count'] else 'text-ink-600'}}"}
+                                        %title
+                                            = bar['title']
+                        .flex.justify-between.mt-2
+                            %span.cap
+                                = first_day
+                            %span.cap
+                                = last_day
 
     .panel.self-start
         %h2.panel-title.px-4.pt-4.pb-2
             = T("Statistics")
         %table.table
             %tbody
-                %tr
-                    %td.pl-4
-                        = T("Land territories")
-                    %td.pr-4.text-right.text-fog-200
-                        = len(map.names)-len(map.seas)-len(map.neutrals)
-                %tr
-                    %td.pl-4
-                        = T("Water territories")
-                    %td.pr-4.text-right.text-fog-200
-                        = len(map.seas)
-                %tr
-                    %td.pl-4
-                        = T("Coastal territories")
-                    %td.pr-4.text-right.text-fog-200
-                        = len(map.coasts)
-                %tr
-                    %td.pl-4
-                        = T("Supply centers")
-                    %td.pr-4.text-right.text-fog-200
-                        = len(map.supply_centers)
-                %tr
-                    %td.pl-4
-                        = T("Supply centers to win")
-                    %td.pr-4.text-right.text-fog-200
-                        = map.scs_to_win
-                %tr
-                    %td.pl-4
-                        = T("Min players")
-                    %td.pr-4.text-right.text-fog-200
-                        = map.min_players
+                - for label, value in statistics
+                    %tr
+                        %td.w-full
+                            = T(label)
+                        %td.text-right.tabular-nums.text-fog-200.whitespace-nowrap
+                            = value
 
         %h2.panel-title.px-4.pt-5.pb-2.border-t.border-ink-700
             = T("Countries")
         %ul.px-4.pb-4.space-y-2
-            - for name, c in map.countries.items()
-                %li.flex.items-center.gap-3{style: "--c: rgb({{=c['r']}} {{=c['g']}} {{=c['b']}})"}
-                    %span.sw
+            - for name, colour, played_count, won, survived, defeated, drawn in outcomes
+                %li.flex.items-center.gap-3
+                    %span.sw{style: "--c: rgb({{=colour['r']}} {{=colour['g']}} {{=colour['b']}})"}
                     %span{class: "font-display text-[16px] uppercase tracking-wider text-fog-200"}
                         = name

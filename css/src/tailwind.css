@@ -223,6 +223,14 @@
   .table td {
     @apply border-t border-ink-700 px-2 py-1.5;
   }
+  .table th:first-child,
+  .table td:first-child {
+    @apply pl-4;
+  }
+  .table th:last-child,
+  .table td:last-child {
+    @apply pr-4;
+  }
   .table tbody tr:hover {
     @apply bg-ink-800/50;
   }

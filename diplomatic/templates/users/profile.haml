@@ -26,13 +26,13 @@
                             = stats[field] if stats else 0
 
         %section.panel
-            %h2.panel-title.px-4.pt-3.pb-2.border-b.border-ink-700
+            %h2.panel-title.px-4.pt-4.pb-2
                 = T("Games")
             - if not roles
                 .px-4.py-6.cap
                     = T("No finished games")
             - else
-                .overflow-x-auto.px-2
+                .overflow-x-auto
                     %table.table
                         %thead
                             %tr
@@ -47,7 +47,7 @@
                                 - game = entry.games
                                 %tr
                                     %td
-                                        %a{href: "{{=url('front.games.play', game.id)}}", class: "text-fog-200 hover:text-signal"}
+                                        %a{href: "{{=url('front.games.play', game.id)}}", class: "font-display font-semibold text-[14px] uppercase tracking-[.08em] text-fog-200 hover:text-signal"}
                                             = game.name
                                     %td.text-right.whitespace-nowrap
                                         = entry.maps.name

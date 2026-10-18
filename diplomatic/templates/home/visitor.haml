@@ -1,0 +1,37 @@
+.grid.gap-8.items-center{class: "lg:grid-cols-2"}
+    %div
+        %h1{class: "mt-2 font-display font-semibold text-[32px] leading-none tracking-[.12em] uppercase text-fog-200"}
+            = T("Negotiate. Betray. Prevail.")
+        %p.mt-4.leading-relaxed.text-fog-300{class: "text-[15px]"}
+            = T("The classic game of negotiation and betrayal, with its variants. Turns last hours or days, press is open, private or silent, and every game is played for points. Seven players, one winner, no dice.")
+        .flex.gap-3.mt-6
+            %a.btn.btn-primary{href: "{{=url('auth.registration')}}"}
+                = T("Sign up")
+            %a.btn{href: "{{=url('front.games.index')}}"}
+                = T("Browse games")
+    .panel.p-3
+        .bg-ink-950
+            %img.block.w-full.h-auto{src: "{{=url('static', 'img/classic.png')}}", alt: "{{=T('The classic map')}}"}
+
+.panel.p-4.mt-8.grid.grid-cols-2.gap-4{class: "md:grid-cols-5"}
+    - for key, label in [('players', 'Players'), ('running', 'Games running'), ('played', 'Games played'), ('turns', 'Turns resolved'), ('hours', 'Hours of play')]
+        .space-y-1
+            .cap
+                = T(label)
+            %div{class: "font-mono text-[18px] tabular-nums text-fog-200"}
+                = totals[key]
+
+- if games
+    .flex.items-baseline.justify-between.mt-10.mb-4
+        %h2.panel-title
+            = T("Now playing")
+        %a.cap{href: "{{=url('front.games.index', params=dict(mode='running'))}}"}
+            = T("All games")
+    .grid.gap-4{class: "md:grid-cols-2 lg:grid-cols-3"}
+        - for game in games
+            - variant = variants[game.id]
+            - card = cards[game.id]
+            - count, role, choices, winner, turn, status = card['count'], card['role'], card['choices'], card['winner'], card['turn'], card['status']
+            - deadline_iso, deadline = card['deadline_iso'], card['deadline']
+            - error = None
+            - include 'games/partials/card.haml'

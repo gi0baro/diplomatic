@@ -1,0 +1,103 @@
+.grid.gap-6{class: "lg:grid-cols-3"}
+    %section.panel.min-w-0{class: "lg:col-span-2"}
+        %h2.panel-title.px-4.pt-4.pb-2
+            = T("Your games")
+        - if not mine
+            .px-4.pb-4.cap
+                = T("No games yet")
+        - else
+            .overflow-x-auto
+                %table.table
+                    %thead
+                        %tr
+                            %th.w-full
+                                = T("Name")
+                            - for label in ['Variant', 'Players', 'Turn', 'Status', 'Deadline']
+                                %th.whitespace-nowrap
+                                    = T(label)
+                            %th
+                    %tbody
+                        - for game in mine
+                            - row = cards[game.id]
+                            - row_play = url('front.games.play', game.id)
+                            %tr{class: "{{='bg-signal/5' if row['due'] else ''}}"}
+                                %td
+                                    %a{href: "{{=row_play}}", class: "font-display font-semibold text-[14px] uppercase tracking-[.08em] text-fog-200 hover:text-signal"}
+                                        = game.name
+                                %td.whitespace-nowrap
+                                    = variants[game.id].name
+                                %td.whitespace-nowrap
+                                    {{=row['count']}} / {{=game.players_number}}
+                                %td.whitespace-nowrap
+                                    - if row['turn']
+                                        = row['turn']
+                                    - else
+                                        —
+                                %td.whitespace-nowrap
+                                    - if row['due']
+                                        %span.badge
+                                            = T("Orders due")
+                                    - else
+                                        = row['status']
+                                %td.whitespace-nowrap
+                                    %span{"data-deadline": "{{=row['deadline_iso']}}"}
+                                        = row['deadline']
+                                %td.text-right.whitespace-nowrap
+                                    %a.btn.btn-primary{href: "{{=row_play}}"}
+                                        = T("Enter")
+
+    %section.panel.self-start.min-w-0
+        .flex.items-baseline.justify-between.px-4.pt-4.pb-2
+            %h2.panel-title
+                = T("Ranking")
+            %a.cap{href: "{{=url('front.ranking')}}"}
+                = T("Full ranking")
+        - if not ranks
+            .px-4.pb-4.cap
+                = T("Not ranked yet")
+        - else
+            .overflow-x-auto
+                %table.table
+                    %thead
+                        %tr
+                            %th.tabular-nums{class: "!text-right"}
+                                = T("#")
+                            %th
+                                = T("Player")
+                            - for label in ['Score', 'Points']
+                                %th.tabular-nums{class: "!text-right"}
+                                    = T(label)
+                    %tbody
+                        - for position, row in enumerate(ranks, rank_start + 1)
+                            %tr{class: "{{='bg-signal/10' if row.user.id == current_user().id else ''}}"}
+                                %td.text-right.tabular-nums
+                                    = position
+                                %td
+                                    %a.flex.items-center.gap-2{href: "{{=url('front.users.profile', row.user.username)}}", class: "text-fog-200 hover:text-signal"}
+                                        %span.avatar
+                                            = (row.user.username or '?')[:2].upper()
+                                            - if row.user.avatar_img
+                                                %img{src: "{{=url('download', row.user.avatar_img)}}", alt: "", onerror: "this.remove()"}
+                                        %span{class: "{{='text-signal' if row.user.id == current_user().id else ''}}"}
+                                            = row.user.username
+                                - for field in ['score', 'points']
+                                    %td.text-right.tabular-nums
+                                        = row[field]
+
+.flex.items-baseline.justify-between.mt-8.mb-4
+    %h2.panel-title
+        = T("Open games")
+    %a.cap{href: "{{=url('front.games.index', params=dict(mode='open'))}}"}
+        = T("See all")
+- if not open_games
+    .panel.px-4.py-6.cap
+        = T("No open games")
+- else
+    .grid.gap-4{class: "md:grid-cols-2 lg:grid-cols-3"}
+        - for game in open_games
+            - variant = open_variants[game.id]
+            - card = open_cards[game.id]
+            - count, role, choices, winner, turn, status = card['count'], card['role'], card['choices'], card['winner'], card['turn'], card['status']
+            - deadline_iso, deadline = card['deadline_iso'], card['deadline']
+            - error = None
+            - include 'games/partials/card.haml'

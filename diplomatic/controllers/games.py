@@ -64,6 +64,24 @@ def card_context(game, user):
     return {"game": game, "variant": variant, **card, "error": None, "Game": Game}
 
 
+def build_cards(games, user):
+    ids = [game.id for game in games]
+    roles = defaultdict(list)
+    if ids:
+        for role in GameRole.where(lambda m: m.game.belongs(ids)).select():
+            roles[role.game].append(role)
+    running = [game.id for game in games if game.stage in RUNNING_STAGES]
+    phases = {}
+    if running:
+        open_phases = GamePhase.where(lambda m: m.game.belongs(running) & (m.stage == GamePhase.Stage.OPEN))
+        fields = (GamePhase.id, GamePhase.game, GamePhase.year, GamePhase.season, GamePhase.type)
+        phases = {phase.game: phase for phase in open_phases.select(*fields)}
+    cards = {game.id: card_values(game, roles[game.id], user) for game in games}
+    for game in games:
+        set_phase(cards[game.id], game, phases.get(game.id))
+    return cards
+
+
 def lobby_context():
     mode = request.query_params.mode
     if mode not in LOBBY_MODES:
@@ -79,21 +97,8 @@ def lobby_context():
     has_next = len(rows) > LOBBY_PAGE
     rows = list(rows)[:LOBBY_PAGE]
     listed = [row.games for row in rows]
-    ids = [game.id for game in listed]
-    roles = defaultdict(list)
-    if ids:
-        for role in GameRole.where(lambda m: m.game.belongs(ids)).select():
-            roles[role.game].append(role)
-    running = [game.id for game in listed if game.stage in RUNNING_STAGES]
-    phases = {}
-    if running:
-        open_phases = GamePhase.where(lambda m: m.game.belongs(running) & (m.stage == GamePhase.Stage.OPEN))
-        fields = (GamePhase.id, GamePhase.game, GamePhase.year, GamePhase.season, GamePhase.type)
-        phases = {phase.game: phase for phase in open_phases.select(*fields)}
     variants = {row.games.id: row.maps for row in rows}
-    cards = {game.id: card_values(game, roles[game.id], auth.user) for game in listed}
-    for game in listed:
-        set_phase(cards[game.id], game, phases.get(game.id))
+    cards = build_cards(listed, auth.user)
     return {
         "games": listed,
         "mode": mode,

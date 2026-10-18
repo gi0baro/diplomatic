@@ -11,12 +11,10 @@
                 %a{href: "{{=author_url}}", target: "_blank", rel: "noopener", class: "text-fog-300 hover:text-fog-200"} gi0baro
                 and agents
             .flex.items-center.gap-4
-                - if commit != 'dev'
-                    %a{href: "{{=repo_url}}/commit/{{=commit}}", target: "_blank", rel: "noopener", class: "hover:text-fog-200"}
-                        Build {{=commit}}
-                - else
-                    %span
-                        Build {{=commit}}
+                %span
+                    Build
+                    %a{href: "{{=repo_url}}/tree/{{=commit}}", target: "_blank", rel: "noopener", class: "text-fog-300 hover:text-fog-200"}
+                        = commit
                 %a{href: "{{=repo_url}}", target: "_blank", rel: "noopener", title: "Source", class: "text-fog-500 hover:text-fog-200"}
                     %svg{width: "14", height: "14", "aria-hidden": "true"}
                         %use{href: "#i-github"}
