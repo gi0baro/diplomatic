@@ -27,10 +27,10 @@ class Vault(TSModel):
             self.db(self.db.UserStats.user == row.user).update(points=row.balance + row.credit)
 
     @rowmethod("supplement")
-    def _supplement(self, row, bet, won):
-        total = row.balance + (row.credit - bet) + won
+    def _supplement(self, row, credit, won):
+        total = row.balance + (row.credit - credit) + won
         if total < START_POINTS:
-            return min(START_POINTS - total, bet)
+            return min(START_POINTS - total, credit)
         return 0
 
 
@@ -45,6 +45,8 @@ class Transaction(TSModel, UUIDModel):
         WON = 4, T("Won")
         SUPPLEMENT = 5, T("Supplement")
 
+    subject_type = Field.string()
+    subject_id = Field.string()
     type = Field.int(notnull=True)
     credit = Field.int(notnull=True)
     debit = Field.int(notnull=True)
@@ -56,7 +58,7 @@ class Transaction(TSModel, UUIDModel):
 
     repr_values = {"type": Type.repr()}
 
-    indexes = {"vault": True, "type": True}
+    indexes = {"vault": True, "type": True, "subject": {"fields": ["subject_type", "subject_id"]}}
 
     @before_insert
     def check_one_side(self, fields):

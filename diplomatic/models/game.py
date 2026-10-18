@@ -37,6 +37,10 @@ class Game(TSModel, UUIDModel):
     )
     has_one({"active_phase": {"target": "GamePhase", "where": lambda m: m.stage == GamePhase.Stage.OPEN}})
 
+    @has_many(field="subject_id")
+    def transactions(self):
+        return Transaction.where(lambda t: t.subject_type == self.tablename)
+
     class Access(Choice):
         FREE = 0, T("Free access")
         PASSWORD = 1, T("Password protected")
@@ -221,8 +225,8 @@ class Game(TSModel, UUIDModel):
             country = next(iter(available_countries), None)
         player = row.players.create(user=user.id, country=country)
         if player.id:
-            user.vault().transactions.create(
-                type=Transaction.Type.BET, debit=row.bet, description=f"Bet for game {row.name}"
+            row.transactions.create(
+                vault=user.vault().id, type=Transaction.Type.BET, debit=row.bet, description=f"Bet for game {row.name}"
             )
             if row.press_type != self.Press.NONE:
                 #: add player to general chat room
@@ -276,9 +280,15 @@ class Game(TSModel, UUIDModel):
     @wrap_in_atomic
     def _cancel_game(self, game):
         for player in game.players():
-            Vault.get(user=player.user).transactions.create(
-                type=Transaction.Type.CANCEL, credit=game.bet, description=f"Bet refund for game {game.name}"
-            )
+            vault = Vault.get(user=player.user)
+            stake = game.stake(vault)
+            if stake > 0:
+                game.transactions.create(
+                    vault=vault.id,
+                    type=Transaction.Type.CANCEL,
+                    credit=stake,
+                    description=f"Bet refund for game {game.name}",
+                )
         game.delete_record()
 
     @rowmethod("claim")
@@ -413,43 +423,69 @@ class Game(TSModel, UUIDModel):
             raise ValueError(f"Unknown pot type {game.pot_type}")
         return rv
 
-    @rowmethod("end")
-    def end_game(self, game, winner, final):
-        roles = game.players.current().select()
-        held = final.supply_centers_no_grouped()
-        centers = {role.country: held.get(role.country, 0) for role in roles}
-        payouts = game.payouts(winner, centers)
+    @rowmethod("stake")
+    def _stake(self, game, vault):
+        bet = (
+            game.transactions.where(lambda t: (t.vault == vault.id) & (t.type == Transaction.Type.BET))
+            .select(Transaction.debit, limitby=(0, 1))
+            .first()
+        )
+        return bet.debit if bet else 0
+
+    @rowmethod("settle_role")
+    def _settle_role(self, game, role, state, won):
+        if role.state in GameRole.TERMINAL_STATES:
+            return
+        role.state = state
+        role.save()
+        vault = Vault.get(user=role.user)
+        stake = game.stake(vault)
+        supplement = vault.supplement(stake, won)
+        if stake > 0:
+            game.transactions.create(
+                vault=vault.id, type=Transaction.Type.POT, debit=stake, description=f"Pot of game {game.name}"
+            )
+        if won > 0:
+            game.transactions.create(
+                vault=vault.id, type=Transaction.Type.WON, credit=won, description=f"Won in game {game.name}"
+            )
+        if supplement > 0:
+            game.transactions.create(
+                vault=vault.id,
+                type=Transaction.Type.SUPPLEMENT,
+                credit=supplement,
+                description=f"Supplement for game {game.name}",
+            )
         counters = {
             GameRole.State.WON: UserStats.won,
             GameRole.State.SURVIVED: UserStats.survived,
             GameRole.State.DEFEATED: UserStats.defeated,
             GameRole.State.DRAWN: UserStats.drawn,
         }
+        counter = counters[state]
+        UserStats.where(lambda m: m.user == role.user).update(
+            played=UserStats.played + 1,
+            score=UserStats.score + won - stake,
+            **{counter.name: counter + 1},
+        )
+
+    @rowmethod("end")
+    def end_game(self, game, winner, final):
+        roles = game.players.current().select()
+        held = final.supply_centers_no_grouped()
+        centers = {role.country: held.get(role.country, 0) for role in roles}
+        payouts = game.payouts(winner, centers)
         for role in roles:
+            if role.state in GameRole.TERMINAL_STATES:
+                continue
             if role.country == winner:
-                role.state = GameRole.State.WON
-            elif role.state == GameRole.State.DEFEATED or not centers[role.country]:
-                role.state = GameRole.State.DEFEATED
+                state = GameRole.State.WON
+            elif not centers[role.country]:
+                state = GameRole.State.DEFEATED
             else:
-                role.state = GameRole.State.SURVIVED
+                state = GameRole.State.SURVIVED
             role.supply_centers_owned = centers[role.country]
-            role.save()
-            won = payouts[role.country]
-            vault = Vault.get(user=role.user)
-            supplement = vault.supplement(game.bet, won)
-            vault.transactions.create(type=Transaction.Type.POT, debit=game.bet, description=f"Pot of game {game.name}")
-            if won > 0:
-                vault.transactions.create(type=Transaction.Type.WON, credit=won, description=f"Won in game {game.name}")
-            if supplement > 0:
-                vault.transactions.create(
-                    type=Transaction.Type.SUPPLEMENT, credit=supplement, description=f"Supplement for game {game.name}"
-                )
-            counter = counters[role.state]
-            UserStats.where(lambda m: m.user == role.user).update(
-                played=UserStats.played + 1,
-                score=UserStats.score + won - game.bet,
-                **{counter.name: counter + 1},
-            )
+            game.settle_role(role, state, payouts[role.country])
         StatsEvent.create(
             variant=game.map.name,
             kind=StatsEvent.Kind.GAME_ENDED,
@@ -553,6 +589,8 @@ class GameRole(UUIDModel):
         SURVIVED = 4, T("Survived")
         DRAWN = 5, T("Drawn")
         WON = 6, T("Won")
+
+    TERMINAL_STATES = frozenset({State.DEFEATED, State.LEFT, State.WON, State.SURVIVED, State.DRAWN})
 
     country = Field(notnull=True)
     is_active = Field.bool(notnull=True)
@@ -670,9 +708,11 @@ class GamePhase(TSModel, UUIDModel):
                 "is_ready": False,
                 "supply_centers_owned": player_supply_centers_no,
             }
-            if defeats and not player_supply_centers_no and not troops.get("armies") and not troops.get("fleets"):
-                updates["state"] = GameRole.State.DEFEATED
             role.update_record(**updates)
+            if defeats and not player_supply_centers_no and not troops.get("armies") and not troops.get("fleets"):
+                game = row.game
+                won = game.payouts(None, {role.country: 0})[role.country]
+                game.settle_role(role, GameRole.State.DEFEATED, won)
 
     @rowmethod("orders_grouped")
     def _orders_grouped(self, phase):
