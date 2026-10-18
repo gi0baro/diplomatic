@@ -1,7 +1,7 @@
 from collections import defaultdict
 from datetime import timezone
 
-from emmett import abort, redirect, request, response, url
+from emmett import T, abort, redirect, request, response, url
 from emmett.tools import requires
 
 from .. import Game, GamePhase, GameRole, Map, Vault, app, auth, db
@@ -21,14 +21,35 @@ LOBBY_MODES = {
 }
 LOBBY_PAGE = 20
 CARD_FIELDS = [field for field in Game.table if field.name not in ("history", "chat_history", "password")]
+MAP_FIELDS = (Map.id, Map.name, Map.scs_to_win)
 DEADLINE_FORMAT = "%d %b %H:%M UTC"
+PRESS_LABELS = {
+    Game.Press.ALL: (T("Open press"), T("Open")),
+    Game.Press.GLOBAL: (T("Global press only"), T("Global only")),
+    Game.Press.NONE: (T("No press"), T("None")),
+}
 
 
 def iso_utc(at):
     return (at.replace(tzinfo=timezone.utc) if at.tzinfo is None else at).isoformat()
 
 
-def card_values(game, roles, user):
+def card_rules(game):
+    if game.stage == Game.Stage.OVER:
+        return []
+    rules = []
+    if game.build_everywhere:
+        rules.append(("hammer", T("Build anywhere")))
+    if game.is_open and game.build_on_start:
+        rules.append(("flag", T("Builds on start")))
+    if game.is_open and game.countries_assignment == Game.Assignment.RANDOM:
+        rules.append(("die", T("Random countries")))
+    if game.anonymous:
+        rules.append(("eye-off", T("Anonymous")))
+    return rules
+
+
+def card_values(game, variant, roles, user):
     role = next((r for r in roles if user and r.user == user.id), None)
     choices = None
     if user and not role and game.is_open and game.countries_assignment == Game.Assignment.CHOICE:
@@ -44,6 +65,12 @@ def card_values(game, roles, user):
         "deadline": at.strftime(DEADLINE_FORMAT) if at else "",
         "status": Game.Stage(game.stage).label,
         "turn": None,
+        "rules": card_rules(game),
+        "skips": ", ".join(day[:3].capitalize() for day in Game.PROC_DAYS if game.skip_processing.get(day)),
+        "centers": game.target_sc or variant.scs_to_win,
+        "press": PRESS_LABELS[game.press_type][0],
+        "press_short": PRESS_LABELS[game.press_type][1],
+        "lang": LANGS[game.lang] if game.press_type != Game.Press.NONE else None,
     }
 
 
@@ -57,14 +84,14 @@ def set_phase(card, game, phase):
 
 def card_context(game, user):
     roles = GameRole.where(lambda m: m.game == game.id).select()
-    variant = Map.where(lambda m: m.id == game.map).select(Map.id, Map.name).first()
-    card = card_values(game, roles, user)
+    variant = Map.where(lambda m: m.id == game.map).select(*MAP_FIELDS).first()
+    card = card_values(game, variant, roles, user)
     if game.stage in RUNNING_STAGES:
         set_phase(card, game, game.active_phase())
     return {"game": game, "variant": variant, **card, "error": None, "Game": Game}
 
 
-def build_cards(games, user):
+def build_cards(games, variants, user):
     ids = [game.id for game in games]
     roles = defaultdict(list)
     if ids:
@@ -76,7 +103,7 @@ def build_cards(games, user):
         open_phases = GamePhase.where(lambda m: m.game.belongs(running) & (m.stage == GamePhase.Stage.OPEN))
         fields = (GamePhase.id, GamePhase.game, GamePhase.year, GamePhase.season, GamePhase.type)
         phases = {phase.game: phase for phase in open_phases.select(*fields)}
-    cards = {game.id: card_values(game, roles[game.id], user) for game in games}
+    cards = {game.id: card_values(game, variants[game.id], roles[game.id], user) for game in games}
     for game in games:
         set_phase(cards[game.id], game, phases.get(game.id))
     return cards
@@ -89,8 +116,7 @@ def lobby_context():
     page = query_page()
     rows = Game.where(lambda g: LOBBY_MODES[mode](g) & (g.map == Map.id)).select(
         *CARD_FIELDS,
-        Map.id,
-        Map.name,
+        *MAP_FIELDS,
         orderby=~Game.created_at,
         limitby=((page - 1) * LOBBY_PAGE, page * LOBBY_PAGE + 1),
     )
@@ -98,7 +124,7 @@ def lobby_context():
     rows = list(rows)[:LOBBY_PAGE]
     listed = [row.games for row in rows]
     variants = {row.games.id: row.maps for row in rows}
-    cards = build_cards(listed, auth.user)
+    cards = build_cards(listed, variants, auth.user)
     return {
         "games": listed,
         "mode": mode,

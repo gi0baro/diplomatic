@@ -2,7 +2,7 @@ from emmett import response
 
 from .. import Game, GamePhase, GameRole, Map, User, UserStats, app, auth, cache, db
 from . import front
-from .games import CARD_FIELDS, LOBBY_MODES, RUNNING_STAGES, build_cards
+from .games import CARD_FIELDS, LOBBY_MODES, MAP_FIELDS, RUNNING_STAGES, build_cards
 
 
 HOME_TTL = 300
@@ -26,11 +26,11 @@ def home_totals():
 
 def home_running():
     rows = Game.where(lambda g: g.stage.belongs(RUNNING_STAGES) & (g.map == Map.id)).select(
-        *CARD_FIELDS, Map.id, Map.name, orderby="<random>", limitby=(0, HOME_RUNNING)
+        *CARD_FIELDS, *MAP_FIELDS, orderby="<random>", limitby=(0, HOME_RUNNING)
     )
     games = [row.games for row in rows]
     variants = {row.games.id: row.maps for row in rows}
-    return games, variants, build_cards(games, None)
+    return games, variants, build_cards(games, variants, None)
 
 
 def ranking_window(user):
@@ -70,19 +70,20 @@ def index():
             & (g.stage != Game.Stage.OVER)
             & (g.map == Map.id)
         )
-    ).select(*CARD_FIELDS, Map.id, Map.name, orderby=Game.next_process_at)
+    ).select(*CARD_FIELDS, *MAP_FIELDS, orderby=Game.next_process_at)
     mine = [row.games for row in rows]
     variants = {row.games.id: row.maps for row in rows}
-    cards = build_cards(mine, user)
+    cards = build_cards(mine, variants, user)
     for game in mine:
         card = cards[game.id]
         role = card["role"]
         card["due"] = bool(game.stage == Game.Stage.GAME and role and role.is_active and not role.is_ready)
     ranks, my_rank, rank_start = ranking_window(user)
     open_rows = Game.where(lambda g: LOBBY_MODES["open"](g) & (g.map == Map.id)).select(
-        *CARD_FIELDS, Map.id, Map.name, orderby=~Game.created_at, limitby=(0, HOME_OPEN)
+        *CARD_FIELDS, *MAP_FIELDS, orderby=~Game.created_at, limitby=(0, HOME_OPEN)
     )
     open_games = [row.games for row in open_rows]
+    open_variants = {row.games.id: row.maps for row in open_rows}
     return {
         "mine": mine,
         "variants": variants,
@@ -91,8 +92,8 @@ def index():
         "my_rank": my_rank,
         "rank_start": rank_start,
         "open_games": open_games,
-        "open_variants": {row.games.id: row.maps for row in open_rows},
-        "open_cards": build_cards(open_games, user),
+        "open_variants": open_variants,
+        "open_cards": build_cards(open_games, open_variants, user),
         "Game": Game,
         "GameRole": GameRole,
     }

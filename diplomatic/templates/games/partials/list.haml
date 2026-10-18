@@ -11,12 +11,13 @@
             - for game in games
                 - variant = variants[game.id]
                 - card = cards[game.id]
-                - count, role, choices, winner, turn, status = card['count'], card['role'], card['choices'], card['winner'], card['turn'], card['status']
+                - count, role, choices, winner, turn, status, press, lang = card['count'], card['role'], card['choices'], card['winner'], card['turn'], card['status'], card['press'], card['lang']
+                - rules, skips, centers = card['rules'], card['skips'], card['centers']
                 - deadline_iso, deadline = card['deadline_iso'], card['deadline']
                 - error = None
                 - include 'games/partials/card.haml'
         .panel.overflow-x-auto{"x-show": 'view === "table"', "x-cloak": None}
-            - list_cols = dict(open=['Turn length', 'Deadline'], running=['Turn', 'Status'], finished=['Result'])[mode]
+            - list_cols = dict(open=['Press', 'Language', 'Turn length', 'Targets', 'Rules', 'Deadline'], running=['Press', 'Language', 'Turn length', 'Targets', 'Rules', 'Turn', 'Status'], finished=['Turn length', 'Targets', 'Result'])[mode]
             %table.table
                 %thead
                     %tr
@@ -32,8 +33,13 @@
                         - row_play = url('front.games.play', game.id)
                         %tr
                             %td
-                                %a{href: "{{=row_play}}", class: "font-display font-semibold text-[14px] uppercase tracking-[.08em] text-fog-200 hover:text-signal"}
-                                    = game.name
+                                .flex.items-center.gap-2
+                                    %a{href: "{{=row_play}}", class: "font-display font-semibold text-[14px] uppercase tracking-[.08em] text-fog-200 hover:text-signal"}
+                                        = game.name
+                                    - if game.is_open and game.access == Game.Access.PASSWORD
+                                        %span.shrink-0.inline-flex.text-fog-500{title: "{{=T('Password protected')}}"}
+                                            %svg{width: "12", height: "12", role: "img", "aria-label": "{{=T('Password protected')}}"}
+                                                %use{href: "#i-lock"}
                             %td.whitespace-nowrap
                                 = variants[game.id].name
                             %td.whitespace-nowrap
@@ -42,9 +48,26 @@
                                 = game.bet
                             %td.whitespace-nowrap
                                 = Game.PotType(game.pot_type).label
-                            - if mode == 'open'
+                            - if mode != 'finished'
                                 %td.whitespace-nowrap
-                                    = duration(game.phase_time)
+                                    = row['press_short']
+                                %td.whitespace-nowrap
+                                    = row['lang'] or '—'
+                            %td.whitespace-nowrap{title: "{{=(T('Skips') + ': ' + row['skips']) if row['skips'] else ''}}"}
+                                = duration(game.phase_time)
+                            %td.whitespace-nowrap
+                                {{=row['centers']}} / {{=game.max_turns or '—'}}
+                            - if mode != 'finished'
+                                %td.whitespace-nowrap
+                                    - if row['rules']
+                                        .flex.items-center.gap-1.5
+                                            - for icon, label in row['rules']
+                                                %span.inline-flex.text-fog-500{title: "{{=label}}"}
+                                                    %svg{width: "12", height: "12", role: "img", "aria-label": "{{=label}}"}
+                                                        %use{href: "#i-{{=icon}}"}
+                                    - else
+                                        —
+                            - if mode == 'open'
                                 %td.whitespace-nowrap
                                     %span{"data-deadline": "{{=row['deadline_iso']}}"}
                                         = row['deadline']
