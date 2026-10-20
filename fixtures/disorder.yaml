@@ -1,0 +1,27 @@
+# Three powers: Germany never saves orders. Spring 1901 is its first miss; Autumn 1901 its second,
+# setting DISORDER (missed_phases = 2) and is_open = true. England and France keep playing through
+# the winter builds. Germany stays in disorder, inactive in winter, with its counter still at 2.
+# Stops on open Spring 1902: Germany's units and centres remain, and its orders are still defaults.
+variant: classic
+name: "Civil disorder"
+players:
+  England: tester1
+  France: tester2
+  Germany: tester3
+settings:
+  press_type: ALL
+phases:
+  # 1. Spring 1901: Germany's defaults hold BER, KIE and MUN; first miss.
+  - England: [LON-NTH, EDI-NWG, LVP-YOR]
+    France: [BRE-MAO, PAR-BUR, MAR-SPA]
+  # E: F NTH, F NWG, A YOR; F: F MAO, A BUR, A SPA; G unchanged.
+
+  # 2. Autumn 1901: Germany misses again and enters civil disorder; the game becomes open.
+  - England: [YOR-NWY via, NTH C YOR-NWY]
+    France: [MAO-POR]
+  # Centres: E 4 (LON EDI LVP NWY) +1, F 5 (BRE PAR MAR SPA POR) +2, G 3 unchanged.
+
+  # 3. Winter 1901: the other powers still build normally; Germany has no orders to give.
+  - England: [LON B F]
+    France: [BRE B F, MAR B A]
+  # Spring 1902 diplomacy open, Germany still DISORDER and is_open still true.
