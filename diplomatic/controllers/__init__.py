@@ -1,4 +1,4 @@
-from emmett import redirect, url
+from emmett import redirect, request, url
 from emmett.pipeline import RequirePipe
 
 from .. import app, auth, db, sessions
@@ -27,9 +27,11 @@ def after_registration(form, user, logged_in):
     redirect(url("front.index"))
 
 
-@app.route("/_health", methods="get", output="bytes")
-def health():
-    return b"ok"
+def query_page():
+    try:
+        return max(1, int(request.query_params.page or 1))
+    except ValueError:
+        return 1
 
 
-from . import api, games, main, maps, users, ws
+from . import _internal, api, games, main, maps, users, ws

@@ -1,116 +1,32 @@
-from collections import defaultdict
 from datetime import timezone
 
-from emmett import T, abort, redirect, request, response, url
+from emmett import abort, redirect, request, response, url
 from emmett.tools import requires
 
-from .. import Game, GamePhase, GameRole, Map, Vault, app, auth, db
+from .. import Game, GameRole, Map, Vault, app, auth, db
 from ..helpers.events import publish
-from ..models.game import LANGS
-from . import front
-from .api import query_page
+from ..helpers.games import CARD_FIELDS, GAME_MAP_FIELDS, build_cards, card_values, set_card_phase
+from . import front, query_page
 
 
 games = front.module(__name__, "games", url_prefix="games", template_folder="games")
 
 RUNNING_STAGES = [Game.Stage.GAME, Game.Stage.PROCESSING, Game.Stage.PAUSE, Game.Stage.CRASH]
 LOBBY_MODES = {
-    "open": lambda g: g.is_open == True,
-    "running": lambda g: g.stage.belongs(RUNNING_STAGES) | ((g.stage == Game.Stage.PREGAME) & (g.is_open == False)),
-    "finished": lambda g: g.stage == Game.Stage.OVER,
+    "open": Game.where(lambda g: g.is_open == True),
+    "running": Game.running(include_pre=True),
+    "finished": Game.in_stage(Game.Stage.OVER),
 }
 LOBBY_PAGE = 20
-CARD_FIELDS = [field for field in Game.table if field.name not in ("history", "chat_history", "password")]
-MAP_FIELDS = (Map.id, Map.name, Map.scs_to_win)
-DEADLINE_FORMAT = "%d %b %H:%M UTC"
-PRESS_LABELS = {
-    Game.Press.ALL: (T("Open press"), T("Open")),
-    Game.Press.GLOBAL: (T("Global press only"), T("Global only")),
-    Game.Press.NONE: (T("No press"), T("None")),
-}
-
-
-def iso_utc(at):
-    return (at.replace(tzinfo=timezone.utc) if at.tzinfo is None else at).isoformat()
-
-
-def card_rules(game):
-    if game.stage == Game.Stage.OVER:
-        return []
-    rules = []
-    if game.build_everywhere:
-        rules.append(("hammer", T("Build anywhere")))
-    if game.stage == Game.Stage.PREGAME and game.is_open and game.build_on_start:
-        rules.append(("flag", T("Builds on start")))
-    if game.stage == Game.Stage.PREGAME and game.is_open and game.countries_assignment == Game.Assignment.RANDOM:
-        rules.append(("die", T("Random countries")))
-    if game.anonymous:
-        rules.append(("eye-off", T("Anonymous")))
-    return rules
-
-
-def card_values(game, variant, roles, user):
-    role = next((r for r in roles if user and r.user == user.id), None)
-    choices = None
-    if (
-        user
-        and not role
-        and game.is_open
-        and (game.stage == Game.Stage.GAME or game.countries_assignment == Game.Assignment.CHOICE)
-    ):
-        choices = game.available_countries()
-    at = game.next_process_at
-    return {
-        "count": sum(1 for r in roles if r.state != GameRole.State.LEFT),
-        "role": role,
-        "choices": choices,
-        "winner": next((r.country for r in roles if r.state == GameRole.State.WON), None),
-        "deadline_iso": iso_utc(at) if at else "",
-        "deadline": at.strftime(DEADLINE_FORMAT) if at else "",
-        "status": Game.Stage(game.stage).label,
-        "turn": None,
-        "rules": card_rules(game),
-        "skips": ", ".join(day[:3].capitalize() for day in Game.PROC_DAYS if game.skip_processing.get(day)),
-        "centers": game.target_sc or variant.scs_to_win,
-        "press": PRESS_LABELS[game.press_type][0],
-        "press_short": PRESS_LABELS[game.press_type][1],
-        "lang": LANGS[game.lang] if game.press_type != Game.Press.NONE else None,
-    }
-
-
-def set_phase(card, game, phase):
-    if not phase:
-        return
-    card["turn"] = GamePhase.label(phase)
-    if game.stage == Game.Stage.GAME:
-        card["status"] = GamePhase.type_label(phase)
 
 
 def card_context(game, user):
     roles = GameRole.where(lambda m: m.game == game.id).select()
-    variant = Map.where(lambda m: m.id == game.map).select(*MAP_FIELDS).first()
+    variant = Map.where(lambda m: m.id == game.map).select(*GAME_MAP_FIELDS).first()
     card = card_values(game, variant, roles, user)
     if game.stage in RUNNING_STAGES:
-        set_phase(card, game, game.active_phase())
+        set_card_phase(card, game, game.active_phase())
     return {"game": game, "variant": variant, **card, "error": None, "Game": Game}
-
-
-def build_cards(games, variants, user):
-    ids = [game.id for game in games]
-    roles = defaultdict(list)
-    if ids:
-        for role in GameRole.where(lambda m: m.game.belongs(ids)).select():
-            roles[role.game].append(role)
-    running = [game.id for game in games if game.stage in RUNNING_STAGES]
-    phases = {}
-    if running:
-        open_phases = GamePhase.where(lambda m: m.game.belongs(running) & (m.stage == GamePhase.Stage.OPEN))
-        fields = (GamePhase.id, GamePhase.game, GamePhase.year, GamePhase.season, GamePhase.type)
-        phases = {phase.game: phase for phase in open_phases.select(*fields)}
-    cards = {game.id: card_values(game, variants[game.id], roles[game.id], user) for game in games}
-    for game in games:
-        set_phase(cards[game.id], game, phases.get(game.id))
-    return cards
 
 
 def lobby_context():
@@ -118,17 +34,21 @@ def lobby_context():
     if mode not in LOBBY_MODES:
         mode = "open"
     page = query_page()
-    rows = Game.where(lambda g: LOBBY_MODES[mode](g) & (g.map == Map.id)).select(
-        *CARD_FIELDS,
-        *MAP_FIELDS,
-        orderby=~Game.created_at,
-        limitby=((page - 1) * LOBBY_PAGE, page * LOBBY_PAGE + 1),
+    rows = (
+        LOBBY_MODES[mode]
+        .where(lambda g: g.map == Map.id)
+        .select(
+            *CARD_FIELDS,
+            *GAME_MAP_FIELDS,
+            orderby=~Game.created_at,
+            limitby=((page - 1) * LOBBY_PAGE, page * LOBBY_PAGE + 1),
+        )
     )
     has_next = len(rows) > LOBBY_PAGE
     rows = list(rows)[:LOBBY_PAGE]
     listed = [row.games for row in rows]
     variants = {row.games.id: row.maps for row in rows}
-    cards = build_cards(listed, variants, auth.user)
+    cards = build_cards(listed, variants, auth.user, mode != "finished")
     return {
         "games": listed,
         "mode": mode,
@@ -145,7 +65,7 @@ def index():
     return lobby_context()
 
 
-@games.route("/list", methods="get", template="partials/list.haml")
+@games.route("/list", template="partials/list.haml")
 def partial_list():
     return lobby_context()
 
@@ -267,11 +187,11 @@ async def create():
         "variants": Map.all_latest().select(Map.id, Map.name, orderby=Map.name),
         "balance": auth.user.vault().balance,
         "Game": Game,
-        "langs": LANGS,
+        "langs": Game.LANGS,
     }
 
 
-@games.route("/variant-options", methods="get", template="partials/variant_options.haml")
+@games.route("/variant-options", template="partials/variant_options.haml")
 @requires(auth.is_logged, url("auth.login"))
 def partial_variant_options():
     variant = (
@@ -285,46 +205,13 @@ def partial_variant_options():
     return {"variant": variant}
 
 
-@games.route("/play/<str:gid>", template="play.haml")
+@games.route("/play/<str:gid>")
 def play(gid):
     game = Game.get(gid)
     if not game:
         abort(404)
     variant = Map.get(game.map)
-    #: evaluate real sc for win
     scs = game.target_sc or variant.scs_to_win
-    #: get player chats
-    # inMatch = ['all']
-    # playercountry = game.player_country(auth.user)
-    # if playercountry:
-    #     inMatch.append(longToObjid(auth.user.id))
-    # chatsr = mdb.chats.find({
-    #     'game': longToObjid(gid), 'users': {'$in': inMatch}
-    # })
-    # chats = {}
-    # for r in chatsr:
-    #     if 'all' in r['users']:
-    #         chats['global'] = r['id']
-    #         continue
-    # if playercountry:
-    #     #for country, player in game.countries.iteritems():
-    #     for el in game.countries:
-    #         if el['country'] == playercountry:
-    #             continue
-    #         for r in chatsr:
-    #             if el['player'] in r['users']:
-    #                 chats[el['country']] = r['id']
-    #                 break
-    #: ui stuffs
-    # if len(game.countries) < 3:
-    #     statscol = 6
-    # elif len(game.countries) >= 3 and len(game.countries) < 4:
-    #     statscol = 4
-    # else:
-    #     statscol = 3
-    # usernames = {}
-    # for el in game.countries:
-    #     usernames[el['country']] = db.User(id=objidToLong(el['player'])).username
     players = game.players.current().join("user").select()
     player = game.player(auth.user) if auth.is_logged() else None
 
@@ -390,8 +277,6 @@ def play(gid):
         "player_ready": player.is_ready if player else False,
         "player_active": player.is_active if player else False,
         "statscol": 6,
-        # timer=game.time_to_next(),
-        # statscol=statscol, unames=usernames)}
     }
 
 

@@ -27,9 +27,6 @@ from .stats import StatsEvent
 from .user import UserStats
 
 
-LANGS = {"en": T("English"), "it": T("Italian")}
-
-
 class Game(TSModel, UUIDModel):
     belongs_to("user", "map")
     has_many(
@@ -73,6 +70,7 @@ class Game(TSModel, UUIDModel):
         ASAP = 0, T("As soon as enough players joined the game")
         ON_TIME = 1, T("When the join period expired")
 
+    LANGS = {"en": T("English"), "it": T("Italian")}
     PROC_DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 
     name = Field(notnull=True)
@@ -93,7 +91,6 @@ class Game(TSModel, UUIDModel):
     target_sc = Field.int()
     skip_processing = Field.json(notnull=True)
     stage = Field.int()
-    # is_active = Field.bool()
     is_open = Field.bool(notnull=True)
     is_ready = Field.bool(notnull=True)
     countries_assignment = Field.int()
@@ -180,7 +177,7 @@ class Game(TSModel, UUIDModel):
     }
 
     repr_values = {
-        "lang": lambda value: LANGS[value],
+        "lang": lambda value: Game.LANGS[value],
         "access": Access.repr(),
         "countries_assignment": Assignment.repr(),
         "pot_type": PotType.repr(),
@@ -194,6 +191,13 @@ class Game(TSModel, UUIDModel):
     @scope("in_stage")
     def filter_stage(self, stage):
         return self.stage == stage
+
+    @scope("running")
+    def filter_running(self, include_pre=False):
+        q = self.stage.belongs([self.Stage.GAME, self.Stage.PROCESSING, self.Stage.PAUSE, self.Stage.CRASH])
+        if include_pre:
+            q = q | ((self.stage == self.Stage.PREGAME) & (self.is_open == False))
+        return q
 
     @before_insert
     def set_join_deadline(self, fields):

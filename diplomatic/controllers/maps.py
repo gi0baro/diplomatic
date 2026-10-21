@@ -2,9 +2,6 @@ from datetime import timedelta
 
 from emmett import abort, now, response
 
-# from diplomatic import app, auth, db, Map
-# from diplomatic.handlers import AppStatus
-# from diplomatic.contexts import BaseContext
 from .. import Game, Map, StatsCountries, StatsGames, StatsTime, app, cache, db
 from ..helpers.maps import preview_svg as build_preview, thumb_svg as build_thumb
 from ..helpers.stats import avg_turns, country_outcomes, win_rates
@@ -133,34 +130,3 @@ def preview_svg(mid):
 @cache.response(duration=None)
 def thumb_svg(mid):
     return build_thumb(_svg_row(mid, Map.names, Map.countries, Map.init))
-
-
-# @maps.route()
-# @requires(auth.is_logged_in, url("main.index"))
-# def new():
-#     return dict(form=Map.form())
-
-
-# @maps.route()
-# @requires(auth.is_logged_in, url("main.index"))
-# def newffile():
-#     fields = {
-#         'image': Field("upload"),
-#         'data': Field("json")
-#     }
-#     form = Form(fields)
-#     if form.accepted:
-#         jdata = form.params.data
-#         db.Map.insert(
-#             image=db.Map.image.store(form.params.image.file, form.params.image.filename),
-#             image_blob=form.params.image.file.read(),
-#             **jdata)
-#     return dict(form=form)
-
-
-# @maps.route("/edit/<int:mid>", template="new.haml")
-# def edit(mid):
-#     record = Map.get(mid)
-#     if not record:
-#         abort(404)
-#     return dict(form=Map.form(record))

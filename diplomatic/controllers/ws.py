@@ -5,7 +5,6 @@ from .. import GameRole, app, db, sessions
 
 
 ws = app.module(__name__, "ws", url_prefix="ws")
-#: no `db.pipe`: it would keep a connection open for the socket's lifetime; the db is used only at opening
 ws.pipeline = [sessions]
 
 
@@ -19,7 +18,6 @@ async def _player_role(gid):
 
 @ws.websocket("/game/<str:gid>")
 async def game(gid):
-    #: frames are built by `helpers.events`; the socket relays them as they are
     role_id = await _player_role(gid)
     if not role_id:
         raise HTTPResponse(403)

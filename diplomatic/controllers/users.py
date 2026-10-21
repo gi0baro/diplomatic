@@ -1,15 +1,30 @@
 from emmett import abort
 
-from .. import Game, GameRole, Map, User, UserStats, db
-from . import front
-from .api import query_page
+from .. import Game, GameRole, Map, User, UserStats, cache, db
+from . import front, query_page
 
 
-users = front.module(__name__, "users", url_prefix="users", template_folder="users")
 PAGE_SIZE = 25
 
+RANKING_SIZE = 100
+RANKING_TTL = 300
 
-@users.route("/<str:username>", template="profile.haml", methods="get")
+users = front.module(__name__, "users", url_prefix="players", template_folder="users")
+
+
+@cache(duration=RANKING_TTL)
+def top_ranks():
+    return UserStats.all().select(
+        orderby=~UserStats.score | ~UserStats.points, paginate=(1, RANKING_SIZE), including="user"
+    )
+
+
+@users.route("/")
+def ranking():
+    return {"ranks": top_ranks()}
+
+
+@users.route("/<str:username>")
 def profile(username):
     user = User.get(username=username)
     if not user:

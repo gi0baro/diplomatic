@@ -5,6 +5,7 @@ x-env: &env
   POSTGRES_PASSWORD: postgres
   REDIS_HOST: redis
   WRK_BROKER_URL: redis://redis:6379/1
+  AUTH_HMAC_KEY: foobar
   AUTH_EMAIL_VERIFICATION: "0"
 
 x-src: &src

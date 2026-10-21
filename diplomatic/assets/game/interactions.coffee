@@ -3,7 +3,6 @@ class Interactions
         @current = "none"
         @active = null
         @tracked = []
-        #@trackedConvoys = {}
         @trackedConvoyRoutes = {}
         @_trackedConvoyRST = []
         @trackedConvoyTerrs = []
@@ -49,7 +48,6 @@ class Interactions
                             if Id in bd
                                 res = true
                     if @app.game.phase().type is PHASE_TYPES.retreats
-                        #if Id in @app.game.phase().previous().getCountryTroops()
                         dlist = @app.game.phase().dislodged[@app.game.country]
                         if not dlist
                             dlist = []
@@ -67,7 +65,6 @@ class Interactions
             when "sup_move_to"
                 lst = @tracked[1..]
                 if Id in lst
-                    #if Id isnt @app.env.getTerritoryByColor(@active)
                     res = true
             when "convoy_from"
                 if Id in @tracked
@@ -76,7 +73,6 @@ class Interactions
                 clen = @trackedConvoyTerrs.length + 1
                 lst = @tracked[clen..]
                 if Id in lst
-                    #if Id isnt @app.env.getTerritoryByColor(@active)
                     res = true
         return res
 
@@ -111,18 +107,11 @@ class Interactions
                 if @_clickCheck("select", id)
                     @app.ux.relevantActionMenuOpen(rpos, id)
                     @current = "menu"
-                #else
-                #   @app.LoadTerrName(id)
-                #   @current = "name"
                     @app.screen.onTerritory(id)
                     @active = id
                     auto_switch_step = true
                 else
                     do_map_upd = false
-            #when "name"
-            #   @app.HideTerrName()
-            #   @app.screen.offTerritory(@active)
-            #   @current = "none"
             when "menu"
                 @app.ux.relevantActionMenuClose()
                 @app.screen.offTerritory(@active)
@@ -138,8 +127,6 @@ class Interactions
             when "sup_move"
                 if @_clickCheck("sup_move_from", id)
                     @intent("sup_move_from", id)
-                    #@app.Terr_SupMove_To_On(id)
-                    #@current = "sup_move_to"
                 else
                     @_offTracked()
                     @app.screen.offTerritory(@active)
@@ -177,9 +164,6 @@ class Interactions
                 else
                     @_offTracked()
                     @current = "none"
-                #@_offTracked()
-                #@app.screen.offTerritory(@active)
-                #@current = "none"
             when "mcoast_move", "mcoast_retreat", "build_fleet"
                 ## a map click while the coast menu waits cancels the order being built
                 ## (build_fleet: the coast menu of a fleet build on a multi-coast centre)
@@ -312,8 +296,6 @@ class Interactions
                 else
                     @intent("disband", null)
                     @app.ux.relevantActionMenuClose()
-        # if eve isnt "close" and @app.game.ready
-        #     @app.ui.setReady()
         @app.screen.update()
         return
 
@@ -349,25 +331,19 @@ class Interactions
                         @_offTracked()
                         @tracked.push(t_id)
                         @app.screen.markTerritory(t_id, "dest")
-                        #@app.UpdateMap()
                         @app.ux.menuOpen("coast", {position: @_lastRpos, territory: t_id})
                     else
                         mc = if l0 then 0 else 1
-                        #@app.game.moves[id] = type: "move", from: id, to: t_id
                         @_offTracked()
                         @app.screen.offTerritory(@active)
                         @current = "none"
                         @app.game.addMoveMC(id, "move", id, t_id, mc)
                 else
-                    #@app.game.moves[id] = type: "move", from: id, to: t_id
                     ## convoys check
                     if t_id in @trackedConvoyTerrs
                         convoys = @_getConvoysFromMove(id, t_id)
                         for i in convoys
-                            #@app.game.moves[i] = type: "convoy", from: id, to: t_id
                             @app.game.addMove(i, "convoy", id, t_id)
-                        #@app.game.moves[id]["viaConvoy"] = true
-                        #@app.game.moves[id]["convoy_route"] = convoys
                         @app.game.addMoveConvoy(id, "move", id, t_id, convoys)
                     else
                         @app.game.addMove(id, "move", id, t_id)
@@ -377,7 +353,6 @@ class Interactions
             when "sup_hold"
                 id = @active
                 t_id = tid
-                #@app.game.moves[id] = type: "support_hold", from: id, to: t_id
                 @app.game.addMove(id, "support_hold", id, t_id)
             when "sup_move_from"
                 id_f = tid
@@ -390,7 +365,6 @@ class Interactions
                         @_offTracked()
                         @app.screen.offTerritory(@active)
                         @current = "none"
-                        #@app.game.moves[id] = type: "support_move", from: id_f, to: id_t
                         if @app.game.moves[id_f].mc isnt undefined
                             @app.game.addMoveMC(id, "support_move", id_f, id_t, @app.game.moves[id_f].mc)
                         else
@@ -404,16 +378,12 @@ class Interactions
                 else
                     @_onSupportMoveTo(id_f)
                     @current = "sup_move_to"
-                #id = @app.env.getTerritoryByColor(@active)
-                #color = @app.screen.getColor(pos)
-                #t_id = @app.env.getTerritoryByColor(color)
             when "sup_move_to"
                 id = @active
                 f_id = @tracked[0]
                 t_id = tid
                 need_mc = false
                 continue_mc = false
-                #if f_id in (key for key of @app.map.troops[@app.play.country])
                 if f_id in @app.game.phase().getCountryTroops()
                     if @app.env.isMCoast(t_id) and @app.game.phase().isFleet(f_id)
                         need_mc = true
@@ -433,11 +403,6 @@ class Interactions
                             @app.ux.menuOpen("coast", {position: @_lastRpos, territory: t_id})
                         else
                             mc = if l0 then 0 else 1
-                            #@app.game.moves[id] = type: "move", from: id, to: t_id
-                            #@app.game.addMove(id, "move", id, t_id)
-                            #@_offTracked()
-                            #@app.screen.offTerritory(@active)
-                            #@current = "none"
                 if not need_mc
                     @app.game.addMove(id, "support_move", f_id, t_id)
                     @app.game.addMove(f_id, "move", f_id, t_id)
@@ -467,14 +432,11 @@ class Interactions
                 id = tid
                 f_id = @tracked[0]
                 if @app.env.isCoast(id)
-                    #@app.game.moves[f_id] = type: "move", from: f_id, to: id, viaConvoy: true, convoy_route: @trackedConvoyTerrs
                     @app.game.addMoveConvoy(f_id, "move", f_id, id, @trackedConvoyTerrs)
                     for i in @trackedConvoyTerrs
-                        #@app.game.moves[i] = type: "convoy", from: f_id, to: id
                         @app.game.addMove(i, "convoy", f_id, id)
                     @_offTracked()
                     @current = "none"
-                    #@app.screen.drawLines()
                 else
                     @trackedConvoyTerrs.push(id)
                     for i in @tracked
@@ -528,7 +490,6 @@ class Interactions
                         @_offTracked()
                         @tracked.push(t_id)
                         @app.screen.markTerritory(t_id, "dest")
-                        #@app.UpdateMap()
                         @app.ux.menuOpen("coast", {position: @_lastRpos, territory: t_id})
                     else
                         mc = if l0 then 0 else 1
@@ -561,7 +522,6 @@ class Interactions
                     @app.screen.drawTroops()
         ## next phase auto swithing
         if @app.game.phase().id isnt "next" and @app.game.gotOrders()
-            # @app.game.loadPhase("next", false)
             @app.game.movePhaseToNext()
         return
 
@@ -569,7 +529,6 @@ class Interactions
         for i in @tracked
             @app.screen.offTerritory(i)
         @tracked = []
-        #@trackedConvoys = {}
         @trackedConvoyRoutes = {}
         @_trackedConvoyRST = []
         @trackedConvoyTerrs = []
@@ -584,7 +543,6 @@ class Interactions
             if i not in @tracked
                 @tracked.push(i)
                 @app.screen.markTerritory(i, "convoy")
-        #@app.play.track_convoy = nears_c
         return
 
     _onSupportHold: (id) ->
@@ -624,13 +582,11 @@ class Interactions
         nears_s = @_availableMoves("convoy_to_fleet", id)
         nears_t = @_availableMoves("convoy_to_terr", id)
         id_f = @tracked[0]
-        #moves_f = @app.map.moves.armies[id_f]
         for i in nears_s
             @tracked.push(i)
             @app.screen.markTerritory(i, "convoy")
         for i in nears_t
             if i isnt id_f
-                #if i not in moves_f
                 @tracked.push(i)
                 @app.screen.markTerritory(i, "dest")
         return
@@ -683,7 +639,6 @@ class Interactions
                     else
                         nears = @app.env.moves.fleets[id_f]
                 for i in nears
-                    #if i in @app.map.troops_lst or i in @app.map.fleets_lst
                     if i in @app.game.phase().listArmies or i in @app.game.phase().listFleets
                         nears_res.push(i)
             when "sup_move_to"
@@ -730,7 +685,6 @@ class Interactions
                     found = false
                     for key, value of nears_s
                         nears_t = @app.env.moves.fleets[key]
-                        #found = false
                         for j in nears_t
                             if j not in (key for key of nears_s)
                                 if @app.game.phase().isFleet(j) and @app.env.isSea(j)
@@ -773,17 +727,7 @@ class Interactions
                                 f_nears.push(j)
                     for j in f_nears
                         if j not in nears_res
-                            #if j in @app.map.troops_lst or j in @app.map.fleets_lst
                             nears_res.push(j)
-                ## via Convoy
-                ## HOW TO?
-                #c_nears = []
-                #for key, j in @app.play.orders
-                #   if j.type is "move" and j.viaConvoy isnt null and j.dst in nears
-                #       c_nears.push(key)
-                #for j in c_nears
-                #   if j not in nears_res
-                #       nears_res.push(j)
                 nears_s = {}
                 for i in nears
                     if @app.env.moves.fleets[i]
@@ -809,7 +753,6 @@ class Interactions
                     nears_t = @app.env.moves.fleets[key]
                     for j in nears_t
                         if j isnt id_f
-                            #if j not in @app.map.seas
                             if not @app.env.isSea(j)
                                 if @app.game.phase().isArmy(j)
                                     if j not in nears_res
@@ -860,45 +803,6 @@ class Interactions
                         continue
                     nears_res.push(i)
         return nears_res
-
-    _OLDgetConvoysFromMove: (id_f, id_t) ->
-        conv_lst = []
-        #country = @app.FindCountry(id_f)
-        #id_t = @app.play.moves[id_f].dst
-        nears_t = @app.env.moves.fleets[id_t]
-        val = 0
-        for i, v of @trackedConvoys
-            if v > val
-                val = v
-        #val = 10
-        for i in nears_t
-            conv_val = @trackedConvoys[i]
-            if conv_val
-                if conv_val < val
-                    val = conv_val
-        ## multi ROUTE?? how TO?
-        routes = []
-        for key, value of @trackedConvoys
-            if value <= val
-                if not routes[value-1]
-                    routes[value-1] = []
-                #conv_lst.push(key)
-                routes[value-1].push(key)
-        ##for route in routes
-        #country_troops = @app.GetCountryTroops(@app.play.country)
-        country_troops = @app.game.phase().getCountryTroops()
-        for i in [0..routes.length-1]
-            route = routes[i]
-            if route.length > 1
-                #arm_dict = @app.map.troops[country]
-                for i in route
-                    #if i in (key for key of (tlist for ttype, tlist of arm_dict))
-                    if i in country_troops
-                        conv_lst.push(i)
-                        break
-            if conv_lst.length<i+1
-                conv_lst.push(route[0])
-        return conv_lst
 
     _getConvoysFromMove: (id_f, id_t) ->
         choosen = false

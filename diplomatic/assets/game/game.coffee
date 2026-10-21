@@ -15,7 +15,6 @@ class Game
         # useless?
         @ready = false
         @buildew = null
-        #@builds = {}
         @presstype = null
         @scsToWin = 0
         #: set by the page before launch: the player has the virtual "next" step (can give orders now)
@@ -38,12 +37,10 @@ class Game
         return
 
     bind: (stepNextMethod) ->
-        # @orderMethod = orderMethod
         @movePhaseToNext = stepNextMethod
 
     init: (data, player, orders, isPlayerReady) ->
         #: load current player
-        # @country = data.currentPlayer
         @country = player
         @players = ((Object.assign({}, p) for p in (data.players or [])))
         #: set participating countries
@@ -51,13 +48,8 @@ class Game
         @buildew = data.build_everywhere
         @presstype = data.press_type
         @orders = {}
-        # TODO: change ready to endpoint
-        # if orders.ready
-        #     @ready = true
-        # @ready = currentReady
         @ready = isPlayerReady
         @_initOrders(orders)
-        # @_loadPhasesOrders(callback)
         return
 
     resetPhase: (data, orders, isPlayerReady, canOrder) ->
@@ -160,7 +152,6 @@ class Game
 
     _addMove: (id, data) ->
         @moves[id] = data
-        #if id in (key for key of @app.map.troops[@app.play.country])
         if id in @phase().getCountryTroops()
             @addOrder(id, data)
         return
@@ -195,15 +186,6 @@ class Game
             for key, value of @moves
                 if value.src is id
                     to_delete.push(key)
-        else if @moves[id].type is "support_move"
-            ## remove move order if no otherORDER_TYPES.support_move            del_move = true
-            for key, value of @moves
-                if value.src is @moves[id].src and value.type in ["support_move", "convoy"]
-                    if key isnt id
-                        del_move = false
-                        break
-            if del_move
-                to_delete.push(@moves[id].src)
         else if @moves[id].type is "convoy"
             to_delete.push(@moves[id].src)
             for key, value of @moves
@@ -212,7 +194,6 @@ class Game
                         to_delete.push(key)
         for i in to_delete
             delete @moves[i]
-            #if i in (key for key of @app.map.troops[@app.play.country])
             if i in @phase().getCountryTroops()
                 @delOrder(i)
         return
@@ -269,7 +250,6 @@ class Game
             order.data.troop = TROOP_TYPES.internal_to_remote(data.troop)
             if @app.env.isMCoast(territory) and data.troop is 'fleet'
                 order.data.coast = data.coast
-        #@orders[territory] = type: data.type, to: data.to
         if data.type in ['move', 'retreat']
             if data.type is 'move' and data.through
                 order.data.through = data.through

@@ -55,7 +55,3 @@ class Map(TSModel):
             .with_alias("newest")
         )
         return (self.name == newest.name) & (self.revision == newest.revision)
-
-    # @after_insert
-    # def init_stats(self, fields, rid):
-    #     self.db.CountryStats.insert(map=rid)
