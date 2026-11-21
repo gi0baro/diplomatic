@@ -7,10 +7,13 @@
 //   PLAYER_ACTIVE the player has orders in the open phase
 //   PLAYER_READY  the initial value of gapp.game.ready (the engine owns it from there: setReady, game:players)
 //   FULL          the player gets the virtual "next" step (their pending orders) on top of the phases
+//   NOTIFICATIONS_READ  the body of the notifications read call: this game and the kinds the page shows
 (function () {
   'use strict';
 
   var TYPE_CLASS = { diplomacy: 'text-signal/80', retreats: 'text-warn', builds: 'text-ok', pre: 'text-fog-400' };
+  // a chat frame is published before the sender's request commits its notifications
+  var READ_DELAY = 1500;
 
   function getJSON(url) {
     return fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
@@ -30,6 +33,7 @@
     var PLAYER_ACTIVE = window.PLAYER_ACTIVE;
     var PLAYER_READY = window.PLAYER_READY;
     var FULL = window.FULL;
+    var NOTIFICATIONS_READ = window.NOTIFICATIONS_READ;
     var TYPES = Steps.TYPES;
     var routes = gapp.net.routes;
     var svg = document.getElementById('map');
@@ -43,6 +47,8 @@
     var refreshing = false;
     var mapData = null;
     var clockTimer = null;
+    var readTimer = null;
+    var readPending = false;
 
     // ---- phase bar ----
     // a step draws the orders of the phase before it, so it is named after that phase; the pre-game step is the
@@ -276,6 +282,35 @@
 
     document.addEventListener('game:state', function (e) {
       if (e.detail === 'processed') refresh();
+    });
+
+    // ---- what the page shows as it lands is read: notified a little later, once per burst, on a visible tab ----
+    function readNotifications() {
+      readTimer = null;
+      if (document.visibilityState !== 'visible') {
+        readPending = true;
+        return;
+      }
+      readPending = false;
+      fetch(routes.notifications_read, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(NOTIFICATIONS_READ)
+      }).then(function (r) {
+        if (!r.ok) throw new Error(r.status + ' ' + routes.notifications_read);
+      }).catch(function (err) { console.error(err); });
+    }
+
+    function scheduleRead() {
+      if (readTimer !== null) clearTimeout(readTimer);
+      readTimer = setTimeout(readNotifications, READ_DELAY);
+    }
+
+    document.addEventListener('game:state', scheduleRead);
+    document.addEventListener('game:chat', scheduleRead);
+    document.addEventListener('visibilitychange', function () {
+      if (readPending && document.visibilityState === 'visible') scheduleRead();
     });
 
     // ---- input (the engine refuses clicks while the player is ready) ----

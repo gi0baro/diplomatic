@@ -58,3 +58,6 @@ register(
 register(Kind("game.defeated", T("Eliminated"), _line(T("You were eliminated from game {name}.")), _game_page))
 register(Kind("game.cancelled", T("Game cancelled"), _line(T("Game {name} was cancelled: not enough players joined."))))
 register(Kind("game.over", T("Game over"), _over, _game_page))
+
+#: what the game page shows (the turn toast, the chat): read when the page loads and by the board as it lands
+PAGE_KINDS = ("game.started", "game.phase", "game.over", "game.messages")

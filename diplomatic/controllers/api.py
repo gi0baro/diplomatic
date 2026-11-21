@@ -398,6 +398,23 @@ async def new_chat_message(gid):
     return row
 
 
+@authorized.route("/notifications/read", methods="post")
+async def notifications_read():
+    params = await request.body_params
+    subject_type, subject_id, kinds = params.subject_type, params.subject_id, params.kinds
+    valid = (
+        isinstance(subject_type, str)
+        and isinstance(subject_id, str)
+        and isinstance(kinds, list)
+        and kinds
+        and all(isinstance(kind, str) for kind in kinds)
+    )
+    if not valid:
+        response.status = 422
+        return {"error": {"message": "invalid"}}
+    return {"status": "ok", "data": Notification.read(auth.user.id, subject_type, subject_id, kinds)}
+
+
 @authorized.route("/game/<str:gid>/readings/<str:rid>", methods="put")
 async def chat_read_message(gid, rid):
     row = ChatReading.get(rid)
