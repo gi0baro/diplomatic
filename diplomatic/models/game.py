@@ -270,7 +270,11 @@ class Game(TSModel, UUIDModel):
         old.chat_memberships.update(player=str(player.id))
         game.update_record(is_open=game.open_from_roles())
         Notification.emit(
-            old.user, self.tablename, game.id, "game.taken_over", {"name": game.name, "country": old.country}
+            old.user,
+            self.tablename,
+            game.id,
+            "game.taken_over",
+            {"name": game.name, "variant": game.map.name, "country": old.country},
         )
         return player.id
 
@@ -333,8 +337,11 @@ class Game(TSModel, UUIDModel):
                     description=f"Bet refund for game {game.name}",
                 )
         game.delete_record()
+        cancelled = {"name": game.name, "variant": game.map.name, "players": game.players_number}
         for player in players:
-            Notification.emit(player.user, self.tablename, game.id, "game.cancelled", {"name": game.name})
+            Notification.emit(
+                player.user, self.tablename, game.id, "game.cancelled", {**cancelled, "country": player.country}
+            )
 
     @rowmethod("claim")
     def _claim(self, row, stage):
@@ -385,8 +392,18 @@ class Game(TSModel, UUIDModel):
             processed_at=now(),
             is_ready=False,
         )
+        started = {
+            "name": game.name,
+            "variant": game.map.name,
+            "players": game.players_number,
+            "turn_length": game.phase_time,
+            "year": phase.year,
+            "season": phase.season,
+            "type": phase.type,
+            "deadline": game.next_process_at.isoformat(),
+        }
         for role in roles:
-            Notification.emit(role.user, self.tablename, game.id, "game.started", {"name": game.name})
+            Notification.emit(role.user, self.tablename, game.id, "game.started", {**started, "country": role.country})
 
     @rowmethod("process")
     def process_game(self, game):
@@ -461,23 +478,36 @@ class Game(TSModel, UUIDModel):
                 is_ready=False,
                 is_open=game.open_from_roles(),
             )
+            turn = {
+                "name": game.name,
+                "variant": game.map.name,
+                "year": phase.year,
+                "season": phase.season,
+                "type": phase.type,
+                "deadline": game.next_process_at.isoformat(),
+            }
             for role in missed_roles:
                 if role.missed_phases == 1:
-                    Notification.emit(role.user, self.tablename, game.id, "game.missed", {"name": game.name})
+                    Notification.emit(
+                        role.user, self.tablename, game.id, "game.missed", {**turn, "country": role.country}
+                    )
                 else:
+                    Notification.emit(
+                        role.user, self.tablename, game.id, "game.disorder", {**turn, "country": role.country}
+                    )
+            for role in roles:
+                if role.is_active:
+                    Notification.emit(
+                        role.user, self.tablename, game.id, "game.phase", {**turn, "country": role.country}
+                    )
+                if role.state == GameRole.State.DEFEATED and role.id in live:
                     Notification.emit(
                         role.user,
                         self.tablename,
                         game.id,
-                        "game.disorder",
-                        {"name": game.name, "country": role.country},
+                        "game.defeated",
+                        {"name": game.name, "variant": game.map.name, "country": role.country},
                     )
-            turn = {"name": game.name, "year": phase.year, "season": phase.season, "type": phase.type}
-            for role in roles:
-                if role.is_active:
-                    Notification.emit(role.user, self.tablename, game.id, "game.phase", turn)
-                if role.state == GameRole.State.DEFEATED and role.id in live:
-                    Notification.emit(role.user, self.tablename, game.id, "game.defeated", {"name": game.name})
         self.db.commit()
         return True
 
@@ -606,7 +636,13 @@ class Game(TSModel, UUIDModel):
                 self.tablename,
                 game.id,
                 "game.over",
-                {"name": game.name, "state": role.state, "winner": winner},
+                {
+                    "name": game.name,
+                    "variant": game.map.name,
+                    "country": role.country,
+                    "state": role.state,
+                    "winner": winner,
+                },
             )
 
     @rowmethod("snapshot")

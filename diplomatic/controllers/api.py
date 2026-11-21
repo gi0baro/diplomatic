@@ -392,9 +392,16 @@ async def new_chat_message(gid):
             & (m.player == GameRole.id)
             & ~GameRole.state.belongs(GameRole.TERMINAL_STATES)
         )
-    ).select(GameRole.user)
+    ).select(GameRole.user, GameRole.country)
+    variant = Map.where(lambda m: m.id == game.map).select(Map.name).first()
+    messages = {"name": game.name, "variant": variant.name}
+    turn = game.active_phase()
+    if turn:
+        messages.update(year=turn.year, season=turn.season, type=turn.type, deadline=game.next_process_at.isoformat())
     for recipient in recipients:
-        Notification.emit(recipient.user, Game.tablename, game.id, "game.messages", {"name": game.name})
+        Notification.emit(
+            recipient.user, Game.tablename, game.id, "game.messages", {**messages, "country": recipient.country}
+        )
     return row
 
 

@@ -74,6 +74,40 @@ class Notification(TSModel, UUIDModel):
     def latest(cls, user, limitby):
         return cls.where(lambda n: n.user == user).select(orderby=~cls.delivered_at | ~cls.id, limitby=limitby)
 
+    @classmethod
+    def due(cls, before):
+        #: the PENDING rows created before `before` (the debounce), each with its user and what it should become
+        rows = (
+            cls.where(lambda n: (n.delivery == cls.Delivery.PENDING) & (n.created_at <= before))
+            .join("user")
+            .select(orderby=cls.created_at | cls.id)
+        )
+        if not rows:
+            return []
+        users = list({row.user.id for row in rows})
+        settings = {s.user: s for s in NotificationSettings.where(lambda s: s.user.belongs(users)).select()}
+        rv = []
+        for row in rows:
+            user_settings = settings[row.user.id]
+            wanted = (
+                row.read_at is None and user_settings.email_enabled and row.kind not in user_settings.email_disabled
+            )
+            rv.append((row, cls.Delivery.SENT if wanted else cls.Delivery.SKIPPED))
+        return rv
+
+    @classmethod
+    def decide(cls, row, delivery):
+        # As Game.claim: one conditional UPDATE, so of two overlapping passes only one moves the row out of
+        # PENDING (the other waits for its commit, then matches nothing), and a row read meanwhile is never SENT.
+        query = cls.where(lambda n: (n.id == row.id) & (n.delivery == cls.Delivery.PENDING))
+        if delivery == cls.Delivery.SENT:
+            query = query.where(lambda n: n.read_at == None)
+        return bool(query.update(delivery=delivery))
+
+    @classmethod
+    def purge(cls, before):
+        return cls.where(lambda n: n.delivered_at < before).delete()
+
 
 class NotificationSettings(TSModel):
     tablename = "notification_settings"

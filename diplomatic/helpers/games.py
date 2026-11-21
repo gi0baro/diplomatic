@@ -16,6 +16,19 @@ PRESS_LABELS = {
 }
 
 
+def duration(minutes):
+    #: as human() in games/create.haml: "1 day 12 h 30 min", zero parts omitted
+    days, hours, rest = minutes // 1440, minutes // 60 % 24, minutes % 60
+    parts = []
+    if days:
+        parts.append(f"{days} day" if days == 1 else f"{days} days")
+    if hours:
+        parts.append(f"{hours} h")
+    if rest:
+        parts.append(f"{rest} min")
+    return " ".join(parts)
+
+
 def iso_utc(at):
     return (at.replace(tzinfo=timezone.utc) if at.tzinfo is None else at).isoformat()
 

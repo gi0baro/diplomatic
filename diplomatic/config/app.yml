@@ -3,6 +3,11 @@ db:
   encoding: utf8
   big_id_fields: yes
 langs: ["en", "it"]
+# the site's public address, no trailing slash: the links in the emails (SITE_URL overrides it)
+site_url: http://localhost:8000
+notifications:
+  # minutes a notification must stay unread before it is emailed
+  email_debounce: 10
 worker:
   cron:
     manage_games:
@@ -10,6 +15,14 @@ worker:
       schedule: 60
     fold_stats:
       task: diplomatic.tasks.fold_stats
+      crontab:
+        minute: 0
+        hour: 2
+    deliver_notifications:
+      task: diplomatic.tasks.deliver_notifications
+      schedule: 60
+    purge_notifications:
+      task: diplomatic.tasks.purge_notifications
       crontab:
         minute: 0
         hour: 2
