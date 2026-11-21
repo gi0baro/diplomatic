@@ -61,11 +61,11 @@
                 .flex.items-center.justify-between.gap-4.px-4.py-3.border-t.border-ink-700
                     %div
                         - if page > 1
-                            %a.btn{href: "{{=url('front.users.profile', profile_user.username, page=page - 1)}}"}
+                            %a.btn{href: "{{=url('front.users.profile', profile_user.username, params=dict(page=page - 1))}}"}
                                 = T("Prev")
                     %span.cap
                         {{=T("Page")}} {{=page}}
                     %div
                         - if has_next
-                            %a.btn{href: "{{=url('front.users.profile', profile_user.username, page=page + 1)}}"}
+                            %a.btn{href: "{{=url('front.users.profile', profile_user.username, params=dict(page=page + 1))}}"}
                                 = T("Next")

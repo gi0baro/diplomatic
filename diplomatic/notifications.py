@@ -12,6 +12,8 @@ class Kind:
     key: str
     label: str
     text: Callable[[dict], str]
+    #: the notification row -> the URL the item leads to; called in the web app only (it may use `url()`)
+    action: Callable[..., str] | None = None
 
 
 def register(kind):

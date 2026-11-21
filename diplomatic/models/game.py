@@ -23,6 +23,7 @@ from ..helpers.validators import SkipProcessingValidator
 from . import TSModel, UUIDModel, wrap_in_atomic
 from .chat import ChatMessage, ChatRoom
 from .economy import Transaction, Vault
+from .notification import Notification
 from .stats import StatsEvent
 from .user import UserStats
 
@@ -268,6 +269,9 @@ class Game(TSModel, UUIDModel):
                 room.messages.delete()
         old.chat_memberships.update(player=str(player.id))
         game.update_record(is_open=game.open_from_roles())
+        Notification.emit(
+            old.user, self.tablename, game.id, "game.taken_over", {"name": game.name, "country": old.country}
+        )
         return player.id
 
     @rowmethod("players_all_ready")
@@ -317,7 +321,8 @@ class Game(TSModel, UUIDModel):
     @rowmethod("cancel")
     @wrap_in_atomic
     def _cancel_game(self, game):
-        for player in game.players.where(lambda p: ~p.state.belongs(GameRole.TERMINAL_STATES)).select():
+        players = game.players.where(lambda p: ~p.state.belongs(GameRole.TERMINAL_STATES)).select()
+        for player in players:
             vault = Vault.get(user=player.user)
             stake = game.stake(vault)
             if stake > 0:
@@ -328,6 +333,8 @@ class Game(TSModel, UUIDModel):
                     description=f"Bet refund for game {game.name}",
                 )
         game.delete_record()
+        for player in players:
+            Notification.emit(player.user, self.tablename, game.id, "game.cancelled", {"name": game.name})
 
     @rowmethod("claim")
     def _claim(self, row, stage):
@@ -378,6 +385,8 @@ class Game(TSModel, UUIDModel):
             processed_at=now(),
             is_ready=False,
         )
+        for role in roles:
+            Notification.emit(role.user, self.tablename, game.id, "game.started", {"name": game.name})
 
     @rowmethod("process")
     def process_game(self, game):
@@ -413,6 +422,7 @@ class Game(TSModel, UUIDModel):
                     .where(lambda r: (r.is_ready == False) & ~r.id.belongs(touched))
                 )
                 missed.update(missed_phases=GameRole.missed_phases + 1)
+                missed_roles = missed.select(GameRole.user, GameRole.country, GameRole.missed_phases)
                 missed.where(lambda r: r.missed_phases >= 2).update(state=GameRole.State.DISORDER)
             current_phase.update_orders_stage_from_processor(updated_orders, successful_orders)
             current_phase.stage = GamePhase.Stage.CLOSED
@@ -441,9 +451,9 @@ class Game(TSModel, UUIDModel):
                 dislodged=outcome.dislodged,
             )
             phase.save()
-            phase.init_orders(
-                game.players.current().select(), new_orders, defeats=current_phase.season == GamePhase.Season.AUTUMN
-            )
+            roles = game.players.current().select()
+            live = {role.id for role in roles if role.state not in GameRole.TERMINAL_STATES}
+            phase.init_orders(roles, new_orders, defeats=current_phase.season == GamePhase.Season.AUTUMN)
             game.update_record(
                 stage=self.Stage.GAME,
                 next_process_at=game.next_deadline(),
@@ -451,6 +461,23 @@ class Game(TSModel, UUIDModel):
                 is_ready=False,
                 is_open=game.open_from_roles(),
             )
+            for role in missed_roles:
+                if role.missed_phases == 1:
+                    Notification.emit(role.user, self.tablename, game.id, "game.missed", {"name": game.name})
+                else:
+                    Notification.emit(
+                        role.user,
+                        self.tablename,
+                        game.id,
+                        "game.disorder",
+                        {"name": game.name, "country": role.country},
+                    )
+            turn = {"name": game.name, "year": phase.year, "season": phase.season, "type": phase.type}
+            for role in roles:
+                if role.is_active:
+                    Notification.emit(role.user, self.tablename, game.id, "game.phase", turn)
+                if role.state == GameRole.State.DEFEATED and role.id in live:
+                    Notification.emit(role.user, self.tablename, game.id, "game.defeated", {"name": game.name})
         self.db.commit()
         return True
 
@@ -538,6 +565,7 @@ class Game(TSModel, UUIDModel):
         held = final.supply_centers_no_grouped()
         centers = {role.country: held.get(role.country, 0) for role in roles}
         payouts = game.payouts(winner, centers)
+        settled = []
         for role in roles:
             if role.state in GameRole.TERMINAL_STATES:
                 continue
@@ -551,6 +579,7 @@ class Game(TSModel, UUIDModel):
                 state = GameRole.State.SURVIVED
             role.supply_centers_owned = centers[role.country]
             game.settle_role(role, state, payouts[role.country])
+            settled.append(role)
         StatsEvent.create(
             variant=game.map.name,
             kind=StatsEvent.Kind.GAME_ENDED,
@@ -571,6 +600,14 @@ class Game(TSModel, UUIDModel):
         )
         game.phases.delete()
         game.chat_rooms.delete()
+        for role in settled:
+            Notification.emit(
+                role.user,
+                self.tablename,
+                game.id,
+                "game.over",
+                {"name": game.name, "state": role.state, "winner": winner},
+            )
 
     @rowmethod("snapshot")
     def snapshot(self, game, final):

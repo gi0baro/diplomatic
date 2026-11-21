@@ -13,6 +13,7 @@ from .. import (
     GamePhase,
     GameRole,
     Map,
+    Notification,
     Order,
     app,
     auth,
@@ -383,6 +384,17 @@ async def new_chat_message(gid):
         return {"error": res.errors.as_dict()}
     row = ChatMessage.get(res.id)
     row.publish_on_relevant_channels(redis)
+    game = Game.get(gid)
+    recipients = ChatMember.where(
+        lambda m: (
+            (m.room == room.id)
+            & (m.id != member.id)
+            & (m.player == GameRole.id)
+            & ~GameRole.state.belongs(GameRole.TERMINAL_STATES)
+        )
+    ).select(GameRole.user)
+    for recipient in recipients:
+        Notification.emit(recipient.user, Game.tablename, game.id, "game.messages", {"name": game.name})
     return row
 
 

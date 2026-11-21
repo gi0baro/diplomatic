@@ -1,0 +1,28 @@
+- footer_enabled = True
+- extend 'layout.haml'
+
+.max-w-3xl.mx-auto
+    %h1{class: "font-display uppercase tracking-wider text-[22px] text-fog-200 mb-6"}
+        = T("Notifications")
+
+    %section.panel
+        - if not items
+            .px-4.py-6.cap
+                = T("No notifications")
+        - else
+            - item_px = 'px-4'
+            %ul.py-1
+                - for item in items
+                    - include 'notifications/_item.haml'
+        - if page > 1 or has_next
+            .flex.items-center.justify-between.gap-4.px-4.py-3.border-t.border-ink-700
+                %div
+                    - if page > 1
+                        %a.btn{href: "{{=url('front.auth.notifications.index', params=dict(page=page - 1))}}"}
+                            = T("Prev")
+                %span.cap
+                    {{=T("Page")}} {{=page}}
+                %div
+                    - if has_next
+                        %a.btn{href: "{{=url('front.auth.notifications.index', params=dict(page=page + 1))}}"}
+                            = T("Next")

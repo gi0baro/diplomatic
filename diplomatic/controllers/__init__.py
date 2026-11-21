@@ -34,4 +34,4 @@ def query_page():
         return 1
 
 
-from . import _internal, api, games, main, maps, users, ws
+from . import _internal, api, games, main, maps, notifications, users, ws

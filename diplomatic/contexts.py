@@ -2,7 +2,7 @@ from emmett import T, url
 from emmett.helpers import get_flashed_messages
 from emmett.pipeline import Injector
 
-from . import app, auth
+from . import Notification, app, auth
 
 
 class BaseContext(Injector):
@@ -25,6 +25,10 @@ class BaseContext(Injector):
         if not auth.user:
             return None
         return auth.user.vault()
+
+    @staticmethod
+    def unread_notifications():
+        return Notification.unread_count(auth.user.id)
 
     @staticmethod
     def flashes():

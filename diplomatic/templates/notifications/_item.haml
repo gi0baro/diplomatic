@@ -1,0 +1,16 @@
+- item_text = 'text-fog-200' if item['unread'] else 'text-fog-400'
+
+%li.flex.items-start.gap-2.border-t.border-ink-700{class: "first:border-t-0 py-2.5 {{=item_px}}"}
+    %span.mt-1.h-2.w-2.shrink-0.rounded-full{class: "{{='bg-signal' if item['unread'] else ''}}"}
+    .min-w-0.flex-1
+        - if item['unread']
+            %span.sr-only
+                = T("Unread")
+        - if item['href']
+            %a{href: "{{=item['href']}}", class: "block text-[13px] leading-snug break-words hover:text-signal {{=item_text}}"}
+                = item['text']
+        - else
+            %p{class: "text-[13px] leading-snug break-words {{=item_text}}"}
+                = item['text']
+        .cap.mt-1
+            = item['when']

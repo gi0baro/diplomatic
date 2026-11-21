@@ -1,0 +1,13 @@
+- item_px = 'px-3'
+
+- if items
+    %ul
+        - for item in items
+            - include 'notifications/_item.haml'
+- else
+    .px-3.py-4.cap
+        = T("No notifications")
+%a{href: "{{=url('front.auth.notifications.index')}}", class: "block px-3 py-1.5 font-mono text-[11px] tracking-[.12em] uppercase text-fog-400 hover:text-fog-200 hover:bg-ink-800 border-t border-ink-700"}
+    = T("All notifications")
+%span#bell-count.badge.absolute{class: "-top-1 -right-1 {{='' if unread else 'hidden'}}", "data-badge": None, "hx-swap-oob": "true"}
+    = unread or ''

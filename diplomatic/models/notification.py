@@ -6,12 +6,6 @@ from ..helpers.choice import Choice
 from . import TSModel, UUIDModel
 
 
-def _subject_columns(subject):
-    if subject is None:
-        return None, None
-    return subject._model.tablename, str(subject.id)
-
-
 class Notification(TSModel, UUIDModel):
     belongs_to("user")
 
@@ -39,26 +33,24 @@ class Notification(TSModel, UUIDModel):
     }
 
     @classmethod
-    def _unread(cls, user, kinds, subject):
-        subject_type, subject_id = _subject_columns(subject)
+    def _unread(cls, user, subject_type, subject_id, kinds):
         return cls.where(
             lambda n: (
                 (n.user == user)
-                & n.kind.belongs(kinds)
                 & (n.subject_type == subject_type)
                 & (n.subject_id == subject_id)
+                & n.kind.belongs(kinds)
                 & (n.read_at == None)
             )
         )
 
     @classmethod
-    def emit(cls, user, kind, subject, data):
+    def emit(cls, user, subject_type, subject_id, kind, data):
         # The UPDATE holds its row locks until the caller commits: emit at the end of the transaction.
         notifications.get(kind)  # refuses an unregistered kind
         moment = now()
-        if cls._unread(user, [kind], subject).update(data=data, delivered_at=moment):
+        if cls._unread(user, subject_type, subject_id, [kind]).update(data=data, delivered_at=moment):
             return
-        subject_type, subject_id = _subject_columns(subject)
         cls.create(
             user=user,
             kind=kind,
@@ -71,8 +63,16 @@ class Notification(TSModel, UUIDModel):
         )
 
     @classmethod
-    def read(cls, user, kinds, subject):
-        return cls._unread(user, kinds, subject).update(read_at=now())
+    def read(cls, user, subject_type, subject_id, kinds):
+        return cls._unread(user, subject_type, subject_id, kinds).update(read_at=now())
+
+    @classmethod
+    def unread_count(cls, user):
+        return cls.where(lambda n: (n.user == user) & (n.read_at == None)).count()
+
+    @classmethod
+    def latest(cls, user, limitby):
+        return cls.where(lambda n: n.user == user).select(orderby=~cls.delivered_at | ~cls.id, limitby=limitby)
 
 
 class NotificationSettings(TSModel):
