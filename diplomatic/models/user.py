@@ -3,6 +3,7 @@ from emmett.tools.auth.models import AuthUserBasic
 
 from . import TSModel
 from .economy import Vault
+from .notification import NotificationSettings
 
 
 class User(AuthUserBasic):
@@ -37,6 +38,7 @@ class User(AuthUserBasic):
     def create_account_data(self, fields, rid):
         UserStats.create(user=rid)
         Vault.create(user=rid)
+        NotificationSettings.create(user=rid)
 
 
 class UserStats(TSModel):
@@ -53,17 +55,3 @@ class UserStats(TSModel):
     drawn = Field.int(notnull=True)
 
     default_values = {"points": 0, "score": 0, "played": 0, "won": 0, "survived": 0, "defeated": 0, "drawn": 0}
-
-
-# _default_notif_settings = {
-#     'email': {
-#         'processing': True,
-#         'messages': False
-#     }
-# }
-
-
-# class UserSettings(Model):
-#     belongs_to('user')
-
-#     notification = Field('json', default=_default_notif_settings)

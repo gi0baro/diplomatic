@@ -27,6 +27,7 @@ from .models.chat import ChatMember, ChatMessage, ChatReading, ChatRoom
 from .models.economy import Transaction, Vault
 from .models.game import Game, GamePhase, GameRole, Order
 from .models.map import Map
+from .models.notification import Notification, NotificationSettings
 from .models.stats import StatsCountries, StatsEvent, StatsGames, StatsTime
 from .models.user import User, UserStats
 
@@ -50,6 +51,8 @@ db.define_models(
     StatsCountries,
     StatsGames,
     StatsTime,
+    Notification,
+    NotificationSettings,
 )
 
 celery = Celery("diplomatic", broker=app.config.worker.broker)

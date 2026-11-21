@@ -1,108 +1,90 @@
-from emmett import session
-from emmett.dal import Field, Model, belongs_to
+from emmett import T, now
+from emmett.orm import Field, belongs_to
 
-from diplomatic.helpers.mongo import longToObjid, objidToLong
-
-
-class NObject(Model):
-    """
-    Contains main data about notifications
-        `type`
-            identifies the type of notification for example:
-            "game_processed", "game_message"
-        `channel`
-            identifies the recipient(s) for the notification, for example:
-            "user_[id]", "game_[id]"
-    """
-
-    tablename = "notification_objects"
-
-    channel = Field()
-    type = Field()
-
-    @classmethod
-    def get_one(cls, channel=None, t=None):
-        _query = (cls.channel == channel) & (cls.type == t)
-        return cls.db(_query).select().first()
+from .. import notifications
+from ..helpers.choice import Choice
+from . import TSModel, UUIDModel
 
 
-class NEvent(Model):
-    """
-    Contains data about single user notification
-        `object`
-            is the id of Object table
-        `actor`
-            identifies who is the actor, for example:
-            "gi0baro" (notif. like "gi0baro sent you a message")
-            "game 123" (notif. like "There are 3 new messages on game 123")
-        `data`
-            what happened? for example:
-            {"msg":"sent message", type: "user", "pic": imgurl}
-            {"msg":"new turn", type: "game", "pic": imgurl}
-    """
-
-    tablename = "notification_events"
-
-    belongs_to({"object": "NObject"}, {"recipient": "User"})
-
-    actor = Field()
-    data = Field("json")
-    occurred_at = Field("datetime")
-    is_read = Field("bool", default=False)
-
-    @classmethod
-    def find_unread(cls, user=None):
-        uid = user or (session.auth.user.id if session.auth else None)
-        return cls((cls.recipient == uid) & (cls.is_read == False)).select()
+def _subject_columns(subject):
+    if subject is None:
+        return None, None
+    return subject._model.tablename, str(subject.id)
 
 
-class NSubscription(Model):
-    """
-    Contains data about single user subscriptions
-        `channel`
-            identifies the channel user is subscribed to
-            example: "user_[id]"
-        `objects`
-            the types user is subscribed to, referenced to objects
-    """
-
-    tablename = "notification_subscriptions"
-
+class Notification(TSModel, UUIDModel):
     belongs_to("user")
 
-    channel = Field()
-    objects = Field("list:reference notification_objects")
+    class Delivery(Choice):
+        PENDING = 0, T("Pending")
+        SENT = 1, T("Sent")
+        SKIPPED = 2, T("Skipped")
+
+    kind = Field.string(length=notifications.KEY_LENGTH, notnull=True)
+    subject_type = Field.string()
+    subject_id = Field.string()
+    data = Field.json(notnull=True)
+    delivered_at = Field.datetime(notnull=True)
+    read_at = Field.datetime()
+    delivery = Field.int(notnull=True)
+
+    validation = {"delivery": {"in": Delivery.choices()}, "data": {"presence": False}}
+
+    repr_values = {"delivery": Delivery.repr()}
+
+    indexes = {
+        "user_delivered": {"fields": ["user", "delivered_at"]},
+        "unread": {"fields": ["user", "kind", "subject_type", "subject_id"], "where": lambda m: m.read_at == None},
+        "pending": {"fields": ["created_at"], "where": lambda m: m.delivery == m.Delivery.PENDING},
+    }
 
     @classmethod
-    def find_subscribers(cls, channel, nobj):
-        from diplomatic import mdb
-
-        rows = mdb.notification_subscriptions.find({"channel": channel, "objects": longToObjid(nobj.id)})
-        return [objidToLong(row.user) for row in rows]
-
-    @classmethod
-    def subscribe(cls, user, channel, nobj=None, nid=None):
-        from diplomatic import mdb
-
-        if nid:
-            nid = longToObjid(nid)
-        else:
-            nid = longToObjid(nobj.id)
-        mdb.notification_subscriptions.ioru(
-            {"user": longToObjid(user), "channel": channel}, {"$push": {"objects": nid}}
+    def _unread(cls, user, kinds, subject):
+        subject_type, subject_id = _subject_columns(subject)
+        return cls.where(
+            lambda n: (
+                (n.user == user)
+                & n.kind.belongs(kinds)
+                & (n.subject_type == subject_type)
+                & (n.subject_id == subject_id)
+                & (n.read_at == None)
+            )
         )
 
     @classmethod
-    def unsuscribe(cls, channel, objs, user=None):
-        uid = user or (session.auth.user.id if session.auth else None)
-        if objs == "all":
-            _query = (cls.channel == channel) & (cls.user == uid)
-            cls.db(_query).update(objects=[])
-        else:
-            if not isinstance(objs, list):
-                objs = [objs]
-            from diplomatic import mdb
+    def emit(cls, user, kind, subject, data):
+        # The UPDATE holds its row locks until the caller commits: emit at the end of the transaction.
+        notifications.get(kind)  # refuses an unregistered kind
+        moment = now()
+        if cls._unread(user, [kind], subject).update(data=data, delivered_at=moment):
+            return
+        subject_type, subject_id = _subject_columns(subject)
+        cls.create(
+            user=user,
+            kind=kind,
+            subject_type=subject_type,
+            subject_id=subject_id,
+            data=data,
+            created_at=moment,
+            delivered_at=moment,
+            delivery=cls.Delivery.PENDING,
+        )
 
-            mdb.notification_subscriptions.fandm(
-                {"user": longToObjid(uid), "channel": channel}, {"$pull": {"objects": objs}}
-            )
+    @classmethod
+    def read(cls, user, kinds, subject):
+        return cls._unread(user, kinds, subject).update(read_at=now())
+
+
+class NotificationSettings(TSModel):
+    tablename = "notification_settings"
+
+    belongs_to("user")
+
+    email_enabled = Field.bool(notnull=True)
+    email_disabled = Field.json(notnull=True)
+
+    validation = {"email_disabled": {"presence": False}}
+
+    default_values = {"email_enabled": True, "email_disabled": []}
+
+    indexes = {"uniq_user": {"fields": ["user"], "unique": True}}
