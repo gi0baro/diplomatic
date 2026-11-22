@@ -1,15 +1,24 @@
 - current_user = locals().get('current_user', lambda: None)
 - player_country = globals().get('player_country', None)
 - player_key = globals().get('player_key', None)
+- bell_poll = globals().get('bell_poll', False)
 
-.flex.items-center.gap-3.shrink-0
+.flex.items-center.gap-3.shrink-0.self-stretch
     - if current_user()
         - user = current_user()
         - vault = uservault()
-        %button.nb.relative{type: "button", title: "Notifications"}
-            %svg{width: "15", height: "15", "aria-hidden": "true"}
-                %use{href: "#i-bell"}
-            %span.badge.absolute.hidden{class: "-top-1 -right-1", "data-badge": None}
+        - bell_unread = unread_notifications()
+        .relative.self-stretch.flex.items-center{"x-data": "{open: false}", "@click.outside": "open = false", "@keydown.escape.window": "open = false"}
+            %button.nb.relative{type: "button", title: "{{=T('Notifications')}}", "aria-haspopup": "true", ":aria-expanded": "open", "@click": 'open = !open; if (open) htmx.trigger($refs.bell, "bell-open")'}
+                %svg{width: "15", height: "15", "aria-hidden": "true"}
+                    %use{href: "#i-bell"}
+                %span#bell-count.badge.absolute{class: "-top-1 -right-1 {{='' if bell_unread else 'hidden'}}", "data-badge": None}
+                    = bell_unread or ''
+            - if bell_poll
+                %div{"hx-get": "{{=url('front.auth.notifications.partial_count')}}", "hx-trigger": 'every 60s [document.visibilityState === "visible"]', "hx-swap": "none"}
+            .absolute.right-0.top-full.mt-px.w-80.panel.border-t-0.rounded-t-none.shadow-2xl.z-40{class: "shadow-black/50", "x-ref": "bell", "x-show": "open", "x-cloak": None, "x-transition.opacity": None, "hx-get": "{{=url('front.auth.notifications.partial_bell')}}", "hx-trigger": "bell-open"}
+                .px-3.py-4.cap
+                    = T("Loading")
         - if player_country
             .flex.items-center.pl-3.border-l.border-ink-700{class: "gap-2.5", "data-power": "{{=player_key}}"}
                 %span.sw.h-3.w-3

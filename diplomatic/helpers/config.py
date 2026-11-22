@@ -24,6 +24,7 @@ def load_config(app):
     app.config.internal_hostname = os.environ.get("INTERNAL_HOSTNAME", "localhost")
     app.config.internal_port = os.environ.get("INTERNAL_PORT", "8000")
     app.config.internal_fqdn = f"{app.config.internal_hostname}:{app.config.internal_port}"
+    app.config.site_url = os.environ.get("SITE_URL", app.config.site_url)
 
     app.config.auth.registration_verification = os.environ.get("AUTH_EMAIL_VERIFICATION", "1") == "1"
     app.config.auth.hmac_key = os.environ.get("AUTH_HMAC_KEY")

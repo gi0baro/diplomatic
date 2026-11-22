@@ -1,0 +1,4 @@
+{{ extend 'emails/game.txt' }}
+{{ =country }}, your country in game {{ =name }} ({{ =variant }}), was in civil disorder and another player has taken it over.
+
+You are out of that game. You can still follow it from its page.

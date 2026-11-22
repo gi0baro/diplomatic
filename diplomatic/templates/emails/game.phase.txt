@@ -1,0 +1,4 @@
+{{ extend 'emails/game.txt' }}
+{{ =type }} ({{ =turn }}) is now open in game {{ =name }} ({{ =variant }}), where you play {{ =country }}.
+
+The previous turn has been resolved. Have a look at the board and send your orders by {{ =deadline }}.

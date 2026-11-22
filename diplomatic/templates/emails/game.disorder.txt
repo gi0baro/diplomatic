@@ -1,0 +1,4 @@
+{{ extend 'emails/game.txt' }}
+You missed another turn in game {{ =name }} ({{ =variant }}), and {{ =country }}, your country, is now in civil disorder.
+
+While it is, any other player can take it over, and you would be out of the game. It is still yours: send orders for the open turn, {{ =type }} ({{ =turn }}), before {{ =deadline }}, to take it back.

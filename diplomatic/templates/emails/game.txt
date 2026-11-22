@@ -1,0 +1,3 @@
+{{ extend 'emails/layout.txt' }}
+{{ include }}
+Open the game: {{ =link }}

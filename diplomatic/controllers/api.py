@@ -13,15 +13,17 @@ from .. import (
     GamePhase,
     GameRole,
     Map,
+    Notification,
     Order,
     app,
     auth,
     db,
-    redis,
     sessions,
 )
 from ..diplomacy import process_order
 from ..helpers.events import publish
+from ..notifications.games import LIVE_KINDS
+from ..tasks import notify_chat_message
 from . import query_page
 
 
@@ -382,8 +384,16 @@ async def new_chat_message(gid):
         response.status = 422
         return {"error": res.errors.as_dict()}
     row = ChatMessage.get(res.id)
-    row.publish_on_relevant_channels(redis)
+    db.commit()
+    await row.publish_on_relevant_channels(app.ext.Redis.client)
+    notify_chat_message.delay(row.id)
     return row
+
+
+@authorized.route("/game/<str:gid>/notifications/read", methods="post")
+async def notifications_read(gid):
+    Notification.read(auth.user.id, Game.tablename, gid, LIVE_KINDS)
+    return {"status": "ok"}
 
 
 @authorized.route("/game/<str:gid>/readings/<str:rid>", methods="put")

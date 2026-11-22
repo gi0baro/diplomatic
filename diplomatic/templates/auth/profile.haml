@@ -70,3 +70,9 @@
                     = T("Password")
                 %a.btn{href: "{{=url('auth.password_change')}}"}
                     = T("Change")
+
+        %section#notification-settings.panel{"hx-get": "{{=url('front.auth.notifications.partial_settings')}}", "hx-trigger": "load", "hx-swap": "outerHTML"}
+            %h2.panel-title.px-4.pt-3.pb-2.border-b.border-ink-700
+                = T("Emails")
+            .p-4.cap
+                = T("Loading")

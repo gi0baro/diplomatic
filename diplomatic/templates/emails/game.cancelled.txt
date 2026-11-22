@@ -1,0 +1,4 @@
+{{ extend 'emails/layout.txt' }}
+The game {{ =name }} ({{ =variant }}) you joined did not reach its {{ =players }} players in time, and it was cancelled.
+
+The points you staked are back in your balance.

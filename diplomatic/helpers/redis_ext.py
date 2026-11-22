@@ -9,7 +9,6 @@ class Redis(Extension):
         pool = ConnectionPool(
             host=self.app.config.redis.host,
             port=self.app.config.redis.port,
-            db=2,
             max_connections=128,
             decode_responses=True,
             socket_connect_timeout=1,

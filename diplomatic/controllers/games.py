@@ -3,9 +3,10 @@ from datetime import timezone
 from emmett import abort, redirect, request, response, url
 from emmett.tools import requires
 
-from .. import Game, GameRole, Map, Vault, app, auth, db
+from .. import Game, GameRole, Map, Notification, Vault, app, auth, db
 from ..helpers.events import publish
 from ..helpers.games import CARD_FIELDS, GAME_MAP_FIELDS, build_cards, card_values, set_card_phase
+from ..notifications.games import PAGE_KINDS
 from . import front, query_page
 
 
@@ -213,7 +214,10 @@ def play(gid):
     variant = Map.get(game.map)
     scs = game.target_sc or variant.scs_to_win
     players = game.players.current().join("user").select()
-    player = game.player(auth.user) if auth.is_logged() else None
+    player = None
+    if auth.is_logged():
+        player = game.player(auth.user)
+        Notification.read(auth.user.id, Game.tablename, game.id, PAGE_KINDS)
 
     #: the country key used by the board (`--c-<key>`, data-power, data-owner): lowercase, every run of
     #: characters other than a-z and 0-9 becomes one dash, no dash at the ends. Must match
@@ -276,6 +280,7 @@ def play(gid):
         "player_country": player.country if player else None,
         "player_ready": player.is_ready if player else False,
         "player_active": player.is_active if player else False,
+        "bell_poll": True,
         "statscol": 6,
     }
 

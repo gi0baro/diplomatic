@@ -1,0 +1,4 @@
+{{ extend 'emails/game.txt' }}
+A turn was resolved in game {{ =name }} ({{ =variant }}) without orders from you for {{ =country }}.
+
+If you miss another one, your country goes into civil disorder and another player can take it over. The next turn, {{ =type }} ({{ =turn }}), is open and closes on {{ =deadline }}.

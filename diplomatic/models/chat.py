@@ -1,3 +1,5 @@
+import asyncio
+
 from emmett import T
 from emmett.orm import Field, after_insert, belongs_to, has_many, refers_to, rowmethod, scope
 
@@ -86,9 +88,13 @@ class ChatMessage(TSModel, UUIDModel):
             ChatReading.where(lambda m: (m.room == fields.room) & (m.member == fields.sender)).update(message=rid)
 
     @rowmethod("publish_on_relevant_channels")
-    def _publish_on_channels(self, row, pub_ctx):
-        for member in row.room.members.select(ChatMember.player):
-            publish(pub_ctx, f"chat:{member.player}:messages", "chat", row)
+    async def _publish_on_channels(self, row, pub_ctx):
+        await asyncio.gather(
+            *(
+                publish(pub_ctx, f"chat:{member.player}:messages", "chat", row)
+                for member in row.room.members.select(ChatMember.player)
+            )
+        )
 
 
 class ChatReading(TSModel, UUIDModel):

@@ -43,6 +43,7 @@
     var refreshing = false;
     var mapData = null;
     var clockTimer = null;
+    var readPending = false;
 
     // ---- phase bar ----
     // a step draws the orders of the phase before it, so it is named after that phase; the pre-game step is the
@@ -276,6 +277,27 @@
 
     document.addEventListener('game:state', function (e) {
       if (e.detail === 'processed') refresh();
+    });
+
+    // ---- notifications read ----
+    function readNotifications() {
+      if (document.visibilityState !== 'visible') {
+        readPending = true;
+        return;
+      }
+      readPending = false;
+      fetch(routes.notifications_read, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' }
+      }).then(function (r) {
+        if (!r.ok) throw new Error(r.status + ' ' + routes.notifications_read);
+      }).catch(function (err) { console.error(err); });
+    }
+
+    document.addEventListener('game:state', readNotifications);
+    document.addEventListener('visibilitychange', function () {
+      if (readPending && document.visibilityState === 'visible') readNotifications();
     });
 
     // ---- input (the engine refuses clicks while the player is ready) ----

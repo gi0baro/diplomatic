@@ -1,0 +1,4 @@
+{{ extend 'emails/game.txt' }}
+The game {{ =name }} you joined has started: {{ =variant }}, {{ =players }} players, one turn every {{ =turn_length }}.
+
+You play {{ =country }}. The first turn, {{ =type }} ({{ =turn }}), is open, and your orders are due by {{ =deadline }}.
