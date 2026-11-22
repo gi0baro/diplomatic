@@ -1,0 +1,27 @@
+# England against France with a two-year limit and the variant's 18 centres to win. In 1901 France
+# takes Spain in the spring and Portugal in the autumn: 5 centres (BRE PAR MAR SPA POR) against
+# England's 4 (LVP LON EDI NWY). Both build, then hold through 1902, the last year allowed: the
+# game ends at the fifth processing and France, the sole leader, wins.
+variant: classic
+name: "Year limit win"
+players:
+  England: tester1
+  France: tester2
+settings:
+  max_years: 2
+phases:
+  # Spring 1901
+  - England: [LON-NTH]
+    France: [MAR-SPA, BRE-MAO]
+  # Autumn 1901
+  - England: [NTH-NWY]
+    France: [MAO-POR]
+  # Winter 1901 builds
+  - England: [LON B F]
+    France: [BRE B F, MAR B A]
+  # Spring 1902
+  - England: [NWY H]
+    France: [SPA H]
+  # Autumn 1902: the limit is reached, France wins
+  - England: [NWY H]
+    France: [SPA H]

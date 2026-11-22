@@ -1,0 +1,33 @@
+# Three powers with a two-year limit and the variant's 18 centres to win. In 1901 England takes
+# Norway and France Spain: 4 centres each (LVP LON EDI NWY, BRE PAR MAR SPA) against Germany's 3
+# (BER KIE MUN). England and France build, then everyone holds through 1902, the last year allowed:
+# the game ends at the fifth processing with a tie at the top, a draw. Every country still holding
+# centres shares the pot, Germany included.
+variant: classic
+name: "Year limit draw"
+players:
+  England: tester1
+  France: tester2
+  Germany: tester3
+settings:
+  max_years: 2
+phases:
+  # Spring 1901
+  - England: [LON-NTH]
+    France: [MAR-SPA]
+    Germany: [MUN H]
+  # Autumn 1901
+  - England: [NTH-NWY]
+    France: [SPA H]
+    Germany: [MUN H]
+  # Winter 1901 builds (Germany has none)
+  - England: [LON B F]
+    France: [MAR B A]
+  # Spring 1902
+  - England: [NWY H]
+    France: [SPA H]
+    Germany: [MUN H]
+  # Autumn 1902: the limit is reached, England and France tie, a draw
+  - England: [NWY H]
+    France: [SPA H]
+    Germany: [MUN H]

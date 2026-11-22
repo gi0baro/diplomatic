@@ -1,0 +1,57 @@
+# The first six phases of `midgame`: stops on the open Winter 1902, where France has four centres
+# for five units and must disband one, while England, Germany and Italy build. To look at a disband
+# order being given, as France, next to builds, as the others.
+variant: classic
+name: "Open disband"
+players:
+  England: tester1
+  France: tester2
+  Germany: tester3
+  Italy: tester4
+phases:
+  # 1. Spring 1901
+  - England: [LON-NTH, EDI-NWG, LVP-YOR]
+    France: [BRE-MAO, PAR-BUR, MAR-SPA]
+    Germany: [KIE-DEN, BER-KIE, MUN-RUH]
+    Italy: [NAP-ION, ROM-APU, VEN-TYR]
+  # E: F NTH, F NWG, A YOR  F: F MAO, A BUR, A SPA  G: F DEN, A KIE, A RUH  I: F ION, A APU, A TYR
+
+  # 2. Autumn 1901: England convoys Yorkshire to Norway, France and Germany bounce in Belgium
+  - England: [YOR-NWY via, NTH C YOR-NWY]
+    France: [MAO-POR, BUR-BEL]
+    Germany: [KIE-HOL, RUH-BEL]
+    Italy: [ION-TUN, APU-VEN]
+  # E: A NWY, F NTH, F NWG  F: F POR, A SPA, A BUR  G: F DEN, A HOL, A RUH  I: F TUN, A VEN, A TYR
+
+  # 3. Winter 1901 builds
+  - England: [LON B F]
+    France: [BRE B F, MAR B A]
+    Germany: [KIE B F, MUN B A]
+    Italy: [NAP B F]
+  # E: A NWY, F NTH, F NWG, F LON  F: F POR, A SPA, A BUR, F BRE, A MAR
+  # G: F DEN, A HOL, A RUH, F KIE, A MUN  I: F TUN, A VEN, A TYR, F NAP
+
+  # 4. Spring 1902: Germany dislodges the army in Burgundy
+  - England: [LON-ENG, NTH S LON-ENG, NWG-BAR, NWY-SWE]
+    France: [BRE-ENG, POR-MAO, MAR-PIE]
+    Germany: [RUH-BUR, MUN S RUH-BUR, HOL-BEL, DEN-SWE]
+    Italy: [VEN-PIE, TYR-BOH, NAP-TYS]
+  # E: F ENG, F NTH, F BAR, A NWY  F: F BRE, F MAO, A SPA, A MAR, A BUR (dislodged)
+  # G: A BUR, A MUN, A BEL, F DEN, F KIE  I: F TUN, A VEN, A BOH, F TYS
+
+  # 5. Spring 1902 retreats
+  - France: [BUR R GAS]
+  # F: F BRE, F MAO, A SPA, A MAR, A GAS
+
+  # 6. Autumn 1902: England takes Holland and St. Petersburg (north coast), Germany Paris,
+  # Italy Vienna
+  - England: [NTH-HOL, BAR-STP/NC]
+    France: [BRE-PIC, MAO-WES, MAR S SPA]
+    Germany: [BUR-PAR]
+    Italy: [VEN-PIE, BOH-VIE, TYS-LYO]
+  # E: F HOL, F STP/NC, A NWY, F ENG  F: F PIC, F WES, A GAS, A SPA, A MAR
+  # G: A PAR, A BEL, A MUN, F DEN, F KIE  I: A PIE, A VIE, F LYO, F TUN
+  # centres: E 6 (LON EDI LVP NWY HOL STP) +2, F 4 (BRE MAR SPA POR) -1,
+  #          G 6 (BER KIE MUN DEN BEL PAR) +1, I 5 (ROM NAP VEN TUN VIE) +1
+
+# Winter 1902 builds open
