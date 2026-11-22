@@ -51,7 +51,7 @@ CMD ["serve", "--no-access-log"]
 FROM base AS worker
 
 ENV C_FORCE_ROOT=yup
-ENV CELERY_WORKER_QUEUES=games,stats,notifications
+ENV CELERY_WORKER_QUEUES=games,stats,notifications,mail
 
 ENTRYPOINT ["celery", "-A", "diplomatic:celery"]
 CMD ["worker", "--loglevel=INFO", "--concurrency=1"]

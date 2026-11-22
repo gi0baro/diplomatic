@@ -15,6 +15,7 @@ from . import (
     app,
     celery,
     db,
+    mailer,
     notifications,
     redis,
 )
@@ -176,6 +177,14 @@ def deliver_notifications():
             if delivery == Notification.Delivery.SENT:
                 subject, body = notifications.email(row, app.config.site_url)
                 celery.send_task(MAIL_TASK, args=(row.user.email, subject, body), queue=MAIL_QUEUE)
+
+
+@celery.task(name=MAIL_TASK, queue=MAIL_QUEUE)
+def send_mail(address, subject, body):
+    #: with no mailer configured the email is dropped; no retry, emails are at most once
+    if not mailer:
+        return
+    mailer.send_mail(recipients=address, subject=subject, body=body)
 
 
 @celery.task(queue="notifications")

@@ -28,6 +28,16 @@ def load_config(app):
 
     app.config.auth.registration_verification = os.environ.get("AUTH_EMAIL_VERIFICATION", "1") == "1"
     app.config.auth.hmac_key = os.environ.get("AUTH_HMAC_KEY")
+    app.config.sessions_key = os.environ.get("SESSIONS_KEY", "diplomatic")
+
+    #: the mailer is loaded only when a server is given
+    app.config.mailer.server = os.environ.get("MAILER_SERVER")
+    app.config.mailer.port = int(os.environ.get("MAILER_PORT", 25))
+    app.config.mailer.username = os.environ.get("MAILER_USERNAME")
+    app.config.mailer.password = os.environ.get("MAILER_PASSWORD")
+    app.config.mailer.use_tls = os.environ.get("MAILER_TLS", "0") == "1"
+    app.config.mailer.use_ssl = os.environ.get("MAILER_SSL", "0") == "1"
+    app.config.mailer.sender = os.environ.get("MAILER_SENDER", "noreply@diplomatic.live")
 
     app.config.db.host = os.environ.get("POSTGRES_HOST", "localhost")
     app.config.db.user = os.environ.get("POSTGRES_USER", app.name)

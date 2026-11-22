@@ -5,7 +5,7 @@ from emmett import App
 from emmett.cache import Cache, RamCache, RedisCache
 from emmett.orm import Database
 from emmett.sessions import SessionManager
-from emmett.tools import Auth
+from emmett.tools import Auth, Mailer
 from redis import Redis
 
 from .helpers.config import load_config, parse_celery_cron
@@ -32,6 +32,7 @@ from .models.stats import StatsCountries, StatsEvent, StatsGames, StatsTime
 from .models.user import User, UserStats
 
 
+mailer = Mailer(app) if app.config.mailer.server else None
 auth = Auth(app, db, user_model=User)
 
 db.define_models(
@@ -63,7 +64,7 @@ celery.conf.timezone = "UTC"
 celery.conf.broker_transport_options = {"visibility_timeout": 60 * 60 * 24}
 celery.conf.beat_schedule = parse_celery_cron(app.config.worker.get("cron", {}))
 
-sessions = SessionManager.cookies("foobar")
+sessions = SessionManager.cookies(app.config.sessions_key)
 
 app.use_extension(RedisExtension)
 
