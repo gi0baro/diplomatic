@@ -4,6 +4,8 @@ __pycache__
 *.sublime-*
 .vscode
 
+.deploy/
+
 .venv
 node_modules
 css/node_modules

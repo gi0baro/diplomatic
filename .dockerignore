@@ -13,8 +13,7 @@ diplomatic/databases
 diplomatic/logs/*.log
 diplomatic/uploads
 
-chart
-docker
+.deploy
 docs
 diplomatico/docs
 tests
