@@ -1,13 +1,12 @@
-import json
 from datetime import timezone
 
 from emmett import abort, redirect, request, response, url
 from emmett.tools import requires
 
 from .. import Game, GameRole, Map, Notification, Vault, app, auth, db
-from ..game_kinds import PAGE_KINDS
 from ..helpers.events import publish
 from ..helpers.games import CARD_FIELDS, GAME_MAP_FIELDS, build_cards, card_values, set_card_phase
+from ..notifications.games import PAGE_KINDS
 from . import front, query_page
 
 
@@ -281,7 +280,6 @@ def play(gid):
         "player_country": player.country if player else None,
         "player_ready": player.is_ready if player else False,
         "player_active": player.is_active if player else False,
-        "notifications_read": json.dumps({"subject_type": Game.tablename, "subject_id": game.id, "kinds": PAGE_KINDS}),
         "statscol": 6,
     }
 

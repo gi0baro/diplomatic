@@ -1,0 +1,12 @@
+{{ extend 'emails/game.txt' }}
+{{ if result == State.WON: }}
+Game {{ =name }} ({{ =variant }}) is over, and you won it as {{ =country }}. Well played.
+{{ elif result == State.SURVIVED: }}
+Game {{ =name }} ({{ =variant }}) is over: {{ =winner }} won. You survived to the end as {{ =country }}.
+{{ elif result == State.DEFEATED: }}
+Game {{ =name }} ({{ =variant }}) is over: {{ =winner }} won. {{ =country }}, your country, ended without supply centres.
+{{ else: }}
+Game {{ =name }} ({{ =variant }}) is over: it ended in a draw. You played {{ =country }}.
+{{ pass }}
+
+Every turn of the game, and its final position, stay on its page.

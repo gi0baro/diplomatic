@@ -1,0 +1,4 @@
+{{ extend 'emails/game.txt' }}
+{{ =country }}, your country in game {{ =name }} ({{ =variant }}), has no units or supply centres left: you are eliminated.
+
+The game goes on without you, and you can keep following it from its page.

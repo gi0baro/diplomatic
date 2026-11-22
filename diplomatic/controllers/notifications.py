@@ -29,7 +29,7 @@ def items_of(rows):
 
 
 def read_shown(rows):
-    #: an item without a call to action is read by being shown; the rows keep their unread look for this response
+    #: the rows keep their unread look for this response
     for row in rows:
         if row.read_at is None and not registry.get(row.kind).action:
             Notification.read(auth.user.id, row.subject_type, row.subject_id, [row.kind])

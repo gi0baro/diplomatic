@@ -17,7 +17,7 @@ PRESS_LABELS = {
 
 
 def duration(minutes):
-    #: as human() in games/create.haml: "1 day 12 h 30 min", zero parts omitted
+    #: mirrors human() in games/create.haml
     days, hours, rest = minutes // 1440, minutes // 60 % 24, minutes % 60
     parts = []
     if days:

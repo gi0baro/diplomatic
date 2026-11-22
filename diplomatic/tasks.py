@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 from emmett import now
 
 from . import (
+    ChatMessage,
     Game,
     GameRole,
     Notification,
@@ -20,7 +21,6 @@ from . import (
 from .helpers.events import publish
 
 
-#: the mailer's contract (a separate system): one task per email, by name, on its queue
 MAIL_TASK = "diplomatic.mail.send"
 MAIL_QUEUE = "mail"
 NOTIFICATION_RETENTION = timedelta(days=30)
@@ -176,6 +176,15 @@ def deliver_notifications():
             if delivery == Notification.Delivery.SENT:
                 subject, body = notifications.email(row, app.config.site_url)
                 celery.send_task(MAIL_TASK, args=(row.user.email, subject, body), queue=MAIL_QUEUE)
+
+
+@celery.task(queue="notifications")
+def notify_chat_message(message_id):
+    with db.connection():
+        message = ChatMessage.get(message_id)
+        if not message:
+            return
+        Game.get(message.room.game).notify_messages(message, redis)
 
 
 @celery.task(queue="notifications")

@@ -18,11 +18,12 @@ from .. import (
     app,
     auth,
     db,
-    redis,
     sessions,
 )
 from ..diplomacy import process_order
 from ..helpers.events import publish
+from ..notifications.games import LIVE_KINDS
+from ..tasks import notify_chat_message
 from . import query_page
 
 
@@ -383,43 +384,16 @@ async def new_chat_message(gid):
         response.status = 422
         return {"error": res.errors.as_dict()}
     row = ChatMessage.get(res.id)
-    row.publish_on_relevant_channels(redis)
-    game = Game.get(gid)
-    recipients = ChatMember.where(
-        lambda m: (
-            (m.room == room.id)
-            & (m.id != member.id)
-            & (m.player == GameRole.id)
-            & ~GameRole.state.belongs(GameRole.TERMINAL_STATES)
-        )
-    ).select(GameRole.user, GameRole.country)
-    variant = Map.where(lambda m: m.id == game.map).select(Map.name).first()
-    messages = {"name": game.name, "variant": variant.name}
-    turn = game.active_phase()
-    if turn:
-        messages.update(year=turn.year, season=turn.season, type=turn.type, deadline=game.next_process_at.isoformat())
-    for recipient in recipients:
-        Notification.emit(
-            recipient.user, Game.tablename, game.id, "game.messages", {**messages, "country": recipient.country}
-        )
+    db.commit()
+    await row.publish_on_relevant_channels(app.ext.Redis.client)
+    notify_chat_message.delay(row.id)
     return row
 
 
-@authorized.route("/notifications/read", methods="post")
-async def notifications_read():
-    params = await request.body_params
-    subject_type, subject_id, kinds = params.subject_type, params.subject_id, params.kinds
-    valid = (
-        isinstance(subject_type, str)
-        and isinstance(subject_id, str)
-        and isinstance(kinds, list)
-        and kinds
-        and all(isinstance(kind, str) for kind in kinds)
-    )
-    if not valid:
-        response.status = 422
-        return {"error": {"message": "invalid"}}
-    return {"status": "ok", "data": Notification.read(auth.user.id, subject_type, subject_id, kinds)}
+@authorized.route("/game/<str:gid>/notifications/read", methods="post")
+async def notifications_read(gid):
+    Notification.read(auth.user.id, Game.tablename, gid, LIVE_KINDS)
+    return {"status": "ok"}
 
 
 @authorized.route("/game/<str:gid>/readings/<str:rid>", methods="put")

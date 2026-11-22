@@ -21,7 +21,7 @@ from ..diplomacy import process_game
 from ..helpers.choice import Choice
 from ..helpers.validators import SkipProcessingValidator
 from . import TSModel, UUIDModel, wrap_in_atomic
-from .chat import ChatMessage, ChatRoom
+from .chat import ChatMember, ChatMessage, ChatRoom
 from .economy import Transaction, Vault
 from .notification import Notification
 from .stats import StatsEvent
@@ -277,6 +277,38 @@ class Game(TSModel, UUIDModel):
             {"name": game.name, "variant": game.map.name, "country": old.country},
         )
         return player.id
+
+    @staticmethod
+    def watching(client, gid, users):
+        pipe = client.pipeline(transaction=False)
+        for user in users:
+            pipe.exists(f"game:{gid}:watching:{user}")
+        return {user for user, found in zip(users, pipe.execute()) if found}
+
+    @rowmethod("notify_messages")
+    @wrap_in_atomic
+    def _notify_messages(self, game, message, client):
+        recipients = ChatMember.where(
+            lambda m: (
+                (m.room == message.room)
+                & (m.id != message.sender)
+                & (m.player == GameRole.id)
+                & ~GameRole.state.belongs(GameRole.TERMINAL_STATES)
+            )
+        ).select(GameRole.user, GameRole.country)
+        watchers = self.watching(client, game.id, [recipient.user for recipient in recipients])
+        maps = self.db.Map
+        variant = maps.where(lambda m: m.id == game.map).select(maps.name).first()
+        data = {"name": game.name, "variant": variant.name}
+        turn = game.active_phase()
+        if turn:
+            data.update(year=turn.year, season=turn.season, type=turn.type, deadline=game.next_process_at.isoformat())
+        for recipient in recipients:
+            if recipient.user in watchers:
+                continue
+            Notification.emit(
+                recipient.user, self.tablename, game.id, "game.messages", {**data, "country": recipient.country}
+            )
 
     @rowmethod("players_all_ready")
     def _players_all_ready(self, row):

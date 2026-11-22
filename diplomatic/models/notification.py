@@ -1,7 +1,6 @@
 from emmett import T, now
 from emmett.orm import Field, belongs_to
 
-from .. import notifications
 from ..helpers.choice import Choice
 from . import TSModel, UUIDModel
 
@@ -14,7 +13,7 @@ class Notification(TSModel, UUIDModel):
         SENT = 1, T("Sent")
         SKIPPED = 2, T("Skipped")
 
-    kind = Field.string(length=notifications.KEY_LENGTH, notnull=True)
+    kind = Field.string(length=32, notnull=True)
     subject_type = Field.string()
     subject_id = Field.string()
     data = Field.json(notnull=True)
@@ -47,7 +46,6 @@ class Notification(TSModel, UUIDModel):
     @classmethod
     def emit(cls, user, subject_type, subject_id, kind, data):
         # The UPDATE holds its row locks until the caller commits: emit at the end of the transaction.
-        notifications.get(kind)  # refuses an unregistered kind
         moment = now()
         if cls._unread(user, subject_type, subject_id, [kind]).update(data=data, delivered_at=moment):
             return
@@ -76,7 +74,6 @@ class Notification(TSModel, UUIDModel):
 
     @classmethod
     def due(cls, before):
-        #: the PENDING rows created before `before` (the debounce), each with its user and what it should become
         rows = (
             cls.where(lambda n: (n.delivery == cls.Delivery.PENDING) & (n.created_at <= before))
             .join("user")

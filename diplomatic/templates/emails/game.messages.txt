@@ -1,0 +1,6 @@
+{{ extend 'emails/game.txt' }}
+Other players have written to you in game {{ =name }} ({{ =variant }}), where you play {{ =country }}. Their messages are waiting in the game's chat.
+{{ if deadline: }}
+
+The current turn, {{ =type }} ({{ =turn }}), closes on {{ =deadline }}.
+{{ pass }}

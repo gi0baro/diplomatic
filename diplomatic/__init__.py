@@ -67,4 +67,4 @@ sessions = SessionManager.cookies("foobar")
 
 app.use_extension(RedisExtension)
 
-from . import commands, game_kinds, tasks
+from . import commands, tasks

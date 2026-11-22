@@ -140,7 +140,7 @@
     gapp.net.route("chat_messages", "{{=url('api.authorized.chat_messages', ':ID:')}}");
     gapp.net.route("chat_push", "{{=url('api.authorized.new_chat_message', game.id)}}");
     gapp.net.route("chat_read", "{{=url('api.authorized.chat_read_message', [game.id, ':ID:'])}}");
-    gapp.net.route("notifications_read", "{{=url('api.authorized.notifications_read')}}");
+    gapp.net.route("notifications_read", "{{=url('api.authorized.notifications_read', game.id)}}");
     {{if player_id:}}
     gapp.net.route("socket", "{{=url.ws('ws.game', game.id, scheme=ws_scheme)}}");
     {{pass}}
@@ -153,4 +153,3 @@
     var PLAYER_READY = {{='true' if player_ready else 'false'}};
     var FULL = ACTIVE && PLAYER !== null && PLAYER_ACTIVE;
     gapp.game.canOrder = FULL;
-    var NOTIFICATIONS_READ = {{=asis(notifications_read)}};
