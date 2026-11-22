@@ -6,6 +6,7 @@ from emmett.cache import Cache, RamCache, RedisCache
 from emmett.orm import Database
 from emmett.sessions import SessionManager
 from emmett.tools import Auth, Mailer
+from emmett_sentry import Sentry
 from redis import Redis
 
 from .helpers.config import load_config, parse_celery_cron
@@ -17,6 +18,7 @@ app.languages = ["en", "it"]
 app.language_default = "en"
 app.language_force_on_url = True
 load_config(app)
+app.use_extension(Sentry)
 
 redis = Redis(**app.config.redis)
 cache = Cache(ram=RamCache(), redis=RedisCache(**app.config.redis))

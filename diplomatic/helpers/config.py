@@ -39,6 +39,11 @@ def load_config(app):
     app.config.mailer.use_ssl = os.environ.get("MAILER_SSL", "0") == "1"
     app.config.mailer.sender = os.environ.get("MAILER_SENDER", "noreply@diplomatic.live")
 
+    #: the extension does nothing without a DSN
+    app.config.Sentry.dsn = os.environ.get("SENTRY_DSN")
+    app.config.Sentry.environment = os.environ.get("SENTRY_ENVIRONMENT", "production")
+    app.config.Sentry.release = app.config.build_commit
+
     app.config.db.host = os.environ.get("POSTGRES_HOST", "localhost")
     app.config.db.user = os.environ.get("POSTGRES_USER", app.name)
     app.config.db.password = os.environ.get("POSTGRES_PASSWORD", app.name)
