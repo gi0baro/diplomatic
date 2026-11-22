@@ -25,6 +25,8 @@
             {{=variant.name}} · {{=game.players_number}} powers
             %br
             {{=scs}} SC to win
+            - if game.max_years
+                · {{=game.max_years}} years
     .flex.items-center.gap-1.ml-auto
         %button.nb{type: "button", "data-nav": "first", title: "First phase (Home)"} |&lt;
         %button.nb{type: "button", "data-nav": "prev", title: "Previous phase (←)"} &lt;

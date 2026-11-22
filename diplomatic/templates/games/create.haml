@@ -57,11 +57,11 @@
                                 - if errors.countries_assignment
                                     .err
                                         = errors.countries_assignment
-                            - for name, key in [('target_sc', 'targetSc'), ('max_turns', 'maxTurns')]
+                            - for name, key, low, high in [('target_sc', 'targetSc', 'targetMin', 'targetMax'), ('max_years', 'maxYears', '2', '100')]
                                 .field
                                     %label.label{for: "f-{{=name}}"}
                                         = custom.label[name]
-                                    %input.input{id: "f-{{=name}}", type: "number", name: "{{=name}}", min: 1, step: 1, value: "{{=v[name] or ''}}", "x-model.number.fill": "{{=key}}", "aria-invalid": "{{=invalid(name)}}"}
+                                    %input.input{id: "f-{{=name}}", type: "number", name: "{{=name}}", ":min": "{{=low}}", ":max": "{{=high}}", step: 1, value: "{{=v[name] or ''}}", "x-model.number.fill": "{{=key}}", "aria-invalid": "{{=invalid(name)}}"}
                                     - if errors.get(name)
                                         .err
                                             = errors[name]
@@ -246,7 +246,7 @@
                             %tr
                                 %td.pl-4
                                     = T("Limits")
-                                %td.pr-4.text-right.text-fog-200{"x-text": '[targetSc && targetSc + " centers", maxTurns && maxTurns + " turns"].filter(Boolean).join(" · ") || "—"'}
+                                %td.pr-4.text-right.text-fog-200{"x-text": '[targetSc && targetSc + " centers", maxYears && maxYears + " years"].filter(Boolean).join(" · ") || "—"'}
                     .px-4.py-3.border-t.border-ink-700
                         .cap.mb-2{"x-text": 'enabled.length + " " + (assign === 1 ? "countries · you play " + (mine || "?") : "countries")'}
                         .flex.flex-wrap.gap-2
@@ -260,7 +260,7 @@
       const STEPS = {{=steps}};
       Alpine.data('createGame', () => ({
         name: null, lang: null, map: null, players: null, bet: null, pot: null, access: null, assign: null, press: null,
-        anonymous: null, buildEverywhere: null, buildOnStart: null, starts: null, targetSc: null, maxTurns: null,
+        anonymous: null, buildEverywhere: null, buildOnStart: null, starts: null, targetSc: null, targetMin: null, targetMax: null, maxYears: null,
         phase: 0, join: 0, countries: {}, colors: {}, mine: null, days: {},
         init() {
           this.$watch('players', (p) => {

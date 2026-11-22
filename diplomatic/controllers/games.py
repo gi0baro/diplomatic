@@ -150,6 +150,10 @@ async def create():
         if form.params.players_number < variant.min_players or form.params.players_number > maxplayers:
             form.errors.players_number = "Invalid number of players"
             return
+        low, high = variant.target_range()
+        if form.params.target_sc and not low <= form.params.target_sc <= high:
+            form.errors.target_sc = f"Centers to win must be between {low} and {high}"
+            return
         vault = Vault.where(lambda m: m.user == auth.user.id).select(for_update=True).first()
         if vault.balance < form.params.bet:
             form.errors.bet = "You have not enough points to set this bet"
@@ -198,7 +202,7 @@ def partial_variant_options():
     variant = (
         Map.all_latest()
         .where(Map.id == request.query_params.map)
-        .select(Map.id, Map.name, Map.min_players, Map.scs_to_win, Map.countries)
+        .select(Map.id, Map.name, Map.min_players, Map.scs_to_win, Map.countries, Map.supply_centers, Map.init)
         .first()
     )
     if not variant:

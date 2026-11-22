@@ -1,8 +1,8 @@
 """initial
 
-Migration ID: 1c7627fc31b2
+Migration ID: 812a3cd0f48c
 Revises: 
-Creation Date: 2026-10-12 23:59:04.203791
+Creation Date: 2026-11-22 16:57:20.921082
 
 """
 
@@ -10,7 +10,7 @@ from emmett.orm import migrations
 
 
 class Migration(migrations.Migration):
-    revision = '1c7627fc31b2'
+    revision = '812a3cd0f48c'
     revises = None
 
     def up(self):
@@ -25,11 +25,11 @@ class Migration(migrations.Migration):
             migrations.Column('reset_password_key', 'string', default='', length=512),
             migrations.Column('registration_id', 'string', default='', length=512),
             migrations.Column('username', 'string', notnull=True, length=512),
-            migrations.Column('avatar_src', 'string', length=512),
             migrations.Column('avatar_img', 'upload', length=512),
             primary_keys=['id'])
         self.create_index('users_widx__email_unique', 'users', ['email'], expressions=[], unique=True)
         self.create_index('users_widx__email', 'users', ['email'], expressions=[], unique=False)
+        self.create_index('users_widx__uniq_username', 'users', ['username'], expressions=[], unique=True)
         self.create_table(
             'auth_groups',
             migrations.Column('id', 'id'),
@@ -125,7 +125,7 @@ class Migration(migrations.Migration):
             migrations.Column('press_type', 'integer', default=0, notnull=True),
             migrations.Column('access', 'integer', default=0, notnull=True),
             migrations.Column('password', 'string', length=512),
-            migrations.Column('max_turns', 'integer'),
+            migrations.Column('max_years', 'integer'),
             migrations.Column('target_sc', 'integer'),
             migrations.Column('skip_processing', 'json', notnull=True),
             migrations.Column('stage', 'integer', default=0),
@@ -149,6 +149,7 @@ class Migration(migrations.Migration):
             migrations.Column('is_active', 'boolean', default=False, notnull=True),
             migrations.Column('is_ready', 'boolean', default=False, notnull=True),
             migrations.Column('state', 'integer', default=0, notnull=True),
+            migrations.Column('missed_phases', 'integer', default=0, notnull=True),
             migrations.Column('supply_centers_owned', 'integer', default=0, notnull=True),
             migrations.Column('game', 'string', length=32),
             migrations.Column('user', 'reference users', ondelete='CASCADE'),
@@ -258,6 +259,8 @@ class Migration(migrations.Migration):
             migrations.Column('id', 'string', length=32),
             migrations.Column('created_at', 'datetime', notnull=True),
             migrations.Column('updated_at', 'datetime', notnull=True),
+            migrations.Column('subject_type', 'string', length=512),
+            migrations.Column('subject_id', 'string', length=512),
             migrations.Column('type', 'integer', notnull=True),
             migrations.Column('credit', 'integer', default=0, notnull=True),
             migrations.Column('debit', 'integer', default=0, notnull=True),
@@ -266,6 +269,7 @@ class Migration(migrations.Migration):
             primary_keys=['id'])
         self.create_index('transactions_widx__vault', 'transactions', ['vault'], expressions=[], unique=False)
         self.create_index('transactions_widx__type', 'transactions', ['type'], expressions=[], unique=False)
+        self.create_index('transactions_widx__subject', 'transactions', ['subject_type', 'subject_id'], expressions=[], unique=False)
         self.create_table(
             'stats_events',
             migrations.Column('id', 'string', length=32),
@@ -313,8 +317,41 @@ class Migration(migrations.Migration):
             migrations.Column('games', 'integer', default=0, notnull=True),
             primary_keys=['id'])
         self.create_index('stats_time_widx__uniq_variant_date', 'stats_time', ['variant', 'date'], expressions=[], unique=True)
+        self.create_table(
+            'notifications',
+            migrations.Column('id', 'string', length=32),
+            migrations.Column('created_at', 'datetime', notnull=True),
+            migrations.Column('updated_at', 'datetime', notnull=True),
+            migrations.Column('kind', 'string', notnull=True, length=32),
+            migrations.Column('subject_type', 'string', length=512),
+            migrations.Column('subject_id', 'string', length=512),
+            migrations.Column('data', 'json', notnull=True),
+            migrations.Column('delivered_at', 'datetime', notnull=True),
+            migrations.Column('read_at', 'datetime'),
+            migrations.Column('delivery', 'integer', notnull=True),
+            migrations.Column('user', 'reference users', ondelete='CASCADE'),
+            primary_keys=['id'])
+        self.create_index('notifications_widx__user_delivered', 'notifications', ['user', 'delivered_at'], expressions=[], unique=False)
+        self.create_index('notifications_widx__unread', 'notifications', ['user', 'kind', 'subject_type', 'subject_id'], expressions=[], unique=False, where='("read_at" IS NULL)')
+        self.create_index('notifications_widx__pending', 'notifications', ['created_at'], expressions=[], unique=False, where='("delivery" = 0)')
+        self.create_table(
+            'notification_settings',
+            migrations.Column('id', 'id'),
+            migrations.Column('created_at', 'datetime', notnull=True),
+            migrations.Column('updated_at', 'datetime', notnull=True),
+            migrations.Column('email_enabled', 'boolean', default=True, notnull=True),
+            migrations.Column('email_disabled', 'json', notnull=True),
+            migrations.Column('user', 'reference users', ondelete='CASCADE'),
+            primary_keys=['id'])
+        self.create_index('notification_settings_widx__uniq_user', 'notification_settings', ['user'], expressions=[], unique=True)
 
     def down(self):
+        self.drop_index('notification_settings_widx__uniq_user', 'notification_settings')
+        self.drop_table('notification_settings')
+        self.drop_index('notifications_widx__pending', 'notifications')
+        self.drop_index('notifications_widx__unread', 'notifications')
+        self.drop_index('notifications_widx__user_delivered', 'notifications')
+        self.drop_table('notifications')
         self.drop_index('stats_time_widx__uniq_variant_date', 'stats_time')
         self.drop_table('stats_time')
         self.drop_index('stats_games_widx__uniq_variant', 'stats_games')
@@ -325,6 +362,7 @@ class Migration(migrations.Migration):
         self.drop_index('stats_events_widx__kind', 'stats_events')
         self.drop_index('stats_events_widx__variant', 'stats_events')
         self.drop_table('stats_events')
+        self.drop_index('transactions_widx__subject', 'transactions')
         self.drop_index('transactions_widx__type', 'transactions')
         self.drop_index('transactions_widx__vault', 'transactions')
         self.drop_table('transactions')
@@ -377,6 +415,7 @@ class Migration(migrations.Migration):
         self.drop_table('auth_memberships')
         self.drop_index('auth_groups_widx__role_unique', 'auth_groups')
         self.drop_table('auth_groups')
+        self.drop_index('users_widx__uniq_username', 'users')
         self.drop_index('users_widx__email', 'users')
         self.drop_index('users_widx__email_unique', 'users')
         self.drop_table('users')

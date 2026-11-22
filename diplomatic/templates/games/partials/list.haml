@@ -56,7 +56,7 @@
                             %td.whitespace-nowrap{title: "{{=(T('Skips') + ': ' + row['skips']) if row['skips'] else ''}}"}
                                 = duration(game.phase_time)
                             %td.whitespace-nowrap
-                                {{=row['centers']}} / {{=game.max_turns or '—'}}
+                                {{=row['centers']}} / {{=game.max_years or '—'}}
                             - if mode != 'finished'
                                 %td.whitespace-nowrap
                                     - if row['rules']

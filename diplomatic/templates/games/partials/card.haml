@@ -22,8 +22,8 @@
             %span{title: "{{=(T('Skips') + ': ' + skips) if skips else ''}}"}
                 {{=duration(game.phase_time)}} {{=T("per turn")}}
             · {{=centers}} {{=T("centers")}}
-            - if game.max_turns
-                · {{=game.max_turns}} {{=T("turns")}}
+            - if game.max_years
+                · {{=game.max_years}} {{=T("years")}}
         .cap.mt-1
             - if game.stage == Game.Stage.OVER
                 &nbsp;

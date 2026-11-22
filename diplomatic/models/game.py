@@ -88,7 +88,7 @@ class Game(TSModel, UUIDModel):
     press_type = Field.int(notnull=True)
     access = Field.int(notnull=True)
     password = Field()
-    max_turns = Field.int()
+    max_years = Field.int()
     target_sc = Field.int()
     skip_processing = Field.json(notnull=True)
     stage = Field.int()
@@ -111,7 +111,7 @@ class Game(TSModel, UUIDModel):
         "press_type": {"in": Press.choices()},
         "stage": {"in": Stage.choices()},
         "starts_on": {"in": Start.choices()},
-        "max_turns": {"gt": 0, "allow": "empty"},
+        "max_years": {"in": {"range": (2, 101)}, "allow": "empty"},
         "target_sc": {"gt": 0, "allow": "empty"},
         "phase_time": {"in": {"range": (10, 60 * 24 * 10 + 1)}},
         "join_time": {"in": {"range": (10, 60 * 24 * 10 + 1)}},
@@ -165,7 +165,7 @@ class Game(TSModel, UUIDModel):
         "anonymous": T("Anonymous players"),
         "press_type": T("In-game messaging"),
         "access": T("Access"),
-        "max_turns": T("Maximum turns"),
+        "max_years": T("Year limit"),
         "target_sc": T("Centers to win"),
         "skip_processing": T("Skip processing on"),
         "countries": T("Enabled countries"),
@@ -173,7 +173,7 @@ class Game(TSModel, UUIDModel):
     }
 
     form_info = {
-        "max_turns": T("Empty for no limit."),
+        "max_years": T("Empty for no limit."),
         "countries": T("With fewer countries than players, all of them are enabled."),
     }
 
@@ -457,7 +457,14 @@ class Game(TSModel, UUIDModel):
 
         with self.db.atomic():
             current_phase = game.active_phase()
-            if not outcome.winner:
+            #: a year is over when the adjudicator opens its builds (after the autumn and its retreats);
+            #: the limit counts years from the variant's first, a build_on_start opening is not one
+            ends = outcome.winner or (
+                game.max_years
+                and outcome.phase == GamePhase.Type.BUILDS
+                and outcome.year >= game.map.year + game.max_years - 1
+            )
+            if not ends:
                 # Adjudication writes bump order timestamps too; detect touches before those writes.
                 touched = (
                     current_phase.orders.where(lambda o: o.updated_at > o.created_at)
@@ -476,7 +483,7 @@ class Game(TSModel, UUIDModel):
             current_phase.update_orders_stage_from_processor(updated_orders, successful_orders)
             current_phase.stage = GamePhase.Stage.CLOSED
             current_phase.save()
-            if outcome.winner:
+            if ends:
                 final = game.phases.new(
                     year=outcome.year,
                     season=outcome.season,
@@ -487,7 +494,14 @@ class Game(TSModel, UUIDModel):
                     coasts=outcome.coast_positions,
                     dislodged=outcome.dislodged,
                 )
-                game.end(outcome.winner, final)
+                winner = outcome.winner
+                if not winner:
+                    #: the year limit: the sole leader in centres wins, a tie at the top is a draw
+                    held = final.supply_centers_no_grouped()
+                    best = max(held.values())
+                    leaders = [country for country, count in held.items() if count == best]
+                    winner = leaders[0] if len(leaders) == 1 else None
+                game.end(winner, final)
                 return True
             phase = game.phases.new(
                 parent=current_phase.id,

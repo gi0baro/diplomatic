@@ -21,7 +21,7 @@ CHOICES = {
     "starts_on": Game.Start,
     "countries_assignment": Game.Assignment,
 }
-INTS = ("bet", "phase_time", "join_time", "max_turns", "target_sc")
+INTS = ("bet", "phase_time", "join_time", "max_years", "target_sc")
 BOOLS = ("build_everywhere", "build_on_start", "anonymous")
 SETTINGS = ("lang", "password", "skip_processing", *INTS, *BOOLS, *CHOICES)
 #: local play: the smallest bet (the only one a 2-player game takes), the countries the scenario

@@ -1,11 +1,12 @@
 - names = list(variant.countries)
 - fixed = variant.min_players == len(names)
+- target_min, target_max = variant.target_range()
 
 #vo-preview.panel.overflow-hidden
     .bg-ink-950
         %img.block.w-full.h-auto{src: "{{=url('map_files.preview_svg', variant.id)}}", alt: "{{=variant.name}}"}
 
-#vo-players.field{"x-init": "players = {{=len(names)}}; targetSc = {{=variant.scs_to_win}}"}
+#vo-players.field{"x-init": "players = {{=len(names)}}; targetSc = {{=variant.scs_to_win}}; targetMin = {{=target_min}}; targetMax = {{=target_max}}"}
     - if fixed
         %input{type: "hidden", name: "players_number", value: "{{=len(names)}}"}
         .label

@@ -70,7 +70,7 @@ def game_get(gid):
         "anonymous": game.anonymous,
         "press_type": game.press_type,
         "access": game.access,
-        "max_turns": game.max_turns,
+        "max_years": game.max_years,
         "target_sc": game.target_sc,
         "skip_processing": game.skip_processing,
         "stage": game.stage,
