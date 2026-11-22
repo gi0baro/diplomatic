@@ -97,7 +97,7 @@
         - for game in open_games
             - variant = open_variants[game.id]
             - card = open_cards[game.id]
-            - count, role, choices, winner, turn, status, press, lang = card['count'], card['role'], card['choices'], card['winner'], card['turn'], card['status'], card['press'], card['lang']
+            - count, role, joinable, choices, winner, turn, status, press, lang = card['count'], card['role'], card['joinable'], card['choices'], card['winner'], card['turn'], card['status'], card['press'], card['lang']
             - rules, skips, centers = card['rules'], card['skips'], card['centers']
             - deadline_iso, deadline = card['deadline_iso'], card['deadline']
             - error = None

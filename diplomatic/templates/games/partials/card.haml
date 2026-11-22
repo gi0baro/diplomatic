@@ -1,6 +1,5 @@
 - card_play = url('front.games.play', game.id)
-- card_joinable = bool(current_user()) and game.is_open and game.stage in (Game.Stage.PREGAME, Game.Stage.GAME) and not role
-- card_open = 'true' if card_joinable and error else 'false'
+- card_open = 'true' if joinable and error else 'false'
 - card_locked = game.is_open and game.access == Game.Access.PASSWORD
 
 %article.panel.flex.flex-col.overflow-hidden{id: "game-{{=game.id}}", "data-game": "{{=game.id}}", "x-data": "{ joining: {{=card_open}} }", "@lobby-join.window": 'if ($event.detail === $el.dataset.game) { joining = true; $nextTick(() => $el.scrollIntoView({block: "center", behavior: "smooth"})) }'}
@@ -55,45 +54,20 @@
                 - if turn
                     {{=turn}} ·
                 = status
-        - if error and not card_joinable
+        - if error and not joinable
             .err.mt-3
                 = error
-        - if card_joinable
+        - if joinable
             %form.mt-4.pt-4.border-t.border-ink-700.space-y-3{"x-show": "joining", "x-cloak": None, "hx-post": "{{=url('front.games.join', game.id)}}", "hx-target": "#game-{{=game.id}}", "hx-swap": "outerHTML"}
-                - if game.access == Game.Access.PASSWORD
-                    .field
-                        %label.label{for: "join-password-{{=game.id}}"}
-                            = T("Password")
-                        %input.input{id: "join-password-{{=game.id}}", type: "password", name: "password", required: None, autocomplete: "off"}
-                - if choices is not None
-                    .field
-                        %label.label{for: "join-country-{{=game.id}}"}
-                            = T("Country")
-                        %select.input{id: "join-country-{{=game.id}}", name: "country"}
-                            - for name in choices
-                                %option{value: "{{=name}}"}
-                                    = name
-                .cap
-                    - if game.stage == Game.Stage.GAME
-                        = T("No stake required")
-                    - else
-                        {{=T("This stakes")}} {{=game.bet}} {{=T("points")}}
-                - if error
-                    .err
-                        = error
-                .flex.justify-end.gap-2
-                    %button.btn{type: "button", "@click": "joining = false"}
-                        = T("Cancel")
-                    %button.btn.btn-primary{type: "submit"}
-                        = T("Take over") if game.stage == Game.Stage.GAME else T("Confirm")
+                - include 'games/_join_fields.haml'
         .pt-4.flex.justify-end.gap-2
             - if role
                 %a.btn.btn-primary{href: "{{=card_play}}"}
                     = T("Enter")
-            - elif card_joinable
+            - elif joinable
                 %button.btn.btn-primary{type: "button", "x-show": "!joining", "@click": "joining = true"}
                     = T("Take over") if game.stage == Game.Stage.GAME else T("Join")
-            - elif game.is_open
+            - elif game.is_open and not current_user()
                 %a.btn{href: "{{=url('auth.login')}}"}
                     = T("Sign in to join")
             - else

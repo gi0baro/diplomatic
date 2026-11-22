@@ -210,12 +210,14 @@ class Game(TSModel, UUIDModel):
         if fields.press_type != self.Press.NONE:
             rid.chat_rooms.create(game=rid)
 
-    @rowmethod("available_countries")
-    def available_countries(self, row):
-        if row.stage == self.Stage.GAME:
-            return row.players.current().in_state(GameRole.State.DISORDER).select(GameRole.country).column("country")
-        enabled_countries = {country for country in row.countries.keys() if row.countries[country]}
-        joined_countries = set(row.players.current().select(GameRole.country).column("country"))
+    @classmethod
+    def available_countries(cls, game):
+        #: takes any game row with `id`, `stage` and `countries`: a partial select has no row methods or relations
+        roles = GameRole.current().where(lambda r: r.game == game.id)
+        if game.stage == cls.Stage.GAME:
+            return roles.in_state(GameRole.State.DISORDER).select(GameRole.country).column("country")
+        enabled_countries = {country for country in game.countries.keys() if game.countries[country]}
+        joined_countries = set(roles.select(GameRole.country).column("country"))
         return list(enabled_countries - joined_countries)
 
     def _add_player_to_dm_chat_rooms(self, game, player):
@@ -228,7 +230,7 @@ class Game(TSModel, UUIDModel):
     def add_player(self, row, user, country=None):
         if row.stage == self.Stage.GAME:
             return self._take_over_player(row, user, country)
-        available_countries = row.available_countries()
+        available_countries = self.available_countries(row)
         if not country or (country not in available_countries):
             random.shuffle(available_countries)
             country = next(iter(available_countries), None)

@@ -1,6 +1,7 @@
 import re
 import uuid
 from collections import defaultdict
+from datetime import timedelta
 
 import click
 import yaml
@@ -342,7 +343,10 @@ def _orders(game, variant, phase, label, country, orders):
         if errors:
             reasons = "; ".join(f"{variant.codes.get(key, key)}: {reason}" for key, reason in errors.items())
             fail(f"{where}: '{text}' rejected: {reasons}")
-        res = Order.where(lambda m: m.id == row.id).validate_and_update(type=order_type, data=data)
+        #: datetimes are stored to the second and a scenario saves in the second the phase created its orders:
+        #: the save is dated one second later, or it would not count as touched (a missed turn)
+        saved_at = row.created_at + timedelta(seconds=1)
+        res = Order.where(lambda m: m.id == row.id).validate_and_update(type=order_type, data=data, updated_at=saved_at)
         if res.errors:
             fail(f"{where}: '{text}': {dict(res.errors)}")
         db.commit()

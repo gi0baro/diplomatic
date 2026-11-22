@@ -5,7 +5,7 @@ from emmett.tools import requires
 
 from .. import Game, GameRole, Map, Notification, Vault, app, auth, db
 from ..helpers.events import publish
-from ..helpers.games import CARD_FIELDS, GAME_MAP_FIELDS, build_cards, card_values, set_card_phase
+from ..helpers.games import CARD_FIELDS, GAME_MAP_FIELDS, build_cards, card_values, join_values, set_card_phase
 from ..notifications.games import PAGE_KINDS
 from . import front, query_page
 
@@ -86,6 +86,27 @@ async def join(gid):
     return {**card_context(game, auth.user), "error": error}
 
 
+def page_join_values(game, user):
+    in_game = game.players.where(lambda p: p.user == user.id).count() > 0
+    return join_values(game, user, in_game)
+
+
+@games.route("/play/<str:gid>/join", methods="post", template="partials/join.haml")
+@requires(auth.is_logged, url("auth.login"))
+async def partial_join(gid):
+    error = await join_game(gid)
+    if not error:
+        if not request.headers.get("hx-request"):
+            redirect(url(".play", gid))
+        response.headers["HX-Redirect"] = url(".play", gid)
+        return ""
+    game = Game.get(gid)
+    if not game:
+        abort(404)
+    joinable, choices = page_join_values(game, auth.user)
+    return {"game": game, "joinable": joinable, "choices": choices, "error": error, "Game": Game}
+
+
 async def join_game(gid):
     game = (
         Game.where(
@@ -111,7 +132,7 @@ async def join_game(gid):
         if params.password != game.password:
             return "wrong password"
     if game.stage == Game.Stage.GAME or game.countries_assignment == Game.Assignment.CHOICE:
-        if params.country not in game.available_countries():
+        if params.country not in Game.available_countries(game):
             return "Selected country not available"
     try:
         with db.atomic():
@@ -150,7 +171,7 @@ async def create():
         if form.params.players_number < variant.min_players or form.params.players_number > maxplayers:
             form.errors.players_number = "Invalid number of players"
             return
-        low, high = variant.target_range()
+        low, high = Map.target_centers_range(variant)
         if form.params.target_sc and not low <= form.params.target_sc <= high:
             form.errors.target_sc = f"Centers to win must be between {low} and {high}"
             return
@@ -207,7 +228,7 @@ def partial_variant_options():
     )
     if not variant:
         abort(404)
-    return {"variant": variant}
+    return {"variant": variant, "target_centers_range": Map.target_centers_range(variant)}
 
 
 @games.route("/play/<str:gid>")
@@ -219,9 +240,12 @@ def play(gid):
     scs = game.target_sc or variant.scs_to_win
     players = game.players.current().join("user").select()
     player = None
+    joinable, choices = False, None
     if auth.is_logged():
         player = game.player(auth.user)
         Notification.read(auth.user.id, Game.tablename, game.id, PAGE_KINDS)
+        if not player:
+            joinable, choices = page_join_values(game, auth.user)
 
     #: the country key used by the board (`--c-<key>`, data-power, data-owner): lowercase, every run of
     #: characters other than a-z and 0-9 becomes one dash, no dash at the ends. Must match
@@ -284,6 +308,10 @@ def play(gid):
         "player_country": player.country if player else None,
         "player_ready": player.is_ready if player else False,
         "player_active": player.is_active if player else False,
+        "joinable": joinable,
+        "choices": choices,
+        "error": None,
+        "Game": Game,
         "bell_poll": True,
         "statscol": 6,
     }

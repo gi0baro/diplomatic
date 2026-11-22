@@ -1,4 +1,4 @@
-from emmett.orm import Field, has_many, rowmethod, scope
+from emmett.orm import Field, has_many, scope
 
 from . import TSModel
 
@@ -56,9 +56,10 @@ class Map(TSModel):
         )
         return (self.name == newest.name) & (self.revision == newest.revision)
 
-    @rowmethod("target_range")
-    def _target_range(self, row):
-        #: the centres to win a game may ask for: more than any country starts with, at most all of them
+    @classmethod
+    def target_centers_range(cls, row):
+        #: the centres to win a game may ask for: more than any country starts with, at most all of them.
+        #: Takes any row with `supply_centers` and `init`: a partial select has no row methods
         centers = set(row.supply_centers)
         most = max(len(centers & set(owned)) for owned in row.init["territories"].values())
         return most + 1, len(centers)

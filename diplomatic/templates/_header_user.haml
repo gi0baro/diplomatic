@@ -2,6 +2,7 @@
 - player_country = globals().get('player_country', None)
 - player_key = globals().get('player_key', None)
 - bell_poll = globals().get('bell_poll', False)
+- header_join = globals().get('header_join', False)
 
 .flex.items-center.gap-3.shrink-0.self-stretch
     - if current_user()
@@ -24,6 +25,13 @@
                 %span.sw.h-3.w-3
                 %span{class: "font-display uppercase tracking-wider text-[16px] text-fog-200"}
                     = player_country
+        - elif header_join
+            .relative.self-stretch.flex.items-center{"x-data": "{joining: false}", "@click.outside": "joining = false", "@keydown.escape.window": "joining = false"}
+                .pl-3.border-l.border-ink-700
+                    %button.btn.btn-primary{type: "button", "aria-haspopup": "true", ":aria-expanded": "joining", "@click": "joining = !joining"}
+                        = T("Take over") if game.stage == Game.Stage.GAME else T("Join")
+                .absolute.right-0.top-full.mt-px.w-80.panel.border-t-0.rounded-t-none.shadow-2xl.z-40{class: "shadow-black/50", "x-show": "joining", "x-cloak": None, "x-transition.opacity": None}
+                    - include 'games/partials/join.haml'
         .pl-3.border-l.border-ink-700{"x-data": "{open: false}", "@click.outside": "open = false", "@keydown.escape.window": "open = false"}
             %button.avatar{type: "button", "@click": "open = !open", "aria-haspopup": "true", title: "{{=user.username}}"}
                 = (user.username or '?')[:2].upper()

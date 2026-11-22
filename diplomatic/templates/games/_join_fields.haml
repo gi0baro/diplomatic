@@ -1,0 +1,28 @@
+- if joinable
+    - if game.access == Game.Access.PASSWORD
+        .field
+            %label.label{for: "join-password-{{=game.id}}"}
+                = T("Password")
+            %input.input{id: "join-password-{{=game.id}}", type: "password", name: "password", required: None, autocomplete: "off"}
+    - if choices is not None
+        .field
+            %label.label{for: "join-country-{{=game.id}}"}
+                = T("Country")
+            %select.input{id: "join-country-{{=game.id}}", name: "country"}
+                - for name in choices
+                    %option{value: "{{=name}}"}
+                        = name
+    .cap
+        - if game.stage == Game.Stage.GAME
+            = T("No stake required")
+        - else
+            {{=T("This stakes")}} {{=game.bet}} {{=T("points")}}
+- if error
+    .err
+        = error
+.flex.justify-end.gap-2
+    %button.btn{type: "button", "@click": "joining = false"}
+        = T("Cancel")
+    - if joinable
+        %button.btn.btn-primary{type: "submit"}
+            = T("Take over") if game.stage == Game.Stage.GAME else T("Confirm")

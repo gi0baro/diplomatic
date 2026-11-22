@@ -11,7 +11,7 @@
             - for game in games
                 - variant = variants[game.id]
                 - card = cards[game.id]
-                - count, role, choices, winner, turn, status, press, lang = card['count'], card['role'], card['choices'], card['winner'], card['turn'], card['status'], card['press'], card['lang']
+                - count, role, joinable, choices, winner, turn, status, press, lang = card['count'], card['role'], card['joinable'], card['choices'], card['winner'], card['turn'], card['status'], card['press'], card['lang']
                 - rules, skips, centers = card['rules'], card['skips'], card['centers']
                 - deadline_iso, deadline = card['deadline_iso'], card['deadline']
                 - error = None
@@ -89,10 +89,10 @@
                                 - if row['role']
                                     %a.btn.btn-primary{href: "{{=row_play}}"}
                                         = T("Enter")
-                                - elif game.is_open and current_user()
+                                - elif row['joinable']
                                     %button.btn.btn-primary{type: "button", "data-game": "{{=game.id}}", "@click": 'view = "grid"; $nextTick(() => $dispatch("lobby-join", $el.dataset.game))'}
-                                        = T("Join")
-                                - elif game.is_open
+                                        = T("Take over") if game.stage == Game.Stage.GAME else T("Join")
+                                - elif game.is_open and not current_user()
                                     %a.btn{href: "{{=url('auth.login')}}"}
                                         = T("Sign in to join")
                                 - else

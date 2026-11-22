@@ -9,6 +9,7 @@ from .. import Game, GamePhase, GameRole, Map
 CARD_FIELDS = [field for field in Game.table if field.name not in ("history", "chat_history", "password")]
 GAME_MAP_FIELDS = (Map.id, Map.name, Map.scs_to_win)
 DEADLINE_FORMAT = "%d %b %H:%M UTC"
+JOIN_STAGES = frozenset({Game.Stage.PREGAME, Game.Stage.GAME})
 PRESS_LABELS = {
     Game.Press.ALL: (T("Open press"), T("Open")),
     Game.Press.GLOBAL: (T("Global press only"), T("Global only")),
@@ -48,20 +49,23 @@ def card_rules(game):
     return rules
 
 
+def join_values(game, user, in_game):
+    #: a user with any row in the game, a leaver's included, cannot join it (join_game's rule)
+    if not user or in_game or not game.is_open or game.stage not in JOIN_STAGES:
+        return False, None
+    if game.stage == Game.Stage.GAME or game.countries_assignment == Game.Assignment.CHOICE:
+        return True, Game.available_countries(game)
+    return True, None
+
+
 def card_values(game, variant, roles, user):
-    role = next((r for r in roles if user and r.user == user.id), None)
-    choices = None
-    if (
-        user
-        and not role
-        and game.is_open
-        and (game.stage == Game.Stage.GAME or game.countries_assignment == Game.Assignment.CHOICE)
-    ):
-        choices = game.available_countries()
+    mine = [r for r in roles if user and r.user == user.id]
+    joinable, choices = join_values(game, user, bool(mine))
     at = game.next_process_at
     return {
         "count": sum(1 for r in roles if r.state != GameRole.State.LEFT),
-        "role": role,
+        "role": next((r for r in mine if r.state != GameRole.State.LEFT), None),
+        "joinable": joinable,
         "choices": choices,
         "winner": next((r.country for r in roles if r.state == GameRole.State.WON), None),
         "deadline_iso": iso_utc(at) if at else "",
