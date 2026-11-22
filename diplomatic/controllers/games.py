@@ -280,6 +280,7 @@ def play(gid):
         "player_country": player.country if player else None,
         "player_ready": player.is_ready if player else False,
         "player_active": player.is_active if player else False,
+        "bell_poll": True,
         "statscol": 6,
     }
 

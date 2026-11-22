@@ -51,6 +51,11 @@ def partial_bell():
     return {"items": items_of(rows), "unread": Notification.unread_count(auth.user.id)}
 
 
+@notifications.route("/count", template="partials/count.haml")
+def partial_count():
+    return {"unread": Notification.unread_count(auth.user.id)}
+
+
 @notifications.route("/<str:nid>/open")
 def open_item(nid):
     row = Notification.get(id=nid, user=auth.user.id)
