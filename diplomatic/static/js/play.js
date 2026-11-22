@@ -271,8 +271,13 @@
             dismissable: true
           });
         }
-      }).catch(function (err) { console.error(err); })
-        .then(function () { refreshing = false; });
+      }).catch(function (err) {
+        console.error(err);
+        toast({
+          kind: 'phase', key: 'stale', tone: 'text-alert', title: 'OUT OF DATE',
+          message: 'Turn was resolved but an error happened. Please refresh the page.'
+        });
+      }).then(function () { refreshing = false; });
     }
 
     document.addEventListener('game:state', function (e) {
