@@ -8,7 +8,7 @@
 %script{src: "{{=url('static', 'js/viewBox.js')}}"}
 %script{src: "{{=url('static', 'js/floating.js')}}"}
 %script{src: "{{=url('static', 'js/board-ui.js')}}"}
-- assets 'js_game'
+%script{src: "{{=url('static', 'bundled/game.js')}}"}
 %script{src: "{{=url('static', 'js/play.js')}}"}
 - if game.press_type != 2
     %script{src: "{{=url('static', 'js/chat.js')}}", defer: None}

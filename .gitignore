@@ -14,8 +14,6 @@ diplomatico/target
 
 diplomatic/databases/*
 diplomatic/logs/*.log
-diplomatic/static/dist/*
-diplomatic/static/bs3/*
 diplomatic/static/bundled/*
 diplomatic/uploads/*
 

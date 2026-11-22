@@ -2,11 +2,21 @@ FROM denoland/deno:2.9.7 AS css
 
 COPY css /wrk/css
 COPY diplomatic/templates /wrk/diplomatic/templates
+COPY diplomatic/static/js /wrk/diplomatic/static/js
 WORKDIR /wrk/css
 
 ENV NODE_ENV=production
 
 RUN deno run -A tailwindcss -i src/tailwind.css -c tailwind.config.js -o dist/main.css --minify
+
+
+FROM denoland/deno:2.9.7 AS engine
+
+COPY engine /wrk/engine
+COPY diplomatic/assets /wrk/diplomatic/assets
+WORKDIR /wrk/engine
+
+RUN deno run -A build.js dist/game.js
 
 
 FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim AS builder
@@ -25,9 +35,8 @@ RUN uv sync --frozen --no-dev --no-editable --no-install-project
 
 FROM python:3.14-slim-bookworm AS base
 
-# nodejs: emmett-assets compiles .coffee sources at request time through PyExecJS
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends libpq5 nodejs && \
+    apt-get install -y --no-install-recommends libpq5 && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -38,6 +47,7 @@ ENV PATH=/app/.venv/bin:$PATH
 COPY diplomatic diplomatic
 COPY variants variants
 COPY --from=css /wrk/css/dist/main.css diplomatic/static/bundled/main.css
+COPY --from=engine /wrk/engine/dist/game.js diplomatic/static/bundled/game.js
 
 
 FROM base AS web
