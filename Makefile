@@ -33,7 +33,7 @@ lint:
 
 .PHONY: test
 test:
-	uv run pytest -q tests
+	uv run pytest -q tests diplomatico/tests
 
 .PHONY: all
 all: format lint test

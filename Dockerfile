@@ -49,6 +49,9 @@ COPY variants variants
 COPY --from=css /wrk/css/dist/main.css diplomatic/static/bundled/main.css
 COPY --from=engine /wrk/engine/dist/game.js diplomatic/static/bundled/game.js
 
+ARG APP_COMMIT=master
+ENV APP_COMMIT=$APP_COMMIT
+
 
 FROM base AS web
 
