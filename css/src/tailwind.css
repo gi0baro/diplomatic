@@ -458,11 +458,12 @@
 :where(#map) .unit .dis, :where(#map) .unit .dis-tether { opacity: 0; transition: opacity .35s; }
 :where(#map) .unit.dislodged .dis { opacity: 1; }
 :where(#map) .unit.dislodged .dis-tether { opacity: .85; }
-:where(#map) .unit .dis { fill: var(--alert); fill-opacity: .12; stroke: var(--alert); stroke-width: 1.6; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; animation: spin 5s linear infinite; }
+:where(#map) .unit .dis { fill: var(--alert); fill-opacity: .12; stroke: var(--alert); stroke-width: 1.6; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; }
+/* every unit carries the ring: only a dislodged one's moves, like the build's pulse (expand and fade) */
+:where(#map) .unit.dislodged .dis { animation: grow 2.4s ease-out infinite; }
 :where(#map) .unit .dis-tether { stroke: var(--alert); stroke-width: 1; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
 :where(#map) .unit.dislodged .body { stroke: var(--alert); }
 :where(#map) .unit.dislodged > .kg { filter: drop-shadow(0 0 5px var(--alert)); }
-@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---- orders: shape carries the type ----
    current (.orders.cur): the player's orders, one neutral colour, a pulse in the player's colour;
@@ -498,6 +499,8 @@
 :where(#map) .order.disband { filter: drop-shadow(0 0 3px var(--alert)); }
 :where(#map) .order.disband .dring { fill: none; stroke: var(--alert); stroke-width: 1.4; stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
 :where(#map) .order.disband .x { stroke: var(--alert); stroke-width: 2.2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+/* the player's disband and convoy rings move like the build's pulse; history's stand still */
+:where(#map) .orders.cur .order.disband .dring, :where(#map) .orders.cur .order .cring { animation: grow 2.4s ease-out infinite; }
 
 /* phase change: the outgoing order layer fades out, the incoming one fades in (units glide meanwhile) */
 #map [data-layer] { opacity: 0; visibility: hidden; transition: opacity .3s ease-in, visibility 0s linear .3s; }
