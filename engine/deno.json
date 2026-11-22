@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "coffeescript": "npm:coffeescript@1.12.7"
+  }
+}
