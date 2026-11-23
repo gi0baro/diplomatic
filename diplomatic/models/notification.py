@@ -21,7 +21,11 @@ class Notification(TSModel, UUIDModel):
     read_at = Field.datetime()
     delivery = Field.int(notnull=True)
 
-    validation = {"delivery": {"in": Delivery.choices()}, "data": {"presence": False}}
+    validation = {
+        "delivery": {"in": Delivery.choices()},
+        "data": {"presence": False},
+        "read_at": {"allow": "empty"},
+    }
 
     repr_values = {"delivery": Delivery.repr()}
 
