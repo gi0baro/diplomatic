@@ -299,8 +299,7 @@ class Game(TSModel, UUIDModel):
             )
         ).select(GameRole.user, GameRole.country)
         watchers = self.watching(client, game.id, [recipient.user for recipient in recipients])
-        maps = self.db.Map
-        variant = maps.where(lambda m: m.id == game.map).select(maps.name).first()
+        variant = self.db.where(self.db.Map.id == game.map).select(self.db.Map.name).first()
         data = {"name": game.name, "variant": variant.name}
         turn = game.active_phase()
         if turn:
