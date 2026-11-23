@@ -12,6 +12,7 @@ dependencies = [
     "celery",
     "diplomatico",
     "emmett-sentry~=0.10.0",
+    "rloop~=0.5.0",
 ]
 
 [tool.uv.sources]
