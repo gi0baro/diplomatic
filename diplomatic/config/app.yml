@@ -4,6 +4,7 @@ db:
   big_id_fields: yes
 langs: ["en", "it"]
 site_url: http://localhost:8000
+uploads_folder: data/uploads
 notifications:
   email_debounce: 10
 worker:

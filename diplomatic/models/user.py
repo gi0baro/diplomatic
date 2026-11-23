@@ -1,6 +1,7 @@
 from emmett.orm import Field, after_insert, belongs_to, has_many, has_one
 from emmett.tools.auth.models import AuthUserBasic
 
+from .. import app
 from . import TSModel
 from .economy import Vault
 from .notification import NotificationSettings
@@ -16,7 +17,7 @@ class User(AuthUserBasic):
     )
 
     username = Field(notnull=True)
-    avatar_img = Field.upload()
+    avatar_img = Field.upload(uploadfolder=app.config.uploads_folder)
 
     form_registration_rw = {"username": True}
     form_profile_rw = {"avatar_img": True}

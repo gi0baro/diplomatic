@@ -11,7 +11,7 @@ diplomatico/**/*.so
 
 diplomatic/databases
 diplomatic/logs/*.log
-diplomatic/uploads
+diplomatic/data
 
 .deploy
 docs
